@@ -10,7 +10,7 @@ namespace BRT_Base {
     public:
         Observer() {}
         virtual ~Observer() {}
-        virtual void update(T* subject) = 0;
+        virtual void Update(T* subject) = 0;
     };
 
     template <class T>
@@ -21,19 +21,19 @@ namespace BRT_Base {
         virtual ~Subject() {}
         void attach(Observer<T>& observer)
         {
-            m_observers.push_back(&observer);
+            observers.push_back(&observer);
         }
         void detach(Observer<T>& observer) {
-            auto it = std::find(m_observers.begin(), m_observers.end(), observer);
-            if (it != m_observers.end())
-                m_observers.erase(it);
+            auto it = std::find(observers.begin(), observers.end(), observer);
+            if (it != observers.end())
+                observers.erase(it);
         }
         void notify()
         {
             typename std::vector<Observer<T>*>::iterator it;
-            for (it = m_observers.begin(); it != m_observers.end(); it++) (*it)->update(static_cast<T*>(this));
+            for (it = observers.begin(); it != observers.end(); it++) (*it)->Update(static_cast<T*>(this));
         }
     private:
-        std::vector<Observer<T>*> m_observers;
+        std::vector<Observer<T>*> observers;
     };
 }

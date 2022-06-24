@@ -23,31 +23,35 @@ namespace BRT_Base {
 		void BeginSetup();
 		bool EndSetup();
 
-		template <typename T, typename U>
+		/*template <typename T, typename U>
 		bool ConnectModules(T& module1, U& module2) {
+			return ConnectModules(module1, "1", module2, "1");
+		}*/
+		template <typename T, typename U>
+		bool ConnectModules(T& module1, std::string exitPointID, U& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
-			module2.connectEntryTo(module1.GetExitPoint());
+			module2.connectEntryTo(module1.GetExitPoint(exitPointID), entryPointID);
 			return true;
 		}
 
 		template <typename T, typename U>
-		bool ConnectModules(std::shared_ptr<T>& module1, U& module2) {
+		bool ConnectModules(std::shared_ptr<T>& module1, std::string exitPointID, U& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
-			module2.connectEntryTo(module1->GetExitPoint());
+			module2.connectEntryTo(module1->GetExitPoint(exitPointID), entryPointID);
 			return true;
 		}
 		
 		template <typename T, typename U>
-		bool ConnectModules(T& module1, std::shared_ptr<U>& module2) {
+		bool ConnectModules(T& module1, std::string exitPointID, std::shared_ptr<U>& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
-			module2->connectEntryTo(module1.GetExitPoint());
+			module2->connectEntryTo(module1.GetExitPoint(exitPointID), entryPointID);
 			return true;
 		}
 
 		template <typename T, typename U>
-		bool ConnectModules(std::shared_ptr<T>& module1, std::shared_ptr<U>& module2) {
+		bool ConnectModules(std::shared_ptr<T>& module1, std::string exitPointID, std::shared_ptr<U>& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
-			module2->connectEntryTo(module1->GetExitPoint());
+			module2->connectEntryTo(module1->GetExitPoint(exitPointID), entryPointID);
 			return true;
 		}
 
