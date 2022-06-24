@@ -3,7 +3,7 @@
 #include "SoundSource.h"
 #include "Listener.hpp"
 
-namespace BRT_Base {
+namespace BRTBase {
 
 
 	class CBRTManager {

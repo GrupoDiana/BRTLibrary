@@ -5,34 +5,35 @@
 #include <vector>
 #include <algorithm>
  
+namespace BRTProcessing {
+    class CSingleProcessor : public BRTBase::CProcessorBase<CSingleProcessor>
+    {
+    public:
+        CSingleProcessor() : gain{ 1.0f } {
+            CreateEntryPoint(*this, "inputSamples");
+            CreateExitPoint("outputSamples");
 
-class CSingleProcessorNew : public CProcessorBase<CSingleProcessorNew>
-{
-public:
-    CSingleProcessorNew() : gain{ 1.0f } {
-        CreateEntryPoint(*this, "inputSamples");
-        CreateExitPoint("outputSamples");
-        
-    }
+        }
 
-    void setGain(float _gain) { gain = _gain; }
+        void setGain(float _gain) { gain = _gain; }
 
-    void Update() {        
-        std::vector<float> temp = GetEntryPoint("inputSamples")->GetData();
-        Process(temp);
-    }
+        void Update() {
+            std::vector<float> temp = GetEntryPoint("inputSamples")->GetData();
+            Process(temp);
+        }
 
-private:
-    float gain;
+    private:
+        float gain;
 
 
-    // Methods
-    void Process(std::vector<float>& inbuffer) {
-        MultiplyVectorByValue(inbuffer, gain);
-        GetExitPoint("outputSamples")->sendData(inbuffer);        
-    }
+        // Methods
+        void Process(std::vector<float>& inbuffer) {
+            MultiplyVectorByValue(inbuffer, gain);
+            GetExitPoint("outputSamples")->sendData(inbuffer);
+        }
 
-    void MultiplyVectorByValue(std::vector<float>& v, float k) {
-        std::transform(v.begin(), v.end(), v.begin(), [k](float& c) { return c * k; });
-    }
-};
+        void MultiplyVectorByValue(std::vector<float>& v, float k) {
+            std::transform(v.begin(), v.end(), v.begin(), [k](float& c) { return c * k; });
+        }
+    };
+}

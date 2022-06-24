@@ -3,7 +3,7 @@
 #include "ExitPoint.h"
 #include <vector>
 
-namespace BRT_Base {
+namespace BRTBase {
 
 	class CSoundSource {
 	public:

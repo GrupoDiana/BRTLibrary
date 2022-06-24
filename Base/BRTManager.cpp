@@ -1,7 +1,7 @@
 #include "BRTManager.h"
 #include <thread>
 
-namespace BRT_Base {
+namespace BRTBase {
 
 
 	
@@ -70,7 +70,7 @@ namespace BRT_Base {
 	void CBRTManager::ProcessAllListener() {
 
 
-		std::thread thread1 = std::thread(&BRT_Base::CBRTManager::ProcessAllListenerThread, this);
+		std::thread thread1 = std::thread(&BRTBase::CBRTManager::ProcessAllListenerThread, this);
 
 
 		thread1.join();		

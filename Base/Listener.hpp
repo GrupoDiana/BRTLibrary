@@ -3,7 +3,7 @@
 #include <memory>
 
 
-namespace BRT_Base {
+namespace BRTBase {
 
 	class CListener {
 	public:

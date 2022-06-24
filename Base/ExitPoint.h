@@ -3,7 +3,7 @@
 #include "ObserverBase.hpp"
 #include <iostream>
 
-namespace BRT_Base {
+namespace BRTBase {
     class CExitPoint : public Subject<CExitPoint>
     {
     public:

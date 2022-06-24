@@ -2,7 +2,7 @@
 #include "ObserverBase.hpp"
 #include "ExitPoint.h"
 
-namespace BRT_Base {
+namespace BRTBase {
 
     template <class U>
     class CEntryPoint : public Observer<CExitPoint>
