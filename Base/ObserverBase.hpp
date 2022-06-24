@@ -2,7 +2,7 @@
 #include <vector>
 
 
-namespace BRT_Base {
+namespace BRTBase {
 
     template <class T>
     class Observer
