@@ -7,10 +7,10 @@
 #include <algorithm>
     
 namespace BRTProcessing {
-    class CSingleBinauralProcessor : public BRTBase::CProcessorBase<CSingleBinauralProcessor> {
+    class CSingleBinauralProcessor : public BRTBase::CProcessorBase {
     public:
         CSingleBinauralProcessor() : leftGain{ 1.0f }, rightGain{ 1.0f } {
-            CreateEntryPoint(*this, "inputSamples");
+            CreateEntryPoint("inputSamples");
             CreateExitPoint("leftEar");
             CreateExitPoint("rightEar");
         }

@@ -43,10 +43,6 @@ namespace BRTBase {
 
 		bool isDataReady() { return leftDataReady & rightDataReady; }
 
-		//std::vector<float> GetBuffer() {
-		//	leftDataReady = false;
-		//	return leftBuffer;
-		//}
 
 		void GetBuffers(std::vector<float>& _leftBuffer, std::vector<float>& _rightBuffer) {
 			_leftBuffer = leftBuffer;

@@ -6,11 +6,11 @@
 #include <algorithm>
  
 namespace BRTProcessing {
-    class CSingleProcessor : public BRTBase::CProcessorBase<CSingleProcessor>
+    class CSingleProcessor : public BRTBase::CProcessorBase
     {
     public:
         CSingleProcessor() : gain{ 1.0f } {
-            CreateEntryPoint(*this, "inputSamples");
+            CreateEntryPoint("inputSamples");
             CreateExitPoint("outputSamples");
 
         }
