@@ -14,9 +14,18 @@ namespace BRTBase {
 
         
         void CreateEntryPoint(std::string entryPointID) {
+            
+            
+            /*BRTBase::CEntryPointWithData<std::vector<float>>* _newEntryPoint2 = new BRTBase::CEntryPointWithData<std::vector<float>>(std::bind(&CProcessorBase::updateFromEntryPoint, this, std::placeholders::_1), entryPointID);            
+            _newEntryPoint2->setup(std::bind(&CProcessorBase::updateFromEntryPoint, this, std::placeholders::_1), entryPointID);
+            entryPoints.push_back(std::shared_ptr<CEntryPoint2>(_newEntryPoint2));*/
 
-            std::shared_ptr<BRTBase::CEntryPoint2 > _newEntryPoint2 = std::make_shared<BRTBase::CEntryPoint2 >(std::bind(&CProcessorBase::updateFromEntryPoint, this, std::placeholders::_1) , entryPointID);
-            entryPoints.push_back(_newEntryPoint2);
+            std::shared_ptr<CEntryPoint2> _newEntryPoint = std::make_shared<BRTBase::CEntryPointWithData<std::vector<float>> >(std::bind(&CProcessorBase::updateFromEntryPoint, this, std::placeholders::_1), entryPointID);            
+            entryPoints.push_back(_newEntryPoint);
+
+
+            /*std::shared_ptr<CEntryPoint2> _newEntryPoint2 = std::make_shared<BRTBase::CEntryPointWithData<int> >(std::bind(&CProcessorBase::updateFromEntryPoint, this, std::placeholders::_1), entryPointID);
+            entryPoints.push_back(_newEntryPoint2);*/            
         }
 
         void CreateExitPoint(std::string exitPointID) {
@@ -33,18 +42,35 @@ namespace BRTBase {
         }
 
         void connectEntryTo(std::shared_ptr<BRTBase::CExitPoint> _exitPoint, std::string entryPointID) {
-            //std::shared_ptr<BRTBase::CEntryPoint<T> > _entryPoint = GetEntryPoint(entryPointID);
-            std::shared_ptr<BRTBase::CEntryPoint2 > _entryPoint = GetEntryPoint(entryPointID);
-            _exitPoint->attach(*_entryPoint.get());
+            
+            //BRTBase::CEntryPointWithData<std::vector<float>>*  _entryPoint = GetEntryPoint2(entryPointID);
+            //_exitPoint->attach(*_entryPoint);
+
+            std::shared_ptr<BRTBase::CEntryPointWithData<std::vector<float>> > _entryPoint2 = GetEntryPoint(entryPointID);
+            _exitPoint->attach(*_entryPoint2.get());
         }
 
-                
-        std::shared_ptr<BRTBase::CEntryPoint2 > GetEntryPoint(std::string _id) {
+        
+        BRTBase::CEntryPointWithData<std::vector<float>> * GetEntryPoint2(std::string _id) {        
             for (auto& it : entryPoints) {
-                if (it->GetID() == _id) { return it; }
+                if (it->GetID() == _id) {                 
+                    CEntryPointWithData<std::vector<float>>* a = dynamic_cast<CEntryPointWithData<std::vector<float>>*>(it.get());                    
+                    return a;                                    
+                }
             }
             return nullptr;
         }
+        
+        std::shared_ptr<BRTBase::CEntryPointWithData<std::vector<float>> > GetEntryPoint(std::string _id) {
+        for (auto& it : entryPoints) {
+            if (it->GetID() == _id) {                
+                //std::shared_ptr<BRTBase::CEntryPointWithData<std::vector<float>> >  b = std::dynamic_pointer_cast<BRTBase::CEntryPointWithData<std::vector<float>>>(it);
+                //return b;
+                return std::dynamic_pointer_cast<BRTBase::CEntryPointWithData<std::vector<float>>>(it); 
+            }
+        }
+        return nullptr;
+    }
 
         std::shared_ptr<BRTBase::CExitPoint > GetExitPoint(std::string _id) {
             for (auto& it : exitPoints) {
