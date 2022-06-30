@@ -8,8 +8,8 @@ namespace BRTBase {
 	class CSoundSource {
 	public:
 		CSoundSource() { 
-			samplesExitPoint = std::make_shared<CExitPoint>("samples"); 
-			sourcePositionExitPoint = std::make_shared<CExitPoint>("sourceTransform");
+			samplesExitPoint = std::make_shared<CExitPointSamplesVector>("samples");
+			sourcePositionExitPoint = std::make_shared<CExitPointInt>("sourceTransform");
 		}
 
 		void SetBuffer(std::vector<float>& _buffer) { samplesBuffer = _buffer; }
@@ -19,21 +19,25 @@ namespace BRTBase {
 			samplesExitPoint->sendData(samplesBuffer);
 		}
 
+		void SetSourceTransform(int a) { sourcePositionExitPoint->sendData(a); }
 		//void SetSourceTransform(CTransform _sourceTransform);
 		//const CTransform& GetCurrentSourceTransform() const;
-		std::shared_ptr<CExitPoint> GetExitPoint(std::string id) { 
+
 		
-			if (id == "samples") { return samplesExitPoint; }
-			else if (id == "sourceTransform") { return sourcePositionExitPoint; }
-			else return nullptr;			 		
+		std::shared_ptr<BRTBase::CExitPointSamplesVector> GetSamplesVectorExitPoint() {
+			return samplesExitPoint;						
 		}
 	
+		std::shared_ptr<BRTBase::CExitPointInt> GetTransformExitPoint() {
+			return sourcePositionExitPoint;			
+		}
+
 	private:
 		//CTransform sourceTransform;
 		std::vector<float> samplesBuffer;
 		
-		std::shared_ptr<CExitPoint> samplesExitPoint;
-		std::shared_ptr<CExitPoint> sourcePositionExitPoint;
+		std::shared_ptr<CExitPointSamplesVector> samplesExitPoint;
+		std::shared_ptr<CExitPointInt> sourcePositionExitPoint;
 	};
 
 }

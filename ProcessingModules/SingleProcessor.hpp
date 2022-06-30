@@ -10,26 +10,31 @@ namespace BRTProcessing {
     {
     public:
         CSingleProcessor() : gain{ 1.0f } {
-            CreateEntryPoint("inputSamples");
-            CreateExitPoint("outputSamples");
+            CreateSamplesEntryPoint("inputSamples");            
+            CreatePositionEntryPoint("sourcePosition");
 
+            CreateSamplesExitPoint("outputSamples");
         }
 
         void setGain(float _gain) { gain = _gain; }
 
         void Update() {
-            std::vector<float> temp = GetEntryPoint("inputSamples")->GetData();
-            Process(temp);
+            std::vector<float> buffer = GetSamplesEntryPoint("inputSamples")->getAttr();            
+            int position = GetPositionEntryPoint("sourcePosition")->getAttr();
+            this->resetUpdatingStack();
+
+            Process(buffer, position);
         }
 
     private:
         float gain;
 
 
-        // Methods
-        void Process(std::vector<float>& inbuffer) {
+        // Methods        
+        void Process(std::vector<float>& inbuffer, int sourcePosition) {
+            std::cout << "Source position: " << sourcePosition << std::endl;
             MultiplyVectorByValue(inbuffer, gain);
-            GetExitPoint("outputSamples")->sendData(inbuffer);
+            GetSamplesExitPoint("outputSamples")->sendData(inbuffer);
         }
 
         void MultiplyVectorByValue(std::vector<float>& v, float k) {

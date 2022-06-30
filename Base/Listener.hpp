@@ -1,5 +1,6 @@
 #pragma once
-#include "EntryPoint.hpp"
+#include "EntryPoint2.hpp"
+#include "ExitPoint.h"
 #include <memory>
 
 
@@ -7,42 +8,46 @@ namespace BRTBase {
 
 	class CListener {
 	public:
-		CListener(float _listenerHeadRadius = 0.0875f) {
-			std::shared_ptr<CEntryPoint<CListener> > _leftEntryPoint = std::make_shared<CEntryPoint<CListener> >(*this, "leftEar");
-			leftEarEntryPoint = _leftEntryPoint;
-									
-			std::shared_ptr<CEntryPoint<CListener> > _rightEntryPoint = std::make_shared<CEntryPoint<CListener> >(*this, "rightEar");
-			rightEarEntryPoint = _rightEntryPoint;
+		CListener(float _listenerHeadRadius = 0.0875f) {			
+			
+			leftEarEntryPoint = std::make_shared<BRTBase::CEntryPointSamplesVector >(std::bind(&CListener::updateFromEntryPoint, this, std::placeholders::_1), "leftEar", 1);
+			rightEarEntryPoint = std::make_shared<BRTBase::CEntryPointSamplesVector >(std::bind(&CListener::updateFromEntryPoint, this, std::placeholders::_1), "rightEar", 1);
+						
+			listenerPositionExitPoint = std::make_shared<CExitPointInt>("listenerTransform");
 
 			leftDataReady = false;
 			rightDataReady = false;			
 			listenerHeadRadius = _listenerHeadRadius;
 		}
 		
-		void connectEntryTo(std::shared_ptr<CExitPoint> _exitPoint, std::string entryPointID) {
-
+		void connectSamplesEntryTo(std::shared_ptr<CExitPointSamplesVector> _exitPoint, std::string entryPointID) {
 			if (entryPointID == "leftEar")		 { _exitPoint->attach(*leftEarEntryPoint.get());	}
 			else if (entryPointID == "rightEar") { _exitPoint->attach(*rightEarEntryPoint.get());	}
 			else { //TODO Notify error 
 			}
 		}
 
+		std::shared_ptr<CExitPointInt> GetTransformExitPoint() {
+			return listenerPositionExitPoint;
+		}
+
+
 		void updateFromEntryPoint(std::string id) {
-			std::cout << "EndPoint Updating --> Recibing buffer" << std::endl;
-			
-			
+			std::cout << "Listener receibing data --> Recibing buffer" << std::endl;
+						
 			if (id == "leftEar") { 
-				leftBuffer = leftEarEntryPoint->GetData(); 
+				leftBuffer = leftEarEntryPoint->getAttr();
 				leftDataReady = true;
 			
 			} else if (id == "rightEar") { 
-				rightBuffer = rightEarEntryPoint->GetData();
+				rightBuffer = rightEarEntryPoint->getAttr();
 				rightDataReady = true;
 			}											
 		}
 
 		bool isDataReady() { return leftDataReady & rightDataReady; }
 
+		void SetListenerTransform(int a) { listenerPositionExitPoint->sendData(a); }
 
 		void GetBuffers(std::vector<float>& _leftBuffer, std::vector<float>& _rightBuffer) {
 			_leftBuffer = leftBuffer;
@@ -59,8 +64,9 @@ namespace BRTBase {
 		//Common::CTransform listenerTransform;		// Transform matrix (position and orientation) of listener  
 		float listenerHeadRadius;					// Head radius of listener 
 
-		std::shared_ptr<CEntryPoint<CListener> > leftEarEntryPoint;
-		std::shared_ptr<CEntryPoint<CListener> > rightEarEntryPoint;
+		std::shared_ptr<CEntryPointSamplesVector > leftEarEntryPoint;
+		std::shared_ptr<CEntryPointSamplesVector > rightEarEntryPoint;				
+		std::shared_ptr<CExitPointInt> listenerPositionExitPoint;
 
 		std::vector<float> leftBuffer;
 		std::vector<float> rightBuffer;

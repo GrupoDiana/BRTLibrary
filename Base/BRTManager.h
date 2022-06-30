@@ -30,10 +30,10 @@ namespace BRTBase {
 		template <typename T, typename U>
 		bool ConnectModules(T& module1, std::string exitPointID, U& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
-			module2.connectEntryTo(module1.GetExitPoint(exitPointID), entryPointID);
+			module2.connectSamplesEntryTo(module1.GetSamplesExitPoint(exitPointID), entryPointID);
 			return true;
 		}
-
+		/*
 		template <typename T, typename U>
 		bool ConnectModules(std::shared_ptr<T>& module1, std::string exitPointID, U& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
@@ -41,6 +41,13 @@ namespace BRTBase {
 			return true;
 		}
 		
+		template <typename T, typename U, typename W>
+		bool ConnectModules(std::shared_ptr<T>& module1, std::string exitPointID, U& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2.connectEntryTo<W>(module1->GetExitPoint<W>(exitPointID), entryPointID);
+			return true;
+		}
+
 		template <typename T, typename U>
 		bool ConnectModules(T& module1, std::string exitPointID, std::shared_ptr<U>& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
@@ -53,10 +60,33 @@ namespace BRTBase {
 			if (!setupModeActivated) return false;
 			module2->connectEntryTo(module1->GetExitPoint(exitPointID), entryPointID);
 			return true;
+		}*/
+
+		template <typename U>
+		bool ConnectModuleToSoundSourceSamples(std::shared_ptr<CSoundSource>& soundSourceModule, U& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;												
+			module2.connectSamplesEntryTo(soundSourceModule->GetSamplesVectorExitPoint(), entryPointID);			
+			return true;
 		}
 
+		template <typename U>
+		bool ConnectModuleToSoundSourceTransform(std::shared_ptr<CSoundSource>& soundSourceModule, U& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2.connectPositionEntryTo(soundSourceModule->GetTransformExitPoint(), entryPointID);
+		}
 
+		template <typename U>
+		bool ConnectListenerToModuleSamples(U& module1, std::string exitPointID, std::shared_ptr<CListener>& listenerModule, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			listenerModule->connectSamplesEntryTo(module1.GetSamplesExitPoint(exitPointID), entryPointID);
+			return true;
+		}
 
+		template <typename U>
+		bool ConnectModuleToListenerTransform(std::shared_ptr<CListener>& listenerModule, U& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2.connectPositionEntryTo(listenerModule->GetTransformExitPoint(), entryPointID);
+		}
 
 	private:
 

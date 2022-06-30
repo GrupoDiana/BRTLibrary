@@ -10,14 +10,22 @@ namespace BRTProcessing {
     class CSingleBinauralProcessor : public BRTBase::CProcessorBase {
     public:
         CSingleBinauralProcessor() : leftGain{ 1.0f }, rightGain{ 1.0f } {
-            CreateEntryPoint("inputSamples");
-            CreateExitPoint("leftEar");
-            CreateExitPoint("rightEar");
+            CreateSamplesEntryPoint("inputSamples");
+
+            CreatePositionEntryPoint("sourcePosition");
+            CreatePositionEntryPoint("listenerPosition");
+
+            CreateSamplesExitPoint("leftEar");
+            CreateSamplesExitPoint("rightEar");            
         }
 
-        void Update() {
-            std::vector<float> temp = GetEntryPoint("inputSamples")->GetData();
-            Process(temp);
+        void Update() {            
+            std::vector<float> buffer = GetSamplesEntryPoint("inputSamples")->getAttr();
+            int sourcePosition = GetPositionEntryPoint("sourcePosition")->getAttr();
+            int listenerPosition = GetPositionEntryPoint("listenerPosition")->getAttr();
+            this->resetUpdatingStack();
+
+            Process(buffer, sourcePosition, listenerPosition);
         }
 
         void setLeftGain(float _gain) { leftGain = _gain; }
@@ -27,18 +35,19 @@ namespace BRTProcessing {
         float leftGain;
         float rightGain;
 
-
-
-        void Process(std::vector<float>& _inbuffer) {
+        
+        void Process(std::vector<float>& _inbuffer, int sourcePosition, int listenerPosition) {
 
             std::vector<float> _leftBuffer = _inbuffer;
             std::vector<float> _rightBuffer = _inbuffer;
 
             MultiplyVectorByValue(_leftBuffer, leftGain);
-            GetExitPoint("leftEar")->sendData(_leftBuffer);
+            GetSamplesExitPoint("leftEar")->sendData(_leftBuffer);
 
             MultiplyVectorByValue(_rightBuffer, rightGain);
-            GetExitPoint("rightEar")->sendData(_rightBuffer);
+            GetSamplesExitPoint("rightEar")->sendData(_rightBuffer);
+
+            std::cout <<"sourcePosition: " << sourcePosition << " - listenerPosition: " << listenerPosition << std::endl;
         }
 
 
