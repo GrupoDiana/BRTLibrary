@@ -12,7 +12,7 @@ namespace BRTBase {
 			sourcePositionExitPoint = std::make_shared<CExitPointInt>("sourceTransform");
 		}
 
-		void SetBuffer(std::vector<float>& _buffer) { samplesBuffer = _buffer; }
+		void SetBuffer(CMonoBuffer<float>& _buffer) { samplesBuffer = _buffer; }
 		void SetDataReady() { samplesExitPoint->sendData(samplesBuffer); }
 
 		void operator()() {
@@ -34,7 +34,7 @@ namespace BRTBase {
 
 	private:
 		//CTransform sourceTransform;
-		std::vector<float> samplesBuffer;
+		CMonoBuffer<float> samplesBuffer;
 		
 		std::shared_ptr<CExitPointSamplesVector> samplesExitPoint;
 		std::shared_ptr<CExitPointInt> sourcePositionExitPoint;

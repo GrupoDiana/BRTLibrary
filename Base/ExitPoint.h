@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ObserverBase.hpp"
+#include "Common/Buffer.h"
 #include <iostream>
 
 namespace BRTBase {
@@ -35,6 +36,6 @@ namespace BRTBase {
     private:        
     };
 
-    typedef CExitPointBase<std::vector<float> > CExitPointSamplesVector;
+    typedef CExitPointBase<CMonoBuffer<float> > CExitPointSamplesVector;
     typedef CExitPointBase<int > CExitPointInt;
 }

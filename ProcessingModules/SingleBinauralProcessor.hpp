@@ -20,7 +20,7 @@ namespace BRTProcessing {
         }
 
         void Update() {            
-            std::vector<float> buffer = GetSamplesEntryPoint("inputSamples")->getAttr();
+            CMonoBuffer<float> buffer = GetSamplesEntryPoint("inputSamples")->getAttr();
             int sourcePosition = GetPositionEntryPoint("sourcePosition")->getAttr();
             int listenerPosition = GetPositionEntryPoint("listenerPosition")->getAttr();
             this->resetUpdatingStack();
@@ -36,10 +36,10 @@ namespace BRTProcessing {
         float rightGain;
 
         
-        void Process(std::vector<float>& _inbuffer, int sourcePosition, int listenerPosition) {
+        void Process(CMonoBuffer<float>& _inbuffer, int sourcePosition, int listenerPosition) {
 
-            std::vector<float> _leftBuffer = _inbuffer;
-            std::vector<float> _rightBuffer = _inbuffer;
+            CMonoBuffer<float> _leftBuffer = _inbuffer;
+            CMonoBuffer<float> _rightBuffer = _inbuffer;
 
             MultiplyVectorByValue(_leftBuffer, leftGain);
             GetSamplesExitPoint("leftEar")->sendData(_leftBuffer);

@@ -1,6 +1,7 @@
 #pragma once
 #include "ObserverBase.hpp"
 #include "ExitPoint.h"
+#include "Common/Buffer.h"
 #include <functional>
 
 namespace BRTBase {
@@ -32,6 +33,6 @@ namespace BRTBase {
         int multiplicity;
     };
    
-    typedef CEntryPointBase<std::vector<float>> CEntryPointSamplesVector;
+    typedef CEntryPointBase<CMonoBuffer<float>> CEntryPointSamplesVector;
     typedef CEntryPointBase<int> CEntryPointInt;        
 }
