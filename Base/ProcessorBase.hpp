@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../Base/EntryPoint.hpp"
-#include "../Base/EntryPoint2.hpp"
 #include <vector>
 
 namespace BRTBase {    
@@ -71,11 +70,8 @@ namespace BRTBase {
         }
 
         // Update callback
-        void updateFromEntryPoint(std::string entryPointID) {
-            std::cout << "Processor receiving an update of its entrypoints ..." << std::endl;
-
-            if (updateStack(entryPointID)) { Update(); }
-            //TODO Check if we have received an update from all the entry points, then we should call to Update.            
+        void updateFromEntryPoint(std::string entryPointID) {            
+            if (updateStack(entryPointID)) { Update(); }                   
         }
 
 
@@ -96,10 +92,10 @@ namespace BRTBase {
             if (it != entryPointsUpdatingStack.end())
                 if (!it->received) { 
                     it->received = true; 
-                    if (it->multiplicity >=1 ) { return checkWaitingStack(); }                    
+                    return checkWaitingStack();
                 }
                 else {
-                    // TODO if multiplicity is 1 this a error. It has been received twice before processing
+                    // It has been received twice before processing it. // TODO manage multiplicity bigger than 1
                 }
             else {
                 // TODO error, why are we receibing this?
@@ -111,7 +107,7 @@ namespace BRTBase {
             bool ready = true;
             typename std::vector<CWaitingEntrypoint>::iterator it;
             for (it = entryPointsUpdatingStack.begin(); it != entryPointsUpdatingStack.end(); it++) {
-                if (!(it->received && it->multiplicity >= 1)) { ready = false; }
+                if (!(it->received)) { ready = false; }
             }
             return ready;
         }

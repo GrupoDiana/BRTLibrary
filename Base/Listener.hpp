@@ -1,5 +1,5 @@
 #pragma once
-#include "EntryPoint2.hpp"
+#include "EntryPoint.hpp"
 #include "ExitPoint.h"
 #include <memory>
 
@@ -32,9 +32,7 @@ namespace BRTBase {
 		}
 
 
-		void updateFromEntryPoint(std::string id) {
-			std::cout << "Listener receibing data --> Recibing buffer" << std::endl;
-						
+		void updateFromEntryPoint(std::string id) {									
 			if (id == "leftEar") { 
 				leftBuffer = leftEarEntryPoint->getAttr();
 				leftDataReady = true;

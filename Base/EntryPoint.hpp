@@ -1,48 +1,37 @@
 #pragma once
 #include "ObserverBase.hpp"
 #include "ExitPoint.h"
+#include <functional>
 
 namespace BRTBase {
+   
+    template <class T>
+    class CEntryPointBase : public Observer, public Attribute<T> {
+    public:
+        CEntryPointBase(std::function<void(std::string)> _callBack, std::string _id, int _multiplicity) : callBackUpdate{ _callBack }, multiplicity{ _multiplicity }, Attribute<T>(_id) {}
+        ~CEntryPointBase() {}
+        
+        void Update(Subject* subject) {
+            CExitPointBase<T>* _subject = (static_cast<CExitPointBase<T>*>(subject));
+            Update(_subject);
+        };
 
-    //template <class U>
-    //class CEntryPoint : public Observer<CExitPoint>
-    //{
-    //public:
+        void Update(CExitPointBase<T>* subject)
+        {            
+            this->setAttr(subject->getAttr());            
+            if (multiplicity == 0) { /*Do nothing*/ }
+            else if (multiplicity == 1) { callBackUpdate(this->GetID()); }
+            else if (multiplicity >1 ) { /*TODO manage this */ callBackUpdate(this->GetID()); }
+            
+        }
+        int GetMultiplicity() { return multiplicity; }
 
-    //    CEntryPoint(U& _myOwner, std::string _id, int _multiplicity = 1);
-    //    ~CEntryPoint() {}
-    //    void Update(CExitPoint* subject);
-
-    //    std::vector<float> GetData() const;
-    //    std::string GetID() { return id; };
-
-    //private:
-    //    U& ownerModule;
-
-    //    std::vector<float> data;
-    //    std::string id;
-    //    int multiplicity;
-    //};
-
-    ///////////////////////////////
-    ////// Methods definition
-    //////////////////////////////
-
-    //template <typename U>
-    //CEntryPoint<U>::CEntryPoint(U& _myOwner, std::string _id, int _multiplicity) : ownerModule{ _myOwner }, id{ _id }, multiplicity{ _multiplicity } {}
-
-    //template <typename U>
-    //void CEntryPoint<U>::Update(CExitPoint* subject)
-    //{
-    //    std::cout << "Entry point recebing Updating from : " << typeid(subject).name() << std::endl;
-    //    data = subject->GetBuffer();
-    //    //TODO Manage multiplicity
-    //    ownerModule.updateFromEntryPoint(id);
-    //}
-
-    //template <typename U>
-    //std::vector<float> CEntryPoint<U>::GetData() const {
-    //    return data;
-    //}
-
+        // Vars
+        std::function<void(std::string)> callBackUpdate;
+        //std::string id;
+        int multiplicity;
+    };
+   
+    typedef CEntryPointBase<std::vector<float>> CEntryPointSamplesVector;
+    typedef CEntryPointBase<int> CEntryPointInt;        
 }

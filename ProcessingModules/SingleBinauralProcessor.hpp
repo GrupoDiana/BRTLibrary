@@ -45,9 +45,7 @@ namespace BRTProcessing {
             GetSamplesExitPoint("leftEar")->sendData(_leftBuffer);
 
             MultiplyVectorByValue(_rightBuffer, rightGain);
-            GetSamplesExitPoint("rightEar")->sendData(_rightBuffer);
-
-            std::cout <<"sourcePosition: " << sourcePosition << " - listenerPosition: " << listenerPosition << std::endl;
+            GetSamplesExitPoint("rightEar")->sendData(_rightBuffer);            
         }
 
 

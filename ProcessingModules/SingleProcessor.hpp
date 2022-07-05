@@ -31,8 +31,7 @@ namespace BRTProcessing {
 
 
         // Methods        
-        void Process(std::vector<float>& inbuffer, int sourcePosition) {
-            std::cout << "Source position: " << sourcePosition << std::endl;
+        void Process(std::vector<float>& inbuffer, int sourcePosition) {            
             MultiplyVectorByValue(inbuffer, gain);
             GetSamplesExitPoint("outputSamples")->sendData(inbuffer);
         }
