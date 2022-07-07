@@ -20,10 +20,10 @@ namespace BRTProcessing {
 
         void Update() {
             CMonoBuffer<float> buffer = GetSamplesEntryPoint("inputSamples")->getAttr();
-            int position = GetPositionEntryPoint("sourcePosition")->getAttr();
+            Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->getAttr();
             this->resetUpdatingStack();
 
-            Process(buffer, position);
+            Process(buffer, sourcePosition);
         }
 
     private:
@@ -31,7 +31,7 @@ namespace BRTProcessing {
 
 
         // Methods        
-        void Process(CMonoBuffer<float>& inbuffer, int sourcePosition) {
+        void Process(CMonoBuffer<float>& inbuffer, Common::CTransform sourcePosition) {
             MultiplyVectorByValue(inbuffer, gain);
             GetSamplesExitPoint("outputSamples")->sendData(inbuffer);
         }

@@ -21,8 +21,8 @@ namespace BRTProcessing {
 
         void Update() {            
             CMonoBuffer<float> buffer = GetSamplesEntryPoint("inputSamples")->getAttr();
-            int sourcePosition = GetPositionEntryPoint("sourcePosition")->getAttr();
-            int listenerPosition = GetPositionEntryPoint("listenerPosition")->getAttr();
+            Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->getAttr();
+            Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->getAttr();
             this->resetUpdatingStack();
 
             Process(buffer, sourcePosition, listenerPosition);
@@ -36,7 +36,7 @@ namespace BRTProcessing {
         float rightGain;
 
         
-        void Process(CMonoBuffer<float>& _inbuffer, int sourcePosition, int listenerPosition) {
+        void Process(CMonoBuffer<float>& _inbuffer, Common::CTransform sourcePosition, Common::CTransform listenerPosition) {
 
             CMonoBuffer<float> _leftBuffer = _inbuffer;
             CMonoBuffer<float> _rightBuffer = _inbuffer;

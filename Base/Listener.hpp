@@ -13,7 +13,7 @@ namespace BRTBase {
 			leftEarEntryPoint = std::make_shared<BRTBase::CEntryPointSamplesVector >(std::bind(&CListener::updateFromEntryPoint, this, std::placeholders::_1), "leftEar", 1);
 			rightEarEntryPoint = std::make_shared<BRTBase::CEntryPointSamplesVector >(std::bind(&CListener::updateFromEntryPoint, this, std::placeholders::_1), "rightEar", 1);
 						
-			listenerPositionExitPoint = std::make_shared<CExitPointInt>("listenerTransform");
+			listenerPositionExitPoint = std::make_shared<CExitPointTransform>("listenerTransform");
 
 			leftDataReady = false;
 			rightDataReady = false;			
@@ -27,7 +27,7 @@ namespace BRTBase {
 			}
 		}
 
-		std::shared_ptr<CExitPointInt> GetTransformExitPoint() {
+		std::shared_ptr<CExitPointTransform> GetTransformExitPoint() {
 			return listenerPositionExitPoint;
 		}
 
@@ -45,7 +45,10 @@ namespace BRTBase {
 
 		bool isDataReady() { return leftDataReady & rightDataReady; }
 
-		void SetListenerTransform(int a) { listenerPositionExitPoint->sendData(a); }
+		void SetListenerTransform(Common::CTransform _transform) {
+			listenerTransform = _transform;
+			listenerPositionExitPoint->sendData(listenerTransform);
+		}
 
 		void GetBuffers(std::vector<float>& _leftBuffer, std::vector<float>& _rightBuffer) {
 			_leftBuffer = leftBuffer;
@@ -59,12 +62,12 @@ namespace BRTBase {
 		
 		//std::unique_ptr<CHRTF> listenerHRTF;		// HRTF of listener														
 		//std::unique_ptr<CILD> listenerILD;			// ILD of listener	
-		//Common::CTransform listenerTransform;		// Transform matrix (position and orientation) of listener  
+		Common::CTransform listenerTransform;		// Transform matrix (position and orientation) of listener  
 		float listenerHeadRadius;					// Head radius of listener 
 
 		std::shared_ptr<CEntryPointSamplesVector > leftEarEntryPoint;
 		std::shared_ptr<CEntryPointSamplesVector > rightEarEntryPoint;				
-		std::shared_ptr<CExitPointInt> listenerPositionExitPoint;
+		std::shared_ptr<CExitPointTransform> listenerPositionExitPoint;
 
 		std::vector<float> leftBuffer;
 		std::vector<float> rightBuffer;

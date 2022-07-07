@@ -9,7 +9,7 @@ namespace BRTBase {
 	public:
 		CSoundSource() { 
 			samplesExitPoint = std::make_shared<CExitPointSamplesVector>("samples");
-			sourcePositionExitPoint = std::make_shared<CExitPointInt>("sourceTransform");
+			sourcePositionExitPoint = std::make_shared<CExitPointTransform>("sourceTransform");
 		}
 
 		void SetBuffer(CMonoBuffer<float>& _buffer) { samplesBuffer = _buffer; }
@@ -19,7 +19,10 @@ namespace BRTBase {
 			samplesExitPoint->sendData(samplesBuffer);
 		}
 
-		void SetSourceTransform(int a) { sourcePositionExitPoint->sendData(a); }
+		void SetSourceTransform(Common::CTransform _transform) { 
+			sourceTransform = _transform;
+			sourcePositionExitPoint->sendData(sourceTransform);
+		}
 		//void SetSourceTransform(CTransform _sourceTransform);
 		//const CTransform& GetCurrentSourceTransform() const;
 
@@ -28,16 +31,16 @@ namespace BRTBase {
 			return samplesExitPoint;						
 		}
 	
-		std::shared_ptr<BRTBase::CExitPointInt> GetTransformExitPoint() {
+		std::shared_ptr<BRTBase::CExitPointTransform> GetTransformExitPoint() {
 			return sourcePositionExitPoint;			
 		}
 
 	private:
-		//CTransform sourceTransform;
+		Common::CTransform sourceTransform;
 		CMonoBuffer<float> samplesBuffer;
 		
 		std::shared_ptr<CExitPointSamplesVector> samplesExitPoint;
-		std::shared_ptr<CExitPointInt> sourcePositionExitPoint;
+		std::shared_ptr<CExitPointTransform> sourcePositionExitPoint;
 	};
 
 }

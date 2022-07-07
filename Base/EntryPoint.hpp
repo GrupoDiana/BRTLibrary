@@ -2,6 +2,7 @@
 #include "ObserverBase.hpp"
 #include "ExitPoint.h"
 #include "Common/Buffer.h"
+#include "Common/Transform.h"
 #include <functional>
 
 namespace BRTBase {
@@ -34,5 +35,6 @@ namespace BRTBase {
     };
    
     typedef CEntryPointBase<CMonoBuffer<float>> CEntryPointSamplesVector;
-    typedef CEntryPointBase<int> CEntryPointInt;        
+    //typedef CEntryPointBase<int> CEntryPointInt;        
+    typedef CEntryPointBase<Common::CTransform> CEntryPointTransform;
 }

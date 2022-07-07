@@ -27,7 +27,7 @@ namespace BRTBase {
         }
 
         void CreatePositionEntryPoint(std::string entryPointID, int _multiplicity = 0) {
-            std::shared_ptr<CEntryPointInt> _newEntryPoint = std::make_shared<BRTBase::CEntryPointInt >(std::bind(&CProcessorBase::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+            std::shared_ptr<CEntryPointTransform> _newEntryPoint = std::make_shared<BRTBase::CEntryPointTransform >(std::bind(&CProcessorBase::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
             positionEntryPoints.push_back(_newEntryPoint);
             addToUpdateStack(entryPointID, _multiplicity);
         }
@@ -50,12 +50,12 @@ namespace BRTBase {
             return nullptr;
         }
 
-        void connectPositionEntryTo(std::shared_ptr<BRTBase::CExitPointInt> _exitPoint, std::string entryPointID) {
-            std::shared_ptr<BRTBase::CEntryPointInt> _entryPoint = GetPositionEntryPoint(entryPointID);
+        void connectPositionEntryTo(std::shared_ptr<BRTBase::CExitPointTransform> _exitPoint, std::string entryPointID) {
+            std::shared_ptr<BRTBase::CEntryPointTransform> _entryPoint = GetPositionEntryPoint(entryPointID);
             if (_entryPoint) { _exitPoint->attach(*_entryPoint.get()); }
         }
                 
-        std::shared_ptr<BRTBase::CEntryPointInt >  GetPositionEntryPoint(std::string _id) {
+        std::shared_ptr<BRTBase::CEntryPointTransform >  GetPositionEntryPoint(std::string _id) {
             for (auto& it : positionEntryPoints) {
                 if (it->GetID() == _id) { return it; }
             }
@@ -123,7 +123,7 @@ namespace BRTBase {
         std::vector<std::shared_ptr<BRTBase::CEntryPointSamplesVector> > samplesEntryPoints;        
         std::vector<std::shared_ptr<BRTBase::CExitPointSamplesVector >> samplesExitPoints;
 
-        std::vector<std::shared_ptr <BRTBase::CEntryPointInt > > positionEntryPoints;
+        std::vector<std::shared_ptr <BRTBase::CEntryPointTransform > > positionEntryPoints;
 
         std::vector< CWaitingEntrypoint> entryPointsUpdatingStack;
 
