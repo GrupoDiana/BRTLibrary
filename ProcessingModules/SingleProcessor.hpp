@@ -19,8 +19,8 @@ namespace BRTProcessing {
         void setGain(float _gain) { gain = _gain; }
 
         void Update() {
-            CMonoBuffer<float> buffer = GetSamplesEntryPoint("inputSamples")->getAttr();
-            Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->getAttr();
+            CMonoBuffer<float> buffer = GetSamplesEntryPoint("inputSamples")->GetData();
+            Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
             this->resetUpdatingStack();
 
             Process(buffer, sourcePosition);

@@ -7,34 +7,35 @@
 
 namespace BRTBase {
 
-    template<typename T> class Attribute  {
+    template<typename T> class CEntryExitPointData  {
     public:
-        Attribute(std::string _id) : mAttr(T()), id{ _id } { }
-        Attribute(std::string _id, T pAttr) : mAttr(pAttr) { }
+        CEntryExitPointData() : mAttr(T()) { }
+        CEntryExitPointData(T pAttr) : mAttr(pAttr) { }
         
-        void setAttr(const T& pAttr) { mAttr = pAttr; }
-        T getAttr() { return mAttr; }
-        std::string GetID() { return id; };
+        void SetData(const T& pAttr) { mAttr = pAttr; }
+        T GetData() { return mAttr; }
+        
     private:
-        T mAttr;
-        std::string id;
+        T mAttr;        
     };
     
    
     template <class T>
-    class CExitPointBase : public Subject, public Attribute<T>
+    class CExitPointBase : public Subject, public CEntryExitPointData<T>
     {
     public:
-        CExitPointBase(std::string _id) : Attribute<T>(_id) { }
+        CExitPointBase(std::string _id) : id{ _id }, CEntryExitPointData<T>() { }
         ~CExitPointBase() {}
 
-        
+        std::string GetID() { return id; };
+
         void sendData(T& _buffer) {
-            this->setAttr(_buffer);
+            this->SetData(_buffer);
             notify();            
         }
 
-    private:        
+    private:    
+        std::string id;
     };
 
     typedef CExitPointBase<CMonoBuffer<float> > CExitPointSamplesVector;

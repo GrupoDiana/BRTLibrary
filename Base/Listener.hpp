@@ -34,11 +34,11 @@ namespace BRTBase {
 
 		void updateFromEntryPoint(std::string id) {									
 			if (id == "leftEar") { 
-				leftBuffer = leftEarEntryPoint->getAttr();
+				leftBuffer = leftEarEntryPoint->GetData();
 				leftDataReady = true;
 			
 			} else if (id == "rightEar") { 
-				rightBuffer = rightEarEntryPoint->getAttr();
+				rightBuffer = rightEarEntryPoint->GetData();
 				rightDataReady = true;
 			}											
 		}

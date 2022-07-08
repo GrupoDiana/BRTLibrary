@@ -31,6 +31,7 @@ namespace BRTBase {
             positionEntryPoints.push_back(_newEntryPoint);
             addToUpdateStack(entryPointID, _multiplicity);
         }
+        
 
         void CreateSamplesExitPoint(std::string exitPointID) {
             std::shared_ptr<BRTBase::CExitPointSamplesVector> _newExitPoint = std::make_shared<BRTBase::CExitPointSamplesVector>(exitPointID);
