@@ -50,6 +50,8 @@ namespace BRTBase {
 			listenerPositionExitPoint->sendData(listenerTransform);
 		}
 
+		Common::CTransform GetListenerTransform() { return listenerTransform; }
+
 		void GetBuffers(std::vector<float>& _leftBuffer, std::vector<float>& _rightBuffer) {
 			_leftBuffer = leftBuffer;
 			_rightBuffer = rightBuffer;
@@ -65,9 +67,9 @@ namespace BRTBase {
 		Common::CTransform listenerTransform;		// Transform matrix (position and orientation) of listener  
 		float listenerHeadRadius;					// Head radius of listener 
 
-		std::shared_ptr<CEntryPointSamplesVector > leftEarEntryPoint;
-		std::shared_ptr<CEntryPointSamplesVector > rightEarEntryPoint;				
-		std::shared_ptr<CExitPointTransform> listenerPositionExitPoint;
+		std::shared_ptr<CEntryPointSamplesVector >	leftEarEntryPoint;
+		std::shared_ptr<CEntryPointSamplesVector >	rightEarEntryPoint;				
+		std::shared_ptr<CExitPointTransform>		listenerPositionExitPoint;
 
 		std::vector<float> leftBuffer;
 		std::vector<float> rightBuffer;
