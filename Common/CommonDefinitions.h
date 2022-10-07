@@ -24,16 +24,6 @@
 
 namespace Common
 {
-	//----------------------------------------------------------------------
-	/** \brief Type definition for specifying one ear
-	*/
-	/*enum T_ear {
-		LEFT = 0,	///< Left ear
-		RIGHT = 1,	///< Right ear
-		BOTH = 2,	///< Both ears
-		NONE = 3	///< No ear
-	};*/
-	
 	/* \brief Declaration of CEarPair class to work with objects that must be duplicated in order to work with
 	*        left and right channels.
 	*/
