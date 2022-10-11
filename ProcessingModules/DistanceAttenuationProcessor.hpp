@@ -17,7 +17,7 @@ namespace BRTProcessing {
     class CDistanceAttenuationProcessor : public BRTBase::CProcessorBase
     {
     public:
-        CDistanceAttenuationProcessor() : previousAttenuation_Channel{ 0.0f }, referenceDistance{ DISTANCE_MODEL_THRESHOLD_NEAR } {
+        CDistanceAttenuationProcessor() : previousAttenuation_Channel{ 0.0f }, referenceDistance{ DISTANCE_MODEL_THRESHOLD_NEAR }, enabled {true} {
             CreateSamplesEntryPoint("inputSamples");            
             CreateSamplesExitPoint("outputSamples");
 
@@ -50,7 +50,10 @@ namespace BRTProcessing {
         // Methods        
         void Process(CMonoBuffer<float>& inbuffer, Common::CTransform sourceTransform, Common::CTransform listenerTransform) {
 
-            if (!enabled) return;
+            if (!enabled) {                
+                GetSamplesExitPoint("outputSamples")->sendData(inbuffer);       // Send output buffer to next module
+                return;
+            }
                                                                                    
             // Calculate distance
             float distance = CalculateDistance(sourceTransform, listenerTransform);                        
