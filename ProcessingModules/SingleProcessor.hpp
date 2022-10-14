@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Base/ProcessorBase.hpp"
+#include <Base/ProcessorBase.hpp>
 #include <memory>
 #include <vector>
 #include <algorithm>

@@ -28,7 +28,7 @@ namespace BRTProcessing {
         void Update() {
             CMonoBuffer<float> buffer = GetSamplesEntryPoint("inputSamples")->GetData();
             Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();            
-            Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
+            Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();            
 
             this->resetUpdatingStack();
 

@@ -22,8 +22,29 @@
 #ifndef _3DTI_COMMONDEFINITIONS_H_
 #define _3DTI_COMMONDEFINITIONS_H_
 
+#include <Common/Transform.h>
+#include <Common/Vector3.h>
+
 namespace Common
 {
+	//----------------------------------------------------------------------
+	/** \brief Type definition for specifying one ear
+	*/
+	enum T_ear {
+		LEFT = 0,	///< Left ear
+		RIGHT = 1,	///< Right ear
+		BOTH = 2,	///< Both ears
+		NONE = 3	///< No ear
+	};
+
+	//----------------------------------------------------------------------
+
+	/* By default, the UPC algorithm is apllied. If the following defines are activated, the basic convolution will be applied. */
+	//#define USE_FREQUENCY_COVOLUTION_WITHOUT_PARTITIONS_ANECHOIC		//Fconvolver witouth UPC algorithms in the anechoic path
+	//#define USE_FREQUENCY_COVOLUTION_WITHOUT_PARTITIONS_REVERB			//Fconvolver witouth UPC algorithms in the reverb path
+
+	//----------------------------------------------------------------------
+
 	/* \brief Declaration of CEarPair class to work with objects that must be duplicated in order to work with
 	*        left and right channels.
 	*/
@@ -33,6 +54,15 @@ namespace Common
 	public:
 		T left;		///< left channel
 		T right;	///< right channel
+	};
+
+
+	class CEarsTransforms {
+	public:		
+		Common::CTransform	leftEarListenerTransform;
+		Common::CTransform	rightEarListenerTransform;
+		Common::CVector3	leftEarListenerLocalPosition;
+		Common::CVector3	rightEarListenerLocalPosition;
 	};
 }
 #endif

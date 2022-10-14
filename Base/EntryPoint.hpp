@@ -37,6 +37,8 @@ namespace BRTBase {
     };
    
     typedef CEntryPointBase<CMonoBuffer<float>> CEntryPointSamplesVector;
-    //typedef CEntryPointBase<int> CEntryPointInt;        
+    
     typedef CEntryPointBase<Common::CTransform> CEntryPointTransform;
+
+    typedef CEntryPointBase<Common::CEarsTransforms> CEntryPoinEarsTransform;
 }

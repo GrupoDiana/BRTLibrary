@@ -131,6 +131,17 @@ namespace BRTBase {
 			if (!setupModeActivated) return false;
 			module2->connectPositionEntryTo(listenerModule->GetTransformExitPoint(), entryPointID);
 		}
+		
+		template <typename U>
+		bool ConnectModuleToListenerEarsTransform(std::shared_ptr<CListener>& listenerModule, U& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2.connectEarsPositionEntryTo(listenerModule->GetEarsTransformExitPoint(), entryPointID);
+		}
+		template <typename U>
+		bool ConnectModuleToListenerEarsTransform(std::shared_ptr<CListener>& listenerModule, std::shared_ptr < U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectEarsPositionEntryTo(listenerModule->GetEarsTransformExitPoint(), entryPointID);
+		}
 
 		///////////////////////////////////////////
 		// GENERIC PROCESSOR MODULES CONNECTIONs

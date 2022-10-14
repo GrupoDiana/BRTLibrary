@@ -1,6 +1,6 @@
 #pragma once
-#include "../brt/Base/ObserverBase.hpp"
-#include "../Base/EntryPoint.hpp"
+#include <Base/ProcessorBase.hpp>
+#include <Base/EntryPoint.hpp>
 
 #include <memory>
 #include <vector>
