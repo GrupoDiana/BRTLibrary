@@ -17,6 +17,7 @@ namespace BRTBase {
 						
 			listenerPositionExitPoint		= std::make_shared<CExitPointTransform>("listenerTransform");
 			listenerEarsPositionExitPoint	= std::make_shared<CExitPointEarsTransform>("listenerEarsTransform");
+			//hrtfExitPoint = std::make_shared<CExitPointEarsTransform>("listenerHRTF");
 
 			leftDataReady = false;
 			rightDataReady = false;			
@@ -67,10 +68,10 @@ namespace BRTBase {
 			listenerPositionExitPoint->sendData(listenerTransform);			// Send
 
 			// Calculate Ears Transform						
-			listenerEarsTransforms.leftEarListenerTransform	= GetListenerEarTransform(Common::T_ear::LEFT);
-			listenerEarsTransforms.rightEarListenerTransform	= GetListenerEarTransform(Common::T_ear::RIGHT);
-			listenerEarsTransforms.leftEarListenerLocalPosition = GetListenerEarLocalPosition(Common::T_ear::LEFT);
-			listenerEarsTransforms.rightEarListenerLocalPosition	= GetListenerEarLocalPosition(Common::T_ear::RIGHT);
+			listenerEarsTransforms.leftEarTransform	= GetListenerEarTransform(Common::T_ear::LEFT);
+			listenerEarsTransforms.rightEarTransform	= GetListenerEarTransform(Common::T_ear::RIGHT);
+			listenerEarsTransforms.leftEarLocalPosition = GetListenerEarLocalPosition(Common::T_ear::LEFT);
+			listenerEarsTransforms.rightEarLocalPosition	= GetListenerEarLocalPosition(Common::T_ear::RIGHT);
 			
 			//Send
 			listenerEarsPositionExitPoint->sendData(listenerEarsTransforms);
@@ -170,7 +171,7 @@ namespace BRTBase {
 		//std::unique_ptr<CHRTF> listenerHRTF;				// HRTF of listener														
 		//std::unique_ptr<CILD> listenerILD;				// ILD of listener	
 		Common::CTransform listenerTransform;				// Transform matrix (position and orientation) of listener  
-		Common::CEarsTransforms listenerEarsTransforms;
+		Common::CEarsTransforms listenerEarsTransforms;		// Transform matrix (position and orientation) of listener EARS
 		float listenerHeadRadius;							// Head radius of listener 
 
 		std::shared_ptr<CEntryPointSamplesVector >		leftEarEntryPoint;

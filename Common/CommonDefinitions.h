@@ -56,13 +56,16 @@ namespace Common
 		T right;	///< right channel
 	};
 
-
+	//
+	/* \brief Class declared to share ear location information
+	* 
+	*/
 	class CEarsTransforms {
 	public:		
-		Common::CTransform	leftEarListenerTransform;
-		Common::CTransform	rightEarListenerTransform;
-		Common::CVector3	leftEarListenerLocalPosition;
-		Common::CVector3	rightEarListenerLocalPosition;
+		Common::CTransform	leftEarTransform;
+		Common::CTransform	rightEarTransform;
+		Common::CVector3	leftEarLocalPosition;
+		Common::CVector3	rightEarLocalPosition;
 	};
 }
 #endif

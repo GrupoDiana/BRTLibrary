@@ -207,10 +207,10 @@ namespace BRTProcessing {
 				return;
 			}
 
-			Common::CVector3 leftVectorTo = _earsTransforms.leftEarListenerTransform.GetVectorTo(_sourceTransform);
-			Common::CVector3 rightVectorTo = _earsTransforms.rightEarListenerTransform.GetVectorTo(_sourceTransform);
-			Common::CVector3 leftVectorTo_sphereProjection = GetSphereProjectionPosition(leftVectorTo, _earsTransforms.leftEarListenerLocalPosition, 1.95f/*ownerCore->GetListener()->GetHRTF()->GetHRTFDistanceOfMeasurement()*/);
-			Common::CVector3 rightVectorTo_sphereProjection = GetSphereProjectionPosition(rightVectorTo, _earsTransforms.rightEarListenerLocalPosition, 1.95f /*ownerCore->GetListener()->GetHRTF()->GetHRTFDistanceOfMeasurement()*/);
+			Common::CVector3 leftVectorTo = _earsTransforms.leftEarTransform.GetVectorTo(_sourceTransform);
+			Common::CVector3 rightVectorTo = _earsTransforms.rightEarTransform.GetVectorTo(_sourceTransform);
+			Common::CVector3 leftVectorTo_sphereProjection = GetSphereProjectionPosition(leftVectorTo, _earsTransforms.leftEarLocalPosition, 1.95f/*ownerCore->GetListener()->GetHRTF()->GetHRTFDistanceOfMeasurement()*/);
+			Common::CVector3 rightVectorTo_sphereProjection = GetSphereProjectionPosition(rightVectorTo, _earsTransforms.rightEarLocalPosition, 1.95f /*ownerCore->GetListener()->GetHRTF()->GetHRTFDistanceOfMeasurement()*/);
 
 			leftElevation = leftVectorTo_sphereProjection.GetElevationDegrees();	//Get left elevation
 			if (!AreSame(ELEVATION_SINGULAR_POINT_UP, leftElevation, EPSILON) && !AreSame(ELEVATION_SINGULAR_POINT_DOWN, leftElevation, EPSILON))
