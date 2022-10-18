@@ -4,7 +4,10 @@
 #include "EntryPoint.hpp"
 #include "ExitPoint.h"
 #include <Common/CommonDefinitions.h>
+#include <ServiceModules/HRTF.h>
 #include <memory>
+
+namespace BRTServices { class CHRTF; }
 
 namespace BRTBase {
 
@@ -131,14 +134,18 @@ namespace BRTBase {
 			return earLocalPosition;
 		}
 
+		void SetHRTF(std::unique_ptr< BRTServices::CHRTF >& _listenerHRTF) {
+			listenerHRTF = std::move(_listenerHRTF);
+		}
+
 		/** \brief Get HRTF of listener
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/		
-		//CHRTF* GetHRTF() const
-		//{
-		//	return listenerHRTF.get();
-		//}
+		BRTServices::CHRTF* GetHRTF() const
+		{
+			return listenerHRTF.get();
+		}
 
 		///** \brief Get ILD Near Field effect of listener
 		//*	\retval ILD pointer to current listener ILD Near Field effect
@@ -168,7 +175,7 @@ namespace BRTBase {
 
 	private:
 		
-		//std::unique_ptr<CHRTF> listenerHRTF;				// HRTF of listener														
+		std::unique_ptr<BRTServices::CHRTF> listenerHRTF;	// HRTF of listener														
 		//std::unique_ptr<CILD> listenerILD;				// ILD of listener	
 		Common::CTransform listenerTransform;				// Transform matrix (position and orientation) of listener  
 		Common::CEarsTransforms listenerEarsTransforms;		// Transform matrix (position and orientation) of listener EARS

@@ -77,7 +77,7 @@ namespace BRTProcessing {
             temp[0] = 1;
             leftHRIR_partitioned.push_back(temp);
 
-            CMonoBuffer<float> temp2(2048, 0.0f);
+            CMonoBuffer<float> temp2(2048, 0.5f);
             temp2[0] = 1;
             rightHRIR_partitioned.push_back(temp2);
 
