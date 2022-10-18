@@ -1,4 +1,3 @@
-#pragma once
 #ifndef _CGLOBAL_PARAMETERS_H_
 #define _CGLOBAL_PARAMETERS_H_
 
@@ -32,8 +31,11 @@
 #define ATTACK_TIME_DISTANCE_ATTENUATION 100			///< Attack time for gradual attenuation in simple attenuation distance (used in ApplyGainExponentially method)
 #endif
 
+#include <Common/Transform.h>
+#include <Common/Vector3.h>
+
 namespace Common {
-	
+		
 	// Comes from Audiostate and Magnitudes of the 3D-Tune-In toolkit
 	class CGlobalParameters
 	{
@@ -62,7 +64,7 @@ namespace Common {
 		void SetSampleRate(int _sampleRate) {
 			sampleRate = _sampleRate;
 		}
-		int GetSampleRate() { return sampleRate; }
+		int GetSampleRate() const { return sampleRate; }
 		
 						
 		

@@ -1,7 +1,9 @@
-#pragma once
+#ifndef _DISTANCE_ATTENUATION_PROCESSOR_
+#define _DISTANCE_ATTENUATION_PROCESSOR_
 
-#include "../Base/ProcessorBase.hpp"
-#include "../Common/GlobalParameters.hpp"
+#include <Base/ProcessorBase.hpp>
+#include <Base/EntryPoint.hpp>
+
 #include <memory>
 #include <vector>
 #include <algorithm>
@@ -104,3 +106,4 @@ namespace BRTProcessing {
        
     };
 }
+#endif

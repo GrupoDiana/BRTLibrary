@@ -1,6 +1,9 @@
-#pragma once
+#ifndef _PROCESSOR_BASE_
+#define _PROCESSOR_BASE_
 
-#include "../Base/EntryPoint.hpp"
+#include <Base/EntryPoint.hpp>
+#include <Base/ExitPoint.h>
+#include <Common/CommonDefinitions.h>
 #include <vector>
 
 namespace BRTBase {    
@@ -149,3 +152,4 @@ namespace BRTBase {
 
     };
 }
+#endif

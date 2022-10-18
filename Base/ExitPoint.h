@@ -1,9 +1,11 @@
-#pragma once
+#ifndef _EXIT_POINT_
+#define _EXIT_POINT_
 
 #include "ObserverBase.hpp"
 #include "Common/Buffer.h"
 #include "Common/Transform.h"
-#include <Common/CommonDefinitions.h>
+//#include <Common/CommonDefinitions.h>
+#include <Common/EarsTransform.hpp>
 #include <iostream>
 
 namespace BRTBase {
@@ -45,3 +47,4 @@ namespace BRTBase {
 
     typedef CExitPointBase<Common::CEarsTransforms> CExitPointEarsTransform;
 }
+#endif

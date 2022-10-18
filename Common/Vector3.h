@@ -62,11 +62,11 @@ namespace Common {
 
 		//static const CVector3 TO_LEFT;       ///< Predefined Left rotation axis, for angle-axis rotation
 		//static const CVector3 TO_RIGHT;      ///< Predefined Right rotation axis, for angle-axis rotation
-		static const CVector3 TO_UP;         ///< Predefined Up rotation axis, for angle-axis rotation
-		static const CVector3 TO_DOWN;       ///< Predefined Down rotation axis, for angle-axis rotation
+		//static const CVector3 TO_UP;         ///< Predefined Up rotation axis, for angle-axis rotation
+		//static const CVector3 TO_DOWN;       ///< Predefined Down rotation axis, for angle-axis rotation
 
-		static const CVector3 TO_ROLL_LEFT;  ///< Predefined forward rotation axis, for angle-axis rotation
-		static const CVector3 TO_ROLL_RIGHT; ///< Predefined backward rotation axis, for angle-axis rotation
+		//static const CVector3 TO_ROLL_LEFT;  ///< Predefined forward rotation axis, for angle-axis rotation
+		//static const CVector3 TO_ROLL_RIGHT; ///< Predefined backward rotation axis, for angle-axis rotation
 
 	//
 	// Constructors/Destructors

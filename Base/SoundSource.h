@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _SOUND_SOURCE_
+#define _SOUND_SOURCE_
 
 #include "ExitPoint.h"
 #include <vector>
@@ -42,5 +43,5 @@ namespace BRTBase {
 		std::shared_ptr<CExitPointSamplesVector> samplesExitPoint;
 		std::shared_ptr<CExitPointTransform> sourcePositionExitPoint;
 	};
-
 }
+#endif

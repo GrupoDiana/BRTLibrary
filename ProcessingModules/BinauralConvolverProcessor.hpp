@@ -1,9 +1,11 @@
-#pragma once
+#ifndef _BINAURAL_CONVOLVER_PROCESSOR_
+#define _BINAURAL_CONVOLVER_PROCESSOR_
+
 #include <Base/ProcessorBase.hpp>
 #include <Base/EntryPoint.hpp>
-#include <BinauralSpatializer/UPCAnechoic.h>
+#include <Common/UPCAnechoic.h>
 #include <Common/Buffer.h>
-#include <Common/CommonDefinitions.h>
+//#include <Common/CommonDefinitions.h>
 
 #include <memory>
 #include <vector>
@@ -44,8 +46,8 @@ namespace BRTProcessing {
     private:
        
         // Atributes
-        Binaural::CUPCAnechoic outputLeftUPConvolution;		// Object to make the inverse fft of the left channel with the UPC method
-        Binaural::CUPCAnechoic outputRightUPConvolution;	// Object to make the inverse fft of the rigth channel with the UPC method
+		Common::CUPCAnechoic outputLeftUPConvolution;		// Object to make the inverse fft of the left channel with the UPC method
+		Common::CUPCAnechoic outputRightUPConvolution;	// Object to make the inverse fft of the rigth channel with the UPC method
 
 		CMonoBuffer<float> leftChannelDelayBuffer;			// To store the delay of the left channel of the expansion method
 		CMonoBuffer<float> rightChannelDelayBuffer;			// To store the delay of the right channel of the expansion method
@@ -213,20 +215,20 @@ namespace BRTProcessing {
 			Common::CVector3 rightVectorTo_sphereProjection = GetSphereProjectionPosition(rightVectorTo, _earsTransforms.rightEarLocalPosition, 1.95f /*ownerCore->GetListener()->GetHRTF()->GetHRTFDistanceOfMeasurement()*/);
 
 			leftElevation = leftVectorTo_sphereProjection.GetElevationDegrees();	//Get left elevation
-			if (!AreSame(ELEVATION_SINGULAR_POINT_UP, leftElevation, EPSILON) && !AreSame(ELEVATION_SINGULAR_POINT_DOWN, leftElevation, EPSILON))
+			if (!Common::AreSame(ELEVATION_SINGULAR_POINT_UP, leftElevation, EPSILON) && !Common::AreSame(ELEVATION_SINGULAR_POINT_DOWN, leftElevation, EPSILON))
 			{
 				leftAzimuth = leftVectorTo_sphereProjection.GetAzimuthDegrees();	//Get left azimuth
 			}
 
 			rightElevation = rightVectorTo_sphereProjection.GetElevationDegrees();	//Get right elevation	
-			if (!AreSame(ELEVATION_SINGULAR_POINT_UP, rightElevation, EPSILON) && !AreSame(ELEVATION_SINGULAR_POINT_DOWN, rightElevation, EPSILON))
+			if (!Common::AreSame(ELEVATION_SINGULAR_POINT_UP, rightElevation, EPSILON) && !Common::AreSame(ELEVATION_SINGULAR_POINT_DOWN, rightElevation, EPSILON))
 			{
 				rightAzimuth = rightVectorTo_sphereProjection.GetAzimuthDegrees();		//Get right azimuth
 			}
 
 
 			centerElevation = _vectorToListener.GetElevationDegrees();		//Get elevation from the head center
-			if (!AreSame(ELEVATION_SINGULAR_POINT_UP, centerElevation, EPSILON) && !AreSame(ELEVATION_SINGULAR_POINT_DOWN, centerElevation, EPSILON))
+			if (!Common::AreSame(ELEVATION_SINGULAR_POINT_UP, centerElevation, EPSILON) && !Common::AreSame(ELEVATION_SINGULAR_POINT_DOWN, centerElevation, EPSILON))
 			{
 				centerAzimuth = _vectorToListener.GetAzimuthDegrees();		//Get azimuth from the head center
 			}
@@ -268,14 +270,6 @@ namespace BRTProcessing {
 
 			return cartesianposition;
 		}
-
-		bool AreSame(float a, float b, float epsilon)
-		{
-			//float absA = fabs(a);
-			//float absB = fabs(b);
-			float diff = fabs(a - b);
-
-			return diff < epsilon;
-		}
     };
 }
+#endif

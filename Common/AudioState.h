@@ -22,28 +22,28 @@
 
 /*! \file */
 
-#ifndef _AUDIO_STATE_H_
-#define _AUDIO_STATE_H_
-
-#ifndef DEFAULT_SAMPLE_RATE
-#define DEFAULT_SAMPLE_RATE 44100
-#endif
-#ifndef DEFAULT_BUFFER_SIZE
-#define DEFAULT_BUFFER_SIZE 512
-#endif
-
-namespace Common 
-{
-	/** \details Simple AudioState struct to centralise sampleRate and bufferSize
-	*/
-	struct TAudioStateStruct
-	{
-		int sampleRate;	///< sample rate in Hertzs
-		int bufferSize;	///< buffer size (number of samples for each channel)
-
-		TAudioStateStruct() :TAudioStateStruct{ DEFAULT_SAMPLE_RATE, DEFAULT_BUFFER_SIZE} {}
-		TAudioStateStruct(int a, int b) : sampleRate(a), bufferSize(b) {}
-	};
-
-}
-#endif
+//#ifndef _AUDIO_STATE_H_
+//#define _AUDIO_STATE_H_
+//
+//#ifndef DEFAULT_SAMPLE_RATE
+//#define DEFAULT_SAMPLE_RATE 44100
+//#endif
+//#ifndef DEFAULT_BUFFER_SIZE
+//#define DEFAULT_BUFFER_SIZE 512
+//#endif
+//
+//namespace Common 
+//{
+//	/** \details Simple AudioState struct to centralise sampleRate and bufferSize
+//	*/
+//	struct TAudioStateStruct
+//	{
+//		int sampleRate;	///< sample rate in Hertzs
+//		int bufferSize;	///< buffer size (number of samples for each channel)
+//
+//		TAudioStateStruct() :TAudioStateStruct{ DEFAULT_SAMPLE_RATE, DEFAULT_BUFFER_SIZE} {}
+//		TAudioStateStruct(int a, int b) : sampleRate(a), bufferSize(b) {}
+//	};
+//
+//}
+//#endif

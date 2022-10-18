@@ -1,10 +1,10 @@
-#pragma once
+#ifndef _CLISTENER_H_
+#define _CLISTENER_H_
+
 #include "EntryPoint.hpp"
 #include "ExitPoint.h"
 #include <Common/CommonDefinitions.h>
-#include <Common/Vector3.h>
 #include <memory>
-
 
 namespace BRTBase {
 
@@ -17,7 +17,7 @@ namespace BRTBase {
 						
 			listenerPositionExitPoint		= std::make_shared<CExitPointTransform>("listenerTransform");
 			listenerEarsPositionExitPoint	= std::make_shared<CExitPointEarsTransform>("listenerEarsTransform");
-			//hrtfExitPoint = std::make_shared<CExitPointEarsTransform>("listenerHRTF");
+			//hrtfExitPoint = std::make_shared<XXXXXXXXXXXX>("listenerHRTF");
 
 			leftDataReady = false;
 			rightDataReady = false;			
@@ -186,3 +186,4 @@ namespace BRTBase {
 		bool rightDataReady;		
 	};
 }
+#endif

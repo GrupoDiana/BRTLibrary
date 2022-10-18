@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _BRT_MANAGER_
+#define _BRT_MANAGER_
 
 #include "SoundSource.h"
 #include "Listener.hpp"
@@ -192,3 +193,4 @@ namespace BRTBase {
 		}
 	};
 }
+#endif

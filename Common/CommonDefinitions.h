@@ -19,14 +19,11 @@
 *
 * \b Acknowledgement: This project has received funding from the European Union's Horizon 2020 research and innovation programme under grant agreement No 644051
 */
-#ifndef _3DTI_COMMONDEFINITIONS_H_
-#define _3DTI_COMMONDEFINITIONS_H_
+#ifndef _COMMON_DEFINITIONS_H_
+#define _COMMON_DEFINITIONS_H_
 
-#include <Common/Transform.h>
-#include <Common/Vector3.h>
+namespace Common {
 
-namespace Common
-{
 	//----------------------------------------------------------------------
 	/** \brief Type definition for specifying one ear
 	*/
@@ -56,16 +53,13 @@ namespace Common
 		T right;	///< right channel
 	};
 
-	//
-	/* \brief Class declared to share ear location information
-	* 
-	*/
-	class CEarsTransforms {
-	public:		
-		Common::CTransform	leftEarTransform;
-		Common::CTransform	rightEarTransform;
-		Common::CVector3	leftEarLocalPosition;
-		Common::CVector3	rightEarLocalPosition;
-	};
+	static bool AreSame(float a, float b, float epsilon)
+	{
+		//float absA = fabs(a);
+		//float absB = fabs(b);
+		float diff = fabs(a - b);
+
+		return diff < epsilon;
+	}
 }
 #endif

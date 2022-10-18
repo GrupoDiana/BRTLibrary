@@ -33,7 +33,7 @@
 */
 typedef std::vector<CMonoBuffer<float>> THRIR_partitioned;
 
-namespace Binaural {
+namespace Common {
 
 	/** \details This class implements the necessary algorithms to do the convolution, in frequency domain, between signal and a impulse response using the	Uniformly Partitioned Convolution Algorithm (UPC algorithm)
 	*/

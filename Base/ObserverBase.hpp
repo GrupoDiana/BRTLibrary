@@ -1,4 +1,7 @@
-#pragma once
+
+#ifndef _OBSERVER_BASE_
+#define _OBSERVER_BASE_
+
 #include <vector>
 
 
@@ -72,3 +75,4 @@ namespace BRTBase {
         std::vector<Observer<T>*> observers;
     };*/
 }
+#endif
