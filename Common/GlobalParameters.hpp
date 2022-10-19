@@ -30,6 +30,9 @@
 #ifndef ATTACK_TIME_DISTANCE_ATTENUATION
 #define ATTACK_TIME_DISTANCE_ATTENUATION 100			///< Attack time for gradual attenuation in simple attenuation distance (used in ApplyGainExponentially method)
 #endif
+#ifndef DEFAULT_LISTENER_HEAD_RADIOUS
+#define DEFAULT_LISTENER_HEAD_RADIOUS  0.0875f
+#endif 
 
 #include <Common/Transform.h>
 #include <Common/Vector3.h>

@@ -193,7 +193,7 @@ namespace BRTServices
 		unsigned long customizedDelay = 0;
 		float interauralAzimuth = std::asin(std::sin(rAzimuth) * std::cos(rElevation));
 
-		float ITD = CalculateITDFromHeadRadius(ownerListener->GetHeadRadius(), interauralAzimuth);
+		float ITD = CalculateITDFromHeadRadius(listenerHeadRadius /*ownerListener->GetHeadRadius()*/, interauralAzimuth);
 
 		if ((ITD > 0 && ear == Common::T_ear::RIGHT) || (ITD < 0 && ear == Common::T_ear::LEFT)) {
 			customizedDelay = static_cast <unsigned long> (round(std::abs(globalParameters.GetSampleRate() * ITD)));
@@ -205,7 +205,7 @@ namespace BRTServices
 	float CHRTF::GetHRTFDistanceOfMeasurement() {
 		return distanceOfMeasurement;
 	}
-
+	
 
 	/*-----  GET HRIR METHODS  ----------------------------------------------------------------------------------------------------------------------*/
 

@@ -159,16 +159,17 @@ namespace BRTServices
 		*	\details By default, customized ITD is switched off and resampling step is set to 5 degrees
 		*   \eh Nothing is reported to the error handler.
 		*/
-		CHRTF(BRTBase::CListener* _ownerListener)
+		/*CHRTF(BRTBase::CListener* _ownerListener)
 			:ownerListener{ _ownerListener }, enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, HRIRLength{ 0 }, HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement { DEFAULT_HRTF_MEASURED_DISTANCE }
-		{}
+		{}*/
 
 		/** \brief Default Constructor
 		*	\details By default, customized ITD is switched off, resampling step is set to 5 degrees and listener is a null pointer
 		*   \eh Nothing is reported to the error handler.
 		*/
 		CHRTF()
-			:ownerListener{ nullptr }, enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, HRIRLength{ 0 }, HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }
+			:enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, HRIRLength{ 0 }, 
+			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, listenerHeadRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }
 		{}
 
 		/** \brief Get size of each HRIR buffer
@@ -294,19 +295,20 @@ namespace BRTServices
 		*   \eh Nothing is reported to the error handler.
 		*/
 		float GetHRTFDistanceOfMeasurement();
-		
+				
 
 	private:
 		///////////////
 		// ATTRIBUTES
 		///////////////
-		BRTBase::CListener* ownerListener;						// owner Listener
+		//BRTBase::CListener* ownerListener;						// owner Listener
 		int32_t HRIRLength;								// HRIR vector length
 		int32_t bufferSize;								// Input signal buffer size
 		//int32_t sampleRate;							// Sample Rate		
 		int32_t HRIR_partitioned_NumberOfSubfilters;	// Number of subfilters (blocks) for the UPC algorithm
 		int32_t HRIR_partitioned_SubfilterLength;		// Size of one HRIR subfilter
 		float distanceOfMeasurement;					//Distance where the HRIR have been measurement
+		float listenerHeadRadius;							// Head radius of listener 
 
 		float sphereBorder;						// Define spheere "sewing"
 		float epsilon_sewing = 0.001f;
@@ -411,7 +413,7 @@ namespace BRTServices
 		void Reset();
 
 
-		friend class CListener;
+		//friend class CListener;
 	};
 }
 #endif

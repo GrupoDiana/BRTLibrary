@@ -73,7 +73,10 @@ namespace BRTProcessing {
             std::vector<CMonoBuffer<float>>  leftHRIR_partitioned;
             std::vector<CMonoBuffer<float>>  rightHRIR_partitioned;
             
-            CMonoBuffer<float> temp(2048, 0.5f);
+			
+			
+			
+			CMonoBuffer<float> temp(2048, 0.5f);
             temp[0] = 1;
             leftHRIR_partitioned.push_back(temp);
 

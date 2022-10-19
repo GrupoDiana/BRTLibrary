@@ -1,30 +1,41 @@
 #ifndef _CLISTENER_H_
 #define _CLISTENER_H_
 
+#include <memory>
 #include "EntryPoint.hpp"
 #include "ExitPoint.h"
 #include <Common/CommonDefinitions.h>
-#include <ServiceModules/HRTF.h>
-#include <memory>
+#include "ServiceModules/HRTF.h"
 
-namespace BRTServices { class CHRTF; }
+namespace BRTServices {
+	class CHRTF;/* {
+	public:
+		void SetListener(BRTBase::CListener* _ownerListener);
+	};*/
+}
 
 namespace BRTBase {
 
 	class CListener {
 	public:
-		CListener(float _listenerHeadRadius = 0.0875f) {			
+		CListener() : listenerHeadRadius{DEFAULT_LISTENER_HEAD_RADIOUS} {
+			//Create a empty HRTF
+			//std::unique_ptr<BRTServices::CHRTF> a(new BRTServices::CHRTF(this));
+			//listenerHRTF = std::move(a);			
+			listenerHRTF = std::make_shared<BRTServices::CHRTF>();
 			
+			
+			// Create entry Points
 			leftEarEntryPoint = std::make_shared<BRTBase::CEntryPointSamplesVector >(std::bind(&CListener::updateFromEntryPoint, this, std::placeholders::_1), "leftEar", 1);
 			rightEarEntryPoint = std::make_shared<BRTBase::CEntryPointSamplesVector >(std::bind(&CListener::updateFromEntryPoint, this, std::placeholders::_1), "rightEar", 1);
-						
+			// Create exit point
 			listenerPositionExitPoint		= std::make_shared<CExitPointTransform>("listenerTransform");
 			listenerEarsPositionExitPoint	= std::make_shared<CExitPointEarsTransform>("listenerEarsTransform");
 			//hrtfExitPoint = std::make_shared<XXXXXXXXXXXX>("listenerHRTF");
 
 			leftDataReady = false;
 			rightDataReady = false;			
-			listenerHeadRadius = _listenerHeadRadius;
+			
 		}
 		
 		void connectSamplesEntryTo(std::shared_ptr<CExitPointSamplesVector> _exitPoint, std::string entryPointID) {
@@ -134,8 +145,8 @@ namespace BRTBase {
 			return earLocalPosition;
 		}
 
-		void SetHRTF(std::unique_ptr< BRTServices::CHRTF >& _listenerHRTF) {
-			listenerHRTF = std::move(_listenerHRTF);
+		void SetHRTF(std::shared_ptr< BRTServices::CHRTF >& _listenerHRTF) {
+			listenerHRTF = std::move(_listenerHRTF);		
 		}
 
 		/** \brief Get HRTF of listener
@@ -175,7 +186,7 @@ namespace BRTBase {
 
 	private:
 		
-		std::unique_ptr<BRTServices::CHRTF> listenerHRTF;	// HRTF of listener														
+		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;	// HRTF of listener														
 		//std::unique_ptr<CILD> listenerILD;				// ILD of listener	
 		Common::CTransform listenerTransform;				// Transform matrix (position and orientation) of listener  
 		Common::CEarsTransforms listenerEarsTransforms;		// Transform matrix (position and orientation) of listener EARS
@@ -190,7 +201,9 @@ namespace BRTBase {
 		std::vector<float> rightBuffer;
 		
 		bool leftDataReady;
-		bool rightDataReady;		
+		bool rightDataReady;	
+
+		//friend class BRTServices::CHRTF;							//Friend Class definition
 	};
 }
 #endif
