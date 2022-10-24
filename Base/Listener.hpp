@@ -4,6 +4,7 @@
 #include <memory>
 #include "EntryPoint.hpp"
 #include "ExitPoint.h"
+#include "ExitPointPtr.hpp"
 #include <Common/CommonDefinitions.h>
 #include "ServiceModules/HRTF.h"
 
@@ -18,29 +19,29 @@ namespace BRTBase {
 
 	class CListener {
 	public:
-		CListener() : listenerHeadRadius{DEFAULT_LISTENER_HEAD_RADIOUS} {
+		CListener() : listenerHeadRadius{ DEFAULT_LISTENER_HEAD_RADIOUS } {
 			//Create a empty HRTF
 			//std::unique_ptr<BRTServices::CHRTF> a(new BRTServices::CHRTF(this));
 			//listenerHRTF = std::move(a);			
 			listenerHRTF = std::make_shared<BRTServices::CHRTF>();
-			
-			
+
+
 			// Create entry Points
 			leftEarEntryPoint = std::make_shared<BRTBase::CEntryPointSamplesVector >(std::bind(&CListener::updateFromEntryPoint, this, std::placeholders::_1), "leftEar", 1);
 			rightEarEntryPoint = std::make_shared<BRTBase::CEntryPointSamplesVector >(std::bind(&CListener::updateFromEntryPoint, this, std::placeholders::_1), "rightEar", 1);
 			// Create exit point
-			listenerPositionExitPoint		= std::make_shared<CExitPointTransform>("listenerTransform");
-			listenerEarsPositionExitPoint	= std::make_shared<CExitPointEarsTransform>("listenerEarsTransform");
-			//hrtfExitPoint = std::make_shared<XXXXXXXXXXXX>("listenerHRTF");
+			listenerPositionExitPoint = std::make_shared<CExitPointTransform>("listenerTransform");
+			listenerEarsPositionExitPoint = std::make_shared<CExitPointEarsTransform>("listenerEarsTransform");
+			hrtfExitPoint = std::make_shared<CExitPointHRTFPtr>("listenerHRTF");
 
 			leftDataReady = false;
-			rightDataReady = false;			
-			
+			rightDataReady = false;
+
 		}
-		
+
 		void connectSamplesEntryTo(std::shared_ptr<CExitPointSamplesVector> _exitPoint, std::string entryPointID) {
-			if (entryPointID == "leftEar")		 { _exitPoint->attach(*leftEarEntryPoint.get());	}
-			else if (entryPointID == "rightEar") { _exitPoint->attach(*rightEarEntryPoint.get());	}
+			if (entryPointID == "leftEar") { _exitPoint->attach(*leftEarEntryPoint.get()); }
+			else if (entryPointID == "rightEar") { _exitPoint->attach(*rightEarEntryPoint.get()); }
 			else { //TODO Notify error 
 			}
 		}
@@ -51,6 +52,10 @@ namespace BRTBase {
 
 		std::shared_ptr<CExitPointEarsTransform> GetEarsTransformExitPoint() {
 			return listenerEarsPositionExitPoint;
+		}
+
+		std::shared_ptr<CExitPointHRTFPtr> GetHRTFPtrExitPoint(){
+			return hrtfExitPoint;
 		}
 
 		void updateFromEntryPoint(std::string id) {									
@@ -146,7 +151,8 @@ namespace BRTBase {
 		}
 
 		void SetHRTF(std::shared_ptr< BRTServices::CHRTF >& _listenerHRTF) {
-			listenerHRTF = std::move(_listenerHRTF);		
+			listenerHRTF = std::move(_listenerHRTF);	
+			hrtfExitPoint->sendData(listenerHRTF);
 		}
 
 		/** \brief Get HRTF of listener
@@ -196,6 +202,7 @@ namespace BRTBase {
 		std::shared_ptr<CEntryPointSamplesVector >		rightEarEntryPoint;				
 		std::shared_ptr<CExitPointTransform>			listenerPositionExitPoint;
 		std::shared_ptr<CExitPointEarsTransform>		listenerEarsPositionExitPoint;
+		std::shared_ptr<CExitPointHRTFPtr>				hrtfExitPoint;
 
 		std::vector<float> leftBuffer;
 		std::vector<float> rightBuffer;

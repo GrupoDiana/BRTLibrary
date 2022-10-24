@@ -1,10 +1,9 @@
 #ifndef _EXIT_POINT_
 #define _EXIT_POINT_
 
-#include "ObserverBase.hpp"
-#include "Common/Buffer.h"
-#include "Common/Transform.h"
-//#include <Common/CommonDefinitions.h>
+#include <Base/ObserverBase.hpp>
+#include <Common/Buffer.h>
+#include <Common/Transform.h>
 #include <Common/EarsTransform.hpp>
 #include <iostream>
 
@@ -40,11 +39,12 @@ namespace BRTBase {
     private:    
         std::string id;
     };
+    //typedef CExitPointBase<CMonoBuffer<float> > CExitPointSamplesVector;     
+    //typedef CExitPointBase<Common::CTransform > CExitPointTransform;
+    //typedef CExitPointBase<Common::CEarsTransforms> CExitPointEarsTransform;
 
-    typedef CExitPointBase<CMonoBuffer<float> > CExitPointSamplesVector;
-     
-    typedef CExitPointBase<Common::CTransform > CExitPointTransform;
-
-    typedef CExitPointBase<Common::CEarsTransforms> CExitPointEarsTransform;
+    using CExitPointSamplesVector = CExitPointBase<CMonoBuffer<float> >;
+    using CExitPointTransform = CExitPointBase<Common::CTransform >;
+    using CExitPointEarsTransform = CExitPointBase<Common::CEarsTransforms>;
 }
 #endif

@@ -27,14 +27,16 @@ namespace BRTProcessing {
             CreatePositionEntryPoint("listenerPosition");            
         }
         
-        void Update() {
-            CMonoBuffer<float> buffer = GetSamplesEntryPoint("inputSamples")->GetData();
-            Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();            
-            Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();            
+        void Update(std::string _entryPointId) {
+            if (_entryPointId == "inputSamples") {
+                CMonoBuffer<float> buffer = GetSamplesEntryPoint("inputSamples")->GetData();
+                Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
+                Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
 
-            this->resetUpdatingStack();
+                this->resetUpdatingStack();
 
-            Process(buffer, sourcePosition, listenerPosition);
+                Process(buffer, sourcePosition, listenerPosition);
+            }            
         }
 
         void Enabled() { enabled = true; }

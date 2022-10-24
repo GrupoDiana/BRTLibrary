@@ -144,17 +144,29 @@ namespace BRTBase {
 			module2->connectEarsPositionEntryTo(listenerModule->GetEarsTransformExitPoint(), entryPointID);
 		}
 
+		template <typename U>
+		bool ConnectModuleToListenerHRTF(std::shared_ptr<CListener>& listenerModule, U& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2.connectHRTFEntryTo(listenerModule->GetHRTFPtrExitPoint(), entryPointID);
+		}
+		template <typename U>
+		bool ConnectModuleToListenerHRTF(std::shared_ptr<CListener>& listenerModule, std::shared_ptr < U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectHRTFEntryTo(listenerModule->GetHRTFPtrExitPoint(), entryPointID);
+		}
+
+
 		///////////////////////////////////////////
 		// GENERIC PROCESSOR MODULES CONNECTIONs
 		///////////////////////////////////////////
 		template <typename T, typename U>
-		bool ConnectModules(T& module1, std::string exitPointID, U& module2, std::string entryPointID) {
+		bool ConnectModulesSamples(T& module1, std::string exitPointID, U& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2.connectSamplesEntryTo(module1.GetSamplesExitPoint(exitPointID), entryPointID);
 			return true;
 		}
 		template <typename T, typename U>
-		bool ConnectModules(std::shared_ptr <T>& module1, std::string exitPointID, std::shared_ptr <U>& module2, std::string entryPointID) {
+		bool ConnectModulesSamples(std::shared_ptr <T>& module1, std::string exitPointID, std::shared_ptr <U>& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->connectSamplesEntryTo(module1->GetSamplesExitPoint(exitPointID), entryPointID);
 			return true;

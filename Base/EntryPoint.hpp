@@ -39,10 +39,12 @@ namespace BRTBase {
         int multiplicity;
     };
    
-    typedef CEntryPointBase<CMonoBuffer<float>> CEntryPointSamplesVector;
+    //typedef CEntryPointBase<CMonoBuffer<float>> CEntryPointSamplesVector;    
+    //typedef CEntryPointBase<Common::CTransform> CEntryPointTransform;
+    //typedef CEntryPointBase<Common::CEarsTransforms> CEntryPoinEarsTransform;
     
-    typedef CEntryPointBase<Common::CTransform> CEntryPointTransform;
-
-    typedef CEntryPointBase<Common::CEarsTransforms> CEntryPoinEarsTransform;
+    using CEntryPointSamplesVector = CEntryPointBase<CMonoBuffer<float>>;
+    using CEntryPointTransform = CEntryPointBase<Common::CTransform>;
+    using CEntryPoinEarsTransform = CEntryPointBase<Common::CEarsTransforms>;    
 }
 #endif

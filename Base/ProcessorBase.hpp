@@ -3,6 +3,7 @@
 
 #include <Base/EntryPoint.hpp>
 #include <Base/ExitPoint.h>
+#include <Base/EntryPointPtr.hpp>
 #include <Common/CommonDefinitions.h>
 #include <vector>
 
@@ -20,7 +21,7 @@ namespace BRTBase {
     public:
         CProcessorBase() {}
         virtual ~CProcessorBase() {}
-        virtual void Update() = 0;
+        virtual void Update(std::string entryPointID) = 0;
 
         // Create Entry and Exit points
         void CreateSamplesEntryPoint(std::string entryPointID, int _multiplicity = 1) {
@@ -38,6 +39,12 @@ namespace BRTBase {
         void CreateEarsPositionEntryPoint(std::string entryPointID, int _multiplicity = 0) {
             std::shared_ptr<CEntryPoinEarsTransform> _newEntryPoint = std::make_shared<BRTBase::CEntryPoinEarsTransform >(std::bind(&CProcessorBase::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
             earsPositionEntryPoints.push_back(_newEntryPoint);
+            addToUpdateStack(entryPointID, _multiplicity);
+        }
+        
+        void CreateHRTFPtrEntryPoint(std::string entryPointID, int _multiplicity = 0) {
+            std::shared_ptr<CEntryPointHRTFPtr> _newEntryPoint = std::make_shared<BRTBase::CEntryPointHRTFPtr>(std::bind(&CProcessorBase::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+            hrtfPtrEntryPoints.push_back(_newEntryPoint);
             addToUpdateStack(entryPointID, _multiplicity);
         }
 
@@ -69,6 +76,18 @@ namespace BRTBase {
             if (_entryPoint) { _exitPoint->attach(*_entryPoint.get()); }            
         }
 
+        void connectHRTFEntryTo(std::shared_ptr<BRTBase::CExitPointHRTFPtr> _exitPoint, std::string entryPointID) {
+            std::shared_ptr<BRTBase::CEntryPointHRTFPtr> _entryPoint = GetHRTFPtrEntryPoint(entryPointID);
+            if (_entryPoint) { _exitPoint->attach(*_entryPoint.get()); }
+        }
+
+        std::shared_ptr<BRTBase::CEntryPointHRTFPtr >  GetHRTFPtrEntryPoint(std::string _id) {
+            for (auto& it : hrtfPtrEntryPoints) {
+                if (it->GetID() == _id) { return it; }
+            }
+            return nullptr;
+        }
+
         std::shared_ptr<BRTBase::CEntryPoinEarsTransform >  GetEarsPositionEntryPoint(std::string _id) {
             for (auto& it : earsPositionEntryPoints) {
                 if (it->GetID() == _id) { return it; }
@@ -92,7 +111,7 @@ namespace BRTBase {
 
         // Update callback
         void updateFromEntryPoint(std::string entryPointID) {            
-            if (updateStack(entryPointID)) { Update(); }                   
+            if (updateStack(entryPointID)) { Update(entryPointID); }
         }
 
 
@@ -147,6 +166,8 @@ namespace BRTBase {
         std::vector<std::shared_ptr <BRTBase::CEntryPointTransform > > positionEntryPoints;
         
         std::vector<std::shared_ptr <BRTBase::CEntryPoinEarsTransform > > earsPositionEntryPoints;
+        std::vector<std::shared_ptr <BRTBase::CEntryPointHRTFPtr>> hrtfPtrEntryPoints;
+
 
         std::vector< CWaitingEntrypoint> entryPointsUpdatingStack;
 
