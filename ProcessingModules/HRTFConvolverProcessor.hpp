@@ -16,14 +16,15 @@
 #define ELEVATION_SINGULAR_POINT_DOWN 270.0
 
 namespace BRTProcessing {
-    class CBinauralConvolverProcessor : public BRTBase::CProcessorBase {
+    class CHRTFConvolverProcessor : public BRTBase::CProcessorBase {
     public:
-        CBinauralConvolverProcessor() {
+        CHRTFConvolverProcessor(): enableInterpolation{ true } {
             CreateSamplesEntryPoint("inputSamples");
 
             CreatePositionEntryPoint("sourcePosition");
 			CreatePositionEntryPoint("listenerPosition");
             CreateEarsPositionEntryPoint("listenerEarPosition");
+			CreateHRTFPtrEntryPoint("listenerHRTF");
 
             CreateSamplesExitPoint("leftEar");
             CreateSamplesExitPoint("rightEar");   						
@@ -31,16 +32,20 @@ namespace BRTProcessing {
 			ResetSourceConvolutionBuffers();	// Initialize convolution buffers
         }
 
-        void Update() {            
-            CMonoBuffer<float> buffer = GetSamplesEntryPoint("inputSamples")->GetData();
-            Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();            			
-			Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
-			Common::CEarsTransforms listenerEarPosition = GetEarsPositionEntryPoint("listenerEarPosition")->GetData();
+        void Update(std::string _entryPointId) {            
+
+			if (_entryPointId == "inputSamples") {
+				CMonoBuffer<float> buffer = GetSamplesEntryPoint("inputSamples")->GetData();
+				Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
+				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
+				Common::CEarsTransforms listenerEarPosition = GetEarsPositionEntryPoint("listenerEarPosition")->GetData();
+				std::shared_ptr<BRTServices::CHRTF> listenerHRTF= GetHRTFPtrEntryPoint("listenerHRTF")->GetData();
 
 
-            this->resetUpdatingStack();
+				this->resetUpdatingStack();
 
-            Process(buffer, sourcePosition, listenerPosition, listenerEarPosition);
+				Process(buffer, sourcePosition, listenerPosition, listenerEarPosition, listenerHRTF);
+			}            
         }
       
     private:
@@ -52,12 +57,10 @@ namespace BRTProcessing {
 		CMonoBuffer<float> leftChannelDelayBuffer;			// To store the delay of the left channel of the expansion method
 		CMonoBuffer<float> rightChannelDelayBuffer;			// To store the delay of the right channel of the expansion method
 		
+		bool enableInterpolation;							// Enables/Disables the interpolation on run time	
+
         /// Methods        
-        void Process(CMonoBuffer<float>& _inBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerPosition, Common::CEarsTransforms& listenerEarPositio) {
-
-            CMonoBuffer<float> leftChannel_withoutDelay;
-            CMonoBuffer<float> rightChannel_withoutDelay;
-
+        void Process(CMonoBuffer<float>& _inBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerPosition, Common::CEarsTransforms& listenerEarPositio, std::shared_ptr<BRTServices::CHRTF> _listenerHRTF) {
 
             // Calculate Source coordinates taking into account Source and Listener transforms
 			float leftAzimuth;
@@ -73,22 +76,19 @@ namespace BRTProcessing {
             std::vector<CMonoBuffer<float>>  leftHRIR_partitioned;
             std::vector<CMonoBuffer<float>>  rightHRIR_partitioned;
             
-			
-			
-			
-			CMonoBuffer<float> temp(2048, 0.5f);
-            temp[0] = 1;
-            leftHRIR_partitioned.push_back(temp);
-
-            CMonoBuffer<float> temp2(2048, 0.5f);
-            temp2[0] = 1;
-            rightHRIR_partitioned.push_back(temp2);
-
+			leftHRIR_partitioned  = _listenerHRTF->GetHRIR_partitioned(Common::T_ear::LEFT, leftAzimuth, leftElevation, enableInterpolation);
+			rightHRIR_partitioned = _listenerHRTF->GetHRIR_partitioned(Common::T_ear::RIGHT, rightAzimuth, rightElevation, enableInterpolation);
+						
             // GET DELAY
-            uint64_t leftDelay = 4;				///< Delay, in number of samples
-            uint64_t rightDelay = 21;			///< Delay, in number of samples
+			uint64_t leftDelay; 				///< Delay, in number of samples
+			uint64_t rightDelay;				///< Delay, in number of samples
+
+			leftDelay  = _listenerHRTF->GetHRIRDelay(Common::T_ear::LEFT, centerAzimuth, centerElevation, enableInterpolation);
+			rightDelay = _listenerHRTF->GetHRIRDelay(Common::T_ear::RIGHT, centerAzimuth, centerElevation, enableInterpolation);
              
-            // DO CONVOLUTION
+            // DO CONVOLUTION			
+			CMonoBuffer<float> leftChannel_withoutDelay;
+			CMonoBuffer<float> rightChannel_withoutDelay;
             //UPC algorithm with memory
             outputLeftUPConvolution.ProcessUPConvolutionWithMemory(_inBuffer, leftHRIR_partitioned, leftChannel_withoutDelay);
             outputRightUPConvolution.ProcessUPConvolutionWithMemory(_inBuffer, rightHRIR_partitioned, rightChannel_withoutDelay);
@@ -99,8 +99,8 @@ namespace BRTProcessing {
 
             ProcessAddDelay_ExpansionMethod(leftChannel_withoutDelay, outLeftBuffer, leftChannelDelayBuffer, leftDelay);
             ProcessAddDelay_ExpansionMethod(rightChannel_withoutDelay, outRightBuffer, rightChannelDelayBuffer, rightDelay);
-            
-            
+
+			// Propagate Result            
             GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
             GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);
         }
