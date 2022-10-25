@@ -168,7 +168,7 @@ namespace BRTServices
 		*   \eh Nothing is reported to the error handler.
 		*/
 		CHRTF()
-			:enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, HRIRLength{ 0 }, 
+			:enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, HRIRLength{ 0 }, fileName {""},
 			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, listenerHeadRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }
 		{}
 
@@ -690,6 +690,21 @@ namespace BRTServices
 			return distanceOfMeasurement;
 		}
 
+
+		/** \brief Set the name of the SOFA file 
+		*    \param [in]	_fileName		string contains filename
+		*/
+		void SetFilename(std::string _fileName) {
+			fileName = _fileName;
+		}
+
+		/** \brief Get the name of the SOFA file 
+		*   \return string contains filename
+		*/
+		std::string GetFilename() { 
+			return fileName;
+		}
+
 	private:
 		///////////////
 		// ATTRIBUTES
@@ -711,7 +726,7 @@ namespace BRTServices
 		bool bInterpolatedResampleTable;			// If true: calculate the HRTF resample matrix with interpolation
 		int resamplingStep; 						// HRTF Resample table step (azimuth and elevation)
 		bool enableCustomizedITD;					// Indicate the use of a customized delay
-		
+		std::string fileName;
 
 		// HRTF tables			
 		T_HRTFTable				t_HRTF_DataBase;
