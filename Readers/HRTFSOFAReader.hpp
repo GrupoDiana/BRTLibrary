@@ -138,6 +138,12 @@ namespace BRTReaders
 					SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Not a valid SimpleFreeFieldHRIR file");
 					return false;
 				}
+												
+				sofa::Attributes _attributes;
+				hrir.GetGlobalAttributes(_attributes);				
+				std::string _title = _attributes.Get(sofa::Attributes::Type::kTitle);
+				std::string _shortName = _attributes.Get(sofa::Attributes::Type::kListenerShortName);
+				listenerHRTF->SetFilename(_title + " " + _shortName);
 
 				std::vector< std::size_t > dims;
 				hrir.GetVariableDimensions(dims, "SourcePosition");
