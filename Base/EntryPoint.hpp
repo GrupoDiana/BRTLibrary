@@ -45,6 +45,6 @@ namespace BRTBase {
     
     using CEntryPointSamplesVector = CEntryPointBase<CMonoBuffer<float>>;
     using CEntryPointTransform = CEntryPointBase<Common::CTransform>;
-    using CEntryPoinEarsTransform = CEntryPointBase<Common::CEarsTransforms>;    
+    //using CEntryPoinEarsTransform = CEntryPointBase<Common::CEarsTransforms>;    
 }
 #endif

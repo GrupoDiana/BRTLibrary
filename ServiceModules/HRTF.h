@@ -169,7 +169,7 @@ namespace BRTServices
 		*/
 		CHRTF()
 			:enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, HRIRLength{ 0 }, fileName {""},
-			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, listenerHeadRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }
+			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, headRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }
 		{}
 
 		/** \brief Get size of each HRIR buffer
@@ -673,7 +673,7 @@ namespace BRTServices
 			unsigned long customizedDelay = 0;
 			float interauralAzimuth = std::asin(std::sin(rAzimuth) * std::cos(rElevation));
 
-			float ITD = CalculateITDFromHeadRadius(listenerHeadRadius /*ownerListener->GetHeadRadius()*/, interauralAzimuth);
+			float ITD = CalculateITDFromHeadRadius(headRadius /*ownerListener->GetHeadRadius()*/, interauralAzimuth);
 
 			if ((ITD > 0 && ear == Common::T_ear::RIGHT) || (ITD < 0 && ear == Common::T_ear::LEFT)) {
 				customizedDelay = static_cast <unsigned long> (round(std::abs(globalParameters.GetSampleRate() * ITD)));
@@ -705,6 +705,14 @@ namespace BRTServices
 			return fileName;
 		}
 
+		/** \brief	Get the radius of the listener head
+		*   \return listenerHeadRadius in meters
+		*   \eh Nothing is reported to the error handler.
+		*/
+		float GetHeadRadius() {
+			return headRadius;
+		}
+
 	private:
 		///////////////
 		// ATTRIBUTES
@@ -716,7 +724,7 @@ namespace BRTServices
 		int32_t HRIR_partitioned_NumberOfSubfilters;	// Number of subfilters (blocks) for the UPC algorithm
 		int32_t HRIR_partitioned_SubfilterLength;		// Size of one HRIR subfilter
 		float distanceOfMeasurement;					//Distance where the HRIR have been measurement
-		float listenerHeadRadius;							// Head radius of listener 
+		float headRadius;							// Head radius of listener 
 
 		float sphereBorder;						// Define spheere "sewing"
 		float epsilon_sewing = 0.001f;

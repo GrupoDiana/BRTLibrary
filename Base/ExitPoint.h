@@ -45,6 +45,6 @@ namespace BRTBase {
 
     using CExitPointSamplesVector = CExitPointBase<CMonoBuffer<float> >;
     using CExitPointTransform = CExitPointBase<Common::CTransform >;
-    using CExitPointEarsTransform = CExitPointBase<Common::CEarsTransforms>;
+    //using CExitPointEarsTransform = CExitPointBase<Common::CEarsTransforms>;
 }
 #endif
