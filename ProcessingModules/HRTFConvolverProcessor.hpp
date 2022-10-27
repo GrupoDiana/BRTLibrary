@@ -39,12 +39,18 @@ namespace BRTProcessing {
 				Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
 				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
 				Common::CEarsTransforms listenerEarPosition = GetEarsPositionEntryPoint("listenerEarPosition")->GetData();
-				std::shared_ptr<BRTServices::CHRTF> listenerHRTF= GetHRTFPtrEntryPoint("listenerHRTF")->GetData();
+				
+				std::weak_ptr<BRTServices::CHRTF> _temp = GetHRTFPtrEntryPoint("listenerHRTF")->GetData();
+				std::shared_ptr<BRTServices::CHRTF> listenerHRTF= _temp.lock();
+				if (listenerHRTF) {
+					Process(buffer, sourcePosition, listenerPosition, listenerEarPosition, listenerHRTF);
+				}
+				else {
+					// error
+					SET_RESULT(RESULT_ERROR_NULLPOINTER, "HRTFlistner pointer is null when trying to use in HRTFConvolverProcessor");
+				}
 
-
-				this->resetUpdatingStack();
-
-				Process(buffer, sourcePosition, listenerPosition, listenerEarPosition, listenerHRTF);
+				this->resetUpdatingStack();				
 			}            
         }
       

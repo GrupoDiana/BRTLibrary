@@ -13,21 +13,20 @@ namespace BRTBase {
     class CExitPointPtrBase : public Subject
     {
 
-    public:
-        //CExitPointPtrBase(const std::shared_ptr<T>& value) : myData(value) {}
+    public:        
         CExitPointPtrBase(std::string _id) : id(_id) {}
         
-        const std::shared_ptr<T>& GetData() const { return myData; }
-        void SetData(const std::shared_ptr<T>& value) { myData = value; }
+        const std::weak_ptr<T>& GetData() const { return myData; }
+        void SetData(const std::weak_ptr<T>& value) { myData = value; }
         
         std::string GetID() { return id; };
 
-        void sendData(const std::shared_ptr<T>& _value) {
+        void sendData(const std::weak_ptr<T>& _value) {
             SetData(_value);
             notify();
         }
     private:
-        std::shared_ptr<T> myData;
+        std::weak_ptr<T> myData;
         std::string id;
     };
 

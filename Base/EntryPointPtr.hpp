@@ -28,8 +28,8 @@ namespace BRTBase {
         }
         int GetMultiplicity() { return multiplicity; }
         std::string GetID() { return id; };
-        void SetData(const std::shared_ptr<T>& value) { myData = value; }
-        const std::shared_ptr<T>& GetData() const { return myData; }
+        void SetData(const std::weak_ptr<T>& value) { myData = value; }
+        const std::weak_ptr<T>& GetData() const { return myData; }
     private:
 
         // Vars
@@ -38,7 +38,7 @@ namespace BRTBase {
         int multiplicity;
 
    
-        std::shared_ptr<T> myData;
+        std::weak_ptr<T> myData;
     };
 
     using CEntryPointHRTFPtr = CEntryPointPtrBase<BRTServices::CHRTF>;
