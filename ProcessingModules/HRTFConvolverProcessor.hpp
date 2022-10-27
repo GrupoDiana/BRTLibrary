@@ -66,7 +66,7 @@ namespace BRTProcessing {
 		bool enableInterpolation;							// Enables/Disables the interpolation on run time	
 
         /// Methods        
-        void Process(CMonoBuffer<float>& _inBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerPosition, Common::CEarsTransforms& listenerEarPositio, std::shared_ptr<BRTServices::CHRTF> _listenerHRTF) {
+        void Process(CMonoBuffer<float>& _inBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerPosition, Common::CEarsTransforms& listenerEarPositio, std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF) {
 
             // Calculate Source coordinates taking into account Source and Listener transforms
 			float leftAzimuth;
