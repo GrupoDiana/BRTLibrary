@@ -169,7 +169,7 @@ namespace BRTServices
 		*/
 		CHRTF()
 			:enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, HRIRLength{ 0 }, fileName {""},
-			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, headRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }
+			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, headRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }, leftEarLocalPosition {Common::CVector3()}, rightEarLocalPosition{ Common::CVector3() }
 		{}
 
 		/** \brief Get size of each HRIR buffer
@@ -714,7 +714,9 @@ namespace BRTServices
 		}
 
 		/** \brief	Set the relative position of one ear (to the listener head center)
-		*   \eh Error not allowed is reported to error handler
+		* 	\param [in]	_ear			ear type
+		*   \param [in]	_earPosition	ear local position
+		*   \eh <<Error not allowed>> is reported to error handler
 		*/
 		void SetEarPosition( Common::T_ear _ear, Common::CVector3 _earPosition) {
 			if (_ear == Common::T_ear::LEFT)		{ leftEarLocalPosition = _earPosition; }
@@ -726,17 +728,45 @@ namespace BRTServices
 		}
 
 		/** \brief	Get the relative position of one ear (to the listener head center)
+		* 	\param [in]	_ear			ear type
 		*   \return  Ear local position in meters
-		*   \eh Error not allowed is reported to error handler
+		*   \eh <<Error not allowed>> is reported to error handler
 		*/
 		Common::CVector3 GetEarLocalPosition(Common::T_ear _ear) {
-			if (_ear == Common::T_ear::LEFT) { return leftEarLocalPosition; }
-			else if (_ear == Common::T_ear::RIGHT) { return rightEarLocalPosition; }
-			else if (_ear == Common::T_ear::BOTH || _ear == Common::T_ear::NONE)
+			if (enableCustomizedITD) {
+				return CalculateEarLocalPositionFromHeadRadius(_ear);
+			}
+			else {
+				if (_ear == Common::T_ear::LEFT)		{ return leftEarLocalPosition; }
+				else if (_ear == Common::T_ear::RIGHT)	{ return rightEarLocalPosition; }
+				else if (_ear == Common::T_ear::BOTH || _ear == Common::T_ear::NONE)
+				{
+					SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to set listener ear transform for BOTH or NONE ears");
+					return Common::CVector3();
+				}
+			}
+		}
+
+		/** \brief	Calculate the relative position of one ear taking into account the listener head radius
+		*	\param [in]	_ear			ear type
+		*   \return  Ear local position in meters
+		*   \eh <<Error not allowed>> is reported to error handler
+		*/
+		Common::CVector3 CalculateEarLocalPositionFromHeadRadius(Common::T_ear ear) {
+			if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
 			{
-				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to set listener ear transform for BOTH or NONE ears");
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get listener ear transform for BOTH or NONE ears");
 				return Common::CVector3();
 			}
+
+			Common::CVector3 earLocalPosition = Common::CVector3::ZERO();
+			if (ear == Common::T_ear::LEFT) {
+				earLocalPosition.SetAxis(RIGHT_AXIS, -headRadius);
+			}
+			else
+				earLocalPosition.SetAxis(RIGHT_AXIS, headRadius);
+
+			return earLocalPosition;
 		}
 
 

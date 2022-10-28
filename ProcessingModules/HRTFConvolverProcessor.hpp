@@ -214,20 +214,15 @@ namespace BRTProcessing {
 			Common::CVector3 _vectorToListener = _listenerTransform.GetVectorTo(_sourceTransform);
 			float _distanceToListener = _vectorToListener.GetDistance();
 
-			//Common::CTransform leftEarTransform = GetListenerEarTransform(Common::T_ear::LEFT, _listenerTransform, _listenerHRTF);
-			//Common::CTransform rightEarTransform = GetListenerEarTransform(Common::T_ear::RIGHT, _listenerTransform, _listenerHRTF);
-			//Common::CVector3 leftEarLocalPosition = GetListenerEarLocalPosition(Common::T_ear::LEFT, _listenerHRTF);
-			//Common::CVector3 rightEarLocalPosition = GetListenerEarLocalPosition(Common::T_ear::RIGHT, _listenerHRTF);
-			Common::CVector3 leftEarLocalPosition = _listenerHRTF->GetEarLocalPosition(Common::T_ear::LEFT);
-			Common::CVector3 rightEarLocalPosition = _listenerHRTF->GetEarLocalPosition(Common::T_ear::RIGHT);
-			Common::CTransform leftEarTransform = _listenerTransform.GetLocalTranslation(leftEarLocalPosition);
-			Common::CTransform rightEarTransform = _listenerTransform.GetLocalTranslation(rightEarLocalPosition);
-
-
 			//Check listener and source are in the same position
 			if (_distanceToListener <= EPSILON) {
 				return;
 			}
+
+			Common::CVector3 leftEarLocalPosition = _listenerHRTF->GetEarLocalPosition(Common::T_ear::LEFT);
+			Common::CVector3 rightEarLocalPosition = _listenerHRTF->GetEarLocalPosition(Common::T_ear::RIGHT);
+			Common::CTransform leftEarTransform = _listenerTransform.GetLocalTranslation(leftEarLocalPosition);
+			Common::CTransform rightEarTransform = _listenerTransform.GetLocalTranslation(rightEarLocalPosition);
 
 			Common::CVector3 leftVectorTo = leftEarTransform.GetVectorTo(_sourceTransform);
 			Common::CVector3 rightVectorTo = rightEarTransform.GetVectorTo(_sourceTransform);
