@@ -713,6 +713,34 @@ namespace BRTServices
 			return headRadius;
 		}
 
+		/** \brief	Set the relative position of one ear (to the listener head center)
+		*   \eh Error not allowed is reported to error handler
+		*/
+		void SetEarPosition( Common::T_ear _ear, Common::CVector3 _earPosition) {
+			if (_ear == Common::T_ear::LEFT)		{ leftEarLocalPosition = _earPosition; }
+			else if (_ear == Common::T_ear::RIGHT)	{ rightEarLocalPosition = _earPosition; }
+			else if (_ear == Common::T_ear::BOTH || _ear == Common::T_ear::NONE)
+			{
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to set listener ear transform for BOTH or NONE ears");
+			}
+		}
+
+		/** \brief	Get the relative position of one ear (to the listener head center)
+		*   \return  Ear local position in meters
+		*   \eh Error not allowed is reported to error handler
+		*/
+		Common::CVector3 GetEarLocalPosition(Common::T_ear _ear) {
+			if (_ear == Common::T_ear::LEFT) { return leftEarLocalPosition; }
+			else if (_ear == Common::T_ear::RIGHT) { return rightEarLocalPosition; }
+			else if (_ear == Common::T_ear::BOTH || _ear == Common::T_ear::NONE)
+			{
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to set listener ear transform for BOTH or NONE ears");
+				return Common::CVector3();
+			}
+		}
+
+
+
 	private:
 		///////////////
 		// ATTRIBUTES
@@ -724,7 +752,10 @@ namespace BRTServices
 		int32_t HRIR_partitioned_NumberOfSubfilters;	// Number of subfilters (blocks) for the UPC algorithm
 		int32_t HRIR_partitioned_SubfilterLength;		// Size of one HRIR subfilter
 		float distanceOfMeasurement;					//Distance where the HRIR have been measurement
-		float headRadius;							// Head radius of listener 
+		float headRadius;								// Head radius of listener 
+		Common::CVector3 leftEarLocalPosition;			// Listener left ear relative position
+		Common::CVector3 rightEarLocalPosition;			// Listener right ear relative position
+
 
 		float sphereBorder;						// Define spheere "sewing"
 		float epsilon_sewing = 0.001f;

@@ -31,7 +31,6 @@ namespace BRTBase {
 			rightEarEntryPoint = std::make_shared<BRTBase::CEntryPointSamplesVector >(std::bind(&CListener::updateFromEntryPoint, this, std::placeholders::_1), "rightEar", 1);
 			// Create exit point
 			listenerPositionExitPoint = std::make_shared<CExitPointTransform>("listenerTransform");
-			//listenerEarsPositionExitPoint = std::make_shared<CExitPointEarsTransform>("listenerEarsTransform");
 			hrtfExitPoint = std::make_shared<CExitPointHRTFPtr>("listenerHRTF");
 
 			leftDataReady = false;
@@ -50,9 +49,6 @@ namespace BRTBase {
 			return listenerPositionExitPoint;
 		}
 
-		//std::shared_ptr<CExitPointEarsTransform> GetEarsTransformExitPoint() {
-		//	return listenerEarsPositionExitPoint;
-		//}
 
 		std::shared_ptr<CExitPointHRTFPtr> GetHRTFPtrExitPoint(){
 			return hrtfExitPoint;
@@ -85,15 +81,6 @@ namespace BRTBase {
 		void SetListenerTransform(Common::CTransform _transform) {
 			listenerTransform = _transform;
 			listenerPositionExitPoint->sendData(listenerTransform);			// Send
-
-			//// Calculate Ears Transform						
-			//listenerEarsTransforms.leftEarTransform	= GetListenerEarTransform(Common::T_ear::LEFT);
-			//listenerEarsTransforms.rightEarTransform	= GetListenerEarTransform(Common::T_ear::RIGHT);
-			//listenerEarsTransforms.leftEarLocalPosition = GetListenerEarLocalPosition(Common::T_ear::LEFT);
-			//listenerEarsTransforms.rightEarLocalPosition	= GetListenerEarLocalPosition(Common::T_ear::RIGHT);
-			
-			//Send
-			//listenerEarsPositionExitPoint->sendData(listenerEarsTransforms);
 		}
 
 		/** \brief Get listener position and orientation
@@ -149,13 +136,11 @@ namespace BRTBase {
 		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;	// HRTF of listener														
 		//std::unique_ptr<CILD> listenerILD;				// ILD of listener	
 		Common::CTransform listenerTransform;				// Transform matrix (position and orientation) of listener  
-		//Common::CEarsTransforms listenerEarsTransforms;		// Transform matrix (position and orientation) of listener EARS
 		float listenerHeadRadius;							// Head radius of listener 
 
 		std::shared_ptr<CEntryPointSamplesVector >		leftEarEntryPoint;
 		std::shared_ptr<CEntryPointSamplesVector >		rightEarEntryPoint;				
 		std::shared_ptr<CExitPointTransform>			listenerPositionExitPoint;
-		//std::shared_ptr<CExitPointEarsTransform>		listenerEarsPositionExitPoint;
 		std::shared_ptr<CExitPointHRTFPtr>				hrtfExitPoint;
 
 		std::vector<float> leftBuffer;

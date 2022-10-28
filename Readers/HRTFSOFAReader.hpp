@@ -171,6 +171,14 @@ namespace BRTReaders
 				std::vector< double > data;
 				hrir.GetDataIR(data);
 
+				//Set listener ear positions
+				std::vector< double > receiverPos;
+				hrir.GetReceiverPosition(receiverPos);
+				Common::CVector3 leftEarPos(receiverPos[0], receiverPos[1], receiverPos[2]);
+				Common::CVector3 rightEarPos(receiverPos[3], receiverPos[4], receiverPos[5]);
+				listenerHRTF->SetEarPosition(Common::T_ear::LEFT, leftEarPos);
+				listenerHRTF->SetEarPosition(Common::T_ear::RIGHT, rightEarPos);
+
 				// Prepare HRTF
 				const unsigned int nSamples = (unsigned int)hrir.GetNumDataSamples();   // For example: 512 samples.			
 

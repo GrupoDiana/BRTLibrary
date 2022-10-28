@@ -44,7 +44,6 @@ namespace BRTBase {
     //typedef CEntryPointBase<Common::CEarsTransforms> CEntryPoinEarsTransform;
     
     using CEntryPointSamplesVector = CEntryPointBase<CMonoBuffer<float>>;
-    using CEntryPointTransform = CEntryPointBase<Common::CTransform>;
-    //using CEntryPoinEarsTransform = CEntryPointBase<Common::CEarsTransforms>;    
+    using CEntryPointTransform = CEntryPointBase<Common::CTransform>; 
 }
 #endif

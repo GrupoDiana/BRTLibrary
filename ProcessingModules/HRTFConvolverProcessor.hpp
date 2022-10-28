@@ -77,14 +77,7 @@ namespace BRTProcessing {
 			float centerElevation;
 			float interauralAzimuth;	
 
-			////Calculate listener ear transforms
-			//Common::CEarsTransforms listenerEarsTransforms;					
-			//listenerEarsTransforms.leftEarTransform = GetListenerEarTransform(Common::T_ear::LEFT, listenerPosition, _listenerHRTF);
-			//listenerEarsTransforms.rightEarTransform = GetListenerEarTransform(Common::T_ear::RIGHT, listenerPosition, _listenerHRTF);
-			//listenerEarsTransforms.leftEarLocalPosition = GetListenerEarLocalPosition(Common::T_ear::LEFT, _listenerHRTF);
-			//listenerEarsTransforms.rightEarLocalPosition = GetListenerEarLocalPosition(Common::T_ear::RIGHT, _listenerHRTF);
-
-			CalculateSourceCoordinates(sourceTransform, listenerPosition, leftElevation, leftAzimuth, rightElevation, rightAzimuth, centerElevation, centerAzimuth, interauralAzimuth, _listenerHRTF);
+			CalculateSourceCoordinates(sourceTransform, listenerPosition, _listenerHRTF, leftElevation, leftAzimuth, rightElevation, rightAzimuth, centerElevation, centerAzimuth, interauralAzimuth);
 								
 			// GET HRTF
             std::vector<CMonoBuffer<float>>  leftHRIR_partitioned;
@@ -214,17 +207,22 @@ namespace BRTProcessing {
 		}
 
 		/// Calculates the parameters derived from the source and listener position
-		void CalculateSourceCoordinates(Common::CTransform& _sourceTransform, Common::CTransform& _listenerTransform, float& leftElevation, float& leftAzimuth, float& rightElevation, float& rightAzimuth, float& centerElevation, float& centerAzimuth, float& interauralAzimuth, std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF)
+		void CalculateSourceCoordinates(Common::CTransform& _sourceTransform, Common::CTransform& _listenerTransform, std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF, float& leftElevation, float& leftAzimuth, float& rightElevation, float& rightAzimuth, float& centerElevation, float& centerAzimuth, float& interauralAzimuth)
 		{
 
 			//Get azimuth and elevation between listener and source
 			Common::CVector3 _vectorToListener = _listenerTransform.GetVectorTo(_sourceTransform);
 			float _distanceToListener = _vectorToListener.GetDistance();
 
-			Common::CTransform leftEarTransform = GetListenerEarTransform(Common::T_ear::LEFT, _listenerTransform, _listenerHRTF);
-			Common::CTransform rightEarTransform = GetListenerEarTransform(Common::T_ear::RIGHT, _listenerTransform, _listenerHRTF);
-			Common::CVector3 leftEarLocalPosition = GetListenerEarLocalPosition(Common::T_ear::LEFT, _listenerHRTF);
-			Common::CVector3 rightEarLocalPosition = GetListenerEarLocalPosition(Common::T_ear::RIGHT, _listenerHRTF);
+			//Common::CTransform leftEarTransform = GetListenerEarTransform(Common::T_ear::LEFT, _listenerTransform, _listenerHRTF);
+			//Common::CTransform rightEarTransform = GetListenerEarTransform(Common::T_ear::RIGHT, _listenerTransform, _listenerHRTF);
+			//Common::CVector3 leftEarLocalPosition = GetListenerEarLocalPosition(Common::T_ear::LEFT, _listenerHRTF);
+			//Common::CVector3 rightEarLocalPosition = GetListenerEarLocalPosition(Common::T_ear::RIGHT, _listenerHRTF);
+			Common::CVector3 leftEarLocalPosition = _listenerHRTF->GetEarLocalPosition(Common::T_ear::LEFT);
+			Common::CVector3 rightEarLocalPosition = _listenerHRTF->GetEarLocalPosition(Common::T_ear::RIGHT);
+			Common::CTransform leftEarTransform = _listenerTransform.GetLocalTranslation(leftEarLocalPosition);
+			Common::CTransform rightEarTransform = _listenerTransform.GetLocalTranslation(rightEarLocalPosition);
+
 
 			//Check listener and source are in the same position
 			if (_distanceToListener <= EPSILON) {
@@ -295,50 +293,62 @@ namespace BRTProcessing {
 
 		/** \brief Get position and orientation of one listener ear
 		*	\param [in] ear listener ear for wich we want to get transform
+		*   \param [in] listenerTransform position of the listener
+		* 	\param [in] _listenerHRTF ptr to the HRTF of the listener
 		*	\retval transform current listener ear position and orientation
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		Common::CTransform GetListenerEarTransform(Common::T_ear ear, Common::CTransform& listenerTransform, std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF) const
+		Common::CTransform GetListenerEarTransform(Common::T_ear ear, Common::CTransform& listenerTransform, std::shared_ptr<BRTServices::CHRTF>& listenerHRTF) const
 		{
-			if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
-			{
-				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get listener ear transform for BOTH or NONE ears");
-				return Common::CTransform();
-			}
-
-			Common::CVector3 earLocalPosition = Common::CVector3::ZERO();
-			if (ear == Common::T_ear::LEFT) {
-				earLocalPosition.SetAxis(RIGHT_AXIS, -_listenerHRTF->GetHeadRadius());
-			}
-			else
-				earLocalPosition.SetAxis(RIGHT_AXIS, _listenerHRTF->GetHeadRadius());
-
-			return listenerTransform.GetLocalTranslation(earLocalPosition);
+			return listenerTransform.GetLocalTranslation(listenerHRTF->GetEarLocalPosition(ear));
 		}
 
-		/** \brief Get EarPosition local to the listenerr
-		*   \param [in] ear indicates the ear which you want to knowthe position
-		*	\retval ear local position
-		*   \eh Nothing is reported to the error handler.
-		*/
-		Common::CVector3 GetListenerEarLocalPosition(Common::T_ear ear, std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF) const
-		{
-			if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
-			{
-				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get listener ear transform for BOTH or NONE ears");
-				return Common::CVector3();
-			}
+		///** \brief Get position and orientation of one listener ear
+		//*	\param [in] ear listener ear for wich we want to get transform
+		//*	\retval transform current listener ear position and orientation
+		//*   \eh On error, an error code is reported to the error handler.
+		//*/
+		//Common::CTransform GetListenerEarTransform(Common::T_ear ear, Common::CTransform& listenerTransform, std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF) const
+		//{
+		//	if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
+		//	{
+		//		SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get listener ear transform for BOTH or NONE ears");
+		//		return Common::CTransform();
+		//	}
 
-			Common::CVector3 earLocalPosition = Common::CVector3::ZERO();
-			if (ear == Common::T_ear::LEFT) {
-				earLocalPosition.SetAxis(RIGHT_AXIS, -_listenerHRTF->GetHeadRadius());
-			}
-			else
-				earLocalPosition.SetAxis(RIGHT_AXIS, _listenerHRTF->GetHeadRadius());
+		//	Common::CVector3 earLocalPosition = Common::CVector3::ZERO();
+		//	if (ear == Common::T_ear::LEFT) {
+		//		earLocalPosition.SetAxis(RIGHT_AXIS, -_listenerHRTF->GetHeadRadius());
+		//	}
+		//	else
+		//		earLocalPosition.SetAxis(RIGHT_AXIS, _listenerHRTF->GetHeadRadius());
+
+		//	return listenerTransform.GetLocalTranslation(earLocalPosition);
+		//}
+
+		///** \brief Get EarPosition local to the listener
+		//*   \param [in] ear indicates the ear which you want to knowthe position
+		//*	\retval ear local position
+		//*   \eh Nothing is reported to the error handler.
+		//*/
+		//Common::CVector3 GetListenerEarLocalPosition(Common::T_ear ear, std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF) const
+		//{
+		//	if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
+		//	{
+		//		SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get listener ear transform for BOTH or NONE ears");
+		//		return Common::CVector3();
+		//	}
+
+		//	Common::CVector3 earLocalPosition = Common::CVector3::ZERO();
+		//	if (ear == Common::T_ear::LEFT) {
+		//		earLocalPosition.SetAxis(RIGHT_AXIS, -_listenerHRTF->GetHeadRadius());
+		//	}
+		//	else
+		//		earLocalPosition.SetAxis(RIGHT_AXIS, _listenerHRTF->GetHeadRadius());
 
 
-			return earLocalPosition;
-		}
+		//	return earLocalPosition;
+		//}
     };
 }
 #endif
