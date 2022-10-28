@@ -19,7 +19,7 @@
 #define DEFAULT_SOUND_SPEED	343.0f						///< Default sound speed, in meters per second (m/s)
 #endif 
 #ifndef DISTANCE_MODEL_THRESHOLD_NEAR
-#define DISTANCE_MODEL_THRESHOLD_NEAR 1.95				///< Reference distance and near-distance threshold, in meters
+#define DISTANCE_MODEL_THRESHOLD_NEAR 1 				///< Reference distance and near-distance threshold, in meters
 #endif 
 #ifndef DISTANCE_MODEL_THRESHOLD_FAR
 #define DISTANCE_MODEL_THRESHOLD_FAR 15					///< Far-distance threshold, in meters
