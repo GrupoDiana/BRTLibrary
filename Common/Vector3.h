@@ -26,7 +26,7 @@
 //#define _USE_MATH_DEFINES // TODO: Test in windows! Might also be problematic for other platforms??	// TODO not working in visual 2019 //TO FIXME
 #include <cmath>
 #include <iostream>
-#include <Common/ErrorHandler.h>
+#include <Common/ErrorHandler.hpp>
 #include <Common/Conventions.h>
 #include <string>
 
