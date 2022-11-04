@@ -99,11 +99,13 @@ namespace BRTBase {
 		bool ConnectModuleToSoundSourceTransform(std::shared_ptr<CSoundSource>& soundSourceModule, U& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2.connectPositionEntryTo(soundSourceModule->GetTransformExitPoint(), entryPointID);
+			return true;
 		}
 		template <typename U>
 		bool ConnectModuleToSoundSourceTransform(std::shared_ptr<CSoundSource>& soundSourceModule, std::shared_ptr <U>& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->connectPositionEntryTo(soundSourceModule->GetTransformExitPoint(), entryPointID);
+			return true;
 		}
 
 		///////////////////////////////
@@ -126,11 +128,13 @@ namespace BRTBase {
 		bool ConnectModuleToListenerTransform(std::shared_ptr<CListener>& listenerModule, U& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2.connectPositionEntryTo(listenerModule->GetTransformExitPoint(), entryPointID);
+			return true;
 		}
 		template <typename U>
 		bool ConnectModuleToListenerTransform(std::shared_ptr<CListener>& listenerModule, std::shared_ptr < U>& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->connectPositionEntryTo(listenerModule->GetTransformExitPoint(), entryPointID);
+			return true;
 		}
 		
 		//template <typename U>
@@ -148,11 +152,13 @@ namespace BRTBase {
 		bool ConnectModuleToListenerHRTF(std::shared_ptr<CListener>& listenerModule, U& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2.connectHRTFEntryTo(listenerModule->GetHRTFPtrExitPoint(), entryPointID);
+			return true;
 		}
 		template <typename U>
 		bool ConnectModuleToListenerHRTF(std::shared_ptr<CListener>& listenerModule, std::shared_ptr < U>& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->connectHRTFEntryTo(listenerModule->GetHRTFPtrExitPoint(), entryPointID);
+			return true;
 		}
 
 
