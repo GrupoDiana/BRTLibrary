@@ -51,7 +51,11 @@ namespace BRTBase {
         //// Connections
         void connectSamplesEntryTo(std::shared_ptr<BRTBase::CExitPointSamplesVector> _exitPoint, std::string entryPointID) {
             std::shared_ptr<BRTBase::CEntryPointSamplesVector> _entryPoint2 = GetSamplesEntryPoint(entryPointID);
-            if (_entryPoint2) { _exitPoint->attach(*_entryPoint2.get()); }            
+            if (_entryPoint2) { _exitPoint->attach(*_entryPoint2.get()); 
+            }
+            else {
+                ASSERT(false, RESULT_ERROR_INVALID_PARAM, "There is no entry point with this id " + entryPointID, "");
+            }
         }
 
         std::shared_ptr<BRTBase::CEntryPointSamplesVector> GetSamplesEntryPoint(std::string _id) {            
@@ -63,13 +67,22 @@ namespace BRTBase {
 
         void connectPositionEntryTo(std::shared_ptr<BRTBase::CExitPointTransform> _exitPoint, std::string entryPointID) {
             std::shared_ptr<BRTBase::CEntryPointTransform> _entryPoint = GetPositionEntryPoint(entryPointID);
-            if (_entryPoint) { _exitPoint->attach(*_entryPoint.get()); }
+            if (_entryPoint) { 
+                _exitPoint->attach(*_entryPoint.get()); 
+            } else {
+                ASSERT(false, RESULT_ERROR_INVALID_PARAM, "There is no entry point with this id " + entryPointID, "");
+            }
         }
              
 
         void connectHRTFEntryTo(std::shared_ptr<BRTBase::CExitPointHRTFPtr> _exitPoint, std::string entryPointID) {
             std::shared_ptr<BRTBase::CEntryPointHRTFPtr> _entryPoint = GetHRTFPtrEntryPoint(entryPointID);
-            if (_entryPoint) { _exitPoint->attach(*_entryPoint.get()); }
+            if (_entryPoint) { 
+                _exitPoint->attach(*_entryPoint.get()); 
+            } else {                
+                //SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There is no entry point with this id " + entryPointID);
+                ASSERT(false, RESULT_ERROR_INVALID_PARAM, "There is no entry point with this id " + entryPointID, "");
+            }
         }
 
         std::shared_ptr<BRTBase::CEntryPointHRTFPtr >  GetHRTFPtrEntryPoint(std::string _id) {
