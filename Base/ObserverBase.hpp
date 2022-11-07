@@ -26,6 +26,7 @@ namespace BRTBase {
         void attach(Observer& observer)
         {
             observers.push_back(&observer);
+            notify(observer);
         }
         void detach(Observer& observer) {
             /*auto it = std::find(observers.begin(), observers.end(), observer);
@@ -38,8 +39,11 @@ namespace BRTBase {
             //for (it = observers.begin(); it != observers.end(); it++) (*it)->Update(static_cast<T*>(this));
             for (it = observers.begin(); it != observers.end(); it++) (*it)->Update(this);                        
         }
+      
     private:
         std::vector<Observer*> observers;
+
+        void notify(Observer& observer) { observer.Update(this); }
     };
 
     /*template <class T>
