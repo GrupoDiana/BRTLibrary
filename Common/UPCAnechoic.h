@@ -115,6 +115,10 @@ namespace Common {
 			sum.resize(impulseResponse_Frequency_Block_Size, 0.0f);
 			CMonoBuffer<float> temp;
 
+			if (!setupDone) { 
+				SET_RESULT(RESULT_ERROR_NOTSET, "HRTF storage buffer to perform UP convolution has not been initialized");
+				return; 
+			}
 
 			if (inBuffer_Time.size() == inputSize) {
 
@@ -174,14 +178,14 @@ namespace Common {
 		*/
 		//void ProcessUPConvolutionWithMemory(const CMonoBuffer<float>& inBuffer_Time, const TOneEarHRIRPartitionedStruct & IR, CMonoBuffer<float>& outBuffer);
 		void ProcessUPConvolutionWithMemory(const CMonoBuffer<float>& inBuffer_Time, const std::vector<CMonoBuffer<float>>& IR, CMonoBuffer<float>& outBuffer)
-		{
+		{			
 			CMonoBuffer<float> sum;
 			sum.resize(impulseResponse_Frequency_Block_Size, 0.0f);
 			CMonoBuffer<float> temp;
 
 			ASSERT(inBuffer_Time.size() == inputSize, RESULT_ERROR_BADSIZE, "Bad input size, don't match with the size setting up in the setup method", "");
 
-			if (impulseResponseMemory)
+			if (impulseResponseMemory && setupDone)
 			{
 				if (inBuffer_Time.size() == inputSize && IR.size() != 0)
 				{
@@ -259,6 +263,23 @@ namespace Common {
 				SET_RESULT(RESULT_ERROR_NOTSET, "HRTF storage buffer to perform UP convolution with memory has not been initialized");
 			}
 
+		}
+		
+		/** \brief Reset class state and clean convolution buffers 
+		*   \details After calling this method it is necessary to do a setup again.
+		*   \details 
+		*/
+		void Reset() {
+			if (setupDone) {				
+				setupDone = false;
+				storageInput_buffer.clear();
+				storageInputFFT_buffer.clear();
+				storageHRIR_buffer.clear();				
+				inputSize = 0;
+				impulseResponseMemory = 0;
+				impulseResponseNumberOfSubfilters = 0;
+				impulseResponse_Frequency_Block_Size = 0;
+			}
 		}
 
 	private:
