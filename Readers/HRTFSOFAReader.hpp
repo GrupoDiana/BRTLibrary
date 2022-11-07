@@ -148,12 +148,16 @@ namespace BRTReaders
 				//Check listener view
 				std::vector<double> listenerView;
 				hrir.GetListenerView(listenerView);
-				Common::CVector3 listenerView_(listenerView[0], listenerView[1], listenerView[2]);
+				Common::CVector3 _listenerView(listenerView[0], listenerView[1], listenerView[2]);
 				Common::CVector3 _forward(1, 0, 0);
+				if (_listenerView != _forward) { SET_RESULT(RESULT_ERROR_CASENOTDEFINED, "Listener View in SOFA file different from [1,0,0]");}
 
-				if (listenerView_ == _forward) {
-					std::cout << "Listener View OK" << std::endl;
-				}
+				//Check listener up
+				std::vector<double> listenerUp;
+				hrir.GetListenerUp(listenerUp);
+				Common::CVector3 _listenerUp(listenerUp[0], listenerUp[1], listenerUp[2]);
+				Common::CVector3 _up(0, 0, 1);
+				if (_listenerUp != _up) { SET_RESULT(RESULT_ERROR_CASENOTDEFINED, "Listener Up in SOFA file different from [0,0,1]"); }
 
 				std::vector< std::size_t > dims;
 				hrir.GetVariableDimensions(dims, "SourcePosition");
