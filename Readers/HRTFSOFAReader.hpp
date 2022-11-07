@@ -174,8 +174,14 @@ namespace BRTReaders
 				//Set listener ear positions
 				std::vector< double > receiverPos;
 				hrir.GetReceiverPosition(receiverPos);
-				Common::CVector3 leftEarPos(receiverPos[0], receiverPos[1], receiverPos[2]);
-				Common::CVector3 rightEarPos(receiverPos[3], receiverPos[4], receiverPos[5]);
+				Common::CVector3 leftEarPos;
+				Common::CVector3 rightEarPos;
+				leftEarPos.SetAxis(FORWARD_AXIS, receiverPos[0]);
+				leftEarPos.SetAxis(RIGHT_AXIS, receiverPos[1]);
+				leftEarPos.SetAxis(UP_AXIS, receiverPos[2]);
+				rightEarPos.SetAxis(FORWARD_AXIS, receiverPos[3]);
+				rightEarPos.SetAxis(RIGHT_AXIS, receiverPos[4]);
+				rightEarPos.SetAxis(UP_AXIS, receiverPos[5]);
 				listenerHRTF->SetEarPosition(Common::T_ear::LEFT, leftEarPos);
 				listenerHRTF->SetEarPosition(Common::T_ear::RIGHT, rightEarPos);
 
