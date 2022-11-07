@@ -436,6 +436,21 @@ namespace Common {
 			return CVector3(x + _rightHand.x, y + _rightHand.y, z + _rightHand.z);
 		}
 
+		/** \brief Component-wise equal to 
+		*/
+		bool operator==(CVector3 const _rightHand) 
+		{
+			return (x == _rightHand.x && y == _rightHand.y && z == _rightHand.z);
+		}
+
+		/** \brief Component-wise not equal to
+*/
+		bool operator!=(CVector3 const _rightHand)
+		{
+			return (x != _rightHand.x || y != _rightHand.y || z != _rightHand.z);
+		}
+
+
 		/** \brief Computes the vector dot product
 		*	\param [in] _rightHand other vector
 		*	\retval product dot product of this vector with other vector
@@ -469,6 +484,9 @@ namespace Common {
 		}
 			
 		static CVector3 ZERO() { return CVector3(0.0f, 0.0f, 0.0f); }
+
+		static CVector3 FORWARD() { return CVector3(1.0f, 0.0f, 0.0f); }
+
 
 		//////////////////////////////////////////////
 		// Predefined rotation axis for rotating in basic directions, using angle-axis rotation
