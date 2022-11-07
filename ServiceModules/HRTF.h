@@ -32,7 +32,7 @@
 #include <cstdint>
 #include <Base/Listener.hpp>
 #include <Common/Buffer.h>
-#include <Common/ErrorHandler.h>
+#include <Common/ErrorHandler.hpp>
 #include <Common/Fprocessor.h>
 #include <Common/GlobalParameters.hpp>
 #include <Common/CommonDefinitions.h>

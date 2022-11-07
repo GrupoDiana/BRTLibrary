@@ -35,7 +35,7 @@ using namespace std;
 /** \brief If SWITCH_ON_3DTI_ERRORHANDLER is undefined, the error handler is completely disabled, causing 0 overhead
 */
 
-//#define SWITCH_ON_3DTI_ERRORHANDLER
+#define SWITCH_ON_3DTI_ERRORHANDLER
 
 #ifdef _3DTI_ANDROID_ERRORHANDLER
 
@@ -280,13 +280,19 @@ namespace Common {
 		*	\retval resultStruct info of last reported result
 		*   \eh Nothing is reported to the error handler.
 		*/
-		TResultStruct GetLastResultStruct();
+		TResultStruct GetLastResultStruct()		
+		{
+			return lastResult;
+		}
 
 		/** \brief Get the ID of the last reported result
 		*	\retval result ID of last reported result
 		*   \eh Nothing is reported to the error handler.
-		*/
-		TResultID GetLastResult();
+		*/		
+		TResultID GetLastResult()
+		{
+			return lastResult.id;
+		}
 
 		/** \brief Set result of last operation
 		*	\note Instead of calling this method, using the macros \link SET_RESULT \endlink or \link ASSERT \endlink is recommended
@@ -294,8 +300,60 @@ namespace Common {
 		*	\param [in] suggestion suggestion or further information about result
 		*	\param [in] filename file from which result is being reported
 		*	\param [in] linenumber line number at which result is being reported (whithin filename file)
-		*/
-		void SetResult(TResultID resultID, string suggestion, string filename, int linenumber);
+		*/		
+		void SetResult(TResultID resultID, string suggestion, string filename, int linenumber)
+		{
+			if (assertMode != ASSERT_MODE_EMPTY)	// Alternative: put this before logging to file
+			{
+				lock_guard<mutex> lock(errorHandlerMutex);
+
+				// Set result struct
+
+				lastResult.id = resultID;
+				lastResult.linenumber = linenumber;
+				lastResult.filename = filename;
+
+				// Set specific strings for each result type. Suggestions are generic and might be replaced with the one specified
+				string defaultDescription, defaultSuggestion;
+				GetDescriptionAndSuggestion(lastResult.id, defaultDescription, defaultSuggestion);
+				lastResult.description = defaultDescription;
+
+				// Replace default suggestion with the provided one, if it was specified
+				if (suggestion != "")
+					lastResult.suggestion = suggestion;
+				else
+					lastResult.suggestion = defaultSuggestion;
+
+				// For filename, remove the path (WARNING! This may be platform-dependent)
+				const size_t last_slash = lastResult.filename.find_last_of("\\/");
+				if (std::string::npos != last_slash)
+					lastResult.filename.erase(0, last_slash + 1);
+
+				// SET FIRST ERROR 
+				if (resultID != RESULT_OK)
+				{
+					if (firstError.id == RESULT_OK)
+					{
+						firstError = lastResult;
+					}
+				}
+
+				// LOG TO FILE
+				if (errorLogFile.is_open())
+					LogErrorToFile(lastResult);
+
+				// LOG TO STREAM
+				if (logToStream)
+					LogErrorToStream(*errorLogStream, lastResult);
+
+				// TERMINATE PROGRAM IF ERROR IN PARANOID MODE 
+				// TO THINK: Do we include RESULT_WARNING here????
+				if ((lastResult.id != RESULT_OK) && (assertMode == ASSERT_MODE_PARANOID))
+				{
+					std::terminate();
+				}
+			}
+		}
 
 #if defined (_3DTI_ANDROID_ERRORHANDLER)
 		void AndroidSetResult(TResultID resultID, string suggestion, string filename, int linenumber)
@@ -326,20 +384,38 @@ namespace Common {
 		/** \brief Inits the first error report, so that the next error will be stored as the first error
 		*	\details Used to mark the starting point of the code block
 		*   \eh Nothing is reported to the error handler.
-		*/
-		void ResetErrors();
+		*/		
+		void ResetErrors()
+		{
+			if (assertMode != ASSERT_MODE_EMPTY)
+			{
+				string description, suggestion;
+				firstError.id = RESULT_OK;
+				GetDescriptionAndSuggestion(firstError.id, description, suggestion);
+				firstError.description = description;
+				firstError.suggestion = suggestion;
+				firstError.filename = "Nobody";
+				firstError.linenumber = -1;
+			}
+		}
 
 		/** \brief Get a struct with the info of the first reported error in code block
 		*	\retval resultStruct info of first reported error in code block
 		*   \eh Nothing is reported to the error handler.
-		*/
-		TResultStruct GetFirstErrorStruct();
+		*/		
+		TResultStruct GetFirstErrorStruct()
+		{
+			return firstError;
+		}
 
 		/** \brief Get the ID of the first reported error in code block
 		*	\retval result ID of first reported error in code block
 		*   \eh Nothing is reported to the error handler.
-		*/
-		TResultID GetFirstError();
+		*/		
+		TResultID GetFirstError()
+		{
+			return firstError.id;
+		}
 
 		//
 		// Verbosity modes
@@ -348,14 +424,60 @@ namespace Common {
 		/** \brief Set verbosity mode from one of the presets
 		*	\sa VERBOSITY_MODE_SILENT, VERBOSITYMODE_ERRORSANDWARNINGS, VERBOSITY_MODE_ONLYERRORS, VERBOSITY_MODE_ALL
 		*   \eh Nothing is reported to the error handler.
-		*/
-		void SetVerbosityMode(int presetMode);
+		*/		
+		void SetVerbosityMode(int presetMode)
+		{
+			// By default, all presets show all attributes of the error handler result
+			verbosityMode.showID = true;
+			verbosityMode.showDescription = true;
+			verbosityMode.showSuggestion = true;
+			verbosityMode.showFilename = true;
+			verbosityMode.showLinenumber = true;
+
+			// What type of results to show, depending on preset
+			switch (presetMode)
+			{
+			case VERBOSITY_MODE_SILENT:
+				verbosityMode.showErrors = false;
+				verbosityMode.showOk = false;
+				verbosityMode.showWarnings = false;
+				//SET_RESULT(RESULT_OK, "Verbosity mode changed to Silent.");	// actually, setting this result is nonsense :)
+				break;
+			case VERBOSITY_MODE_ONLYERRORS:
+				verbosityMode.showErrors = true;
+				verbosityMode.showOk = false;
+				verbosityMode.showWarnings = false;
+				//SET_RESULT(RESULT_OK, "Verbosity mode changed to Only Errors.");	// actually, setting this result is nonsense :)
+				break;
+			case VERBOSITY_MODE_ALL:
+				verbosityMode.showErrors = true;
+				verbosityMode.showOk = true;
+				verbosityMode.showWarnings = true;
+				//SET_RESULT(RESULT_OK, "Verbosity mode changed to All.");
+				break;
+			case VERBOSITYMODE_ERRORSANDWARNINGS:
+				verbosityMode.showErrors = true;
+				verbosityMode.showOk = false;
+				verbosityMode.showWarnings = true;
+				//SET_RESULT(RESULT_OK, "Verbosity mode changed to Errors and Warnings.");
+				break;
+			default:
+				verbosityMode.showErrors = false;
+				verbosityMode.showOk = false;
+				verbosityMode.showWarnings = false;
+				//SET_RESULT(RESULT_ERROR_CASENOTDEFINED, "Preset not found for verbosity mode.");
+				break;
+			}
+		}
 
 		/** \brief Set custom verbosity mode
 		*	\param [in] _verbosityMode definition of custom verbosity mode
 		*   \eh Nothing is reported to the error handler.
-		*/
-		void SetVerbosityMode(TVerbosityMode _verbosityMode);
+		*/		
+		void SetVerbosityMode(TVerbosityMode _verbosityMode)
+		{
+			verbosityMode = _verbosityMode;
+		}
 
 		//
 		// Logging to file
@@ -366,14 +488,30 @@ namespace Common {
 		*	\param [in] logOn switch on/off logging to file (default, true)
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void SetErrorLogFile(string filename, bool logOn = true);
+		void SetErrorLogFile(string filename, bool logOn = true)		
+		{
+			// TO DO: check errors!
+
+			if (errorLogFile.is_open())
+				errorLogFile.close();
+
+			if (logOn)
+			{
+				errorLogFile.open(filename, std::ofstream::out | std::ofstream::app);	// Using append, we allow enabling/disabling log to the same file in runtime
+				// TO DO: Put a text header in log file each time you open it? (for example, with a time stamp, but this might be platform-dependent)
+			}
+		}
 
 		/** \brief Enable log of reported results to output stream, using current verbosity mode
 		*	\param [in] outStream output stream
 		*	\param [in] logOn switch on/off logging to stream (default, true)
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void SetErrorLogStream(ostream* outStream, bool logOn = true);
+		void SetErrorLogStream(ostream* outStream, bool logOn = true)		
+		{
+			errorLogStream = outStream;
+			logToStream = logOn;
+		}
 
 		//
 		// Assert modes
@@ -383,8 +521,20 @@ namespace Common {
 		*	\details Defines what to do when an error is reported
 		*	\param [in] _assertMode one of the preset assert modes
 		*	\sa ASSERT_MODE_EMPTY, ASSERT_MODE_CONTINUE, ASSERT_MODE_ABORT, ASSERT_MODE_PARANOID
-		*/
-		void SetAssertMode(TAssertMode _assertMode);
+		*/		
+		void SetAssertMode(TAssertMode _assertMode)
+		{
+			assertMode = _assertMode;
+			if (assertMode == ASSERT_MODE_EMPTY)
+			{
+				lastResult.id = RESULT_OK;
+				lastResult.description = "No results";
+				lastResult.suggestion = "Assert mode is empty; results are not being reported.";
+				lastResult.filename = "";
+				lastResult.linenumber = -1;
+				firstError = lastResult;
+			}
+		}
 
 		/** \brief Test a condition and report error if false, doing the action specified by the assert mode
 		*	\details Internally used by the \link ASSERT \endlink macro. Using the macro instead of this method is recommended
@@ -395,7 +545,26 @@ namespace Common {
 		*	\param [in] filename filename for reported result struct
 		*	\param [in] linenumber linenumber for reported result struct
 		*/
-		void AssertTest(bool condition, TResultID errorID, string suggestionError, string suggestionOK, string filename, int linenumber);
+		void AssertTest(bool condition, TResultID errorID, string suggestionError, string suggestionOK, string filename, int linenumber)
+		{
+			if (assertMode != ASSERT_MODE_EMPTY)
+			{
+				if (condition)
+				{
+					if (suggestionOK != "")
+						SetResult(RESULT_OK, suggestionOK, filename, linenumber);
+				}
+				else
+				{
+					SetResult(errorID, suggestionError, filename, linenumber);
+
+					if (assertMode == ASSERT_MODE_ABORT)
+					{
+						std::terminate();
+					}
+				}
+			}
+		}
 
 #if defined (_3DTI_ANDROID_ERRORHANDLER)
 		void AndroidAssertTest(bool condition, TResultID errorID, string suggestionError, string suggestionOK, string filename, int linenumber)
@@ -417,13 +586,19 @@ namespace Common {
 		/** \brief Add a variable to the list of variables to watch
 		*	\param [in] whichVar variable to watch, which has to be added first to the \link TWatcherVariable \endlink enum
 		*/
-		void AddVariableWatch(TWatcherVariable whichVar);
+		void AddVariableWatch(TWatcherVariable whichVar)		
+		{
+			watcherVariables[whichVar] = true;
+		}
 
 		/** \brief Remove a variable from the list of variables to watch
 		*	\param [in] whichVar which variable to stop watching
 		*	\pre Variable was added to watch first
-		*/
-		void RemoveVariableWatch(TWatcherVariable whichVar);
+		*/		
+		void RemoveVariableWatch(TWatcherVariable whichVar)
+		{
+			watcherVariables[whichVar] = false;
+		}		
 
 		/** \brief Enable/disable log to file of a specific watched variable
 		*	\param [in] whichVar which variable to log to file
@@ -431,7 +606,19 @@ namespace Common {
 		*	\param [in] logOn switch on/off file logging for this war (default, true)
 		*	\pre Variable was added to watch first
 		*/
-		void SetWatcherLogFile(TWatcherVariable whichVar, string filename, bool logOn = true);
+		void SetWatcherLogFile(TWatcherVariable whichVar, string filename, bool logOn = true)		
+		{
+			// TO DO: check errors!
+
+			if (watcherLogFiles[whichVar].is_open())
+				watcherLogFiles[whichVar].close();
+
+			if (logOn)
+			{
+				watcherLogFiles[whichVar].open(filename, std::ofstream::out | std::ofstream::app);	// Using append, we allow enabling/disabling log to the same file in runtime
+				// TO DO: Put a text header in log file each time you open it? (for example, with a time stamp, but this might be platform-dependent)			
+			}
+		}
 
 		/** \brief Sends the value of a variable to the watcher
 		*	\details The value will be recorded ONLY if the variable is on the list of watched variables. No overhead if the variable is not in the list
@@ -488,15 +675,95 @@ namespace Common {
 			}
 		}
 
-		// Generic method for obtaining description and suggestions of a result ID
-		void GetDescriptionAndSuggestion(TResultID result, string& description, string& suggestion);
+		// Generic method for obtaining description and suggestions of a result ID		
+		void GetDescriptionAndSuggestion(TResultID result, string& description, string& suggestion)
+		{
+			// Set specific strings for each error type. Suggestions are generic and might be replaced with the one specified when calling to SetResult
+			switch (result)
+			{
+			case RESULT_OK: { description = "OK"; suggestion = "Nothing to do"; break;  }
+			case RESULT_ERROR_UNKNOWN: { description = "Unknown error"; suggestion = "There are no specific details about this error type"; break;  }
+			case RESULT_ERROR_NOTSET: { description = "Value not set"; suggestion = "Tried to use a parameter and its value was not set"; break;  }
+			case RESULT_ERROR_BADALLOC: { description = "Memory allocation failure"; suggestion = "Bad alloc exception thrown using New"; break;  }
+			case RESULT_ERROR_NULLPOINTER: { description = "Null pointer"; suggestion = "Attempt to use a null pointer"; break;  }
+			case RESULT_ERROR_DIVBYZERO: { description = "Division by zero"; suggestion = ""; break;  }
+			case RESULT_ERROR_CASENOTDEFINED: { description = "Case not defined"; suggestion = "A switch statement went through an unexpected default case"; break;  }
+			case RESULT_ERROR_PHYSICS: { description = "Violation of physics"; suggestion = "You tried to do something which is not physically correct"; break;  }
+			case RESULT_ERROR_OUTOFRANGE: { description = "Out of range"; suggestion = "Trying to access an array or vector position outside its size"; break;  }
+			case RESULT_ERROR_BADSIZE: { description = "Bad size"; suggestion = "Trying to fill a data structure with a bad size"; break;  }
+			case RESULT_ERROR_NOTINITIALIZED: { description = "Not initialized"; suggestion = "Using or returning a value which was not initialized"; break;  }
+			case RESULT_ERROR_INVALID_PARAM: { description = "Invalid parameter"; suggestion = "One or more parameters passed to a method have an incorrect value"; break;  }
+			case RESULT_ERROR_SYSTEMCALL: { description = "Error in System Call"; suggestion = "Some platform-specific system call returned an error"; break;  }
+			case RESULT_ERROR_NOTALLOWED: { description = "Not allowed"; suggestion = "Attempt to do something which is not allowed in the current context"; break;  }
+			case RESULT_ERROR_NOTIMPLEMENTED: { description = "Not implemented yet"; suggestion = "Call to a method not implemented yet in this version of the toolkit core"; break;  }
+			case RESULT_ERROR_FILE: { description = "File handling error"; suggestion = "Wrong attempt to open, read or write a file"; break;  }
+			case RESULT_ERROR_EXCEPTION: { description = "Exception cuaght"; suggestion = "An exception was thrown and caught"; break;  }
+			case RESULT_WARNING: { description = "Warning!"; suggestion = "This is not an error, only a warning"; break;  }
+			default: { description = "Unknown error type"; suggestion = "The error handler was not properly used for setting result"; }
+			}
+		}
 
-		// Log to file/stream
-		void LogErrorToFile(TResultStruct result);
-		void LogErrorToStream(ostream& outStream, TResultStruct result);
+		// Log to file/stream		
+		void LogErrorToFile(TResultStruct result)
+		{
+			LogErrorToStream(errorLogFile, result);
+		}
+		
+		void LogErrorToStream(ostream& outStream, TResultStruct result)
+		{
+			// Return if we want to log an OK in a verbosity mode not logging OK
+			if ((!verbosityMode.showOk) && (result.id == RESULT_OK))
+				return;
 
-		// Reset all watches
-		void ResetWatcher();
+			// Return if we want to log an error in a verbosity mode not logging errors
+			if ((!verbosityMode.showErrors) && (result.id != RESULT_OK))
+				return;
+
+			// Return if we want to log a warning in a verbosity mode not logging warnings
+			if ((!verbosityMode.showWarnings) && (result.id == RESULT_WARNING))
+				return;
+
+			// Go ahead with loggin in any other case
+			// TO DO: coherent text, brackets, etc for custom verbosity modes
+			if (verbosityMode.showID)
+			{
+				if (result.id == RESULT_OK)
+					outStream << "    OK";	// We put spaces to clearly spot errors at first sight
+				else
+				{
+					if (result.id == RESULT_WARNING)
+						outStream << "  Warning";
+					else
+						outStream << "ERROR #" << result.id;
+				}
+			}
+			if (verbosityMode.showFilename)
+			{
+				outStream << " in " << result.filename << " (";
+			}
+			if (verbosityMode.showLinenumber)
+			{
+				outStream << result.linenumber << "): ";
+			}
+			if (verbosityMode.showDescription)
+			{
+				outStream << result.description;
+			}
+			if (verbosityMode.showSuggestion)
+			{
+				outStream << " - " << result.suggestion;
+			}
+			outStream << std::endl;
+		}
+
+		// Reset all watches		
+		void ResetWatcher()
+		{
+			for (int i = 0; i < WV_END; i++)
+			{
+				watcherVariables[i] = false;
+			}
+		}
 
 	private:
 		// ATTRIBUTES:

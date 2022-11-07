@@ -28,7 +28,7 @@
 #include <vector>
 #include <algorithm>
 #include <cassert>
-#include <Common/ErrorHandler.h>
+#include <Common/ErrorHandler.hpp>
 #include <Common/GlobalParameters.hpp>
 //#include <initializer_list>
 
