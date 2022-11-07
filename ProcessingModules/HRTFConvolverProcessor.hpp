@@ -18,18 +18,15 @@
 namespace BRTProcessing {
     class CHRTFConvolverProcessor : public BRTBase::CProcessorBase {
     public:
-        CHRTFConvolverProcessor(): enableInterpolation{ true } {
+		CHRTFConvolverProcessor() : enableInterpolation{ true }, convolutionBuffersInitialized{ false } {
             CreateSamplesEntryPoint("inputSamples");
 
             CreatePositionEntryPoint("sourcePosition");
-			CreatePositionEntryPoint("listenerPosition");
-           // CreateEarsPositionEntryPoint("listenerEarPosition");
+			CreatePositionEntryPoint("listenerPosition");           
 			CreateHRTFPtrEntryPoint("listenerHRTF");
 
             CreateSamplesExitPoint("leftEar");
-            CreateSamplesExitPoint("rightEar");   						
-
-			ResetSourceConvolutionBuffers();	// Initialize convolution buffers
+            CreateSamplesExitPoint("rightEar");   									
         }
 
         void Update(std::string _entryPointId) {            
@@ -37,8 +34,7 @@ namespace BRTProcessing {
 			if (_entryPointId == "inputSamples") {
 				CMonoBuffer<float> buffer = GetSamplesEntryPoint("inputSamples")->GetData();
 				Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
-				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
-				//Common::CEarsTransforms listenerEarPosition = GetEarsPositionEntryPoint("listenerEarPosition")->GetData();
+				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();				
 				
 				std::weak_ptr<BRTServices::CHRTF> _temp = GetHRTFPtrEntryPoint("listenerHRTF")->GetData();
 				std::shared_ptr<BRTServices::CHRTF> listenerHRTF= _temp.lock();
@@ -58,15 +54,20 @@ namespace BRTProcessing {
        
         // Atributes
 		Common::CUPCAnechoic outputLeftUPConvolution;		// Object to make the inverse fft of the left channel with the UPC method
-		Common::CUPCAnechoic outputRightUPConvolution;	// Object to make the inverse fft of the rigth channel with the UPC method
+		Common::CUPCAnechoic outputRightUPConvolution;		// Object to make the inverse fft of the rigth channel with the UPC method
 
 		CMonoBuffer<float> leftChannelDelayBuffer;			// To store the delay of the left channel of the expansion method
 		CMonoBuffer<float> rightChannelDelayBuffer;			// To store the delay of the right channel of the expansion method
 		
 		bool enableInterpolation;							// Enables/Disables the interpolation on run time
+		bool convolutionBuffersInitialized;					
+
 
         /// Methods        
         void Process(CMonoBuffer<float>& _inBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerPosition, /*Common::CEarsTransforms& listenerEarPositio,*/ std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF) {
+
+			// First time - Initialize convolution buffers
+			if (!convolutionBuffersInitialized) { InitializedSourceConvolutionBuffers(_listenerHRTF); }
 
             // Calculate Source coordinates taking into account Source and Listener transforms
 			float leftAzimuth;
@@ -194,16 +195,33 @@ namespace BRTProcessing {
 			}
 		}//End ProcessAddDelay_ExpansionMethod
 
-		void ResetSourceConvolutionBuffers() {
-			int numOfSubfilters = 1;//  listener->GetHRTF()->GetHRIRNumberOfSubfilters();
-			int subfilterLength = 2048;// listener->GetHRTF()->GetHRIRSubfilterLength();
+
+		/// Initialize convolvers and convolition buffers		
+		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF) {
 			
+			int numOfSubfilters = _listenerHRTF->GetHRIRNumberOfSubfilters();
+			int subfilterLength = _listenerHRTF->GetHRIRSubfilterLength();
+
 			Common::CGlobalParameters globalParameters;
 			outputLeftUPConvolution.Setup(globalParameters.GetBufferSize(), subfilterLength, numOfSubfilters, true);
 			outputRightUPConvolution.Setup(globalParameters.GetBufferSize(), subfilterLength, numOfSubfilters, true);
 			//Init buffer to store delay to be used in the ProcessAddDelay_ExpansionMethod method
 			leftChannelDelayBuffer.clear();
 			rightChannelDelayBuffer.clear();
+			
+			// Declare variable
+			convolutionBuffersInitialized = true;
+		}
+		
+		/// Reset convolvers and convolution buffers
+		void ResetSourceConvolutionBuffers() {
+			convolutionBuffersInitialized = false;
+			// Reset convolver classes
+			outputLeftUPConvolution.Reset();
+			outputRightUPConvolution.Reset();			
+			//Init buffer to store delay to be used in the ProcessAddDelay_ExpansionMethod method
+			leftChannelDelayBuffer.clear();
+			rightChannelDelayBuffer.clear();			
 		}
 
 		/// Calculates the parameters derived from the source and listener position
@@ -297,53 +315,7 @@ namespace BRTProcessing {
 		{
 			return listenerTransform.GetLocalTranslation(listenerHRTF->GetEarLocalPosition(ear));
 		}
-
-		///** \brief Get position and orientation of one listener ear
-		//*	\param [in] ear listener ear for wich we want to get transform
-		//*	\retval transform current listener ear position and orientation
-		//*   \eh On error, an error code is reported to the error handler.
-		//*/
-		//Common::CTransform GetListenerEarTransform(Common::T_ear ear, Common::CTransform& listenerTransform, std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF) const
-		//{
-		//	if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
-		//	{
-		//		SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get listener ear transform for BOTH or NONE ears");
-		//		return Common::CTransform();
-		//	}
-
-		//	Common::CVector3 earLocalPosition = Common::CVector3::ZERO();
-		//	if (ear == Common::T_ear::LEFT) {
-		//		earLocalPosition.SetAxis(RIGHT_AXIS, -_listenerHRTF->GetHeadRadius());
-		//	}
-		//	else
-		//		earLocalPosition.SetAxis(RIGHT_AXIS, _listenerHRTF->GetHeadRadius());
-
-		//	return listenerTransform.GetLocalTranslation(earLocalPosition);
-		//}
-
-		///** \brief Get EarPosition local to the listener
-		//*   \param [in] ear indicates the ear which you want to knowthe position
-		//*	\retval ear local position
-		//*   \eh Nothing is reported to the error handler.
-		//*/
-		//Common::CVector3 GetListenerEarLocalPosition(Common::T_ear ear, std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF) const
-		//{
-		//	if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
-		//	{
-		//		SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get listener ear transform for BOTH or NONE ears");
-		//		return Common::CVector3();
-		//	}
-
-		//	Common::CVector3 earLocalPosition = Common::CVector3::ZERO();
-		//	if (ear == Common::T_ear::LEFT) {
-		//		earLocalPosition.SetAxis(RIGHT_AXIS, -_listenerHRTF->GetHeadRadius());
-		//	}
-		//	else
-		//		earLocalPosition.SetAxis(RIGHT_AXIS, _listenerHRTF->GetHeadRadius());
-
-
-		//	return earLocalPosition;
-		//}
+		
     };
 }
 #endif
