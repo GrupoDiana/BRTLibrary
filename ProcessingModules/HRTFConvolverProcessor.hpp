@@ -244,8 +244,8 @@ namespace BRTProcessing {
 
 			Common::CVector3 leftVectorTo = leftEarTransform.GetVectorTo(_sourceTransform);
 			Common::CVector3 rightVectorTo = rightEarTransform.GetVectorTo(_sourceTransform);
-			Common::CVector3 leftVectorTo_sphereProjection = GetSphereProjectionPosition(leftVectorTo, leftEarLocalPosition, 1.95f/*ownerCore->GetListener()->GetHRTF()->GetHRTFDistanceOfMeasurement()*/);
-			Common::CVector3 rightVectorTo_sphereProjection = GetSphereProjectionPosition(rightVectorTo, rightEarLocalPosition, 1.95f /*ownerCore->GetListener()->GetHRTF()->GetHRTFDistanceOfMeasurement()*/);
+			Common::CVector3 leftVectorTo_sphereProjection = GetSphereProjectionPosition(leftVectorTo, leftEarLocalPosition, _listenerHRTF->GetHRTFDistanceOfMeasurement());
+			Common::CVector3 rightVectorTo_sphereProjection = GetSphereProjectionPosition(rightVectorTo, rightEarLocalPosition, _listenerHRTF->GetHRTFDistanceOfMeasurement());
 
 			leftElevation = leftVectorTo_sphereProjection.GetElevationDegrees();	//Get left elevation
 			if (!Common::AreSame(ELEVATION_SINGULAR_POINT_UP, leftElevation, EPSILON) && !Common::AreSame(ELEVATION_SINGULAR_POINT_DOWN, leftElevation, EPSILON))
