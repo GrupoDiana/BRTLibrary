@@ -28,12 +28,13 @@ namespace BRTBase {
 			return control;
 		}
 
-
-		std::shared_ptr<CSoundSource> CreateSoundSource() {
-			// Create new source and add it to this core sources
+		/** \brief Create new source and add it to this core sources
+		*   \eh Warnings may be reported to the error handler.
+		*/
+		std::shared_ptr<CSoundSource> CreateSoundSource(std::string sourceID) {			
 			try
 			{
-				std::shared_ptr<CSoundSource> newSource(new CSoundSource());
+				std::shared_ptr<CSoundSource> newSource(new CSoundSource(sourceID));
 				audioSources.push_back(newSource);
 				SET_RESULT(RESULT_OK, "Single source DSP created succesfully");
 				return newSource;
@@ -45,11 +46,11 @@ namespace BRTBase {
 			}
 		}
 
-		std::shared_ptr<CListener> CreateListener() {
+		std::shared_ptr<CListener> CreateListener(std::string listenerID) {
 			// Create new source and add it to this core sources
 			try
 			{
-				std::shared_ptr<CListener> newListener = std::make_shared<CListener>();
+				std::shared_ptr<CListener> newListener = std::make_shared<CListener>(listenerID);
 				listeners.push_back(newListener);
 				SET_RESULT(RESULT_OK, "Listener created succesfully");
 				return newListener;

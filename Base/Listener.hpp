@@ -19,12 +19,10 @@ namespace BRTBase {
 
 	class CListener {
 	public:
-		CListener() : listenerHeadRadius{ DEFAULT_LISTENER_HEAD_RADIOUS } {
-			//Create a empty HRTF
-			//std::unique_ptr<BRTServices::CHRTF> a(new BRTServices::CHRTF(this));
-			//listenerHRTF = std::move(a);			
-			listenerHRTF = std::make_shared<BRTServices::CHRTF>();
-
+		CListener(std::string _listenerID) : listenerHeadRadius{ DEFAULT_LISTENER_HEAD_RADIOUS } {
+			
+			listenerID = _listenerID;								// Save listenerID						
+			listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// Create a empty HRTF			
 
 			// Create entry Points
 			leftEarEntryPoint = std::make_shared<BRTBase::CEntryPointSamplesVector >(std::bind(&CListener::updateFromEntryPoint, this, std::placeholders::_1), "leftEar", 1);
@@ -32,10 +30,9 @@ namespace BRTBase {
 			// Create exit point
 			listenerPositionExitPoint = std::make_shared<CExitPointTransform>("listenerTransform");
 			hrtfExitPoint = std::make_shared<CExitPointHRTFPtr>("listenerHRTF");
-
+			// Init vars
 			leftDataReady = false;
 			rightDataReady = false;
-
 		}
 
 		void connectSamplesEntryTo(std::shared_ptr<CExitPointSamplesVector> _exitPoint, std::string entryPointID) {
@@ -73,6 +70,8 @@ namespace BRTBase {
 			leftDataReady = false;
 			rightDataReady = false;
 		}
+
+		std::string GetListenerID() { return listenerID; }
 
 		/** \brief Set listener position and orientation
 		*	\param [in] _listenerTransform new listener position and orientation
@@ -132,7 +131,7 @@ namespace BRTBase {
 		}
 
 	private:
-		
+		std::string listenerID;								// Store unique listener ID
 		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;	// HRTF of listener														
 		//std::unique_ptr<CILD> listenerILD;				// ILD of listener	
 		Common::CTransform listenerTransform;				// Transform matrix (position and orientation) of listener  
