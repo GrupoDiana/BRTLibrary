@@ -5,7 +5,6 @@
 #include <Base/EntryPoint.hpp>
 #include <Common/UPCAnechoic.h>
 #include <Common/Buffer.h>
-//#include <Common/CommonDefinitions.h>
 
 #include <memory>
 #include <vector>
