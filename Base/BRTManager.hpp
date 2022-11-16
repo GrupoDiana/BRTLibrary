@@ -191,7 +191,9 @@ namespace BRTBase {
 		//////////////////////
 		// GET SET
 		/////////////////////
-
+		void Do(std::string _commnand) {
+			std::cout << "Command received by brt: " << _commnand << endl;
+		}
 
 
 
