@@ -1,0 +1,43 @@
+# This is really the one I have tested
+cmake_minimum_required(VERSION 3.24)
+project(libbrt)
+
+# FIXME: take to separate dependecies.cmake file 
+# with include(dependencies.cmake)
+include(FetchContent)
+option(BUILD_SHARED_LIBS "By default link libsofa statically" OFF)
+FetchContent_Declare(
+    libsofa
+    GIT_REPOSITORY "https://github.com/lmtanco/API_Cpp.git"
+    GIT_TAG 0cd067b03b55b22a3f8e8ceb756ce6d3b1700dff
+    GIT_PROGRESS true
+)
+FetchContent_MakeAvailable(libsofa)
+
+# Brt library is the main target
+add_library(brt INTERFACE)
+target_compile_features(brt INTERFACE cxx_std_17)
+
+# FIXME: Dependency of libsofa should be OPTIONAL. 
+target_include_directories(brt 
+    INTERFACE  include
+    INTERFACE  libsofa/src
+    )
+target_link_libraries(brt 
+    INTERFACE libsofa 
+    )
+
+# If we are in the root, define additional targets 
+# See https://www.foonathan.net/2022/06/cmake-fetchcontent/ 
+if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    option(BRT_BUILD_TESTS  "whether or not build tests, sofaexamples, etc should be built" ON)
+endif()
+
+if (BRT_BUILD_TESTS)
+    # This is just a test to test linking of dependencies. 
+    add_executable(testBRT test/test.cpp)
+    target_link_libraries(testBRT brt)
+endif()
+
+
+
