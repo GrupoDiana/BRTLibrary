@@ -33,7 +33,7 @@
 //CProfilerDataSet dataSetOthers;
 //#endif
 
-namespace Common {
+//namespace Common {
 	/////////////////////////////
 	// CONSTRUCTOR/DESTRUCTOR  //
 	/////////////////////////////
