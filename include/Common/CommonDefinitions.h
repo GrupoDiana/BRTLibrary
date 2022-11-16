@@ -22,6 +22,8 @@
 #ifndef _COMMON_DEFINITIONS_H_
 #define _COMMON_DEFINITIONS_H_
 
+#include <cmath>
+
 namespace Common {
 
 	//----------------------------------------------------------------------
@@ -57,7 +59,7 @@ namespace Common {
 	{
 		//float absA = fabs(a);
 		//float absB = fabs(b);
-		float diff = fabs(a - b);
+		float diff = std::fabs(a - b);
 
 		return diff < epsilon;
 	}
