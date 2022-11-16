@@ -12,7 +12,7 @@ namespace BRTBase {
 
 	public:
 
-		CBRTManager() : initialized{ false }, setupModeActivated{ false } {}
+		CBRTManager() noexcept : initialized{ false }, setupModeActivated{ false } {}
 
 		void BeginSetup() {
 			setupModeActivated = true;
