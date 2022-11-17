@@ -5,8 +5,11 @@
 #include "Listener.hpp"
 #include <thread>
 
-namespace BRTBase {
+//#include <json.hpp>
+#include "third_party_libraries/nlohmann/json.hpp"
 
+namespace BRTBase {
+	using json = nlohmann::json;
 
 	class CBRTManager {
 
@@ -193,6 +196,28 @@ namespace BRTBase {
 		/////////////////////
 		void Do(std::string _commnand) {
 			std::cout << "Command received by brt: " << _commnand << endl;
+
+			json j = json::parse(_commnand);			
+			if (!j["command"].is_null()) { std::cout << j["command"].get<std::string>() <<std::endl; }
+			
+						
+			double temp = 0.0;
+			std::vector<double> tempV;
+			if (!j["parameter"].is_null() && j["parameter"].is_number_float()) { temp= j["parameter"]; std::cout << temp << std::endl;}
+			if (!j["parameter"].is_null() && j["parameter"].is_structured()) { 
+		
+				
+				
+				tempV = j["parameter"].get<std::vector<double>>(); 
+				std::cout << tempV[0] << std::endl;
+				std::cout << tempV[1] << std::endl;
+				std::cout << tempV[2] << std::endl;			
+			}
+			
+			
+			
+			
+
 		}
 
 
