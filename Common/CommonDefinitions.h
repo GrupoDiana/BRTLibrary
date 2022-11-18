@@ -24,6 +24,9 @@
 
 namespace Common {
 
+	inline constexpr std::string_view COMMAND_EXIT_POINT_ID{ "command" };
+	inline constexpr std::string_view COMMAND_ENTRY_POINT_ID{ "command" };
+
 	//----------------------------------------------------------------------
 	/** \brief Type definition for specifying one ear
 	*/

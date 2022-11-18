@@ -38,12 +38,9 @@ namespace BRTBase {
         std::string id;
         int multiplicity;
     };
-   
-    //typedef CEntryPointBase<CMonoBuffer<float>> CEntryPointSamplesVector;    
-    //typedef CEntryPointBase<Common::CTransform> CEntryPointTransform;
-    //typedef CEntryPointBase<Common::CEarsTransforms> CEntryPoinEarsTransform;
-    
+           
     using CEntryPointSamplesVector = CEntryPointBase<CMonoBuffer<float>>;
     using CEntryPointTransform = CEntryPointBase<Common::CTransform>; 
+    using CEntryPointCommand = CEntryPointBase<std::string>;
 }
 #endif

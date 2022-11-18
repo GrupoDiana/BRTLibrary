@@ -19,7 +19,10 @@ namespace BRTBase {
 
     class CProcessorBase {
     public:
-        CProcessorBase() {}
+        CProcessorBase() {
+            CreateCommandEntryPoint();
+        }
+
         virtual ~CProcessorBase() {}
         virtual void Update(std::string entryPointID) = 0;
 
@@ -43,11 +46,18 @@ namespace BRTBase {
             addToUpdateStack(entryPointID, _multiplicity);
         }
 
+        void CreateCommandEntryPoint(/*std::string entryPointID = "command", int _multiplicity = 1*/) {
+            std::string entryPointID = static_cast<std::string>(Common::COMMAND_ENTRY_POINT_ID);            
+            int _multiplicity = 1;
+            commandsEntryPoint = std::make_shared<BRTBase::CEntryPointCommand>(std::bind(&CProcessorBase::updateFromCommandEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+            addToUpdateStack(entryPointID, _multiplicity);            
+        }
+
         void CreateSamplesExitPoint(std::string exitPointID) {
             std::shared_ptr<BRTBase::CExitPointSamplesVector> _newExitPoint = std::make_shared<BRTBase::CExitPointSamplesVector>(exitPointID);
             samplesExitPoints.push_back(_newExitPoint);
         }
-
+        
         //// Connections
         void connectSamplesEntryTo(std::shared_ptr<BRTBase::CExitPointSamplesVector> _exitPoint, std::string entryPointID) {
             std::shared_ptr<BRTBase::CEntryPointSamplesVector> _entryPoint2 = GetSamplesEntryPoint(entryPointID);
@@ -88,13 +98,24 @@ namespace BRTBase {
             }
         }
 
+        void connectCommandEntryTo(std::shared_ptr<BRTBase::CExitPointCommand> _exitPoint) {
+            std::string entryPointID = static_cast<std::string>(Common::COMMAND_ENTRY_POINT_ID);
+            //if (_entryPoint) {
+                _exitPoint->attach(*commandsEntryPoint.get());
+                SET_RESULT(RESULT_OK, "Connection done correctly with this entry point " + entryPointID);
+            //}
+            //else {
+                //ASSERT(false, RESULT_ERROR_INVALID_PARAM, "There is no entry point with this id " + entryPointID, "");
+            //}
+        }
+
+        // Find entry/exit point in vectors 
         std::shared_ptr<BRTBase::CEntryPointHRTFPtr >  GetHRTFPtrEntryPoint(std::string _id) {
             for (auto& it : hrtfPtrEntryPoints) {
                 if (it->GetID() == _id) { return it; }
             }
             return nullptr;
         }
-
 
         std::shared_ptr<BRTBase::CEntryPointTransform >  GetPositionEntryPoint(std::string _id) {
             for (auto& it : positionEntryPoints) {
@@ -115,6 +136,9 @@ namespace BRTBase {
             if (updateStack(entryPointID)) { Update(entryPointID); }
         }
 
+        void updateFromCommandEntryPoint(std::string entryPointID) {
+            std::cout << "hola" << endl;
+        }
 
         // Update Management
         void addToUpdateStack(std::string _id, int _multiplicity) {
@@ -160,14 +184,14 @@ namespace BRTBase {
             }
         }
         
-    private:                        
+    private:                                
         std::vector<std::shared_ptr<BRTBase::CEntryPointSamplesVector> > samplesEntryPoints;        
         std::vector<std::shared_ptr<BRTBase::CExitPointSamplesVector >> samplesExitPoints;
 
         std::vector<std::shared_ptr <BRTBase::CEntryPointTransform > > positionEntryPoints;
+        std::shared_ptr<BRTBase::CEntryPointCommand> commandsEntryPoint;
         
         std::vector<std::shared_ptr <BRTBase::CEntryPointHRTFPtr>> hrtfPtrEntryPoints;
-
 
         std::vector< CWaitingEntrypoint> entryPointsUpdatingStack;
 

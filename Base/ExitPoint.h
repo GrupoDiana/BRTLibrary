@@ -39,11 +39,9 @@ namespace BRTBase {
     private:    
         std::string id;
     };
-    //typedef CExitPointBase<CMonoBuffer<float> > CExitPointSamplesVector;     
-    //typedef CExitPointBase<Common::CTransform > CExitPointTransform;
-    //typedef CExitPointBase<Common::CEarsTransforms> CExitPointEarsTransform;
-
+    
     using CExitPointSamplesVector = CExitPointBase<CMonoBuffer<float> >;
     using CExitPointTransform = CExitPointBase<Common::CTransform >;
+    using CExitPointCommand = CExitPointBase<std::string>;
 }
 #endif

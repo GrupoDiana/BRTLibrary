@@ -15,7 +15,9 @@ namespace BRTBase {
 
 	public:
 
-		CBRTManager() : initialized{ false }, setupModeActivated{ false } {}
+		CBRTManager() : initialized{ false }, setupModeActivated{ false } {
+			commandsExitPoint = std::make_shared<BRTBase::CExitPointCommand>(static_cast<std::string>(Common::COMMAND_EXIT_POINT_ID));
+		}
 
 		void BeginSetup() {
 			setupModeActivated = true;
@@ -70,7 +72,7 @@ namespace BRTBase {
 			try
 			{
 				std::shared_ptr<T> newProcessor = std::make_shared<T>();
-				
+				ConnectModulesCommand(newProcessor);
 				SET_RESULT(RESULT_OK, "Processor created succesfully");
 				return newProcessor;
 			}
@@ -181,6 +183,13 @@ namespace BRTBase {
 			module2->connectSamplesEntryTo(module1->GetSamplesExitPoint(exitPointID), entryPointID);
 			return true;
 		}
+		template <typename T>
+		bool ConnectModulesCommand(std::shared_ptr <T>& module1) {
+			//if (!setupModeActivated) return false;
+			module1->connectCommandEntryTo(commandsExitPoint);
+			return true;
+		}
+
 
 		//////////////////////
 		// PROCESS METHODs
@@ -198,12 +207,18 @@ namespace BRTBase {
 			std::cout << "Command received by brt: " << _commnand << endl;
 
 			json j = json::parse(_commnand);			
-			if (!j["command"].is_null()) { std::cout << j["command"].get<std::string>() <<std::endl; }
+			if (!j["command"].is_null()) { 
+				std::string _command = j["command"].get<std::string>();
+				std::cout << _command <<std::endl;
+				commandsExitPoint->sendData(_command);
+			}
 			
 						
 			double temp = 0.0;
 			std::vector<double> tempV;
-			if (!j["parameter"].is_null() && j["parameter"].is_number_float()) { temp= j["parameter"]; std::cout << temp << std::endl;}
+			if (!j["parameter"].is_null() && j["parameter"].is_number_float()) { 
+				temp= j["parameter"]; std::cout << temp << std::endl;							
+			}
 			if (!j["parameter"].is_null() && j["parameter"].is_structured()) { 
 		
 				
@@ -223,7 +238,7 @@ namespace BRTBase {
 
 
 	private:
-		//Common::CMagnitudes commonMagnitudes(); // TODO Magnitudes should be a singletone
+		std::shared_ptr<BRTBase::CExitPointCommand> commandsExitPoint;
 
 		std::vector<std::shared_ptr<CSoundSource>> audioSources;	// List of audio sources 
 		std::vector<std::shared_ptr<CListener>> listeners;			// List of audio sources 
