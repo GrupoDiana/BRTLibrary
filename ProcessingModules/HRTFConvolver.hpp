@@ -38,7 +38,17 @@ namespace BRTProcessing {
 		*   \eh The error handler is informed if the size of the input buffer differs from that stored in the global
 		*       parameters and if the HRTF of the listener is null.
 		*/
-		void Process(CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerPosition, std::weak_ptr<BRTServices::CHRTF>& _listenerHRTFWeak) {
+
+		/** \brief Process data from input buffer to generate anechoic spatialization (direct path)
+		*	\param [in] inBuffer input buffer with anechoic audio
+		* *	\param [in] sourceTransform transform of the source
+		* *	\param [in] listenerPosition transform of the listener
+		* *	\param [in] listenerHRTFWeak weak smart pointer to the listener HRTF
+		*	\param [out] outLeftBuffer output mono buffer with spatialized audio for the left channel
+		*	\param [out] outRightBuffer output mono buffer with spatialized audio for the right channel
+		*   \eh On error, an error code is reported to the error handler.		   
+		*/
+		void Process(CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CHRTF>& _listenerHRTFWeak) {
 
 			ASSERT(_inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");
 						
@@ -71,7 +81,7 @@ namespace BRTProcessing {
 			float centerElevation;
 			float interauralAzimuth;
 
-			CalculateSourceCoordinates(sourceTransform, listenerPosition, _listenerHRTF, leftElevation, leftAzimuth, rightElevation, rightAzimuth, centerElevation, centerAzimuth, interauralAzimuth);
+			CalculateSourceCoordinates(sourceTransform, listenerTransform, _listenerHRTF, leftElevation, leftAzimuth, rightElevation, rightAzimuth, centerElevation, centerAzimuth, interauralAzimuth);
 
 			// GET HRTF
 			std::vector<CMonoBuffer<float>>  leftHRIR_partitioned;
