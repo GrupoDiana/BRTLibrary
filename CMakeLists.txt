@@ -9,7 +9,7 @@ option(BUILD_SHARED_LIBS "By default link libsofa statically" OFF)
 FetchContent_Declare(
     libsofa
     GIT_REPOSITORY "https://github.com/lmtanco/API_Cpp.git"
-    GIT_TAG 0cd067b03b55b22a3f8e8ceb756ce6d3b1700dff
+    GIT_TAG da65f0e27dab5073e2a1abc6e707881bbdbb4ff2
     GIT_PROGRESS true
 )
 FetchContent_MakeAvailable(libsofa)
