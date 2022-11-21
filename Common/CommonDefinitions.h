@@ -63,6 +63,6 @@ namespace Common {
 		float diff = fabs(a - b);
 
 		return diff < epsilon;
-	}
+	}	
 }
 #endif

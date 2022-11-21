@@ -49,6 +49,21 @@ namespace BRTProcessing {
 				this->resetUpdatingStack();				
 			}            
         }
+		void UpdateCommand() {					
+			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
+									
+			std::cout << command.GetCommand() << std::endl;
+			
+			if (command.GetCommand() == "/brt/ConvolverEnableSpatialization/") {
+				std::cout << command.GetBoolParameter() << std::endl;
+			}
+			else if (command.GetCommand() == "/brt/flotante/") { 
+
+				std::cout << command.GetFloatParameter() << std::endl;
+				DisableSpatialization(); 
+			}
+			else if (command.GetCommand() == "/brt/cadena/") { EnableSpatialization(); }
+		}
       
     private:
        

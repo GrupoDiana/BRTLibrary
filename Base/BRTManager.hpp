@@ -203,31 +203,38 @@ namespace BRTBase {
 		//////////////////////
 		// GET SET
 		/////////////////////
-		void Do(std::string _commnand) {
-			std::cout << "Command received by brt: " << _commnand << endl;
-
-			json j = json::parse(_commnand);			
-			if (!j["command"].is_null()) { 
-				std::string _command = j["command"].get<std::string>();
-				std::cout << _command <<std::endl;
-				commandsExitPoint->sendData(_command);
-			}
+		void Do(std::string commandJson) {
+			std::cout << "Command received by brt: " << commandJson << endl;
+			BRTBase::CCommand command(commandJson);
+			commandsExitPoint->sendData(command);
 			
-						
-			double temp = 0.0;
-			std::vector<double> tempV;
-			if (!j["parameter"].is_null() && j["parameter"].is_number_float()) { 
-				temp= j["parameter"]; std::cout << temp << std::endl;							
-			}
-			if (!j["parameter"].is_null() && j["parameter"].is_structured()) { 
+
+			//json j = json::parse(commandJson);
+			//if (!j["command"].is_null()) { 
+			//	std::string _command = j["command"].get<std::string>();
+			//	//std::cout << _command <<std::endl;
+			//	BRTBase::CCommand command (_command, commandJson);
+			//	
+			//	commandsExitPoint->sendData(command);
+
+
+			//}
+			//
+			//			
+			//double temp = 0.0;
+			//std::vector<double> tempV;
+			//if (!j["parameter"].is_null() && j["parameter"].is_number_float()) { 
+			//	temp= j["parameter"]; std::cout << temp << std::endl;							
+			//}
+			//if (!j["parameter"].is_null() && j["parameter"].is_structured()) { 
 		
-				
-				
-				tempV = j["parameter"].get<std::vector<double>>(); 
-				std::cout << tempV[0] << std::endl;
-				std::cout << tempV[1] << std::endl;
-				std::cout << tempV[2] << std::endl;			
-			}
+			//	
+			//	
+			//	tempV = j["parameter"].get<std::vector<double>>(); 
+			//	std::cout << tempV[0] << std::endl;
+			//	std::cout << tempV[1] << std::endl;
+			//	std::cout << tempV[2] << std::endl;			
+			//}
 			
 			
 			

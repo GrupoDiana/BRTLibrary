@@ -25,6 +25,9 @@ namespace BRTBase {
 
         virtual ~CProcessorBase() {}
         virtual void Update(std::string entryPointID) = 0;
+        virtual void UpdateCommand() = 0;
+
+        ///////
 
         // Create Entry and Exit points
         void CreateSamplesEntryPoint(std::string entryPointID, int _multiplicity = 1) {
@@ -50,7 +53,7 @@ namespace BRTBase {
             std::string entryPointID = static_cast<std::string>(Common::COMMAND_ENTRY_POINT_ID);            
             int _multiplicity = 1;
             commandsEntryPoint = std::make_shared<BRTBase::CEntryPointCommand>(std::bind(&CProcessorBase::updateFromCommandEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
-            addToUpdateStack(entryPointID, _multiplicity);            
+            //addToUpdateStack(entryPointID, _multiplicity);            
         }
 
         void CreateSamplesExitPoint(std::string exitPointID) {
@@ -70,12 +73,7 @@ namespace BRTBase {
             }
         }
 
-        std::shared_ptr<BRTBase::CEntryPointSamplesVector> GetSamplesEntryPoint(std::string _id) {            
-            for (auto& it : samplesEntryPoints) {
-                if (it->GetID() == _id) { return it; }
-            }
-            return nullptr;
-        }
+
 
         void connectPositionEntryTo(std::shared_ptr<BRTBase::CExitPointTransform> _exitPoint, std::string entryPointID) {
             std::shared_ptr<BRTBase::CEntryPointTransform> _entryPoint = GetPositionEntryPoint(entryPointID);
@@ -124,6 +122,17 @@ namespace BRTBase {
             return nullptr;
         }
 
+        std::shared_ptr<BRTBase::CEntryPointSamplesVector> GetSamplesEntryPoint(std::string _id) {
+            for (auto& it : samplesEntryPoints) {
+                if (it->GetID() == _id) { return it; }
+            }
+            return nullptr;
+        }
+
+        std::shared_ptr<BRTBase::CEntryPointCommand >  GetCommandEntryPoint() {            
+            return commandsEntryPoint;            
+        }
+
         std::shared_ptr<BRTBase::CExitPointSamplesVector > GetSamplesExitPoint(std::string _id) {
             for (auto& it : samplesExitPoints) {
                 if (it->GetID() == _id) { return it; }
@@ -137,7 +146,16 @@ namespace BRTBase {
         }
 
         void updateFromCommandEntryPoint(std::string entryPointID) {
-            std::cout << "hola" << endl;
+            /*if (updateStack(entryPointID)) { 
+                UpdateCommand(); 
+            }*/
+            //std::string command = GetCommandEntryPoint()->GetData();
+            //if (command!="") { UpdateCommand(); }            
+
+            BRTBase::CCommand _command = GetCommandEntryPoint()->GetData();
+            if (!_command.isNull()) { 
+                UpdateCommand(); 
+            }
         }
 
         // Update Management

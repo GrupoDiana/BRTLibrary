@@ -7,6 +7,7 @@
 #include <Common/Buffer.h>
 #include <Common/Transform.h>
 #include <Common/EarsTransform.hpp>
+#include <Base/Command.hpp>
 
 namespace BRTBase {
    
@@ -41,6 +42,7 @@ namespace BRTBase {
            
     using CEntryPointSamplesVector = CEntryPointBase<CMonoBuffer<float>>;
     using CEntryPointTransform = CEntryPointBase<Common::CTransform>; 
-    using CEntryPointCommand = CEntryPointBase<std::string>;
+    //using CEntryPointCommand = CEntryPointBase<std::string>;
+    using CEntryPointCommand = CEntryPointBase<BRTBase::CCommand>;
 }
 #endif

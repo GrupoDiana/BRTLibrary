@@ -5,6 +5,7 @@
 #include <Common/Buffer.h>
 #include <Common/Transform.h>
 #include <Common/EarsTransform.hpp>
+#include <Base/Command.hpp>
 #include <iostream>
 
 namespace BRTBase {
@@ -42,6 +43,7 @@ namespace BRTBase {
     
     using CExitPointSamplesVector = CExitPointBase<CMonoBuffer<float> >;
     using CExitPointTransform = CExitPointBase<Common::CTransform >;
-    using CExitPointCommand = CExitPointBase<std::string>;
+    //using CExitPointCommand = CExitPointBase<std::string>;
+    using CExitPointCommand = CExitPointBase<BRTBase::CCommand>;
 }
 #endif
