@@ -19,11 +19,11 @@ namespace BRTProcessing {
 		CHRTFConvolver() : enableInterpolation{ true }, enableSpatialization{ true }, convolutionBuffersInitialized{false} { }
 
 
-		///Enable anechoic process for this source	
+		///Enable spatialization process for this source	
 		void EnableSpatialization() { enableSpatialization = true; }
-		///Disable anechoic process for this source	
+		///Disable spatialization process for this source	
 		void DisableSpatialization() { enableSpatialization = false; }
-		///Get the flag for anechoic process enabling
+		///Get the flag for spatialization process enabling
 		bool IsSpatializationEnabled() { return enableSpatialization; }
 		
 		///Enable HRTF interpolation method	
@@ -34,19 +34,16 @@ namespace BRTProcessing {
 		bool IsInterpolationEnabled() { return enableInterpolation; }
 
 		
-		/** \brief Process data from input buffer to generate anechoic spatialization (direct path)
-		*   \eh The error handler is informed if the size of the input buffer differs from that stored in the global
-		*       parameters and if the HRTF of the listener is null.
-		*/
-
-		/** \brief Process data from input buffer to generate anechoic spatialization (direct path)
+		
+		/** \brief Process data from input buffer to generate spatialization by convolution
 		*	\param [in] inBuffer input buffer with anechoic audio
 		* *	\param [in] sourceTransform transform of the source
 		* *	\param [in] listenerPosition transform of the listener
 		* *	\param [in] listenerHRTFWeak weak smart pointer to the listener HRTF
 		*	\param [out] outLeftBuffer output mono buffer with spatialized audio for the left channel
 		*	\param [out] outRightBuffer output mono buffer with spatialized audio for the right channel
-		*   \eh On error, an error code is reported to the error handler.		   
+		*   \eh The error handler is informed if the size of the input buffer differs from that stored in the global
+		*       parameters and if the HRTF of the listener is null.		   
 		*/
 		void Process(CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CHRTF>& _listenerHRTFWeak) {
 
