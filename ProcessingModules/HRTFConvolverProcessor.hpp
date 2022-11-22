@@ -32,7 +32,6 @@ namespace BRTProcessing {
 
         void Update(std::string _entryPointId) {            
 
-
 			CMonoBuffer<float> outLeftBuffer;
 			CMonoBuffer<float> outRightBuffer;
 
@@ -49,25 +48,29 @@ namespace BRTProcessing {
 				this->resetUpdatingStack();				
 			}            
         }
+
 		void UpdateCommand() {					
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
 									
 			std::cout << command.GetCommand() << std::endl;
 			
-			if (command.GetCommand() == "/brt/ConvolverEnableSpatialization/") {
-				std::cout << command.GetBoolParameter() << std::endl;
+			if (command.GetCommand() == "/brt/source/hrtfconvoler/enablespatialization/") {
+				std::cout << "sourceID: " << command.GetSourceID() << std::endl;
+				//TODO check if its my source ID
+				if (command.GetBoolParameter()) { EnableSpatialization(); }
+				else { DisableSpatialization(); }
 			}
-			else if (command.GetCommand() == "/brt/flotante/") { 
-
-				std::cout << command.GetFloatParameter() << std::endl;
-				DisableSpatialization(); 
+			else if (command.GetCommand() == "/brt/source/hrtfconvoler/enableinterpolation/") {
+				std::cout << "sourceID: " << command.GetSourceID() << std::endl;
+				//TODO check if its my source ID
+				if (command.GetBoolParameter()) { EnableInterpolation(); }
+				else { DisableInterpolation(); }
 			}
-			else if (command.GetCommand() == "/brt/cadena/") { EnableSpatialization(); }
 		}
       
     private:
        
- 
+		
 		
     };
 }
