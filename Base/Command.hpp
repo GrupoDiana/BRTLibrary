@@ -19,16 +19,24 @@ namespace BRTBase {
 
 		std::string GetCommand() {
 			std::string _command = "";
-			if (!j["command"].is_null()) {
+			if (!j["command"].is_null() && j["command"].is_string()) {
 				_command = j["command"].get<std::string>();
 			}
 			return _command;			
 		}
 
+		std::string GetSourceID() {
+			std::string _command = "";
+			if (!j["sourceID"].is_null() && j["sourceID"].is_string()) {
+				_command = j["sourceID"].get<std::string>();
+			}
+			return _command;
+		}
+
 		std::string GetStringParameter() {
 			std::string _temp = "";
 			if (!j["parameter"].is_null() && j["parameter"].is_string()) {
-				_temp = j["command"].get<std::string>();
+				_temp = j["parameter"].get<std::string>();
 			}
 			return _temp;
 		}
@@ -41,8 +49,7 @@ namespace BRTBase {
 			return temp;
 		}
 
-		double GetDoubleParameter() {
-			//json j = json::parse(commandJsonString);
+		double GetDoubleParameter() {			
 			double temp = 0.0;
 			if (!j["parameter"].is_null() && j["parameter"].is_number_float()) {
 				temp = j["parameter"];
@@ -54,8 +61,7 @@ namespace BRTBase {
 			return (float)GetDoubleParameter();
 		}
 
-		std::vector<double> GetDoubleVector() {
-			//json j = json::parse(commandJsonString);
+		std::vector<double> GetDoubleVector() {			
 			std::vector<double> tempV;
 			if (!j["parameter"].is_null() && j["parameter"].is_structured()) {
 				tempV = j["parameter"].get<std::vector<double>>();
@@ -63,6 +69,13 @@ namespace BRTBase {
 			return tempV;
 		}
 
+		std::vector<std::string> GetStringVector() {
+			std::vector<std::string> tempV;
+			if (!j["parameter"].is_null() && j["parameter"].is_structured()) {
+				tempV = j["parameter"].get<std::vector<std::string>>();
+			}
+			return tempV;
+		}
 	};
 }
 #endif
