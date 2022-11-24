@@ -54,13 +54,13 @@ namespace BRTProcessing {
 									
 			std::cout << command.GetCommand() << std::endl;
 			
-			if (command.GetCommand() == "/brt/source/hrtfconvoler/enablespatialization/") {
+			if (command.GetCommand() == "/brt/source/hrtfconvolver/enablespatialization/") {
 				std::cout << "sourceID: " << command.GetSourceID() << std::endl;
 				//TODO check if its my source ID
 				if (command.GetBoolParameter()) { EnableSpatialization(); }
 				else { DisableSpatialization(); }
 			}
-			else if (command.GetCommand() == "/brt/source/hrtfconvoler/enableinterpolation/") {
+			else if (command.GetCommand() == "/brt/source/hrtfconvolver/enableinterpolation/") {
 				std::cout << "sourceID: " << command.GetSourceID() << std::endl;
 				//TODO check if its my source ID
 				if (command.GetBoolParameter()) { EnableInterpolation(); }
