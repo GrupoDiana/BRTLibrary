@@ -66,6 +66,11 @@ namespace BRTProcessing {
 				if (command.GetBoolParameter()) { EnableInterpolation(); }
 				else { DisableInterpolation(); }
 			}
+			else if (command.GetCommand() == "/brt/source/hrtfconvolver/resetBuffers/") {
+				//std::cout << "sourceID: " << command.GetSourceID() << std::endl;
+				//TODO check if its my source ID
+				ResetSourceConvolutionBuffers();
+			}
 		}
       
     private:

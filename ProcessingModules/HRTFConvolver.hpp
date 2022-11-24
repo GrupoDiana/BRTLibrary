@@ -121,6 +121,17 @@ namespace BRTProcessing {
 			//GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
 			//GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);
 		}
+
+		/// Reset convolvers and convolution buffers
+		void ResetSourceConvolutionBuffers() {
+			convolutionBuffersInitialized = false;
+			// Reset convolver classes
+			outputLeftUPConvolution.Reset();
+			outputRightUPConvolution.Reset();
+			//Init buffer to store delay to be used in the ProcessAddDelay_ExpansionMethod method
+			leftChannelDelayBuffer.clear();
+			rightChannelDelayBuffer.clear();
+		}
 	private:
 
 		// Atributes
@@ -239,16 +250,6 @@ namespace BRTProcessing {
 			convolutionBuffersInitialized = true;
 		}
 
-		/// Reset convolvers and convolution buffers
-		void ResetSourceConvolutionBuffers() {
-			convolutionBuffersInitialized = false;
-			// Reset convolver classes
-			outputLeftUPConvolution.Reset();
-			outputRightUPConvolution.Reset();
-			//Init buffer to store delay to be used in the ProcessAddDelay_ExpansionMethod method
-			leftChannelDelayBuffer.clear();
-			rightChannelDelayBuffer.clear();
-		}
 
 		/// Calculates the parameters derived from the source and listener position
 		void CalculateSourceCoordinates(Common::CTransform& _sourceTransform, Common::CTransform& _listenerTransform, std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF, float& leftElevation, float& leftAzimuth, float& rightElevation, float& rightAzimuth, float& centerElevation, float& centerAzimuth, float& interauralAzimuth)
