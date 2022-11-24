@@ -99,9 +99,16 @@ namespace BRTBase {
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/		
-		BRTServices::CHRTF* GetHRTF() const
+		std::shared_ptr < BRTServices::CHRTF> GetHRTF() const
 		{
-			return listenerHRTF.get();
+			return listenerHRTF;
+		}
+
+		/** \brief Remove the HRTF of thelistener
+		*   \eh Nothing is reported to the error handler.
+		*/
+		void RemoveHRTF() {
+			listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// empty HRTF			
 		}
 
 		///** \brief Get ILD Near Field effect of listener
