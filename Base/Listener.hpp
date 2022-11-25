@@ -52,23 +52,32 @@ namespace BRTBase {
 		}
 
 		void updateFromEntryPoint(std::string id) {									
-			if (id == "leftEar") { 
-				leftBuffer = leftEarEntryPoint->GetData();
-				leftDataReady = true;
-			
-			} else if (id == "rightEar") { 
-				rightBuffer = rightEarEntryPoint->GetData();
-				rightDataReady = true;
+		
+			if (id == "leftEar") { 				
+				UpdateLeftBuffer();
+			} else if (id == "rightEar") { 				
+				UpdateRightBuffer();
 			}											
 		}
 
 		bool isDataReady() { return leftDataReady && rightDataReady; }
 				
-		void GetBuffers(std::vector<float>& _leftBuffer, std::vector<float>& _rightBuffer) {
-			_leftBuffer = leftBuffer;
-			_rightBuffer = rightBuffer;
-			leftDataReady = false;
-			rightDataReady = false;
+		void GetBuffers(CMonoBuffer<float>& _leftBuffer, CMonoBuffer<float>& _rightBuffer) {						
+			if (leftDataReady) {
+				_leftBuffer = leftBuffer;
+				leftDataReady = false;
+			}
+			else {
+				_leftBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
+			}
+			
+			if (rightDataReady) {
+				_rightBuffer = rightBuffer;
+				rightDataReady = false;
+			}
+			else {
+				_rightBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
+			}
 		}
 
 		std::string GetListenerID() { return listenerID; }
@@ -144,18 +153,43 @@ namespace BRTBase {
 		Common::CTransform listenerTransform;				// Transform matrix (position and orientation) of listener  
 		float listenerHeadRadius;							// Head radius of listener 
 
+		Common::CGlobalParameters globalParameters;
+
 		std::shared_ptr<CEntryPointSamplesVector >		leftEarEntryPoint;
 		std::shared_ptr<CEntryPointSamplesVector >		rightEarEntryPoint;				
 		std::shared_ptr<CExitPointTransform>			listenerPositionExitPoint;
 		std::shared_ptr<CExitPointHRTFPtr>				hrtfExitPoint;
 
-		std::vector<float> leftBuffer;
-		std::vector<float> rightBuffer;
+		CMonoBuffer<float> leftBuffer;
+		CMonoBuffer<float> rightBuffer;
 		
 		bool leftDataReady;
 		bool rightDataReady;	
 
-		//friend class BRTServices::CHRTF;							//Friend Class definition
+		// Private Methods
+		
+
+		void UpdateLeftBuffer() {
+			if (!leftDataReady) {
+				leftBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
+			}
+			CMonoBuffer<float> buffer = leftEarEntryPoint->GetData();
+			if (buffer.size() != 0) {
+				leftBuffer += buffer;
+				leftDataReady = true;
+			}
+		}
+
+		void UpdateRightBuffer() {
+			if (!rightDataReady) {
+				rightBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
+			}
+			CMonoBuffer<float> buffer = leftEarEntryPoint->GetData();
+			if (buffer.size() != 0) {
+				rightBuffer += buffer;
+				rightDataReady = true;
+			}
+		}		
 	};
 }
 #endif
