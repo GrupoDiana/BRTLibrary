@@ -291,8 +291,8 @@ namespace Common {
 		bool setupDone;								//It's true when setup has been called at least once
 				
 		std::vector<float> storageInput_buffer;						//To store the last input signal
-		std::vector<vector<float>> storageInputFFT_buffer;			//To store the history of input signals FFTs 
-		std::vector<vector<float>>::iterator it_storageInputFFT;	//Declare a general iterator to keep the head of the FTTs buffer
+		std::vector<std::vector<float>> storageInputFFT_buffer;			//To store the history of input signals FFTs 
+		std::vector<std::vector<float>>::iterator it_storageInputFFT;	//Declare a general iterator to keep the head of the FTTs buffer
 		std::vector<THRIR_partitioned> storageHRIR_buffer;			//To store the HRIR of the orientation of the previous frames
 		std::vector<THRIR_partitioned>::iterator it_storageHRIR;		//Declare a general iterator to keep the head of the storageHRIR_buffer		
 	};

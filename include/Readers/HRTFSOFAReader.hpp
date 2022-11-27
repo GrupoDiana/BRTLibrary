@@ -41,7 +41,7 @@ namespace BRTReaders
 		*	\param [out] listener affected by the hrtf
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		bool CreateFromSofa(const std::string& sofafile, shared_ptr<BRTServices::CHRTF> listenerHRTF, bool& specifiedDelays)
+		bool CreateFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CHRTF> listenerHRTF, bool& specifiedDelays)
 		{
 			if (LoadHRTFTableFromSOFA(sofafile, listenerHRTF, specifiedDelays))
 			{
@@ -119,7 +119,7 @@ namespace BRTReaders
 		*   \eh On error, an error code is reported to the error handler. */
 		//bool Create3DTIFromSofa(const std::string & sofafile, shared_ptr<Binaural::CListener> listener, bool & specifiedDelays);
 
-		bool LoadHRTFTableFromSOFA(const std::string& sofafile, shared_ptr<BRTServices::CHRTF> listenerHRTF, bool& specifiedDelays)
+		bool LoadHRTFTableFromSOFA(const std::string& sofafile, std::shared_ptr<BRTServices::CHRTF> listenerHRTF, bool& specifiedDelays)
 		{
 			std::ostream& output = std::cout;
 			try {

@@ -30,7 +30,7 @@
 
 /*! \file */
 
-using namespace std;
+//using namespace std;
 
 /** \brief If SWITCH_ON_3DTI_ERRORHANDLER is undefined, the error handler is completely disabled, causing 0 overhead
 */
@@ -172,9 +172,9 @@ enum TResultID
 struct TResultStruct
 {
 	TResultID id;			///< ID of result
-	string description;		///< Description of result
-	string suggestion;		///< Suggestion for fixing error or further information about result
-	string filename;		///< File from which result was reported
+	std::string description;		///< Description of result
+	std::string suggestion;		///< Suggestion for fixing error or further information about result
+	std::string filename;		///< File from which result was reported
 	int linenumber;			///< Line number at which result was reported (within filename file)
 };
 
@@ -301,11 +301,11 @@ namespace Common {
 		*	\param [in] filename file from which result is being reported
 		*	\param [in] linenumber line number at which result is being reported (whithin filename file)
 		*/		
-		void SetResult(TResultID resultID, string suggestion, string filename, int linenumber)
+		void SetResult(TResultID resultID, std::string suggestion, std::string filename, int linenumber)
 		{
 			if (assertMode != ASSERT_MODE_EMPTY)	// Alternative: put this before logging to file
 			{
-				lock_guard<mutex> lock(errorHandlerMutex);
+				std::lock_guard<std::mutex> lock(errorHandlerMutex);
 
 				// Set result struct
 
@@ -314,7 +314,7 @@ namespace Common {
 				lastResult.filename = filename;
 
 				// Set specific strings for each result type. Suggestions are generic and might be replaced with the one specified
-				string defaultDescription, defaultSuggestion;
+				std::string defaultDescription, defaultSuggestion;
 				GetDescriptionAndSuggestion(lastResult.id, defaultDescription, defaultSuggestion);
 				lastResult.description = defaultDescription;
 
@@ -389,7 +389,7 @@ namespace Common {
 		{
 			if (assertMode != ASSERT_MODE_EMPTY)
 			{
-				string description, suggestion;
+				std::string description, suggestion;
 				firstError.id = RESULT_OK;
 				GetDescriptionAndSuggestion(firstError.id, description, suggestion);
 				firstError.description = description;
@@ -488,7 +488,7 @@ namespace Common {
 		*	\param [in] logOn switch on/off logging to file (default, true)
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void SetErrorLogFile(string filename, bool logOn = true)		
+		void SetErrorLogFile(std::string filename, bool logOn = true)		
 		{
 			// TO DO: check errors!
 
@@ -507,7 +507,7 @@ namespace Common {
 		*	\param [in] logOn switch on/off logging to stream (default, true)
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void SetErrorLogStream(ostream* outStream, bool logOn = true)		
+		void SetErrorLogStream(std::ostream* outStream, bool logOn = true)		
 		{
 			errorLogStream = outStream;
 			logToStream = logOn;
@@ -545,7 +545,7 @@ namespace Common {
 		*	\param [in] filename filename for reported result struct
 		*	\param [in] linenumber linenumber for reported result struct
 		*/
-		void AssertTest(bool condition, TResultID errorID, string suggestionError, string suggestionOK, string filename, int linenumber)
+		void AssertTest(bool condition, TResultID errorID, std::string suggestionError, std::string suggestionOK, std::string filename, int linenumber)
 		{
 			if (assertMode != ASSERT_MODE_EMPTY)
 			{
@@ -606,7 +606,7 @@ namespace Common {
 		*	\param [in] logOn switch on/off file logging for this war (default, true)
 		*	\pre Variable was added to watch first
 		*/
-		void SetWatcherLogFile(TWatcherVariable whichVar, string filename, bool logOn = true)		
+		void SetWatcherLogFile(TWatcherVariable whichVar, std::string filename, bool logOn = true)		
 		{
 			// TO DO: check errors!
 
@@ -676,7 +676,7 @@ namespace Common {
 		}
 
 		// Generic method for obtaining description and suggestions of a result ID		
-		void GetDescriptionAndSuggestion(TResultID result, string& description, string& suggestion)
+		void GetDescriptionAndSuggestion(TResultID result, std::string& description, std::string& suggestion)
 		{
 			// Set specific strings for each error type. Suggestions are generic and might be replaced with the one specified when calling to SetResult
 			switch (result)
@@ -709,7 +709,7 @@ namespace Common {
 			LogErrorToStream(errorLogFile, result);
 		}
 		
-		void LogErrorToStream(ostream& outStream, TResultStruct result)
+		void LogErrorToStream(std::ostream& outStream, TResultStruct result)
 		{
 			// Return if we want to log an OK in a verbosity mode not logging OK
 			if ((!verbosityMode.showOk) && (result.id == RESULT_OK))
@@ -768,7 +768,7 @@ namespace Common {
 	private:
 		// ATTRIBUTES:
 
-		mutex errorHandlerMutex;
+		std::mutex errorHandlerMutex;
 
 		// Last Result handling
 		TResultStruct lastResult;
