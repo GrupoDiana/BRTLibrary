@@ -25,10 +25,10 @@ namespace BRTBase {
 			return _command;			
 		}
 
-		std::string GetSourceID() {
+		std::string GetID() {
 			std::string _command = "";
-			if (!j["sourceID"].is_null() && j["sourceID"].is_string()) {
-				_command = j["sourceID"].get<std::string>();
+			if (!j["id"].is_null() && j["id"].is_string()) {
+				_command = j["id"].get<std::string>();
 			}
 			return _command;
 		}
@@ -67,6 +67,16 @@ namespace BRTBase {
 				tempV = j["parameter"].get<std::vector<double>>();
 			}
 			return tempV;
+		}
+
+		Common::CVector3 GetVector3() {
+			
+			std::vector<double> tempV;
+			if (!j["parameter"].is_null() && j["parameter"].is_structured()) {
+				tempV = j["parameter"].get<std::vector<double>>();
+			}
+			Common::CVector3 tempV3(tempV[0], tempV[1], tempV[2]);
+			return tempV3;
 		}
 
 		std::vector<std::string> GetStringVector() {
