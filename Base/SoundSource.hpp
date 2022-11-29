@@ -1,5 +1,5 @@
-#ifndef _SOUND_SOURCE_
-#define _SOUND_SOURCE_
+#ifndef _SOUND_SOURCE_HPP
+#define _SOUND_SOURCE_HPP
 
 #include "ExitPoint.h"
 #include <vector>
@@ -8,14 +8,20 @@ namespace BRTBase {
 
 	class CSoundSource {
 	public:
-		CSoundSource(std::string _sourceID) {
-			sourceID = _sourceID;
+		CSoundSource(std::string _sourceID) : dataReady{ false }, sourceID{ _sourceID} {			
 			samplesExitPoint = std::make_shared<CExitPointSamplesVector>("samples");
 			sourcePositionExitPoint = std::make_shared<CExitPointTransform>("sourceTransform");
 		}
 
-		void SetBuffer(CMonoBuffer<float>& _buffer) { samplesBuffer = _buffer; }
-		void SetDataReady() { samplesExitPoint->sendData(samplesBuffer); }
+		void SetBuffer(CMonoBuffer<float>& _buffer) { 
+			samplesBuffer = _buffer; 
+			dataReady = true;
+		}
+		void SetDataReady() {
+			if (!dataReady) { return; }
+			samplesExitPoint->sendData(samplesBuffer); 
+			dataReady = false;
+		}
 
 		void operator()() {
 			samplesExitPoint->sendData(samplesBuffer);
@@ -40,6 +46,8 @@ namespace BRTBase {
 
 	private:
 		std::string sourceID;
+		bool dataReady;
+
 		Common::CTransform sourceTransform;
 		CMonoBuffer<float> samplesBuffer;
 		

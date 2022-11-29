@@ -1,7 +1,7 @@
 #ifndef _BRT_MANAGER_
 #define _BRT_MANAGER_
 
-#include "SoundSource.h"
+#include "SoundSource.hpp"
 #include "Listener.hpp"
 #include <thread>
 
