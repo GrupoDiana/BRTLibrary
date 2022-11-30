@@ -58,11 +58,10 @@ namespace BRTBase {
 			return hrtfExitPoint;
 		}
 
-		void updateFromEntryPoint(std::string id) {									
-		
-			if (id == "leftEar") { 				
+		void updateFromEntryPoint(std::string id) {											
+			if (id == "leftEar") { 								
 				UpdateLeftBuffer();
-			} else if (id == "rightEar") { 				
+			} else if (id == "rightEar") { 								
 				UpdateRightBuffer();
 			}											
 		}
@@ -85,6 +84,7 @@ namespace BRTBase {
 			else {
 				_rightBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
 			}
+
 		}
 
 		std::string GetListenerID() { return listenerID; }
@@ -191,7 +191,7 @@ namespace BRTBase {
 			if (!rightDataReady) {
 				rightBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
 			}
-			CMonoBuffer<float> buffer = leftEarEntryPoint->GetData();
+			CMonoBuffer<float> buffer = rightEarEntryPoint->GetData();
 			if (buffer.size() != 0) {
 				rightBuffer += buffer;
 				rightDataReady = true;
