@@ -42,6 +42,13 @@ namespace BRTBase {
 			}
 		}
 
+		void disconnectSamplesEntryFrom(std::shared_ptr<CExitPointSamplesVector> _exitPoint, std::string entryPointID) {
+			if (entryPointID == "leftEar") { _exitPoint->detach(leftEarEntryPoint.get()); }
+			else if (entryPointID == "rightEar") { _exitPoint->detach(rightEarEntryPoint.get()); }
+			else { //TODO Notify error 
+			}
+		}
+
 		std::shared_ptr<CExitPointTransform> GetTransformExitPoint() {
 			return listenerPositionExitPoint;
 		}

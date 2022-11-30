@@ -3,7 +3,7 @@
 #define _OBSERVER_BASE_
 
 #include <vector>
-
+#include <iostream>
 
 namespace BRTBase {
 
@@ -28,10 +28,10 @@ namespace BRTBase {
             observers.push_back(&observer);
             notify(observer);
         }
-        void detach(Observer& observer) {
-            /*auto it = std::find(observers.begin(), observers.end(), observer);
+        void detach(Observer *observer) {           
+            auto it = (std::find(observers.begin(), observers.end(), observer));
             if (it != observers.end())
-                observers.erase(it);*/
+                observers.erase(it);            
         }
         void notify()
         {
