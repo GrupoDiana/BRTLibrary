@@ -87,7 +87,7 @@ namespace BRTBase {
 			auto it = std::find_if(audioSources.begin(), audioSources.end(), [&_sourceID](std::shared_ptr<CSoundSource>& sourceItem) { return sourceItem->GetSourceID() == _sourceID; });
 			if (it != audioSources.end()) { 
 				audioSources.erase(it); 				
-				it->reset();
+				//it->reset();
 			}				
 		}
 		
