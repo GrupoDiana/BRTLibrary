@@ -51,15 +51,20 @@ namespace BRTBase {
 
 		double GetDoubleParameter() {			
 			double temp = 0.0;
+			std::vector<double> tempV;
 			if (!j["parameter"].is_null() && j["parameter"].is_number_float()) {
 				temp = j["parameter"];
 			}
+			else if (!j["parameter"].is_null() && j["parameter"].is_structured()) {
+				tempV = j["parameter"].get<std::vector<double>>();
+			}
+			if (tempV.size() > 0) { temp = tempV[0]; }
 			return temp;
 		}
 
 		float GetFloatParameter() {
 			return (float)GetDoubleParameter();
-		}
+		}		
 
 		std::vector<double> GetDoubleVector() {			
 			std::vector<double> tempV;
@@ -67,7 +72,7 @@ namespace BRTBase {
 				tempV = j["parameter"].get<std::vector<double>>();
 			}
 			return tempV;
-		}
+		}			
 
 		Common::CVector3 GetVector3() {
 			
@@ -75,7 +80,9 @@ namespace BRTBase {
 			if (!j["parameter"].is_null() && j["parameter"].is_structured()) {
 				tempV = j["parameter"].get<std::vector<double>>();
 			}
-			Common::CVector3 tempV3(tempV[0], tempV[1], tempV[2]);
+			Common::CVector3 tempV3;
+			if (tempV.size() == 3) { tempV3 = Common::CVector3(tempV[0], tempV[1], tempV[2]);	}
+			
 			return tempV3;
 		}
 
