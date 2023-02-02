@@ -54,13 +54,13 @@ namespace BRTProcessing {
 									
 			std::cout << command.GetCommand() << std::endl;
 			
-			if (command.GetCommand() == "/brt/source/HRTFConvolver/enableSpatialization/") {
+			if (command.GetCommand() == "/brt/listener/enableSpatialization/") {
 				//std::cout << "sourceID: " << command.GetID() << std::endl;
 				//TODO check if its my source ID
 				if (command.GetBoolParameter()) { EnableSpatialization(); }
 				else { DisableSpatialization(); }
 			}
-			else if (command.GetCommand() == "/brt/source/HRTFConvolver/enableInterpolation/") {
+			else if (command.GetCommand() == "/brt/listener/enableInterpolation/") {
 				//std::cout << "sourceID: " << command.GetID() << std::endl;
 				//TODO check if its my source ID
 				if (command.GetBoolParameter()) { EnableInterpolation(); }
@@ -71,7 +71,7 @@ namespace BRTProcessing {
 				//TODO check if its my source ID
 				ResetSourceConvolutionBuffers();
 			}			
-		}
+		} 
       
     private:
        
