@@ -497,6 +497,7 @@ namespace BRTServices
 						{
 							newHRIR = it->second.rightHRIR_Partitioned;
 						}
+						return newHRIR;
 					}
 					else
 					{
