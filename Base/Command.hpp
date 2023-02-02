@@ -74,7 +74,7 @@ namespace BRTBase {
 			return tempV;
 		}			
 
-		Common::CVector3 GetVector3() {
+		Common::CVector3 GetVector3Parameter() {
 			
 			std::vector<double> tempV;
 			if (!j["parameter"].is_null() && j["parameter"].is_structured()) {
@@ -92,6 +92,31 @@ namespace BRTBase {
 				tempV = j["parameter"].get<std::vector<std::string>>();
 			}
 			return tempV;
+		}
+
+		std::string GetTuplaPath() {
+			std::string _temp = "";
+			if (!j["path"].is_null() && j["path"].is_string()) {
+				_temp = j["path"].get<std::string>();
+			}
+			return _temp;
+		}
+
+		std::string GetTuplaData() {
+			std::string _temp = "";
+			if (!j["data"].is_null() && j["data"].is_string()) {
+				_temp = j["data"].get<std::string>();
+			}
+			return _temp;
+		}
+
+		float GetTuplaFloatValue() {
+			double temp = 0.0;
+			std::vector<double> tempV;
+			if (!j["value"].is_null() && j["value"].is_number_float()) {
+				temp = j["value"];
+			}						
+			return temp;
 		}
 	};
 }
