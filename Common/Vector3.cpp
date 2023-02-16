@@ -36,7 +36,7 @@
 //
 //constexpr float _2PI = 2.0f*M_PI;
 
-namespace Common {
+//namespace Common {
 
 //	//////////////////////////////////////////////
 //	// BASIC PREDEFINED VECTORS
@@ -451,4 +451,4 @@ namespace Common {
 
 	//	return result;
 	//}
-}//end namespace Common
+//}//end namespace Common
