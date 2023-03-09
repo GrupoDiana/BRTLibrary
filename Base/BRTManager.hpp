@@ -211,8 +211,22 @@ namespace BRTBase {
 			return true;
 		}
 
+		//
+		template <typename U>
+		bool ConnectModuleToListenerILD(std::shared_ptr<CListener>& listenerModule, std::shared_ptr < U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectILDEntryTo(listenerModule->GetILDPtrExitPoint(), entryPointID);
+			return true;
+		}
 
+		template <typename U>
+		bool DisconnectModuleToListenerILD(std::shared_ptr<CListener>& listenerModule, std::shared_ptr < U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectILDEntryTo(listenerModule->GetILDPtrExitPoint(), entryPointID);
+			return true;
+		}
 
+		//
 
 		///////////////////////////////////////////
 		// GENERIC PROCESSOR MODULES CONNECTIONs
