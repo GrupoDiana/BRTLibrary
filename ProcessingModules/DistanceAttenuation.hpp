@@ -22,7 +22,7 @@ namespace BRTProcessing {
     class CDistanceAttenuation
     {
     public:
-        CDistanceAttenuation() : previousAttenuation_Channel{ 0.0f }, referenceDistance{ DISTANCE_MODEL_THRESHOLD_NEAR }, enabledDistanceAttenuation {true} {                    
+        CDistanceAttenuation() : previousAttenuation_Channel{ 0.0f }, referenceDistance{ REFERENCE_DISTANCE_ATTENUATION }, enabledDistanceAttenuation {true} {
         }
                         
         ///Enable distance attenuation 	

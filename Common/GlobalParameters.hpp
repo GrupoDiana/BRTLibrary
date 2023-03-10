@@ -19,7 +19,7 @@
 #define DEFAULT_SOUND_SPEED	343.0f						///< Default sound speed, in meters per second (m/s)
 #endif 
 #ifndef DISTANCE_MODEL_THRESHOLD_NEAR
-#define DISTANCE_MODEL_THRESHOLD_NEAR 1 				///< Reference distance and near-distance threshold, in meters
+#define DISTANCE_MODEL_THRESHOLD_NEAR 2 				///< Reference distance for the near-distance threshold, in meters
 #endif 
 #ifndef DISTANCE_MODEL_THRESHOLD_FAR
 #define DISTANCE_MODEL_THRESHOLD_FAR 15					///< Far-distance threshold, in meters
@@ -27,12 +27,19 @@
 #ifndef EPSILON_ATTACK_SAMPLES
 #define EPSILON_ATTACK_SAMPLES  0.001f					///< Attack sample lower limit attenuation in simple attenuation distance (used in ApplyGainExponentially method)
 #endif
+#ifndef REFERENCE_DISTANCE_ATTENUATION
+#define REFERENCE_DISTANCE_ATTENUATION 1				///< Reference distance for attenuation by distance in meters	
+#endif
 #ifndef ATTACK_TIME_DISTANCE_ATTENUATION
 #define ATTACK_TIME_DISTANCE_ATTENUATION 100			///< Attack time for gradual attenuation in simple attenuation distance (used in ApplyGainExponentially method)
 #endif
 #ifndef DEFAULT_LISTENER_HEAD_RADIOUS
 #define DEFAULT_LISTENER_HEAD_RADIOUS  0.0875f
 #endif 
+#ifndef MINIMUM_DISTANCE_SOURCE_LISTENER
+#define MINIMUM_DISTANCE_SOURCE_LISTENER 0.0001f		///< Minimun distance allowed betwwen source and listener in metres. It only serves to solve the numerical problem
+#endif 
+
 
 #include <Common/Transform.h>
 #include <Common/Vector3.h>

@@ -260,8 +260,9 @@ namespace BRTProcessing {
 			float _distanceToListener = _vectorToListener.GetDistance();
 
 			//Check listener and source are in the same position
-			if (_distanceToListener <= EPSILON) {
-				return;
+			if (_distanceToListener <= MINIMUM_DISTANCE_SOURCE_LISTENER) {				
+				SET_RESULT(RESULT_WARNING, "The sound source is too close to the centre of the listener's head in BRTProcessing::CHRTFConvolver");
+				_distanceToListener = MINIMUM_DISTANCE_SOURCE_LISTENER;
 			}
 
 			Common::CVector3 leftEarLocalPosition = _listenerHRTF->GetEarLocalPosition(Common::T_ear::LEFT);
