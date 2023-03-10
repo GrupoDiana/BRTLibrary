@@ -4,7 +4,8 @@
 
 #include <Common/Buffer.h>
 #include <ServiceModules/ILD.hpp>
-#define EPSILON 0.0001f
+#include <Common/GlobalParameters.hpp>
+//#define EPSILON 0.0001f
 
 namespace BRTProcessing {
 
@@ -92,9 +93,9 @@ namespace BRTProcessing {
 			float _distanceToListener = _vectorToListener.GetDistance();
 
 			//Check listener and source are in the same position
-			if (_distanceToListener <= EPSILON) {
+			if (_distanceToListener <= MINIMUM_DISTANCE_SOURCE_LISTENER) {
 				SET_RESULT(RESULT_WARNING, "The sound source is too close to the centre of the listener's head in BRTProcessing::CNearFieldEffect");
-				return EPSILON;
+				return MINIMUM_DISTANCE_SOURCE_LISTENER;
 			}						
 			return _vectorToListener.GetInterauralAzimuthDegrees();			
 		}
