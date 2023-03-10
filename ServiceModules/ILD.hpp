@@ -108,17 +108,14 @@ namespace BRTServices {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		CILD() : setupInProgress{ false }, ILDLoaded{ false }, samplingRate{ -1 }, numberOfEars{ -1 },azimuthStep{-1}, distanceStep{-1}, fileTitle{""}, fileName{""}, fileDescription{""}
-		{
-			//ILDNearFieldEffectTable_AzimuthStep = 5;	// In degress
-			//ILDNearFieldEffectTable_DistanceStep = 10;	// In milimeters
-			//ILDSpatializationTable_AzimuthStep = 5;		// In degress
-			//ILDSpatializationTable_DistanceStep = 10;	// In milimeters				
+		{					
 		}
 
 
 		void BeginSetup() {
-			setupInProgress = true;
-			ILDLoaded = false;
+			setupInProgress = true;			
+			ILDLoaded = false;			
+			Clear();
 
 			SET_RESULT(RESULT_OK, "ILD Setup started");
 		}
@@ -126,16 +123,31 @@ namespace BRTServices {
 		bool EndSetup()
 		{
 			if (setupInProgress) {
+				setupInProgress = false;
 				
-				if (samplingRate != -1 && numberOfEars != -1 && azimuthStep != -1 && distanceStep != -1) {
-					setupInProgress = false;
+				azimuthStep = CalculateTableAzimuthStep();
+				distanceStep = CalculateTableDistanceStep();
+
+				if (samplingRate != -1 && numberOfEars != -1 && azimuthStep != -1 && distanceStep != -1) {															
 					ILDLoaded = true;
 					SET_RESULT(RESULT_OK, "ILD Setup finished");
+					azimuthList.clear();
+					distanceList.clear();
 					return true;
 				}								
 			}
 			SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Some parameter is missing in order to finish the data upload in BRTServices::CILD.");
 			return false;
+		}
+
+		void Clear() {
+			t_ILDNearFieldEffect.clear();
+			azimuthList.clear();
+			distanceList.clear();
+			samplingRate = -1;
+			numberOfEars = -1;
+			azimuthStep = -1;
+			distanceStep = -1;
 		}
 
 		/** \brief Set the name of the SOFA file
@@ -207,36 +219,7 @@ namespace BRTServices {
 		int GetNumberOfEars() {
 			return numberOfEars;
 		}
-
-		/** \brief Set the azimuth step in degrees in the ILD table of the SOFA file.
-		*    \param [in]	azimuthStep	int contains table azimuth step
-		*/
-		void SetAzimuthTableStep(int _azimuthStep) {
-			azimuthStep = _azimuthStep;
-		}
-
-		/** \brief Get the azimuth step 
-		*   \return int contains azimuth step in degrees
-		*/
-		int GetAzimuthTableStep() {
-			return azimuthStep;
-		}
-
-		/** \brief Set the distance step in meter in the ILD table of the SOFA file
-		*    \param [in]	distanceStep	int contains table distance Step in metres
-		*/
-		void SetDistanceTableStep(float _distanceStep) {
-			
-			distanceStep = static_cast<int> (round(GetDistanceInMM(_distanceStep)));
-		}
-
-		/** \brief Get the distance step
-		*   \return int contains distance step in metres
-		*/
-		float GetDistanceTableStep() {
-			return GetDistanceInMetres(distanceStep);
-		}
-
+	
 		/** \brief	Set the relative position of one ear (to the listener head center)
 		* 	\param [in]	_ear			ear type
 		*   \param [in]	_earPosition	ear local position
@@ -274,7 +257,11 @@ namespace BRTServices {
 
 				auto returnValue = t_ILDNearFieldEffect.emplace(CILD_Key(iDistance, iAzimuth), std::forward<TILDStruct>(newCoefs));
 				//Error handler
-				if (returnValue.second) { /*SET_RESULT(RESULT_OK, "ILD Coefficients emplaced into t_ILDNearFieldEffect succesfully"); */ }
+				if (returnValue.second) { 
+					/*SET_RESULT(RESULT_OK, "ILD Coefficients emplaced into t_ILDNearFieldEffect succesfully"); */ 
+					azimuthList.push_back(iAzimuth);
+					distanceList.push_back(iDistance);
+				}
 				else { SET_RESULT(RESULT_WARNING, "Error emplacing ILD Cofficients"); }
 			}
 		}
@@ -400,7 +387,40 @@ namespace BRTServices {
 		//}
 
 	private:
+		
+		int CalculateTableAzimuthStep() {			
+			// Order azimuth and remove duplicates
+			std::sort(azimuthList.begin(), azimuthList.end());
+			azimuthList.erase(unique(azimuthList.begin(), azimuthList.end()), azimuthList.end());
 
+			// Calculate the minimum azimuth
+			int azimuthStep = 999999;
+			for (int i = 0; i < azimuthList.size() - 1; i++) {
+				if (azimuthList[i + 1] - azimuthList[i] < azimuthStep) {
+					azimuthStep = azimuthList[i + 1] - azimuthList[i];
+				}
+			}
+			return azimuthStep;
+		}
+
+		/// Calculate the TABLE Distance STEP from the table
+		float CalculateTableDistanceStep() {			
+			// Order distances and remove duplicates
+			std::sort(distanceList.begin(), distanceList.end());
+			distanceList.erase(unique(distanceList.begin(), distanceList.end()), distanceList.end());
+
+			// Calculate the minimum d
+			double distanceStep = 999999;
+			for (int i = 0; i < distanceList.size() - 1; i++) {
+				if (distanceList[i + 1] - distanceList[i] < distanceStep) {
+					distanceStep = distanceList[i + 1] - distanceList[i];
+				}
+			}
+			// Rounding the result, to millimetres and back to metres
+			//float distenceStepMM = distanceStep * 1000;
+			//return std::round(distenceStepMM) * 0.001f;
+			return distanceStep;
+		}
 
 		float GetDistanceInMM(float _distanceInMetres) {
 			return _distanceInMetres * 1000.0f;
@@ -410,6 +430,8 @@ namespace BRTServices {
 			return _distanceInMilimetres * 0.001f;
 		}
 
+
+
 		///////////////
 		// ATTRIBUTES
 		///////////////	
@@ -418,9 +440,11 @@ namespace BRTServices {
 		bool ILDLoaded;								// Variable that indicates if the ILD has been loaded correctly
 
 		T_ILD_HashTable t_ILDNearFieldEffect;
-		int azimuthStep;		// In degress
-		int distanceStep;		// In milimeters
-												  
+		int azimuthStep;							// In degress
+		int distanceStep;							// In milimeters
+		std::vector<double> azimuthList;
+		std::vector<double> distanceList;
+
 		//T_ILD_HashTable t_ILDSpatialization;	  
 		//int ILDSpatializationTable_AzimuthStep;			// In degress
 		//int ILDSpatializationTable_DistanceStep;		// In milimeters
