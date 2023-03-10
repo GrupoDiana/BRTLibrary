@@ -27,8 +27,8 @@
 #include <Common/Buffer.h>
 #include <Common/CommonDefinitions.h>
 
-#define NEAR_FIELD_TABLE_AZIMUTH_STEP 5
-#define NEAR_FIELD_TABLE_DISTANCE_STEP 10
+//#define NEAR_FIELD_TABLE_AZIMUTH_STEP 5
+//#define NEAR_FIELD_TABLE_DISTANCE_STEP 10
 
 	/** \brief Class to be used as Key in the hash table used by CILD
 	*/
@@ -107,7 +107,7 @@ namespace BRTServices {
 		*	\details Leaves ILD Table empty. Use SetILDNearFieldEffectTable to load.
 		*   \eh Nothing is reported to the error handler.
 		*/
-		CILD() : setupInProgress{ false }, ILDLoaded{ false }, samplingRate{ -1 }, numberOfEars{ -1 }, fileTitle{""}, fileName{""}, fileDescription{""}
+		CILD() : setupInProgress{ false }, ILDLoaded{ false }, samplingRate{ -1 }, numberOfEars{ -1 },azimuthStep{-1}, distanceStep{-1}, fileTitle{""}, fileName{""}, fileDescription{""}
 		{
 			//ILDNearFieldEffectTable_AzimuthStep = 5;	// In degress
 			//ILDNearFieldEffectTable_DistanceStep = 10;	// In milimeters
@@ -123,12 +123,19 @@ namespace BRTServices {
 			SET_RESULT(RESULT_OK, "ILD Setup started");
 		}
 
-		void EndSetup()
+		bool EndSetup()
 		{
 			if (setupInProgress) {
-				setupInProgress = false;
-				ILDLoaded = true;
+				
+				if (samplingRate != -1 && numberOfEars != -1 && azimuthStep != -1 && distanceStep != -1) {
+					setupInProgress = false;
+					ILDLoaded = true;
+					SET_RESULT(RESULT_OK, "ILD Setup finished");
+					return true;
+				}								
 			}
+			SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Some parameter is missing in order to finish the data upload in BRTServices::CILD.");
+			return false;
 		}
 
 		/** \brief Set the name of the SOFA file
@@ -201,6 +208,34 @@ namespace BRTServices {
 			return numberOfEars;
 		}
 
+		/** \brief Set the azimuth step in degrees in the ILD table of the SOFA file.
+		*    \param [in]	azimuthStep	int contains table azimuth step
+		*/
+		void SetAzimuthTableStep(int _azimuthStep) {
+			azimuthStep = _azimuthStep;
+		}
+
+		/** \brief Get the azimuth step 
+		*   \return int contains azimuth step in degrees
+		*/
+		int GetAzimuthTableStep() {
+			return azimuthStep;
+		}
+
+		/** \brief Set the distance step in meter in the ILD table of the SOFA file
+		*    \param [in]	distanceStep	int contains table distance Step in metres
+		*/
+		void SetDistanceTableStep(float _distanceStep) {
+			
+			distanceStep = static_cast<int> (round(GetDistanceInMM(_distanceStep)));
+		}
+
+		/** \brief Get the distance step
+		*   \return int contains distance step in metres
+		*/
+		float GetDistanceTableStep() {
+			return GetDistanceInMetres(distanceStep);
+		}
 
 		/** \brief	Set the relative position of one ear (to the listener head center)
 		* 	\param [in]	_ear			ear type
@@ -275,6 +310,11 @@ namespace BRTServices {
 		*/				
 		std::vector<float> GetILDNearFieldEffectCoefficients(Common::T_ear ear, float distance_m, float azimuth)
 		{
+			if (!ILDLoaded) {
+				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "ILD table was not initialized in BRTServices::CILD::GetILDNearFieldEffectCoefficients()");
+				return std::vector<float>();
+			}
+
 			if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
 			{
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get Near Field ILD coefficients for a wrong ear (BOTH or NONE)");
@@ -291,15 +331,9 @@ namespace BRTServices {
 			//ASSERT(ILDNearFieldEffectTable_AzimuthStep > 0 && ILDNearFieldEffectTable_DistanceStep > 0, RESULT_ERROR_INVALID_PARAM, "Step values of ILD hash table are not valid", "");
 
 			float distance_mm = GetDistanceInMM(distance_m);
-
-			/*float distSign = distance_mm > 0 ? 1 : -1;
-			float azimSign = azimuth > 0 ? 1 : -1;
-
-			int q_distance_mm	= NEAR_FIELD_TABLE_DISTANCE_STEP * (int)((distance_mm + distSign * ((float)NEAR_FIELD_TABLE_DISTANCE_STEP) / 2) / NEAR_FIELD_TABLE_DISTANCE_STEP);
-			int q_azimuth		= NEAR_FIELD_TABLE_AZIMUTH_STEP * (int)((azimuth + azimSign * ((float)NEAR_FIELD_TABLE_AZIMUTH_STEP) / 2) / NEAR_FIELD_TABLE_AZIMUTH_STEP);*/
-					
-			int q_distance_mm	= GetRoundUp(distance_mm, NEAR_FIELD_TABLE_DISTANCE_STEP);
-			int q_azimuth = GetRoundUp(azimuth, NEAR_FIELD_TABLE_AZIMUTH_STEP);
+								
+			int q_distance_mm	= GetRoundUp(distance_mm, distanceStep);
+			int q_azimuth		= GetRoundUp(azimuth, azimuthStep);
 
 			auto itEar = t_ILDNearFieldEffect.find(CILD_Key(q_distance_mm, q_azimuth));
 			if (itEar != t_ILDNearFieldEffect.end())
@@ -372,6 +406,10 @@ namespace BRTServices {
 			return _distanceInMetres * 1000.0f;
 		}
 
+		float GetDistanceInMetres(float _distanceInMilimetres) {
+			return _distanceInMilimetres * 0.001f;
+		}
+
 		///////////////
 		// ATTRIBUTES
 		///////////////	
@@ -380,8 +418,8 @@ namespace BRTServices {
 		bool ILDLoaded;								// Variable that indicates if the ILD has been loaded correctly
 
 		T_ILD_HashTable t_ILDNearFieldEffect;
-		//int ILDNearFieldEffectTable_AzimuthStep;		// In degress
-		//int ILDNearFieldEffectTable_DistanceStep;		// In milimeters
+		int azimuthStep;		// In degress
+		int distanceStep;		// In milimeters
 												  
 		//T_ILD_HashTable t_ILDSpatialization;	  
 		//int ILDSpatializationTable_AzimuthStep;			// In degress

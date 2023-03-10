@@ -229,20 +229,12 @@ namespace BRTReaders
 				return false;
 			}
 
-
-			/*std::vector< double > delays;
-			ildFile.GetDataDelay(delays);*/
-
 			std::vector< double > data;
-			ildFile.GetDataSOS(data);
-
-
-			// Prepare HRTF
-			const unsigned int nCoefficients = (unsigned int)ildFile.GetNumDataSamples();   // For example: 512 samples.			
+			ildFile.GetDataSOS(data);			
+			const unsigned int nCoefficients = (unsigned int)ildFile.GetNumDataSamples();   // For example: 12 coefs
 			const unsigned int numberOfReceivers = (unsigned int)ildFile.GetNumReceivers();
 
 			if (numberOfReceivers == 0) {
-
 				SET_RESULT(RESULT_ERROR_BADSIZE, "SOFA gives incoherent number of receivers and coefficients");
 				return false;
 			}
@@ -251,19 +243,28 @@ namespace BRTReaders
 
 			}
 
-			listenerILD->BeginSetup();
-			// This outtermost loop iterates over Cofficients
+			// Calculate table steps and Save
+			int azimuthStep = CalculateTableAzimuthStep(pos, dims[0], dims[1]);
+			float distanceStep = CalculateTableDistanceStep(pos, dims[0], dims[1]);
 
+			listenerILD->SetAzimuthTableStep(azimuthStep);
+			listenerILD->SetDistanceTableStep(distanceStep);
+
+			// Get and save coefficients table
+			listenerILD->BeginSetup();			
+			// This outtermost loop iterates over Cofficients
 			for (std::size_t i = 0; i < nMeasurements; i++) // or for( std::size_t i = 0; i < dims[0]; i++ ), should be the same.
 			{
 				TILDStruct coefficients;
 				coefficients.leftCoefs.resize(nCoefficients);
 
 				double azimuth = pos[array2DIndex(i, 0, nMeasurements, dims[1])];
-				double elevation = pos[array2DIndex(i, 1, nMeasurements, dims[1])];
+				//double elevation = pos[array2DIndex(i, 1, nMeasurements, dims[1])];
 				double distance = pos[array2DIndex(i, 2, nMeasurements, dims[1])];
 
 				//while (elevation < 0) elevation += 360; // TODO: check who should do this
+				
+
 
 				const int left_ear = 0;
 				//hrir_value.leftDelay = delays[specifiedDelays ? array2DIndex(i, left_ear, nMeasurements, 2) : 0];
@@ -288,6 +289,57 @@ namespace BRTReaders
 			}			
 			return true;
 		}
+
+		/// Calculate the TABLE AZIMUTH STEP from the table
+		int CalculateTableAzimuthStep(const std::vector<double>& pos, unsigned int dimmensionRow, unsigned int dimmensionColumn) {
+
+			std::vector<double> azimuthList;									
+			//Get all the azimuths from the table
+			for (std::size_t i = 0; i < dimmensionRow; i++) {
+				double azimuth	= pos[array2DIndex(i, 0, dimmensionRow, dimmensionColumn)];							
+				azimuthList.push_back(azimuth);			
+			}
+
+			// Order azimuth and remove duplicates
+			std::sort(azimuthList.begin(), azimuthList.end());
+			azimuthList.erase(unique(azimuthList.begin(), azimuthList.end()), azimuthList.end());
+			
+			// Calculate the minimum azimuth
+			int azimuthStep = 999999;
+			for (int i = 0; i < azimuthList.size() - 1; i++) {
+				if (azimuthList[i + 1] - azimuthList[i] < azimuthStep) {
+					azimuthStep = azimuthList[i + 1] - azimuthList[i];
+				}
+			}			
+			return azimuthStep;
+		}
+
+		/// Calculate the TABLE Distance STEP from the table
+		float CalculateTableDistanceStep(const std::vector<double>& pos, unsigned int dimmensionRow, unsigned int dimmensionColumn) {			
+			std::vector<double> distanceList;
+						
+			//Get all the distances from the table
+			for (std::size_t i = 0; i < dimmensionRow; i++) {				
+				double distance = pos[array2DIndex(i, 2, dimmensionRow, dimmensionColumn)];
+				distanceList.push_back(distance);
+			}
+
+			// Order azimuth and remove duplicates
+			std::sort(distanceList.begin(), distanceList.end());
+			distanceList.erase(unique(distanceList.begin(), distanceList.end()), distanceList.end());
+			
+			// Calculate the minimum d
+			double distanceStep = 999999;
+			for (int i = 0; i < distanceList.size() - 1; i++) {
+				if (distanceList[i + 1] - distanceList[i] < distanceStep) {
+					distanceStep = distanceList[i + 1] - distanceList[i];
+				}
+			}
+			// Rounding the result, to millimetres and back to metres
+			float distenceStepMM = distanceStep * 1000;
+			return std::round(distenceStepMM) * 0.001f;
+		}
+
 
 		// Calculate sofa 2D matrix index
 		const std::size_t array2DIndex(const unsigned long i, const unsigned long j, const unsigned long dim1, const unsigned long dim2) {
