@@ -33,6 +33,22 @@ namespace BRTBase {
 			return _command;
 		}
 
+		std::string GetString(std::string fieldName) {
+			std::string _command = "";
+			if (!j[fieldName].is_null() && j[fieldName].is_string()) {
+				_command = j[fieldName].get<std::string>();
+			}
+			return _command;
+		}
+
+		int GetInt(std::string fieldName) {
+			int _command;
+			if (!j[fieldName].is_null() && j[fieldName].is_number_integer()) {
+				_command = j[fieldName].get<int>();
+			}
+			return _command;
+		}
+
 		std::string GetStringParameter() {
 			std::string _temp = "";
 			if (!j["parameter"].is_null() && j["parameter"].is_string()) {
