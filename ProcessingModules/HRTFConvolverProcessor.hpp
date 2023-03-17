@@ -50,19 +50,19 @@ namespace BRTProcessing {
 									
 			std::cout << command.GetCommand() << std::endl;
 			
-			if (command.GetCommand() == "/brt/listener/enableSpatialization/") {
+			if (command.GetCommand() == "/listener/enableSpatialization") {
 				//std::cout << "sourceID: " << command.GetID() << std::endl;
 				//TODO check if its my source ID
-				if (command.GetBoolParameter()) { EnableSpatialization(); }
+				if (command.GetBool("boolParam")) { EnableSpatialization(); }
 				else { DisableSpatialization(); }
 			}
-			else if (command.GetCommand() == "/brt/listener/enableInterpolation/") {
+			else if (command.GetCommand() == "/listener/enableInterpolation") {
 				//std::cout << "sourceID: " << command.GetID() << std::endl;
 				//TODO check if its my source ID
-				if (command.GetBoolParameter()) { EnableInterpolation(); }
+				if (command.GetBool("boolParam")) { EnableInterpolation(); }
 				else { DisableInterpolation(); }
 			}
-			else if (command.GetCommand() == "/brt/source/HRTFConvolver/resetBuffers/") {
+			else if (command.GetCommand() == "/source/HRTFConvolver/resetBuffers") {
 				//std::cout << "sourceID: " << command.GetSourceID() << std::endl;
 				//TODO check if its my source ID
 				ResetSourceConvolutionBuffers();

@@ -56,7 +56,7 @@ namespace BRTProcessing {
 			if (command.GetCommand() == "/brt/listener/enableNearFiedlEffect/") {
 				//std::cout << "sourceID: " << command.GetID() << std::endl;
 				//TODO check if its my source ID
-				if (command.GetBoolParameter()) { EnableNearFieldEffect(); }
+				if (command.GetBool("boolParam")) { EnableNearFieldEffect(); }
 				else { DisableNearFieldEffect(); }
 			}							
 		} 

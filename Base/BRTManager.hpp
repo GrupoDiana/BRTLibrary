@@ -268,10 +268,17 @@ namespace BRTBase {
 		//////////////////////
 		// GET SET
 		/////////////////////
+		//TODO: delete?
 		void Do(std::string commandJson) {
 			std::cout << "Command received by brt: " << commandJson << endl;
 			BRTBase::CCommand command(commandJson);
 			commandsExitPoint->sendData(command);																		
+		}
+
+		void SendCommand2BRT(BRTBase::CCommand _command) {
+			//std::cout << "Command received by brt: " << commandJson << endl;
+			//BRTBase::CCommand command(commandJson);
+			commandsExitPoint->sendData(_command);
 		}
 
 
