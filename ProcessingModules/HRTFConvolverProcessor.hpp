@@ -48,21 +48,21 @@ namespace BRTProcessing {
 		void UpdateCommand() {					
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
 									
-			std::cout << command.GetCommand() << std::endl;
+			std::cout << command.GetAddress() << std::endl;
 			
-			if (command.GetCommand() == "/listener/enableSpatialization") {
+			if (command.GetAddress() == "/listener/enableSpatialization") {
 				//std::cout << "sourceID: " << command.GetID() << std::endl;
 				//TODO check if its my source ID
-				if (command.GetBool("boolParam")) { EnableSpatialization(); }
+				if (command.GetBoolParameter("boolParam")) { EnableSpatialization(); }
 				else { DisableSpatialization(); }
 			}
-			else if (command.GetCommand() == "/listener/enableInterpolation") {
+			else if (command.GetAddress() == "/listener/enableInterpolation") {
 				//std::cout << "sourceID: " << command.GetID() << std::endl;
 				//TODO check if its my source ID
-				if (command.GetBool("boolParam")) { EnableInterpolation(); }
+				if (command.GetBoolParameter("boolParam")) { EnableInterpolation(); }
 				else { DisableInterpolation(); }
 			}
-			else if (command.GetCommand() == "/source/HRTFConvolver/resetBuffers") {
+			else if (command.GetAddress() == "/source/HRTFConvolver/resetBuffers") {
 				//std::cout << "sourceID: " << command.GetSourceID() << std::endl;
 				//TODO check if its my source ID
 				ResetSourceConvolutionBuffers();

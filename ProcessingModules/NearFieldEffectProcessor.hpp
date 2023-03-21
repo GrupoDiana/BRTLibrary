@@ -51,12 +51,12 @@ namespace BRTProcessing {
 		void UpdateCommand() {					
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
 									
-			std::cout << command.GetCommand() << std::endl;
+			std::cout << command.GetAddress() << std::endl;
 			
-			if (command.GetCommand() == "/brt/listener/enableNearFiedlEffect/") {
+			if (command.GetAddress() == "/brt/listener/enableNearFiedlEffect/") {
 				//std::cout << "sourceID: " << command.GetID() << std::endl;
 				//TODO check if its my source ID
-				if (command.GetBool("boolParam")) { EnableNearFieldEffect(); }
+				if (command.GetBoolParameter("boolParam")) { EnableNearFieldEffect(); }
 				else { DisableNearFieldEffect(); }
 			}							
 		} 
