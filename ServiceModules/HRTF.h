@@ -181,6 +181,15 @@ namespace BRTServices
 			return HRIRLength;
 		}
 
+
+		void SetResamplingStep(int _resamplingStep) {
+			resamplingStep = _resamplingStep;
+		}
+
+		int GetResamplingStep() {
+			return resamplingStep;
+		}
+
 		/** \brief Start a new HRTF configuration
 		*	\param [in] _HRIRLength buffer size of the HRIR to be added		
 		*   \eh On success, RESULT_OK is reported to the error handler.
@@ -194,7 +203,6 @@ namespace BRTServices
 				HRIRLength = _HRIRLength;
 				distanceOfMeasurement = _distance;
 				bufferSize = globalParameters.GetBufferSize();
-				//resamplingStep = ownerListener->GetHRTFResamplingStep();		// TODO Do we need this? 
 
 				float partitions = (float)HRIRLength / (float)bufferSize;
 				HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
@@ -820,7 +828,7 @@ namespace BRTServices
 		void CalculateHRIR_InPoles()
 		{
 			THRIRStruct precalculatedHRIR_270, precalculatedHRIR_90;
-			int azimuthStep = AZIMUTH_STEP;
+			//int azimuthStep = AZIMUTH_STEP;
 			bool found = false;
 
 			//Clasify every HRIR of the HRTF into the two hemispheres by their orientations
@@ -1801,28 +1809,28 @@ namespace BRTServices
 		}
 				
 		// Recalculate the HRTF FFT table partitioned or not with a new bufferSize or resampling step		
-		void CalculateNewHRTFTable() {
-			if (!t_HRTF_DataBase.empty())
-			{
-				//BeginSetup
-				//Update parameters								
-				bufferSize = globalParameters.GetBufferSize();
-				//resamplingStep = ownerListener->GetHRTFResamplingStep();		// TODO Do we need this? 
-				float partitions = (float)HRIRLength / (float)bufferSize;
-				HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
+		//void CalculateNewHRTFTable() {
+		//	if (!t_HRTF_DataBase.empty())
+		//	{
+		//		//BeginSetup
+		//		//Update parameters								
+		//		bufferSize = globalParameters.GetBufferSize();
+		//		//resamplingStep = ownerListener->GetHRTFResamplingStep();		// TODO Do we need this? 
+		//		float partitions = (float)HRIRLength / (float)bufferSize;
+		//		HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
 
-				//Clear every table		
-				t_HRTF_Resampled_frequency.clear();
-				t_HRTF_Resampled_partitioned.clear();
+		//		//Clear every table		
+		//		t_HRTF_Resampled_frequency.clear();
+		//		t_HRTF_Resampled_partitioned.clear();
 
-				//Change class state
-				setupInProgress = true;
-				HRTFLoaded = false;
+		//		//Change class state
+		//		setupInProgress = true;
+		//		HRTFLoaded = false;
 
-				//Calculate Tables
-				EndSetup();
-			}
-		}
+		//		//Calculate Tables
+		//		EndSetup();
+		//	}
+		//}
 
 		// Reset HRTF		
 		void Reset() {
@@ -1839,8 +1847,9 @@ namespace BRTServices
 			//Update parameters			
 			HRIRLength = 0;
 			bufferSize = 0;
-			resamplingStep = 0;
-		}		
+			resamplingStep = DEFAULT_RESAMPLING_STEP;
+		}	
+
 	};
 }
 #endif

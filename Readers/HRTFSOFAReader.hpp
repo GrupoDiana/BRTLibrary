@@ -43,8 +43,13 @@ namespace BRTReaders
 		*/
 		bool CreateFromSofa(const std::string& sofafile, shared_ptr<BRTServices::CHRTF> listenerHRTF, bool& specifiedDelays)
 		{
+			return CreateFromSofa(sofafile, listenerHRTF, specifiedDelays, -1);
+		}
+
+		bool CreateFromSofa(const std::string& sofafile, shared_ptr<BRTServices::CHRTF> listenerHRTF, bool& specifiedDelays, int _resamplingStep) {
 			if (LoadHRTFTableFromSOFA(sofafile, listenerHRTF, specifiedDelays))
 			{
+				if (_resamplingStep!=-1){ listenerHRTF->SetResamplingStep(_resamplingStep); }				
 				listenerHRTF->EndSetup();
 				return true;
 			}
