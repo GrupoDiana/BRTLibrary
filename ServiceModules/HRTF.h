@@ -865,6 +865,8 @@ namespace BRTServices
 
 				precalculatedHRIR_90 = CalculateHRIR_InOneHemispherePole(keys_northenHemisphere);
 
+				SET_RESULT(RESULT_WARNING, "HRIR interpolated for position: " + std::to_string(0) + ", " + std::to_string(90));
+
 			}
 
 			//	SOURTHERN HEMOSPHERE POLES (270 degrees elevation) ____________________________________________________________________________
@@ -897,6 +899,8 @@ namespace BRTServices
 				});*/
 
 				precalculatedHRIR_270 = CalculateHRIR_InOneHemispherePole(keys_southernHemisphere);
+
+				SET_RESULT(RESULT_WARNING, "HRIR interpolated for position: " + std::to_string(0) + ", " + std::to_string(270));
 			}
 
 
@@ -1116,7 +1120,7 @@ namespace BRTServices
 						newHRIR_partitioned = SplitAndGetFFT_HRTFData(interpolatedHRIR);
 						auto returnValue1 = t_HRTF_Resampled_partitioned.emplace(orientation(newAzimuth, newElevation), std::forward<THRIRPartitionedStruct>(newHRIR_partitioned));
 						//Error handler
-						if (returnValue1.second) { /*SET_RESULT(RESULT_OK, "HRIR emplaced into t_HRTF_Resampled_partitioned successfully");*/ }
+						if (returnValue1.second) { SET_RESULT(RESULT_WARNING, "HRIR interpolated for position: " + std::to_string(newAzimuth) + ", " + std::to_string(newElevation)); }
 						else { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_partitioned table"); }
 #endif												
 					}
@@ -1170,7 +1174,7 @@ namespace BRTServices
 						newHRIR_partitioned = SplitAndGetFFT_HRTFData(interpolatedHRIR);
 						auto returnValue1 = t_HRTF_Resampled_partitioned.emplace(orientation(newAzimuth, newElevation), std::forward<THRIRPartitionedStruct>(newHRIR_partitioned));
 						//Error handler
-						if (returnValue1.second) { /*SET_RESULT(RESULT_OK, "HRIR emplaced into t_HRTF_Resampled_partitioned successfully");*/ }
+						if (returnValue1.second) { SET_RESULT(RESULT_WARNING, "HRIR interpolated for position: " + std::to_string(newAzimuth) + ", " + std::to_string(newElevation)); }
 						else { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_partitioned table"); }
 #endif // 															
 					}
