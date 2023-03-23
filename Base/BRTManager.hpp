@@ -243,6 +243,14 @@ namespace BRTBase {
 			module2->connectSamplesEntryTo(module1->GetSamplesExitPoint(exitPointID), entryPointID);
 			return true;
 		}
+
+		template <typename T, typename U>
+		bool DisconnectModulesSamples(std::shared_ptr <T>& module1, std::string exitPointID, std::shared_ptr <U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectSamplesEntryTo(module1->GetSamplesExitPoint(exitPointID), entryPointID);
+			return true;
+		}
+
 		template <typename T>
 		bool ConnectModulesCommand(std::shared_ptr <T>& module1) {
 			//if (!setupModeActivated) return false;
