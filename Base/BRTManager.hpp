@@ -140,6 +140,20 @@ namespace BRTBase {
 			return true;
 		}
 
+		template <typename U>
+		bool ConnectModuleToSoundSourceID(std::shared_ptr<CSoundSource>& soundSourceModule, std::shared_ptr <U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectIDEntryTo(soundSourceModule->GetIDExitPoint(), entryPointID);
+			return true;
+		}
+
+		template <typename U>
+		bool DisconnectModuleToSoundSourceID(std::shared_ptr<CSoundSource>& soundSourceModule, std::shared_ptr <U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectIDEntryTo(soundSourceModule->GetIDExitPoint(), entryPointID);
+			return true;
+		}
+
 		///////////////////////////////
 		// LISTENER CONNECTIONS
 		//////////////////////////////
@@ -210,8 +224,7 @@ namespace BRTBase {
 			module2->disconnectHRTFEntryTo(listenerModule->GetHRTFPtrExitPoint(), entryPointID);
 			return true;
 		}
-
-		//
+		
 		template <typename U>
 		bool ConnectModuleToListenerILD(std::shared_ptr<CListener>& listenerModule, std::shared_ptr < U>& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
@@ -226,7 +239,19 @@ namespace BRTBase {
 			return true;
 		}
 
-		//
+		template <typename U>
+		bool ConnectModuleToListenerID(std::shared_ptr<CListener>& listenerModule, std::shared_ptr < U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectIDEntryTo(listenerModule->GetIDExitPoint(), entryPointID);
+			return true;
+		}
+
+		template <typename U>
+		bool DisconnectModuleToListenerID(std::shared_ptr<CListener>& listenerModule, std::shared_ptr < U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectIDEntryTo(listenerModule->GetIDExitPoint(), entryPointID);
+			return true;
+		}
 
 		///////////////////////////////////////////
 		// GENERIC PROCESSOR MODULES CONNECTIONs
@@ -275,21 +300,12 @@ namespace BRTBase {
 
 		//////////////////////
 		// GET SET
-		/////////////////////
-		//TODO: delete?
-		void Do(std::string commandJson) {
-			std::cout << "Command received by brt: " << commandJson << endl;
+		/////////////////////		
+		void ExecuteCommand(std::string commandJson) {
+			//std::cout << "Command received by brt: " << commandJson << endl;
 			BRTBase::CCommand command(commandJson);
 			commandsExitPoint->sendData(command);																		
 		}
-
-		void SendCommand2BRT(BRTBase::CCommand _command) {
-			//std::cout << "Command received by brt: " << commandJson << endl;
-			//BRTBase::CCommand command(commandJson);
-			commandsExitPoint->sendData(_command);
-		}
-
-
 
 	private:
 		std::shared_ptr<BRTBase::CExitPointCommand> commandsExitPoint;		// Exit point to emit control commands

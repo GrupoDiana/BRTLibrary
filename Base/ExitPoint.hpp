@@ -43,7 +43,7 @@ namespace BRTBase {
     
     using CExitPointSamplesVector = CExitPointBase<CMonoBuffer<float> >;
     using CExitPointTransform = CExitPointBase<Common::CTransform >;
-    //using CExitPointCommand = CExitPointBase<std::string>;
     using CExitPointCommand = CExitPointBase<BRTBase::CCommand>;
+    using CExitPointID = CExitPointBase<std::string>;
 }
 #endif
