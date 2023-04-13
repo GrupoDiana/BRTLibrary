@@ -3,7 +3,7 @@
 
 #include <functional>
 #include <Base/ObserverBase.hpp>
-#include <Base/ExitPoint.h>
+#include <Base/ExitPoint.hpp>
 #include <Common/Buffer.h>
 #include <Common/Transform.h>
 #include <Common/EarsTransform.hpp>
@@ -41,8 +41,8 @@ namespace BRTBase {
     };
            
     using CEntryPointSamplesVector = CEntryPointBase<CMonoBuffer<float>>;
-    using CEntryPointTransform = CEntryPointBase<Common::CTransform>; 
-    //using CEntryPointCommand = CEntryPointBase<std::string>;
+    using CEntryPointTransform = CEntryPointBase<Common::CTransform>;     
     using CEntryPointCommand = CEntryPointBase<BRTBase::CCommand>;
+    using CEntryPointID = CEntryPointBase<std::string>;
 }
 #endif

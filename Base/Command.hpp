@@ -14,7 +14,11 @@ namespace BRTBase {
 		CCommand(std::string _commandJsonString) : j{ json::parse(_commandJsonString) } {}
 		
 		bool isNull() { 
-			return (j["address"].is_null());
+			return (j["address"].is_null() && j["command"].is_null());
+		}
+
+		std::string GetCommand() {			
+			return GetStringParameter("command");
 		}
 
 		std::string GetAddress() {

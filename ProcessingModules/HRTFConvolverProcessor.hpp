@@ -22,6 +22,9 @@ namespace BRTProcessing {
 			CreatePositionEntryPoint("listenerPosition");           
 			CreateHRTFPtrEntryPoint("listenerHRTF");
 
+			CreateIDEntryPoint("sourceID");
+			CreateIDEntryPoint("listenerID");
+
             CreateSamplesExitPoint("leftEar");
             CreateSamplesExitPoint("rightEar");   									
         }
@@ -50,29 +53,35 @@ namespace BRTProcessing {
 									
 			std::cout << command.GetAddress() << std::endl;
 			
-			if (command.GetAddress() == "/listener/enableSpatialization") {
-				//std::cout << "sourceID: " << command.GetID() << std::endl;
-				//TODO check if its my source ID
-				if (command.GetBoolParameter("boolParam")) { EnableSpatialization(); }
-				else { DisableSpatialization(); }
+			//if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
+				if (command.GetCommand() == "/listener/enableSpatialization") {					
+					if (command.GetBoolParameter("enable")) { EnableSpatialization(); }
+					else { DisableSpatialization(); }
+				}
+				else if (command.GetCommand() == "/listener/enableInterpolation") {					
+					if (command.GetBoolParameter("enable")) { EnableInterpolation(); }
+					else { DisableInterpolation(); }
+				}
+			//}
+
+			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
+				if (command.GetCommand() == "/source/HRTFConvolver/resetBuffers") {
+					ResetSourceConvolutionBuffers();
+				}
 			}
-			else if (command.GetAddress() == "/listener/enableInterpolation") {
-				//std::cout << "sourceID: " << command.GetID() << std::endl;
-				//TODO check if its my source ID
-				if (command.GetBoolParameter("boolParam")) { EnableInterpolation(); }
-				else { DisableInterpolation(); }
-			}
-			else if (command.GetAddress() == "/source/HRTFConvolver/resetBuffers") {
-				//std::cout << "sourceID: " << command.GetSourceID() << std::endl;
-				//TODO check if its my source ID
-				ResetSourceConvolutionBuffers();
-			}			
 		} 
       
     private:
        
+		bool IsToMySoundSource(std::string _sourceID) {
+			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
+			return mySourceID == _sourceID;
+		}
 		
-		
+		bool IsToMyListener(std::string _listenerID) {
+			std::string myListenerID = GetIDEntryPoint("listenerID")->GetData();
+			return myListenerID == _listenerID;
+		}
     };
 }
 #endif

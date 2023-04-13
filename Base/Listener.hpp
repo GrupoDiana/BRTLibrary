@@ -3,17 +3,14 @@
 
 #include <memory>
 #include "EntryPoint.hpp"
-#include "ExitPoint.h"
+#include "ExitPoint.hpp"
 #include "ExitPointPtr.hpp"
 #include <Common/CommonDefinitions.h>
 #include <ServiceModules/HRTF.h>
 #include <ServiceModules/ILD.hpp>
 
 namespace BRTServices {
-	class CHRTF;/* {
-	public:
-		void SetListener(BRTBase::CListener* _ownerListener);
-	};*/
+	class CHRTF;
 }
 
 namespace BRTBase {
@@ -32,9 +29,13 @@ namespace BRTBase {
 			listenerPositionExitPoint	= std::make_shared<CExitPointTransform>("listenerTransform");
 			hrtfExitPoint				= std::make_shared<CExitPointHRTFPtr>("listenerHRTF");
 			ildExitPoint				= std::make_shared<CExitPointILDPtr>("listenerILD");
+			listenerIDExitPoint			= std::make_shared<CExitPointID>("listenerID");
+			
 			// Init vars
 			leftDataReady = false;
 			rightDataReady = false;
+			//Send this listener ID
+			listenerIDExitPoint->sendData(listenerID);
 		}
 
 		void connectSamplesEntryTo(std::shared_ptr<CExitPointSamplesVector> _exitPoint, std::string entryPointID) {
@@ -61,6 +62,10 @@ namespace BRTBase {
 
 		std::shared_ptr<CExitPointILDPtr> GetILDPtrExitPoint() {
 			return ildExitPoint;
+		}
+		
+		std::shared_ptr<CExitPointID> GetIDExitPoint() {
+			return listenerIDExitPoint;
 		}
 
 		void updateFromEntryPoint(std::string id) {											
@@ -205,6 +210,7 @@ namespace BRTBase {
 		std::shared_ptr<CExitPointTransform>			listenerPositionExitPoint;
 		std::shared_ptr<CExitPointHRTFPtr>				hrtfExitPoint;
 		std::shared_ptr<CExitPointILDPtr>				ildExitPoint;
+		std::shared_ptr<CExitPointID>					listenerIDExitPoint;
 
 		CMonoBuffer<float> leftBuffer;
 		CMonoBuffer<float> rightBuffer;
