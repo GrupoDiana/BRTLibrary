@@ -52,6 +52,7 @@
 #define MAX_DISTANCE_BETWEEN_ELEVATIONS 5
 #define NUMBER_OF_PARTS 4 
 #define AZIMUTH_STEP  15
+
 //#define EPSILON 0.01f;
 
 /*! \file */
@@ -246,13 +247,13 @@ namespace BRTServices
 		void AddHRIR(float azimuth, float elevation, THRIRStruct && newHRIR)		
 		{
 			if (setupInProgress) {
-				int iAzimuth = static_cast<int> (round(azimuth));
-				int iElevation = static_cast<int> (round(elevation));
+				int iAzimuth = RoundToHundredth(azimuth);  
+				int iElevation = RoundToHundredth(elevation);
 
 				auto returnValue = t_HRTF_DataBase.emplace(orientation(iAzimuth, iElevation), std::forward<THRIRStruct>(newHRIR));
 				//Error handler
 				if (returnValue.second) { /*SET_RESULT(RESULT_OK, "HRIR emplaced into t_HRTF_DataBase succesfully"); */ }
-				else { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map"); }
+				else { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position ["+ std::to_string(iAzimuth) + ", " + std::to_string(iElevation)+ "]"); }
 			}
 		}
 
@@ -837,7 +838,11 @@ namespace BRTServices
 			//	NORTHERN HEMOSPHERE POLES (90 degrees elevation ) ____________________________________________________________________________
 
 			//If HRIR with orientation (0,90) exist in t_HRTF_DataBase
-			auto it90 = t_HRTF_DataBase.find(orientation(0, 90));
+			int iAzimuthPoles = 0;
+			int iElevationNorthPole = RoundToHundredth(90);  
+			int iElevationSouthPole = RoundToHundredth(270);
+
+			auto it90 = t_HRTF_DataBase.find(orientation(iAzimuthPoles, iElevationNorthPole));
 			if (it90 != t_HRTF_DataBase.end())
 			{
 				precalculatedHRIR_90 = it90->second;
@@ -847,7 +852,7 @@ namespace BRTServices
 				keys_northenHemisphere.reserve(t_HRTF_DataBase.size());
 				for (auto& it : t_HRTF_DataBase)
 				{
-					if (it.first.elevation < 90) { keys_northenHemisphere.push_back(it.first); }
+					if (it.first.elevation < iElevationNorthPole) { keys_northenHemisphere.push_back(it.first); }
 				}
 				// sort using a custom function object
 				struct {
@@ -865,16 +870,17 @@ namespace BRTServices
 
 				precalculatedHRIR_90 = CalculateHRIR_InOneHemispherePole(keys_northenHemisphere);
 
-				//SET_RESULT(RESULT_WARNING, "HRIR interpolated for position: " + std::to_string(0) + ", " + std::to_string(90));
+				SET_RESULT(RESULT_WARNING, "HRIR interpolated in the pole [ " + std::to_string(iAzimuthPoles) + ", " + std::to_string(iElevationNorthPole/OFFSET) + "]");
 
 			}
 
 			//	SOURTHERN HEMOSPHERE POLES (270 degrees elevation) ____________________________________________________________________________
 
 			//If HRIR with orientation (0,270) exist in t_HRTF_DataBase
-			if (t_HRTF_DataBase.find(orientation(0, 270)) != t_HRTF_DataBase.end())
+
+			if (t_HRTF_DataBase.find(orientation(0, iElevationSouthPole)) != t_HRTF_DataBase.end())
 			{
-				auto it270 = t_HRTF_DataBase.find(orientation(0, 270));
+				auto it270 = t_HRTF_DataBase.find(orientation(iAzimuthPoles, iElevationSouthPole));
 				precalculatedHRIR_270 = it270->second;
 			}
 			else
@@ -882,7 +888,7 @@ namespace BRTServices
 				keys_southernHemisphere.reserve(t_HRTF_DataBase.size());
 				for (auto& it : t_HRTF_DataBase)
 				{
-					if (it.first.elevation > 270) { keys_southernHemisphere.push_back(it.first); }
+					if (it.first.elevation > iElevationSouthPole) { keys_southernHemisphere.push_back(it.first); }
 				}
 				//Get a vector of iterators ordered from highest to lowest elevation.		
 				struct {
@@ -900,22 +906,24 @@ namespace BRTServices
 
 				precalculatedHRIR_270 = CalculateHRIR_InOneHemispherePole(keys_southernHemisphere);
 
-				//SET_RESULT(RESULT_WARNING, "HRIR interpolated for position: " + std::to_string(0) + ", " + std::to_string(270));
+				
+				SET_RESULT(RESULT_WARNING, "HRIR interpolated in the pole [ " + std::to_string(iAzimuthPoles) + ", " + std::to_string(iElevationSouthPole/OFFSET) + "]");
 			}
 
 
 			// Fill out the table ____________________________________________________________________________
-
+			int iWithOffset = 0;
 			for (int i = 0; i < 360; i = i + AZIMUTH_STEP)
 			{
+				iWithOffset = RoundToHundredth(i);
 				//Elevation 270 degrees
-				t_HRTF_DataBase.emplace(orientation(i, 270), precalculatedHRIR_270);
+				t_HRTF_DataBase.emplace(orientation(iWithOffset, iElevationSouthPole), precalculatedHRIR_270);
 				//Elevation 90 degrees
-				t_HRTF_DataBase.emplace(orientation(i, 90), precalculatedHRIR_90);
+				t_HRTF_DataBase.emplace(orientation(iWithOffset, iElevationNorthPole), precalculatedHRIR_90);
 				//Azimuth 360 degrees
-				auto it0 = t_HRTF_DataBase.find(orientation(0, i));
+				auto it0 = t_HRTF_DataBase.find(orientation(0, iWithOffset));
 				if (it0 != t_HRTF_DataBase.end()) {
-					t_HRTF_DataBase.emplace(orientation(360, i), it0->second);
+					t_HRTF_DataBase.emplace(orientation(RoundToHundredth(360), iWithOffset), it0->second);
 				}
 			}
 		}
@@ -963,7 +971,7 @@ namespace BRTServices
 						{
 							break;
 						}
-						else
+						else 
 						{
 							int32_t currentAzimuth = it.azimuth;
 							for (int j = 0; j < NUMBER_OF_PARTS; j++)
@@ -1003,7 +1011,7 @@ namespace BRTServices
 
 				for (auto it = hemisphereParts[q].begin(); it != hemisphereParts[q].end(); it++)
 				{
-					auto itHRIR = t_HRTF_DataBase.find(orientation(it->azimuth, it->elevation));
+					auto itHRIR = t_HRTF_DataBase.find(orientation(RoundToHundredth(it->azimuth), RoundToHundredth(it->elevation)));
 
 					//Get the delay
 					newHRIR[q].leftDelay = (newHRIR[q].leftDelay + itHRIR->second.leftDelay);
@@ -1063,13 +1071,14 @@ namespace BRTServices
 		void CalculateResampled_HRTFTable(int resamplingStep)
 		{
 			THRIRStruct interpolatedHRIR;
+			int numOfInterpolatedHRIRs = 0;
 
 			//Resample Interpolation Algorithm
 			for (int newAzimuth = 0; newAzimuth < 360; newAzimuth = newAzimuth + resamplingStep)
 			{
 				for (int newElevation = 0; newElevation <= 90; newElevation = newElevation + resamplingStep)
 				{
-					auto it = t_HRTF_DataBase.find(orientation(newAzimuth, newElevation));
+					auto it = t_HRTF_DataBase.find(orientation(RoundToHundredth(newAzimuth), RoundToHundredth(newElevation)));
 					if (it != t_HRTF_DataBase.end())
 					{
 
@@ -1100,6 +1109,7 @@ namespace BRTServices
 
 						//Get the interpolated HRIR 
 						interpolatedHRIR = CalculateHRIR_offlineMethod(newAzimuth, newElevation);
+						numOfInterpolatedHRIRs++;
 
 #ifdef USE_FREQUENCY_COVOLUTION_WITHOUT_PARTITIONS_ANECHOIC
 						//Fill out interpolated frequency table. IR in frequency domain
@@ -1128,7 +1138,7 @@ namespace BRTServices
 
 				for (int newElevation = 270; newElevation < 360; newElevation = newElevation + resamplingStep)
 				{
-					auto it2 = t_HRTF_DataBase.find(orientation(newAzimuth, newElevation));
+					auto it2 = t_HRTF_DataBase.find(orientation(RoundToHundredth(newAzimuth), RoundToHundredth(newElevation)));
 					if (it2 != t_HRTF_DataBase.end())
 					{
 #ifdef USE_FREQUENCY_COVOLUTION_WITHOUT_PARTITIONS_ANECHOIC
@@ -1157,6 +1167,7 @@ namespace BRTServices
 					{
 						//Get the interpolated HRIR 
 						interpolatedHRIR = CalculateHRIR_offlineMethod(newAzimuth, newElevation);
+						numOfInterpolatedHRIRs++;
 #ifdef USE_FREQUENCY_COVOLUTION_WITHOUT_PARTITIONS_ANECHOIC
 						//Fill out interpolated frequency table. IR in frequency domain
 						THRIRStruct newHRIR;
@@ -1181,6 +1192,7 @@ namespace BRTServices
 				}
 			}
 			//SET_RESULT(RESULT_OK, "CalculateResampled_HRTFTable has finished succesfully");
+			SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
 		}
 
 		//	Split the input HRIR data in subfilters and get the FFT to apply the UPC algorithm
@@ -1257,6 +1269,9 @@ namespace BRTServices
 		THRIRStruct CalculateHRIR_offlineMethod(int newAzimuth, int newElevation)
 		{
 			THRIRStruct newHRIR;
+			//int iNewAzimuth = RoundWithOffset(newAzimuth);
+			//int iNewElevation = RoundWithOffset(newElevation);
+
 			// Get a list sorted by distances to the orientation of interest
 			std::list<T_PairDistanceOrientation> sortedList = GetSortedDistancesList(newAzimuth, newElevation);
 
@@ -1292,9 +1307,9 @@ namespace BRTServices
 
 								if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f) {
 									// Calculate the new HRIR with the barycentric coorfinates
-									auto it0 = t_HRTF_DataBase.find(orientation(mygroup[i].azimuth, mygroup[i].elevation));
-									auto it1 = t_HRTF_DataBase.find(orientation(mygroup[j].azimuth, mygroup[j].elevation));
-									auto it2 = t_HRTF_DataBase.find(orientation(mygroup[k].azimuth, mygroup[k].elevation));
+									auto it0 = t_HRTF_DataBase.find(orientation(RoundToHundredth(mygroup[i].azimuth), RoundToHundredth(mygroup[i].elevation)));
+									auto it1 = t_HRTF_DataBase.find(orientation(RoundToHundredth(mygroup[j].azimuth), RoundToHundredth(mygroup[j].elevation)));
+									auto it2 = t_HRTF_DataBase.find(orientation(RoundToHundredth(mygroup[k].azimuth), RoundToHundredth(mygroup[k].elevation)));
 
 									if (it0 != t_HRTF_DataBase.end() && it1 != t_HRTF_DataBase.end() && it2 != t_HRTF_DataBase.end()) {
 
@@ -1395,12 +1410,12 @@ namespace BRTServices
 		{
 			T_PairDistanceOrientation temp;
 			float distance;
-			std::list<T_PairDistanceOrientation> sortedList;
+			std::list<T_PairDistanceOrientation> sortedList; 
 
 			// Algorithm to calculate the three shortest distances between the point (newAzimuth, newelevation) and all the points in the HRTF table (t)
 			for (auto it = t_HRTF_DataBase.begin(); it != t_HRTF_DataBase.end(); ++it)
 			{
-				distance = CalculateDistance_HaversineFormula(newAzimuth, newElevation, it->first.azimuth, it->first.elevation);
+				distance = CalculateDistance_HaversineFormula(newAzimuth, newElevation, DivideByOneHundred(it->first.azimuth), DivideByOneHundred(it->first.elevation));
 
 				temp.first = distance;
 				temp.second = it->first;
@@ -1853,6 +1868,15 @@ namespace BRTServices
 			bufferSize = 0;
 			resamplingStep = DEFAULT_RESAMPLING_STEP;
 		}	
+
+		int RoundToHundredth(float angle) {
+			return static_cast<int> (round(angle * 100));
+		}
+
+		int DivideByOneHundred(float angle) {
+			return static_cast<int> (round(angle / 100));
+
+		}
 
 	};
 }
