@@ -50,9 +50,7 @@ namespace BRTProcessing {
 
 		void UpdateCommand() {					
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
-									
-			std::cout << command.GetAddress() << std::endl;
-			
+															
 			//if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
 				if (command.GetCommand() == "/listener/enableSpatialization") {					
 					if (command.GetBoolParameter("enable")) { EnableSpatialization(); }
