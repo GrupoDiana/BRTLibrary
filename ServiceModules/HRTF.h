@@ -52,6 +52,8 @@
 #define MAX_DISTANCE_BETWEEN_ELEVATIONS 5
 #define NUMBER_OF_PARTS 4 
 #define AZIMUTH_STEP  15
+#define MARGIN 10
+
 
 //#define EPSILON 0.01f;
 
@@ -870,8 +872,13 @@ namespace BRTServices
 
 				precalculatedHRIR_90 = CalculateHRIR_InOneHemispherePole(keys_northenHemisphere);
 
-				SET_RESULT(RESULT_WARNING, "HRIR interpolated in the pole [ " + std::to_string(iAzimuthPoles) + ", " + std::to_string(iElevationNorthPole/OFFSET) + "]");
+				SET_RESULT(RESULT_WARNING, "HRIR interpolated in the pole [ " + std::to_string(iAzimuthPoles) + ", " + std::to_string(DivideByOneHundred(iElevationNorthPole)) + "]");
 
+				if (keys_northenHemisphere.begin()->elevation < iElevationNorthPole - RoundToHundredth(MARGIN))
+				{
+					//Calculate Casket
+				}
+			
 			}
 
 			//	SOURTHERN HEMOSPHERE POLES (270 degrees elevation) ____________________________________________________________________________
@@ -907,23 +914,23 @@ namespace BRTServices
 				precalculatedHRIR_270 = CalculateHRIR_InOneHemispherePole(keys_southernHemisphere);
 
 				
-				SET_RESULT(RESULT_WARNING, "HRIR interpolated in the pole [ " + std::to_string(iAzimuthPoles) + ", " + std::to_string(iElevationSouthPole/OFFSET) + "]");
+				SET_RESULT(RESULT_WARNING, "HRIR interpolated in the pole [ " + std::to_string(iAzimuthPoles) + ", " + std::to_string(DivideByOneHundred(iElevationSouthPole)) + "]");
 			}
 
 
 			// Fill out the table ____________________________________________________________________________
-			int iWithOffset = 0;
+			int iRoundedToHundred = 0;
 			for (int i = 0; i < 360; i = i + AZIMUTH_STEP)
 			{
-				iWithOffset = RoundToHundredth(i);
+				iRoundedToHundred = RoundToHundredth(i);
 				//Elevation 270 degrees
-				t_HRTF_DataBase.emplace(orientation(iWithOffset, iElevationSouthPole), precalculatedHRIR_270);
+				t_HRTF_DataBase.emplace(orientation(iRoundedToHundred, iElevationSouthPole), precalculatedHRIR_270);
 				//Elevation 90 degrees
-				t_HRTF_DataBase.emplace(orientation(iWithOffset, iElevationNorthPole), precalculatedHRIR_90);
+				t_HRTF_DataBase.emplace(orientation(iRoundedToHundred, iElevationNorthPole), precalculatedHRIR_90);
 				//Azimuth 360 degrees
-				auto it0 = t_HRTF_DataBase.find(orientation(0, iWithOffset));
+				auto it0 = t_HRTF_DataBase.find(orientation(0, iRoundedToHundred));
 				if (it0 != t_HRTF_DataBase.end()) {
-					t_HRTF_DataBase.emplace(orientation(RoundToHundredth(360), iWithOffset), it0->second);
+					t_HRTF_DataBase.emplace(orientation(RoundToHundredth(360), iRoundedToHundred), it0->second);
 				}
 			}
 		}
@@ -935,7 +942,7 @@ namespace BRTServices
 			THRIRStruct calculatedHRIR;
 			std::vector < vector <orientation>> hemisphereParts;
 			hemisphereParts.resize(NUMBER_OF_PARTS);
-			int border = std::ceil(360.0f / NUMBER_OF_PARTS);
+			int border = std::ceil(RoundToHundredth(360.0f) / NUMBER_OF_PARTS);
 
 			auto currentElevation = keys_hemisphere.begin()->elevation;
 			for (auto& it : keys_hemisphere)
@@ -967,7 +974,7 @@ namespace BRTServices
 					else
 					{
 						currentElevation = it.elevation;
-						if (currentElevation > (keys_hemisphere.begin()->elevation + MAX_DISTANCE_BETWEEN_ELEVATIONS))
+						if (currentElevation > (keys_hemisphere.begin()->elevation + RoundToHundredth(MAX_DISTANCE_BETWEEN_ELEVATIONS)))
 						{
 							break;
 						}
@@ -1002,7 +1009,7 @@ namespace BRTServices
 				float scaleFactor;
 				if (hemisphereParts[q].size())
 				{
-					scaleFactor = 1.0f / hemisphereParts[q].size();
+					scaleFactor = 1.0f / hemisphereParts[q].size(); 
 				}
 				else
 				{
