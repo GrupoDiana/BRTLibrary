@@ -1018,7 +1018,7 @@ namespace BRTServices
 
 				for (auto it = hemisphereParts[q].begin(); it != hemisphereParts[q].end(); it++)
 				{
-					auto itHRIR = t_HRTF_DataBase.find(orientation(RoundToHundredth(it->azimuth), RoundToHundredth(it->elevation)));
+					auto itHRIR = t_HRTF_DataBase.find(orientation(it->azimuth, it->elevation));
 
 					//Get the delay
 					newHRIR[q].leftDelay = (newHRIR[q].leftDelay + itHRIR->second.leftDelay);
@@ -1425,7 +1425,7 @@ namespace BRTServices
 				distance = CalculateDistance_HaversineFormula(newAzimuth, newElevation, DivideByOneHundred(it->first.azimuth), DivideByOneHundred(it->first.elevation));
 
 				temp.first = distance;
-				temp.second = it->first;
+				temp.second = orientation(DivideByOneHundred(it->first.azimuth), DivideByOneHundred(it->first.elevation));
 
 				sortedList.push_back(temp);
 			}
