@@ -655,9 +655,9 @@ namespace Common {
 				return;
 			}
 
-			vector<float> frequencies;
-			vector<float> amplitudes;
-			vector<float> phases;
+			std::vector<float> frequencies;
+			std::vector<float> amplitudes;
+			std::vector<float> phases;
 
 			for (typename std::initializer_list<float>::iterator it = frequencieslist.begin(); it != frequencieslist.end(); ++it)
 				frequencies.push_back(*it);
