@@ -270,11 +270,10 @@ namespace BRTServices
 					RemoveCommonDelay_HRTFDataBaseTable();
 
 					//HRTF Resampling methdos
-					CalculateHRIR_InPoles(resamplingStep);	//Specific method for LISTEN DataBase
-
+					CalculateHRIR_InPoles(resamplingStep);	
+					FillOutTableOfAzimuth360(resamplingStep);
 					CalculateResampled_HRTFTable(resamplingStep);
 
-					FillOutTableOfAzimuth360(resamplingStep);
 
 					//Setup values
 					auto it = t_HRTF_Resampled_partitioned.begin();
@@ -844,7 +843,7 @@ namespace BRTServices
 				
 				for (auto& it : t_HRTF_DataBase)
 				{
-					if (DivideByOneHundred(it.first.elevation) < iElevationNorthPole) { keys_northenHemisphere.push_back(OrientationDividedByOneHundred(it.first)); }
+					if (DivideByOneHundred(it.first.elevation) < iElevationNorthPole) { keys_northenHemisphere.push_back(it.first); }
 				}
 				// sort using a custom function object
 				struct { bool operator()(orientation a, orientation b) const { return a.elevation > b.elevation;}
@@ -868,7 +867,7 @@ namespace BRTServices
 				keys_southernHemisphere.reserve(t_HRTF_DataBase.size());
 				for (auto& it : t_HRTF_DataBase)
 				{
-					if (DivideByOneHundred(it.first.elevation) > iElevationSouthPole) { keys_southernHemisphere.push_back(OrientationDividedByOneHundred(it.first));}
+					if (DivideByOneHundred(it.first.elevation) > iElevationSouthPole) { keys_southernHemisphere.push_back(it.first);}
 				}
 				//Get a vector of iterators ordered from highest to lowest elevation.		
 				struct {
@@ -895,7 +894,7 @@ namespace BRTServices
 		THRIRStruct CalculateHRIR_InOneHemispherePole(std::vector<orientation> keys_hemisphere)
 		{
 			THRIRStruct calculatedHRIR;
-			std::vector < vector <orientation>> hemisphereParts;
+			std::vector < std::vector <orientation>> hemisphereParts;
 			hemisphereParts.resize(NUMBER_OF_PARTS); 
 			int border = std::ceil(360.0f / NUMBER_OF_PARTS);
 			auto currentElevation = keys_hemisphere.begin()->elevation;
@@ -928,7 +927,7 @@ namespace BRTServices
 					else
 					{
 						currentElevation = it.elevation;
-						if (currentElevation > (keys_hemisphere.begin()->elevation + MAX_DISTANCE_BETWEEN_ELEVATIONS))
+						if (currentElevation > (keys_hemisphere.begin()->elevation + RoundToHundredth(MAX_DISTANCE_BETWEEN_ELEVATIONS)))
 						{
 							break;
 						}
@@ -972,7 +971,7 @@ namespace BRTServices
 
 				for (auto it = hemisphereParts[q].begin(); it != hemisphereParts[q].end(); it++)
 				{
-					auto itHRIR = Find_inHRTFDatabase_withAngleRoundToHundredth(it->azimuth, it->elevation);
+					auto itHRIR = t_HRTF_DataBase.find(orientation(it->azimuth, it->elevation));
 
 					//Get the delay
 					newHRIR[q].leftDelay = (newHRIR[q].leftDelay + itHRIR->second.leftDelay);
