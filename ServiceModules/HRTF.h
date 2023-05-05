@@ -892,13 +892,12 @@ namespace BRTServices
 
 		//	Calculate the HRIR in the pole of one of the hemispheres
 		//param hemisphereParts	vector of the HRTF orientations of the hemisphere		
-		THRIRStruct CalculateHRIR_InOneHemispherePole(vector<orientation> keys_hemisphere)
+		THRIRStruct CalculateHRIR_InOneHemispherePole(std::vector<orientation> keys_hemisphere)
 		{
 			THRIRStruct calculatedHRIR;
 			std::vector < vector <orientation>> hemisphereParts;
 			hemisphereParts.resize(NUMBER_OF_PARTS); 
 			int border = std::ceil(360.0f / NUMBER_OF_PARTS);
-
 			auto currentElevation = keys_hemisphere.begin()->elevation;
 			for (auto& it : keys_hemisphere)
 			{
