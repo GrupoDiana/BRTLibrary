@@ -51,8 +51,9 @@
 
 #define MAX_DISTANCE_BETWEEN_ELEVATIONS 5
 #define NUMBER_OF_PARTS 4 
-#define AZIMUTH_STEP  15
 #define MARGIN 10
+#define ELEVATION_NORTH_POLE 90
+#define ELEVATION_SOUTH_POLE 270
 
 
 //#define EPSILON 0.01f;
@@ -246,16 +247,13 @@ namespace BRTServices
 		*	\param [in] newHRIR HRIR data for both ears
 		*   \eh Warnings may be reported to the error handler.
 		*/
-		void AddHRIR(float azimuth, float elevation, THRIRStruct && newHRIR)		
+		void AddHRIR(float _azimuth, float _elevation, THRIRStruct && newHRIR)		
 		{
 			if (setupInProgress) {
-				int iAzimuth = RoundToHundredth(azimuth);  
-				int iElevation = RoundToHundredth(elevation);
-
-				auto returnValue = t_HRTF_DataBase.emplace(orientation(iAzimuth, iElevation), std::forward<THRIRStruct>(newHRIR));
+				bool returnValue = Emplace_inHRTFDatabase_WithAngleRoundToHundredth(_azimuth, _elevation, std::move(newHRIR));
 				//Error handler
-				if (returnValue.second) { /*SET_RESULT(RESULT_OK, "HRIR emplaced into t_HRTF_DataBase succesfully"); */ }
-				else { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position ["+ std::to_string(iAzimuth) + ", " + std::to_string(iElevation)+ "]"); }
+				if (returnValue) { /*SET_RESULT(RESULT_OK, "HRIR emplaced into t_HRTF_DataBase succesfully"); */ }
+				else { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position ["+ std::to_string(_azimuth) + ", " + std::to_string(_elevation)+ "]"); }
 			}
 		}
 
@@ -272,23 +270,18 @@ namespace BRTServices
 					RemoveCommonDelay_HRTFDataBaseTable();
 
 					//HRTF Resampling methdos
-					CalculateHRIR_InPoles();	//Specific method for LISTEN DataBase
+					CalculateHRIR_InPoles(resamplingStep);	//Specific method for LISTEN DataBase
 
 					CalculateResampled_HRTFTable(resamplingStep);
 
+					FillOutTableOfAzimuth360(resamplingStep);
+
 					//Setup values
-#ifndef USE_FREQUENCY_COVOLUTION_WITHOUT_PARTITIONS_ANECHOIC
 					auto it = t_HRTF_Resampled_partitioned.begin();
 					HRIR_partitioned_SubfilterLength = it->second.leftHRIR_Partitioned[0].size();
-#endif // !USE_FREQUENCY_COVOLUTION_WITHOUT_PARTITIONS_ANECHOIC
-
 					setupInProgress = false;
 					HRTFLoaded = true;
 
-					//if (ownerListener != nullptr)
-					//{
-					//	ownerListener->SetHRTFLoaded();		//Report to the listener that the HRTF has been a loaded.
-					//}
 					SET_RESULT(RESULT_OK, "HRTF Matrix resample completed succesfully");
 				}
 				else
@@ -828,66 +821,46 @@ namespace BRTServices
 		/////////////
 
 		//	Fill out the HRTF for every azimuth and two specific elevations: 90 and 270 degrees		
-		void CalculateHRIR_InPoles()
+		void CalculateHRIR_InPoles(int _resamplingStep)
 		{
 			THRIRStruct precalculatedHRIR_270, precalculatedHRIR_90;
-			//int azimuthStep = AZIMUTH_STEP;
 			bool found = false;
-
 			//Clasify every HRIR of the HRTF into the two hemispheres by their orientations
 			std::vector<orientation> keys_southernHemisphere, keys_northenHemisphere;
+			int iAzimuthPoles = 0;
+			int iElevationNorthPole = ELEVATION_NORTH_POLE;
+			int iElevationSouthPole = ELEVATION_SOUTH_POLE;
 
 			//	NORTHERN HEMOSPHERE POLES (90 degrees elevation ) ____________________________________________________________________________
+			auto it90 = Find_inHRTFDatabase_withAngleRoundToHundredth(iAzimuthPoles, iElevationNorthPole);
 
-			//If HRIR with orientation (0,90) exist in t_HRTF_DataBase
-			int iAzimuthPoles = 0;
-			int iElevationNorthPole = RoundToHundredth(90);  
-			int iElevationSouthPole = RoundToHundredth(270);
-
-			auto it90 = t_HRTF_DataBase.find(orientation(iAzimuthPoles, iElevationNorthPole));
 			if (it90 != t_HRTF_DataBase.end())
-			{
-				precalculatedHRIR_90 = it90->second;
+			{ 
+				precalculatedHRIR_90 = it90->second; 
 			}
 			else
 			{
 				keys_northenHemisphere.reserve(t_HRTF_DataBase.size());
+				
 				for (auto& it : t_HRTF_DataBase)
 				{
-					if (it.first.elevation < iElevationNorthPole) { keys_northenHemisphere.push_back(it.first); }
+					if (DivideByOneHundred(it.first.elevation) < iElevationNorthPole) { keys_northenHemisphere.push_back(OrientationDividedByOneHundred(it.first)); }
 				}
 				// sort using a custom function object
-				struct {
-					bool operator()(orientation a, orientation b) const
-					{
-						return a.elevation > b.elevation;
-					}
+				struct { bool operator()(orientation a, orientation b) const { return a.elevation > b.elevation;}
 				} customLess;
 				std::sort(keys_northenHemisphere.begin(), keys_northenHemisphere.end(), customLess);
 
-				//C++14
-				/*std::sort(keys_northenHemisphere.begin(), keys_northenHemisphere.end(), [](auto &left, auto &right) {
-				return left.elevation > right.elevation;
-				});*/
-
 				precalculatedHRIR_90 = CalculateHRIR_InOneHemispherePole(keys_northenHemisphere);
 
-				SET_RESULT(RESULT_WARNING, "HRIR interpolated in the pole [ " + std::to_string(iAzimuthPoles) + ", " + std::to_string(DivideByOneHundred(iElevationNorthPole)) + "]");
-
-				if (keys_northenHemisphere.begin()->elevation < iElevationNorthPole - RoundToHundredth(MARGIN))
-				{
-					//Calculate Casket
-				}
-			
+				SET_RESULT(RESULT_WARNING, "HRIR interpolated in the pole [ " + std::to_string(iAzimuthPoles) + ", " + std::to_string(iElevationNorthPole) + "]");
 			}
 
 			//	SOURTHERN HEMOSPHERE POLES (270 degrees elevation) ____________________________________________________________________________
+			auto it270 = Find_inHRTFDatabase_withAngleRoundToHundredth(iAzimuthPoles, iElevationSouthPole);
 
-			//If HRIR with orientation (0,270) exist in t_HRTF_DataBase
-
-			if (t_HRTF_DataBase.find(orientation(0, iElevationSouthPole)) != t_HRTF_DataBase.end())
+			if (it270 != t_HRTF_DataBase.end())
 			{
-				auto it270 = t_HRTF_DataBase.find(orientation(iAzimuthPoles, iElevationSouthPole));
 				precalculatedHRIR_270 = it270->second;
 			}
 			else
@@ -895,43 +868,25 @@ namespace BRTServices
 				keys_southernHemisphere.reserve(t_HRTF_DataBase.size());
 				for (auto& it : t_HRTF_DataBase)
 				{
-					if (it.first.elevation > iElevationSouthPole) { keys_southernHemisphere.push_back(it.first); }
+					if (DivideByOneHundred(it.first.elevation) > iElevationSouthPole) { keys_southernHemisphere.push_back(OrientationDividedByOneHundred(it.first));}
 				}
 				//Get a vector of iterators ordered from highest to lowest elevation.		
 				struct {
-					bool operator()(orientation a, orientation b) const
-					{
-						return a.elevation < b.elevation;
-					}
+					bool operator()(orientation a, orientation b) const	{ return a.elevation < b.elevation; }
 				} customLess;
 				std::sort(keys_southernHemisphere.begin(), keys_southernHemisphere.end(), customLess);
 
-				//C++14
-				/*std::sort(keys_southernHemisphere.begin(), keys_southernHemisphere.end(), [](auto &left, auto &right) {
-				return left.elevation < right.elevation;
-				});*/
-
 				precalculatedHRIR_270 = CalculateHRIR_InOneHemispherePole(keys_southernHemisphere);
-
 				
-				SET_RESULT(RESULT_WARNING, "HRIR interpolated in the pole [ " + std::to_string(iAzimuthPoles) + ", " + std::to_string(DivideByOneHundred(iElevationSouthPole)) + "]");
+				SET_RESULT(RESULT_WARNING, "HRIR interpolated in the pole [ " + std::to_string(iAzimuthPoles) + ", " + std::to_string(iElevationSouthPole) + "]");
 			}
-
-
-			// Fill out the table ____________________________________________________________________________
-			int iRoundedToHundred = 0;
-			for (int i = 0; i < 360; i = i + AZIMUTH_STEP)
+			// Fill out the table for "every azimuth in the pole" ____________________________________________________________________________
+			for (int i = 0; i < 360; i = i + _resamplingStep)
 			{
-				iRoundedToHundred = RoundToHundredth(i);
-				//Elevation 270 degrees
-				t_HRTF_DataBase.emplace(orientation(iRoundedToHundred, iElevationSouthPole), precalculatedHRIR_270);
 				//Elevation 90 degrees
-				t_HRTF_DataBase.emplace(orientation(iRoundedToHundred, iElevationNorthPole), precalculatedHRIR_90);
-				//Azimuth 360 degrees
-				auto it0 = t_HRTF_DataBase.find(orientation(0, iRoundedToHundred));
-				if (it0 != t_HRTF_DataBase.end()) {
-					t_HRTF_DataBase.emplace(orientation(RoundToHundredth(360), iRoundedToHundred), it0->second);
-				}
+				Emplace_inHRTFDatabase_WithAngleRoundToHundredth(i, iElevationNorthPole, precalculatedHRIR_90);
+				//Elevation 270 degrees
+				Emplace_inHRTFDatabase_WithAngleRoundToHundredth(i, iElevationSouthPole, precalculatedHRIR_270);
 			}
 		}
 
@@ -941,8 +896,8 @@ namespace BRTServices
 		{
 			THRIRStruct calculatedHRIR;
 			std::vector < vector <orientation>> hemisphereParts;
-			hemisphereParts.resize(NUMBER_OF_PARTS);
-			int border = std::ceil(RoundToHundredth(360.0f) / NUMBER_OF_PARTS);
+			hemisphereParts.resize(NUMBER_OF_PARTS); 
+			int border = std::ceil(360.0f / NUMBER_OF_PARTS);
 
 			auto currentElevation = keys_hemisphere.begin()->elevation;
 			for (auto& it : keys_hemisphere)
@@ -974,7 +929,7 @@ namespace BRTServices
 					else
 					{
 						currentElevation = it.elevation;
-						if (currentElevation > (keys_hemisphere.begin()->elevation + RoundToHundredth(MAX_DISTANCE_BETWEEN_ELEVATIONS)))
+						if (currentElevation > (keys_hemisphere.begin()->elevation + MAX_DISTANCE_BETWEEN_ELEVATIONS))
 						{
 							break;
 						}
@@ -1018,7 +973,7 @@ namespace BRTServices
 
 				for (auto it = hemisphereParts[q].begin(); it != hemisphereParts[q].end(); it++)
 				{
-					auto itHRIR = t_HRTF_DataBase.find(orientation(it->azimuth, it->elevation));
+					auto itHRIR = Find_inHRTFDatabase_withAngleRoundToHundredth(it->azimuth, it->elevation);
 
 					//Get the delay
 					newHRIR[q].leftDelay = (newHRIR[q].leftDelay + itHRIR->second.leftDelay);
@@ -1073,133 +1028,93 @@ namespace BRTServices
 			return calculatedHRIR;
 		}
 
+		/// <summary>
+		/// Get HRIR of azimith 0 and emplace again with azimuth 360 in the HRTF database table for every elevations
+		/// </summary>
+		/// <param name="_resamplingStep"></param>
+		void FillOutTableOfAzimuth360(int _resamplingStep) {
+			for (int el = 0; el <= 90; el = el + _resamplingStep)
+			{
+				GetAndEmplaceHRIRinAzimuth360(el);
+			}
+			for (int el = 270; el < 360; el = el + _resamplingStep)
+			{
+				GetAndEmplaceHRIRinAzimuth360(el);
+			}
+		}
+
+		/// <summary>
+		/// Get HRIR of azimith 0 and emplace again with azimuth 360 in the HRTF database table for an specific elevation
+		/// </summary>
+		/// <param name="_elevation"></param>
+		void GetAndEmplaceHRIRinAzimuth360(float _elevation) {
+			auto it = Find_inHRTFDatabase_withAngleRoundToHundredth(0, _elevation);
+			if (it != t_HRTF_DataBase.end()) {
+				THRIRStruct temp = it->second;
+				Emplace_inHRTFDatabase_WithAngleRoundToHundredth(360, _elevation, temp);
+			}
+		}
+
 		//	Calculate the resample matrix using the Barycentric interpolation Method (copy the HRIR function of the nearest orientation)
 		//param resamplingStep	HRTF resample matrix step for both azimuth and elevation		
-		void CalculateResampled_HRTFTable(int resamplingStep)
+		void CalculateResampled_HRTFTable(int _resamplingStep)
 		{
-			THRIRStruct interpolatedHRIR;
-			int numOfInterpolatedHRIRs = 0;
+			int numOfInterpolatedHRIRs;
 
 			//Resample Interpolation Algorithm
-			for (int newAzimuth = 0; newAzimuth < 360; newAzimuth = newAzimuth + resamplingStep)
+			for (int newAzimuth = 0; newAzimuth < 360; newAzimuth = newAzimuth + _resamplingStep)
 			{
-				for (int newElevation = 0; newElevation <= 90; newElevation = newElevation + resamplingStep)
+				for (int newElevation = 0; newElevation <= 90; newElevation = newElevation + _resamplingStep)
 				{
-					auto it = t_HRTF_DataBase.find(orientation(RoundToHundredth(newAzimuth), RoundToHundredth(newElevation)));
-					if (it != t_HRTF_DataBase.end())
-					{
-
-#ifdef USE_FREQUENCY_COVOLUTION_WITHOUT_PARTITIONS_ANECHOIC
-						//Fill out interpolated frequency table. IR in frequency domain
-						THRIRStruct temp;
-						Common::CFprocessor::GetFFT(it->second.leftHRIR, temp.leftHRIR, bufferSize);
-						Common::CFprocessor::GetFFT(it->second.rightHRIR, temp.rightHRIR, bufferSize);
-						temp.leftDelay = it->second.leftDelay;
-						temp.rightDelay = it->second.rightDelay;
-						auto returnValue2 = t_HRTF_Resampled_frequency.emplace(orientation(newAzimuth, newElevation), std::forward<THRIRStruct>(temp));
-						//Error handler
-						if (returnValue2.second) { /*SET_RESULT(RESULT_OK, "HRIR emplaced into t_HRTF_Resampled_frequency successfully");*/ }
-						else { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_frequency table"); }
-#else
-						//Fill out HRTF partitioned table.IR in frequency domain
-						THRIRPartitionedStruct newHRIR_partitioned;
-						newHRIR_partitioned = SplitAndGetFFT_HRTFData(it->second);
-						auto returnValue3 = t_HRTF_Resampled_partitioned.emplace(orientation(newAzimuth, newElevation), std::forward<THRIRPartitionedStruct>(newHRIR_partitioned));
-						//Error handler
-						if (returnValue3.second) { /*SET_RESULT(RESULT_OK, "HRIR emplaced into t_HRTF_Resampled_partitioned successfully");*/ }
-						else { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_partitioned table"); }
-#endif
-					}
-
-					else
-					{
-
-						//Get the interpolated HRIR 
-						interpolatedHRIR = CalculateHRIR_offlineMethod(newAzimuth, newElevation);
-						numOfInterpolatedHRIRs++;
-
-#ifdef USE_FREQUENCY_COVOLUTION_WITHOUT_PARTITIONS_ANECHOIC
-						//Fill out interpolated frequency table. IR in frequency domain
-						THRIRStruct newHRIR;
-						Common::CFprocessor::GetFFT(interpolatedHRIR.leftHRIR, newHRIR.leftHRIR, bufferSize);
-						Common::CFprocessor::GetFFT(interpolatedHRIR.rightHRIR, newHRIR.rightHRIR, bufferSize);
-						newHRIR.leftDelay = interpolatedHRIR.leftDelay;
-						newHRIR.rightDelay = interpolatedHRIR.rightDelay;
-
-						auto returnValue2 = t_HRTF_Resampled_frequency.emplace(orientation(newAzimuth, newElevation), std::forward<THRIRStruct>(newHRIR));
-						//Error handler
-						if (returnValue2.second) { /*SET_RESULT(RESULT_OK, "HRIR emplaced into t_HRTF_Resampled_frequency successfully");*/ }
-						else { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_frequency table"); }
-
-#else
-						//Fill out HRTF partitioned table.IR in frequency domain
-						THRIRPartitionedStruct newHRIR_partitioned;
-						newHRIR_partitioned = SplitAndGetFFT_HRTFData(interpolatedHRIR);
-						auto returnValue1 = t_HRTF_Resampled_partitioned.emplace(orientation(newAzimuth, newElevation), std::forward<THRIRPartitionedStruct>(newHRIR_partitioned));
-						//Error handler
-						if (returnValue1.second) { /*SET_RESULT(RESULT_WARNING, "HRIR interpolated for position: " + std::to_string(newAzimuth) + ", " + std::to_string(newElevation)); */}
-						else { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_partitioned table"); }
-#endif												
-					}
+					numOfInterpolatedHRIRs = CalculateAndEmplaceNewPartitionedHRIR(newAzimuth, newElevation);
 				}
 
-				for (int newElevation = 270; newElevation < 360; newElevation = newElevation + resamplingStep)
+				for (int newElevation = 270; newElevation < 360; newElevation = newElevation + _resamplingStep)
 				{
-					auto it2 = t_HRTF_DataBase.find(orientation(RoundToHundredth(newAzimuth), RoundToHundredth(newElevation)));
-					if (it2 != t_HRTF_DataBase.end())
-					{
-#ifdef USE_FREQUENCY_COVOLUTION_WITHOUT_PARTITIONS_ANECHOIC
-
-						//Fill out interpolated frequency table. IR in frequency domain
-						THRIRStruct temp;
-						Common::CFprocessor::GetFFT(it2->second.leftHRIR, temp.leftHRIR, bufferSize);
-						Common::CFprocessor::GetFFT(it2->second.rightHRIR, temp.rightHRIR, bufferSize);
-						temp.leftDelay = it2->second.leftDelay;
-						temp.rightDelay = it2->second.rightDelay;
-						auto returnValue = t_HRTF_Resampled_frequency.emplace(orientation(newAzimuth, newElevation), std::forward<THRIRStruct>(temp));
-						//Error handler
-						if (returnValue.second) { /*SET_RESULT(RESULT_OK, "HRIR emplaced into t_HRTF_Resampled_frequency successfully");*/ }
-						else { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_frequency table"); }
-#else
-						//Fill out HRTF partitioned table.IR in frequency domain
-						THRIRPartitionedStruct newHRIR_partitioned;
-						newHRIR_partitioned = SplitAndGetFFT_HRTFData(it2->second);
-						auto returnValue3 = t_HRTF_Resampled_partitioned.emplace(orientation(newAzimuth, newElevation), std::forward<THRIRPartitionedStruct>(newHRIR_partitioned));
-						//Error handler
-						if (returnValue3.second) { /*SET_RESULT(RESULT_OK, "HRIR emplaced into t_HRTF_Resampled_partitioned successfully");*/ }
-						else { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_partitioned table"); }
-#endif
-					}
-					else
-					{
-						//Get the interpolated HRIR 
-						interpolatedHRIR = CalculateHRIR_offlineMethod(newAzimuth, newElevation);
-						numOfInterpolatedHRIRs++;
-#ifdef USE_FREQUENCY_COVOLUTION_WITHOUT_PARTITIONS_ANECHOIC
-						//Fill out interpolated frequency table. IR in frequency domain
-						THRIRStruct newHRIR;
-						Common::CFprocessor::GetFFT(interpolatedHRIR.leftHRIR, newHRIR.leftHRIR, bufferSize);
-						Common::CFprocessor::GetFFT(interpolatedHRIR.rightHRIR, newHRIR.rightHRIR, bufferSize);
-						newHRIR.leftDelay = interpolatedHRIR.leftDelay;
-						newHRIR.rightDelay = interpolatedHRIR.rightDelay;
-						auto returnValue = t_HRTF_Resampled_frequency.emplace(orientation(newAzimuth, newElevation), std::forward<THRIRStruct>(newHRIR));
-						//Error handler
-						if (returnValue.second) { /*SET_RESULT(RESULT_OK, "HRIR emplaced into t_HRTF_Resampled_frequency successfully");*/ }
-						else { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_frequency table"); }
-#else
-						//Fill out HRTF partitioned table.IR in frequency domain
-						THRIRPartitionedStruct newHRIR_partitioned;
-						newHRIR_partitioned = SplitAndGetFFT_HRTFData(interpolatedHRIR);
-						auto returnValue1 = t_HRTF_Resampled_partitioned.emplace(orientation(newAzimuth, newElevation), std::forward<THRIRPartitionedStruct>(newHRIR_partitioned));
-						//Error handler
-						if (returnValue1.second) { /*SET_RESULT(RESULT_WARNING, "HRIR interpolated for position: " + std::to_string(newAzimuth) + ", " + std::to_string(newElevation));*/ }
-						else { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_partitioned table"); }
-#endif // 															
-					}
+					numOfInterpolatedHRIRs = numOfInterpolatedHRIRs + CalculateAndEmplaceNewPartitionedHRIR(newAzimuth, newElevation);
 				}
 			}
 			//SET_RESULT(RESULT_OK, "CalculateResampled_HRTFTable has finished succesfully");
 			SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
+		}
+
+		/// <summary>
+		/// Calculate the resample HRIR using the Barycentric interpolation Method 
+		/// </summary>
+		/// <param name="newAzimuth"></param>
+		/// <param name="newElevation"></param>
+		/// <returns>numOfInterpolatedHRIRs: count how many HRIRs have been calculated using the interpolation</returns>
+		int CalculateAndEmplaceNewPartitionedHRIR(float newAzimuth, float newElevation) {
+			THRIRStruct interpolatedHRIR;
+			int numOfInterpolatedHRIRs = 0;
+			auto it = Find_inHRTFDatabase_withAngleRoundToHundredth(newAzimuth, newElevation);
+			if (it != t_HRTF_DataBase.end())
+			{
+				//Fill out HRTF partitioned table.IR in frequency domain
+				THRIRPartitionedStruct newHRIR_partitioned;
+				newHRIR_partitioned = SplitAndGetFFT_HRTFData(it->second);
+				auto returnValue = t_HRTF_Resampled_partitioned.emplace(orientation(newAzimuth, newElevation), std::forward<THRIRPartitionedStruct>(newHRIR_partitioned));
+				//Error handler
+				if (returnValue.second) { /*SET_RESULT(RESULT_OK, "HRIR emplaced into t_HRTF_Resampled_partitioned successfully");*/ }
+				else { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_partitioned table"); }
+			}
+
+			else
+			{
+				//Get the interpolated HRIR 
+				interpolatedHRIR = CalculateHRIR_offlineMethod(newAzimuth, newElevation);
+				numOfInterpolatedHRIRs++;
+
+				//Fill out HRTF partitioned table.IR in frequency domain
+				THRIRPartitionedStruct newHRIR_partitioned;
+				newHRIR_partitioned = SplitAndGetFFT_HRTFData(interpolatedHRIR);
+				auto returnValue1 = t_HRTF_Resampled_partitioned.emplace(orientation(newAzimuth, newElevation), std::forward<THRIRPartitionedStruct>(newHRIR_partitioned));
+				//Error handler
+				if (returnValue1.second) { /*SET_RESULT(RESULT_WARNING, "HRIR interpolated for position: " + std::to_string(newAzimuth) + ", " + std::to_string(newElevation)); */ }
+				else { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_partitioned table"); }
+			}
+			return numOfInterpolatedHRIRs;
+		
 		}
 
 		//	Split the input HRIR data in subfilters and get the FFT to apply the UPC algorithm
@@ -1314,9 +1229,9 @@ namespace BRTServices
 
 								if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f) {
 									// Calculate the new HRIR with the barycentric coorfinates
-									auto it0 = t_HRTF_DataBase.find(orientation(RoundToHundredth(mygroup[i].azimuth), RoundToHundredth(mygroup[i].elevation)));
-									auto it1 = t_HRTF_DataBase.find(orientation(RoundToHundredth(mygroup[j].azimuth), RoundToHundredth(mygroup[j].elevation)));
-									auto it2 = t_HRTF_DataBase.find(orientation(RoundToHundredth(mygroup[k].azimuth), RoundToHundredth(mygroup[k].elevation)));
+									auto it0 = Find_inHRTFDatabase_withAngleRoundToHundredth(mygroup[i].azimuth, mygroup[i].elevation);
+									auto it1 = Find_inHRTFDatabase_withAngleRoundToHundredth(mygroup[j].azimuth, mygroup[j].elevation);
+									auto it2 = Find_inHRTFDatabase_withAngleRoundToHundredth(mygroup[k].azimuth, mygroup[k].elevation);
 
 									if (it0 != t_HRTF_DataBase.end() && it1 != t_HRTF_DataBase.end() && it2 != t_HRTF_DataBase.end()) {
 
@@ -1822,41 +1737,17 @@ namespace BRTServices
 			//SET_RESULT(RESULT_OK, "Common delay deleted from HRTF table succesfully");
 		}
 
-		//		Calculate the ITD using the Lord Rayleight formula which depend on the interaural azimuth and the listener head radious
+		//Calculate the ITD using the Lord Rayleight formula which depend on the interaural azimuth and the listener head radious
 		//param		_headRadious		listener head radius, set by the App
 		//param		_interauralAzimuth	source interaural azimuth
 		//return	float				customizated ITD
-		const  float CalculateITDFromHeadRadius(float _headRadius, float _interauralAzimuth)const
-		//const float CHRTF::CalculateITDFromHeadRadius(float _headRadius, float _interauralAzimuth) const
-		{
+		const  float CalculateITDFromHeadRadius(float _headRadius, float _interauralAzimuth)const{
 			//Calculate the ITD (from https://www.lpi.tel.uva.es/~nacho/docencia/ing_ond_1/trabajos_05_06/io5/public_html/ & http://interface.cipic.ucdavis.edu/sound/tutorial/psych.html)
 			float ITD = _headRadius * (_interauralAzimuth + std::sin(_interauralAzimuth)) / globalParameters.GetSoundSpeed(); //_azimuth in radians!
 			return 0;// ITD;
 		}
 				
-		// Recalculate the HRTF FFT table partitioned or not with a new bufferSize or resampling step		
-		//void CalculateNewHRTFTable() {
-		//	if (!t_HRTF_DataBase.empty())
-		//	{
-		//		//BeginSetup
-		//		//Update parameters								
-		//		bufferSize = globalParameters.GetBufferSize();
-		//		//resamplingStep = ownerListener->GetHRTFResamplingStep();		// TODO Do we need this? 
-		//		float partitions = (float)HRIRLength / (float)bufferSize;
-		//		HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
-
-		//		//Clear every table		
-		//		t_HRTF_Resampled_frequency.clear();
-		//		t_HRTF_Resampled_partitioned.clear();
-
-		//		//Change class state
-		//		setupInProgress = true;
-		//		HRTFLoaded = false;
-
-		//		//Calculate Tables
-		//		EndSetup();
-		//	}
-		//}
+		
 
 		// Reset HRTF		
 		void Reset() {
@@ -1876,6 +1767,36 @@ namespace BRTServices
 			resamplingStep = DEFAULT_RESAMPLING_STEP;
 		}	
 
+		T_HRTFTable::const_iterator Find_inHRTFDatabase_withAngleRoundToHundredth(float _azimuthDegrees, float _elevationDegrees) {
+
+			float azimuth_hundredth = RoundToHundredth(_azimuthDegrees);
+			float elevation_hundredth = RoundToHundredth(_elevationDegrees);
+
+			T_HRTFTable::const_iterator it = t_HRTF_DataBase.find(orientation(azimuth_hundredth, elevation_hundredth));
+
+			return it;
+		}
+
+		bool Emplace_inHRTFDatabase_WithAngleRoundToHundredth(float _azimuthDegrees, float _elevationDegrees, THRIRStruct & _HRIR ) {
+
+			float azimuth_hundredth = RoundToHundredth(_azimuthDegrees);
+			float elevation_hundredth = RoundToHundredth(_elevationDegrees);
+
+			auto returnValue = t_HRTF_DataBase.emplace(orientation(azimuth_hundredth, elevation_hundredth), _HRIR);
+
+			return returnValue.second;
+		}
+
+		bool Emplace_inHRTFDatabase_WithAngleRoundToHundredth(float _azimuthDegrees, float _elevationDegrees, THRIRStruct && _HRIR) {
+
+			float azimuth_hundredth = RoundToHundredth(_azimuthDegrees);
+			float elevation_hundredth = RoundToHundredth(_elevationDegrees);
+
+			auto returnValue = t_HRTF_DataBase.emplace(orientation(azimuth_hundredth, elevation_hundredth), std::forward<THRIRStruct>(_HRIR));
+
+			return returnValue.second;
+		}
+
 		int RoundToHundredth(float angle) {
 			return static_cast<int> (round(angle * 100));
 		}
@@ -1883,6 +1804,10 @@ namespace BRTServices
 		int DivideByOneHundred(float angle) {
 			return static_cast<int> (round(angle / 100));
 
+		}
+
+		orientation OrientationDividedByOneHundred(orientation _position) {
+			return orientation(DivideByOneHundred(_position.azimuth), DivideByOneHundred(_position.elevation));
 		}
 
 	};
