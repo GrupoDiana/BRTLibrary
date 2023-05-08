@@ -1057,19 +1057,19 @@ namespace BRTServices
 		//param resamplingStep	HRTF resample matrix step for both azimuth and elevation		
 		void CalculateResampled_HRTFTable(int _resamplingStep)
 		{
-			int numOfInterpolatedHRIRs;
+			int numOfInterpolatedHRIRs = 0;
 
 			//Resample Interpolation Algorithm
 			for (int newAzimuth = 0; newAzimuth < 360; newAzimuth = newAzimuth + _resamplingStep)
 			{
 				for (int newElevation = 0; newElevation <= 90; newElevation = newElevation + _resamplingStep)
 				{
-					numOfInterpolatedHRIRs = CalculateAndEmplaceNewPartitionedHRIR(newAzimuth, newElevation);
+					if (CalculateAndEmplaceNewPartitionedHRIR(newAzimuth, newElevation)) { numOfInterpolatedHRIRs++; }
 				}
 
 				for (int newElevation = 270; newElevation < 360; newElevation = newElevation + _resamplingStep)
 				{
-					numOfInterpolatedHRIRs = numOfInterpolatedHRIRs + CalculateAndEmplaceNewPartitionedHRIR(newAzimuth, newElevation);
+					if (CalculateAndEmplaceNewPartitionedHRIR(newAzimuth, newElevation)) { numOfInterpolatedHRIRs++; }
 				}
 			}
 			//SET_RESULT(RESULT_OK, "CalculateResampled_HRTFTable has finished succesfully");
@@ -1081,10 +1081,10 @@ namespace BRTServices
 		/// </summary>
 		/// <param name="newAzimuth"></param>
 		/// <param name="newElevation"></param>
-		/// <returns>numOfInterpolatedHRIRs: count how many HRIRs have been calculated using the interpolation</returns>
-		int CalculateAndEmplaceNewPartitionedHRIR(float newAzimuth, float newElevation) {
+		/// <returns>interpolatedHRIRs: true if the HRIR has been calculated using the interpolation</returns>
+		bool CalculateAndEmplaceNewPartitionedHRIR(float newAzimuth, float newElevation) {
 			THRIRStruct interpolatedHRIR;
-			int numOfInterpolatedHRIRs = 0;
+			bool interpolatedHRIRs = false;
 			auto it = Find_inHRTFDatabase_withAngleRoundToHundredth(newAzimuth, newElevation);
 			if (it != t_HRTF_DataBase.end())
 			{
@@ -1101,7 +1101,7 @@ namespace BRTServices
 			{
 				//Get the interpolated HRIR 
 				interpolatedHRIR = CalculateHRIR_offlineMethod(newAzimuth, newElevation);
-				numOfInterpolatedHRIRs++;
+				interpolatedHRIRs = true;
 
 				//Fill out HRTF partitioned table.IR in frequency domain
 				THRIRPartitionedStruct newHRIR_partitioned;
@@ -1111,7 +1111,7 @@ namespace BRTServices
 				if (returnValue1.second) { /*SET_RESULT(RESULT_WARNING, "HRIR interpolated for position: " + std::to_string(newAzimuth) + ", " + std::to_string(newElevation)); */ }
 				else { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_partitioned table"); }
 			}
-			return numOfInterpolatedHRIRs;
+			return interpolatedHRIRs;
 		
 		}
 
