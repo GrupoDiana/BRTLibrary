@@ -54,6 +54,8 @@
 #define MARGIN 10
 #define ELEVATION_NORTH_POLE 90
 #define ELEVATION_SOUTH_POLE 270
+#define DEFAULT_GAP_THRESHOLD 10
+
 
 #define ORIENTATION_RESOLUTION 0.01
 
@@ -162,7 +164,7 @@ namespace BRTServices
 		*   \eh Nothing is reported to the error handler.
 		*/
 		CHRTF()
-			:enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, HRIRLength{ 0 }, fileName {""},
+			:enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, gapThreshold{ DEFAULT_GAP_THRESHOLD }, HRIRLength{ 0 }, fileName {""},
 			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, headRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }, leftEarLocalPosition {Common::CVector3()}, rightEarLocalPosition{ Common::CVector3() }
 		{}
 
@@ -175,6 +177,17 @@ namespace BRTServices
 			return HRIRLength;
 		}
 
+		enum class TPole { north, south };
+
+		int GetPoleElevation(TPole _pole)
+		{
+			if (_pole == TPole::north) { return ELEVATION_NORTH_POLE; }
+			else if (_pole == TPole::south) { return ELEVATION_SOUTH_POLE; }
+			else {
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get a non-existent pole");
+				return 0;
+			}
+		}
 
 		void SetResamplingStep(int _resamplingStep) {
 			resamplingStep = _resamplingStep;
@@ -261,6 +274,7 @@ namespace BRTServices
 					//HRTF Resampling methdos
 					CalculateHRIR_InPoles(resamplingStep);	
 					FillOutTableOfAzimuth360(resamplingStep);
+					FillSphericalCap_HRTF(gapThreshold, resamplingStep);
 					CalculateResampled_HRTFTable(resamplingStep);
 
 
@@ -788,6 +802,7 @@ namespace BRTServices
 		bool bInterpolatedResampleTable;			// If true: calculate the HRTF resample matrix with interpolation
 		int resamplingStep; 						// HRTF Resample table step (azimuth and elevation)
 		bool enableCustomizedITD;					// Indicate the use of a customized delay
+		int gapThreshold;							// Max distance between pole and next elevation to be consider as a gap
 		std::string fileName;
 
 		// HRTF tables			
@@ -1041,6 +1056,124 @@ namespace BRTServices
 			}
 		}
 
+		void FillSphericalCap_HRTF(int _gapTreshold, int _resamplingStep)
+		{
+			// Initialize some variables
+			int max_dist_elev = 0;
+			int elev_Step = _resamplingStep;
+			int pole, elev_south, elev_north, distance;
+			std::vector<orientation> orientations, north_hemisphere, south_hemisphere;
+			orientation bufferOrientation;
+
+			// Create a vector with all the orientations of the Database
+			orientations.reserve(t_HRTF_DataBase.size());
+			for (auto& itr : t_HRTF_DataBase)
+			{
+				orientations.push_back(itr.first);
+			}
+
+			//  Sort orientations of the DataBase with a lambda function in sort.
+			std::sort(orientations.begin(), orientations.end(), [](orientation a, orientation b) {return a.elevation < b.elevation; });
+
+			//	Separating orientations of both hemispheres
+			std::copy_if(orientations.begin(), orientations.end(), back_inserter(south_hemisphere), [](orientation n) {return n.elevation > 180; }); //SOUTH
+			std::copy_if(orientations.begin(), orientations.end(), back_inserter(north_hemisphere), [](orientation n) {return n.elevation < 180; }); //NORTH
+
+
+			reverse(north_hemisphere.begin(), north_hemisphere.end());
+
+			// SOUTH HEMISPHERE
+
+			CalculateDistanceBetweenPoleandLastRing(south_hemisphere, max_dist_elev, elev_south);
+
+			if (max_dist_elev > _gapTreshold)
+			{
+				//pole = ELEVATION_SOUTH_POLE; // 270
+				pole = GetPoleElevation(TPole::south);
+				Calculate_and_EmplaceHRIR(pole, south_hemisphere, elev_south, elev_Step, _resamplingStep);
+			}
+
+			// Reset var to use it in north hemisphere
+			max_dist_elev = 0;
+
+			// NORTH HEMISPHERE
+
+			CalculateDistanceBetweenPoleandLastRing(north_hemisphere, max_dist_elev, elev_north);
+
+			if (max_dist_elev > _gapTreshold)
+			{
+				//pole = ELEVATION_NORTH_POLE; //90
+				pole = GetPoleElevation(TPole::north);
+				Calculate_and_EmplaceHRIR(pole, north_hemisphere, elev_north, elev_Step, _resamplingStep);
+			}
+		}
+		void CalculateDistanceBetweenPoleandLastRing(std::vector<orientation> _hemisphere, int& _max_dist_elev, int& elevationLastRing)
+		{
+			for (int jj = 1; jj < _hemisphere.size(); jj++)
+			{
+				// distance between 2 orientations, always positive
+				if (_hemisphere[jj].elevation != _hemisphere[0].elevation)
+				{
+					_max_dist_elev = abs(_hemisphere[jj].elevation - _hemisphere[0].elevation); // Distance positive for all poles
+					elevationLastRing = _hemisphere[jj].elevation;
+					break;
+				}
+			}
+		}
+		void Calculate_and_EmplaceHRIR(int _pole, std::vector<orientation> _hemisphere, int _elevationLastRing, int _elevStep, int _resamplingStep)
+		{
+			std::list<orientation> onlythatelev;
+			std::list<T_PairDistanceOrientation> sortedList;
+			int azimuth_Step = _resamplingStep;
+			THRIRStruct HRIR_interpolated;
+
+			// Get a list with only the points of the nearest known ring
+			for (auto& itr : _hemisphere)
+			{
+				if (itr.elevation == _elevationLastRing)
+				{
+					onlythatelev.push_back(itr);
+				}
+			}
+			// SOUTH HEMISPHERE
+
+			if (_pole == ELEVATION_SOUTH_POLE)
+			{
+				for (int elevat = _pole + _elevStep; elevat < _elevationLastRing; elevat = elevat + _elevStep)
+				{
+					for (int azim = 0; azim <= 360; azim = azim + azimuth_Step)
+					{
+
+						sortedList = GetSortedDistancesList_v2(azim, elevat, onlythatelev);
+
+						HRIR_interpolated = CalculateHRIR_offlineMethod_v2(azim, elevat, sortedList, _pole);
+
+						t_HRTF_DataBase.emplace(orientation(azim, elevat), HRIR_interpolated);
+
+					}
+				}
+			}	// NORTH HEMISPHERE
+			else if (_pole == ELEVATION_NORTH_POLE)
+			{
+
+				for (int elevat = _elevationLastRing + _elevStep; elevat < _pole; elevat = elevat + _elevStep)
+				{
+					for (int azim = 0; azim <= 360; azim = azim + azimuth_Step)
+					{
+
+						sortedList = GetSortedDistancesList_v2(azim, elevat, onlythatelev);
+
+						HRIR_interpolated = CalculateHRIR_offlineMethod_v2(azim, elevat, sortedList, _pole);
+
+						t_HRTF_DataBase.emplace(orientation(azim, elevat), HRIR_interpolated);
+
+					}
+				}
+
+			}
+
+		}
+
 		//	Calculate the resample matrix using the Barycentric interpolation Method (copy the HRIR function of the nearest orientation)
 		//param resamplingStep	HRTF resample matrix step for both azimuth and elevation		
 		void CalculateResampled_HRTFTable(int _resamplingStep)
@@ -1253,6 +1386,92 @@ namespace BRTServices
 
 		}
 
+		THRIRStruct CalculateHRIR_offlineMethod_v2(int newAzimuth, int newElevation, std::list<T_PairDistanceOrientation> sortedList, int pole)
+		{
+			THRIRStruct newHRIR;
+			//// Get a list sorted by distances to the orientation of interest
+			//std::list<T_PairDistanceOrientation> sortedList = GetSortedDistancesList(newAzimuth, newElevation);
+			// PASS THE SORTED LIST TO THE FUNCTION
+
+			if (sortedList.size() != 0) {
+				// Obtain  the valid Barycentric coordinates:
+				TBarycentricCoordinatesStruct barycentricCoordinates;
+				std::vector<orientation> mygroup(sortedList.size());
+				auto it = sortedList.begin();
+				for (int copy = 0; copy < sortedList.size(); copy++) {
+					mygroup[copy] = it->second;
+					it++;
+				}
+				//Algorithm to get a triangle around the orientation of interest
+				for (int groupSize = 3; groupSize < sortedList.size(); groupSize++)
+				{
+					for (int i = 0; i < groupSize - 2; i++)
+					{
+						for (int j = i + 1; j < groupSize - 1; j++)
+						{
+							for (int k = j + 1; k < groupSize; k++)
+							{
+								if (pole == ELEVATION_SOUTH_POLE || pole == ELEVATION_NORTH_POLE)
+								{
+									mygroup[i].azimuth = newAzimuth;
+									mygroup[i].elevation = pole;
+								}
+
+								//Azimuth and elevation transformation in order to get the barientric coordinates (due to we are working with a spehere not a plane)
+								float newAzimuthTransformed = TransformAzimuth(newAzimuth, newAzimuth);
+								float iAzimuthTransformed = TransformAzimuth(newAzimuth, mygroup[i].azimuth);
+								float jAzimuthTransformed = TransformAzimuth(newAzimuth, mygroup[j].azimuth);
+								float kAzimuthTransformed = TransformAzimuth(newAzimuth, mygroup[k].azimuth);
+								float newElevationTransformed = TransformElevation(newElevation, newElevation);
+								float iElevationTransformed = TransformElevation(newElevation, mygroup[i].elevation);
+								float jElevationTransformed = TransformElevation(newElevation, mygroup[j].elevation);
+								float kElevationTransformed = TransformElevation(newElevation, mygroup[k].elevation);
+
+								barycentricCoordinates = GetBarycentricCoordinates(newAzimuthTransformed, newElevationTransformed, iAzimuthTransformed, iElevationTransformed, jAzimuthTransformed, jElevationTransformed, kAzimuthTransformed, kElevationTransformed);
+
+								if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f) {
+									// Calculate the new HRIR with the barycentric coorfinates
+									auto it0 = t_HRTF_DataBase.find(orientation(mygroup[i].azimuth, mygroup[i].elevation));
+									auto it1 = t_HRTF_DataBase.find(orientation(mygroup[j].azimuth, mygroup[j].elevation));
+									auto it2 = t_HRTF_DataBase.find(orientation(mygroup[k].azimuth, mygroup[k].elevation));
+
+									if (it0 != t_HRTF_DataBase.end() && it1 != t_HRTF_DataBase.end() && it2 != t_HRTF_DataBase.end()) {
+
+										//FIXME!!! another way to initialize?
+										newHRIR = it0->second;
+										//END FIXME
+
+										for (int i = 0; i < HRIRLength; i++) {
+											newHRIR.leftHRIR[i] = barycentricCoordinates.alpha * it0->second.leftHRIR[i] + barycentricCoordinates.beta * it1->second.leftHRIR[i] + barycentricCoordinates.gamma * it2->second.leftHRIR[i];
+											newHRIR.rightHRIR[i] = barycentricCoordinates.alpha * it0->second.rightHRIR[i] + barycentricCoordinates.beta * it1->second.rightHRIR[i] + barycentricCoordinates.gamma * it2->second.rightHRIR[i];
+										}
+
+										// Calculate delay
+										newHRIR.leftDelay = barycentricCoordinates.alpha * it0->second.leftDelay + barycentricCoordinates.beta * it1->second.leftDelay + barycentricCoordinates.gamma * it2->second.leftDelay;
+										newHRIR.rightDelay = barycentricCoordinates.alpha * it0->second.rightDelay + barycentricCoordinates.beta * it1->second.rightDelay + barycentricCoordinates.gamma * it2->second.rightDelay;
+										//SET_RESULT(RESULT_OK, "HRIR calculated with interpolation method succesfully");
+										return newHRIR;
+									}
+									else {
+										SET_RESULT(RESULT_WARNING, "GetHRIR_InterpolationMethod return empty because HRIR with a specific orientation was not found");
+										return emptyHRIR;
+									}
+								}
+							}
+						}
+					}
+				}
+				//SET_RESULT(RESULT_OK, "");
+			}
+			else {
+				SET_RESULT(RESULT_ERROR_NOTSET, "Orientation List sorted by distances in GetHRIR_InterpolationMethod is empty");
+			}
+
+			SET_RESULT(RESULT_WARNING, "GetHRIR_InterpolationMethod returns empty");
+			return emptyHRIR;
+
+		}
+
 		//		Calculate the barycentric coordinates of three vertex [(x1,y1), (x2,y2), (x3,y3)] and the orientation of interest (x,y)
 		//const TBarycentricCoordinatesStruct GetBarycentricCoordinates(float newAzimuth, float newElevation, float x1, float y1, float x2, float y2, float x3, float y3) const;
 		const TBarycentricCoordinatesStruct GetBarycentricCoordinates(float x, float y, float x1, float y1, float x2, float y2, float x3, float y3)const
@@ -1324,6 +1543,37 @@ namespace BRTServices
 
 				temp.first = distance;
 				temp.second = orientation(it->first.azimuth, it->first.elevation);
+
+				sortedList.push_back(temp);
+			}
+
+			if (sortedList.size() != 0) {
+				sortedList.sort([](const T_PairDistanceOrientation& a, const T_PairDistanceOrientation& b) { return a.first < b.first; });
+				//SET_RESULT(RESULT_OK, "Sorted distances list obtained succesfully");
+			}
+			else {
+				SET_RESULT(RESULT_WARNING, "Orientation list sorted by distances is empty");
+			}
+
+			return sortedList;
+		}
+
+
+
+		std::list<T_PairDistanceOrientation> GetSortedDistancesList_v2(int newAzimuth, int newElevation, std::list<orientation> listToSort)
+		{
+			T_PairDistanceOrientation temp;
+			float distance;
+			std::list<T_PairDistanceOrientation> sortedList;
+
+			// Algorithm to calculate the three shortest distances between the point (newAzimuth, newelevation) and all the points in the given list
+			for (auto it = listToSort.begin(); it != listToSort.end(); ++it)
+			{
+				distance = CalculateDistance_HaversineFormula(newAzimuth, newElevation, it->azimuth, it->elevation);
+
+				temp.first = distance;
+				temp.second.azimuth = it->azimuth;
+				temp.second.elevation = it->elevation;
 
 				sortedList.push_back(temp);
 			}
