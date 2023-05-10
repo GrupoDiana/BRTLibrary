@@ -1090,7 +1090,7 @@ namespace BRTServices
 			{
 				//pole = ELEVATION_SOUTH_POLE; // 270
 				pole = GetPoleElevation(TPole::south);
-				Calculate_and_EmplaceHRIR(pole, south_hemisphere, elev_south, elev_Step, _resamplingStep);
+				Calculate_and_EmplaceHRIR(pole, south_hemisphere, elev_south, elev_Step);
 			}
 
 			// Reset var to use it in north hemisphere
@@ -1104,7 +1104,7 @@ namespace BRTServices
 			{
 				//pole = ELEVATION_NORTH_POLE; //90
 				pole = GetPoleElevation(TPole::north);
-				Calculate_and_EmplaceHRIR(pole, north_hemisphere, elev_north, elev_Step, _resamplingStep);
+				Calculate_and_EmplaceHRIR(pole, north_hemisphere, elev_north, elev_Step);
 			}
 		}
 		void CalculateDistanceBetweenPoleandLastRing(std::vector<orientation> _hemisphere, int& _max_dist_elev, int& elevationLastRing)
@@ -1120,11 +1120,11 @@ namespace BRTServices
 				}
 			}
 		}
-		void Calculate_and_EmplaceHRIR(int _pole, std::vector<orientation> _hemisphere, int _elevationLastRing, int _elevStep, int _resamplingStep)
+		void Calculate_and_EmplaceHRIR(int _pole, std::vector<orientation> _hemisphere, int _elevationLastRing, int _fillStep)
 		{
 			std::list<orientation> onlythatelev;
 			std::list<T_PairDistanceOrientation> sortedList;
-			int azimuth_Step = _resamplingStep;
+			int azimuth_Step = _fillStep;
 			THRIRStruct HRIR_interpolated;
 
 			// Get a list with only the points of the nearest known ring
@@ -1139,7 +1139,7 @@ namespace BRTServices
 
 			if (_pole == ELEVATION_SOUTH_POLE)
 			{
-				for (int elevat = _pole + _elevStep; elevat < _elevationLastRing; elevat = elevat + _elevStep)
+				for (int elevat = _pole + _fillStep; elevat < _elevationLastRing; elevat = elevat + _fillStep)
 				{
 					for (int azim = 0; azim <= 360; azim = azim + azimuth_Step)
 					{
@@ -1156,7 +1156,7 @@ namespace BRTServices
 			else if (_pole == ELEVATION_NORTH_POLE)
 			{
 
-				for (int elevat = _elevationLastRing + _elevStep; elevat < _pole; elevat = elevat + _elevStep)
+				for (int elevat = _elevationLastRing + _fillStep; elevat < _pole; elevat = elevat + _fillStep)
 				{
 					for (int azim = 0; azim <= 360; azim = azim + azimuth_Step)
 					{
