@@ -54,8 +54,10 @@
 #define MARGIN 10
 #define ELEVATION_NORTH_POLE 90
 #define ELEVATION_SOUTH_POLE 270
+
 #define DEFAULT_GAP_THRESHOLD 10
 
+// #define SPHERE_BORDER 360.0f
 
 #define ORIENTATION_RESOLUTION 0.01
 
@@ -1218,8 +1220,17 @@ namespace BRTServices
 
 			else
 			{
+				std::list<orientation> orientations;
+				//orientations.reserve(t_HRTF_DataBase.size());
+				for (auto& kv : t_HRTF_DataBase)
+				{
+					orientations.push_back(kv.first);
+				}
+				// Get a list sorted by distances to the orientation of interest
+				std::list<T_PairDistanceOrientation> sortedList = GetSortedDistancesList_v2(_azimuth, _elevation, orientations);
+
 				//Get the interpolated HRIR 
-				interpolatedHRIR = CalculateHRIR_offlineMethod(_azimuth, _elevation);
+				interpolatedHRIR = CalculateHRIR_offlineMethod_v2(_azimuth, _elevation, sortedList, 0);
 				bHRIRInterpolated = true;
 
 				//Fill out HRTF partitioned table.IR in frequency domain
