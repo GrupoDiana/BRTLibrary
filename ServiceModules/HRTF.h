@@ -57,7 +57,13 @@
 
 #define DEFAULT_GAP_THRESHOLD 10
 
-// #define SPHERE_BORDER 360.0f
+#define SPHERE_BORDER 360.0f
+
+#define DEFAULT_MIN_AZIMUTH 0
+#define DEFAULT_MAX_AZIMUTH 360
+#define DEFAULT_MIN_ELEVATION 0
+#define DEFAULT_MAX_ELEVATION 360
+
 
 #define ORIENTATION_RESOLUTION 0.01
 
@@ -181,7 +187,7 @@ namespace BRTServices
 
 		enum class TPole { north, south };
 
-		int GetPoleElevation(TPole _pole)
+		int GetPoleElevation(TPole _pole)const
 		{
 			if (_pole == TPole::north) { return ELEVATION_NORTH_POLE; }
 			else if (_pole == TPole::south) { return ELEVATION_SOUTH_POLE; }
@@ -225,7 +231,16 @@ namespace BRTServices
 				setupInProgress = true;
 				HRTFLoaded = false;
 
-				sphereBorder = 360.0f;
+				sphereBorder = SPHERE_BORDER; 
+
+
+				aziMin = DEFAULT_MIN_AZIMUTH;
+				aziMax = DEFAULT_MAX_AZIMUTH;
+				eleMin = DEFAULT_MIN_ELEVATION;
+				eleMax = DEFAULT_MAX_ELEVATION;
+				eleNorth = GetPoleElevation(TPole::north);
+				eleSouth = GetPoleElevation(TPole::south);
+
 
 				SET_RESULT(RESULT_OK, "HRTF Setup started");
 			}
@@ -346,8 +361,8 @@ namespace BRTServices
 					int iazimuth = static_cast<int>(round(_azimuth));
 					int ielevation = static_cast<int>(round(_elevation));
 					// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
-					if (iazimuth == 360) { iazimuth = 0; }
-					if (ielevation == 360) { ielevation = 0; }
+					if (iazimuth == aziMax) { iazimuth = aziMin; }
+					if (ielevation == eleMax) { ielevation = eleMin; }
 					// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
 					if ((ielevation == 90) || (ielevation == 270)) { iazimuth = 0; }
 
@@ -799,12 +814,15 @@ namespace BRTServices
 		float sphereBorder;						// Define spheere "sewing"
 		float epsilon_sewing = 0.001f;
 
+		int aziMin, aziMax, eleMin, eleMax, eleNorth, eleSouth;	// Variables that define limits of work area
+
 		bool setupInProgress;						// Variable that indicates the HRTF add and resample algorithm are in process
 		bool HRTFLoaded;							// Variable that indicates if the HRTF has been loaded correctly
 		bool bInterpolatedResampleTable;			// If true: calculate the HRTF resample matrix with interpolation
 		int resamplingStep; 						// HRTF Resample table step (azimuth and elevation)
 		bool enableCustomizedITD;					// Indicate the use of a customized delay
 		int gapThreshold;							// Max distance between pole and next elevation to be consider as a gap
+
 		std::string fileName;
 
 		// HRTF tables			
