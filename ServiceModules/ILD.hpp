@@ -80,22 +80,22 @@
 	//typedef CILD_BiquadFilterCoefs<2> T_ILD_TwoBiquadFilterCoefs;
 
 
-	struct TILDStruct {		
-		CMonoBuffer<float> leftCoefs;	///< Left filters coefs
-		CMonoBuffer<float> rightCoefs;	///< Right filters coefs
-	};
+	//struct TILDStruct {		
+	//	CMonoBuffer<float> leftCoefs;	///< Left filters coefs
+	//	CMonoBuffer<float> rightCoefs;	///< Right filters coefs
+	//};
 
 
 	/** \brief Hash table that contains a set of coefficients for two biquads filters that are indexed through a pair of distance
 	 and azimuth values (interaural coordinates). */
 	//typedef std::unordered_map<CILD_Key, T_ILD_TwoBiquadFilterCoefs> T_ILD_HashTable;
-	typedef std::unordered_map<CILD_Key, TILDStruct> T_ILD_HashTable;
+	typedef std::unordered_map<CILD_Key, BRTServices::TILDStruct> T_ILD_HashTable;
 
 namespace BRTServices {
 
 	/** \details This class models the effect of frequency-dependent Interaural Level Differences when the sound source is close to the listener
 	*/
-	class CILD
+	class CILD : public CServicesBase
 	{
 
 	public:
@@ -107,7 +107,7 @@ namespace BRTServices {
 		*	\details Leaves ILD Table empty. Use SetILDNearFieldEffectTable to load.
 		*   \eh Nothing is reported to the error handler.
 		*/
-		CILD() : setupInProgress{ false }, ILDLoaded{ false }, samplingRate{ -1 }, numberOfEars{ -1 },azimuthStep{-1}, distanceStep{-1}, fileTitle{""}, fileName{""}, fileDescription{""}
+		CILD() : setupInProgress{ false }, ILDLoaded{ false }, samplingRate{ -1 }, numberOfEars{ -1 },azimuthStep{-1}, distanceStep{-1}, fileTitle{""}, fileName{""}
 		{					
 		}
 
@@ -150,47 +150,50 @@ namespace BRTServices {
 			distanceStep = -1;
 		}
 
+		
+
+		/** \brief Set the title of the SOFA file
+		*    \param [in]	_title		string contains title
+		*/
+		void SetTitle(std::string _title) {
+			fileTitle = _title;
+		}
+		
+		/** \brief Get the title of the SOFA file
+		*   \return string contains title
+		*/
+		std::string GetTitle() {
+			return fileTitle;
+		}
+
+		/** \brief Set the title of the SOFA file
+		*    \param [in]	_title		string contains title
+		*/
+		void SetDatabaseName(std::string _databaseName) {
+			databaseName = _databaseName;
+		}
+
+		/** \brief Set the title of the SOFA file
+		*    \param [in]	_title		string contains title
+		*/
+		void SetListenerShortName(std::string _listenerShortName) {
+			listenerShortName = _listenerShortName;
+		}
+
+
 		/** \brief Set the name of the SOFA file
 		*    \param [in]	_fileName		string contains filename
 		*/
-		void SetFileName(std::string _fileName) {
+		void SetFilename(std::string _fileName) {
 			fileName = _fileName;
 		}
 
 		/** \brief Get the name of the SOFA file
 		*   \return string contains filename
 		*/
-		std::string GetFileName() {
+		std::string GetFilename() {
 			return fileName;
-		}
-
-		/** \brief Set the title of the SOFA file
-		*    \param [in]	_title		string contains title
-		*/
-		void SetFileTitle(std::string _title) {
-			fileTitle = _title;
-		}
-
-		/** \brief Get the title of the SOFA file
-		*   \return string contains title
-		*/
-		std::string GetFileTitle() {
-			return fileTitle;
-		}
-
-		/** \brief Set the Description of the SOFA file
-		*    \param [in]	_title		string contains Description
-		*/
-		void SetFileDescription(std::string _description) {
-			fileDescription = _description;
-		}
-
-		/** \brief Get the Description of the SOFA file
-		*   \return string contains Description
-		*/
-		std::string GetFileDescription() {
-			return fileDescription;
-		}
+		}		
 
 		/** \brief Set the samplingRate of the SOFA file
 		*    \param [in]	samplingRate	int contains samplingRate
@@ -453,8 +456,9 @@ namespace BRTServices {
 		Common::CVector3 rightEarLocalPosition;			// Listener right ear relative position
 
 		std::string fileName;
-		std::string fileTitle;		
-		std::string fileDescription;
+		std::string fileTitle;				
+		std::string databaseName;
+		std::string listenerShortName;
 		
 		int samplingRate;
 		int numberOfEars;

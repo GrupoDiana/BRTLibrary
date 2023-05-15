@@ -196,14 +196,13 @@ namespace BRTReaders
 		}
 
 		// Read data from sofa struct and save into ILD class
-		void GetAndSaveGlobalAttributes(const sofa::SimpleFreeFieldSOS& ildFile, shared_ptr<BRTServices::CILD> listenerILD, std::string _sofafile) {
+		void GetAndSaveGlobalAttributes(const sofa::SimpleFreeFieldSOS& ildFile, shared_ptr<BRTServices::CILD> listenerILD, const std::string& _sofafile) {
 			sofa::Attributes _attributes;
 			ildFile.GetGlobalAttributes(_attributes);
 			std::string _title = _attributes.Get(sofa::Attributes::Type::kTitle);
 			std::string _description = _attributes.Get(sofa::Attributes::Type::kComment);
-			listenerILD->SetFileName(_sofafile);
-			listenerILD->SetFileTitle(_title);
-			listenerILD->SetFileDescription(_description);
+			listenerILD->SetFilename(_sofafile);
+			listenerILD->SetTitle(_title);			
 		}
 
 		// Read data from sofa struct and save into ILD class
@@ -244,7 +243,7 @@ namespace BRTReaders
 			// This outtermost loop iterates over Cofficients
 			for (std::size_t i = 0; i < nMeasurements; i++) // or for( std::size_t i = 0; i < dims[0]; i++ ), should be the same.
 			{
-				TILDStruct coefficients;
+				BRTServices::TILDStruct coefficients;
 				coefficients.leftCoefs.resize(nCoefficients);
 
 				double azimuth = pos[array2DIndex(i, 0, nMeasurements, dims[1])];
