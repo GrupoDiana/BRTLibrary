@@ -36,6 +36,7 @@
 #include <Common/Fprocessor.h>
 #include <Common/GlobalParameters.hpp>
 #include <Common/CommonDefinitions.h>
+#include <ServiceModules/ServiceModuleInterfaces.hpp>
 
 
 #ifndef PI 
@@ -86,14 +87,14 @@ struct orientation
 	}
 };
 
-/** \brief Type definition for a left-right pair of impulse response with the ITD removed and stored in a specific struct field
-*/
-struct THRIRStruct {
-	uint64_t leftDelay;				///< Left delay, in number of samples
-	uint64_t rightDelay;			///< Right delay, in number of samples
-	CMonoBuffer<float> leftHRIR;	///< Left impulse response data
-	CMonoBuffer<float> rightHRIR;	///< Right impulse response data
-};
+///** \brief Type definition for a left-right pair of impulse response with the ITD removed and stored in a specific struct field
+//*/
+//struct THRIRStruct {
+//	uint64_t leftDelay;				///< Left delay, in number of samples
+//	uint64_t rightDelay;			///< Right delay, in number of samples
+//	CMonoBuffer<float> leftHRIR;	///< Left impulse response data
+//	CMonoBuffer<float> rightHRIR;	///< Right impulse response data
+//};
 
 /** \brief Type definition for a left-right pair of impulse response subfilter set with the ITD removed and stored in a specific struct field
 */
@@ -148,7 +149,7 @@ namespace std
 
 /** \brief Type definition for the HRTF table
 */
-typedef std::unordered_map<orientation, THRIRStruct> T_HRTFTable;
+typedef std::unordered_map<orientation, BRTServices::THRIRStruct> T_HRTFTable;
 
 /** \brief Type definition for the HRTF partitioned table used when UPConvolution is activated
 */
@@ -164,7 +165,7 @@ namespace BRTServices
 {
 	/** \details This class gets impulse response data to compose HRTFs and implements different algorithms to interpolate the HRIR functions.
 	*/
-	class CHRTF
+	class CHRTF : public CServicesBase
 	{
 	public:
 		/** \brief Default Constructor
@@ -280,7 +281,7 @@ namespace BRTServices
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/		
-		void EndSetup()
+		bool EndSetup()
 		{
 			if (setupInProgress) {
 				if (!t_HRTF_DataBase.empty())
@@ -302,6 +303,7 @@ namespace BRTServices
 					HRTFLoaded = true;
 
 					SET_RESULT(RESULT_OK, "HRTF Matrix resample completed succesfully");
+					return true;
 				}
 				else
 				{
@@ -309,6 +311,7 @@ namespace BRTServices
 					SET_RESULT(RESULT_ERROR_NOTSET, "The t_HRTF_DataBase map has not been set");
 				}
 			}
+			return false;
 		}
 
 		/** \brief Switch on ITD customization in accordance with the listener head radius
@@ -714,6 +717,27 @@ namespace BRTServices
 			return distanceOfMeasurement;
 		}
 
+		/** \brief Set the title of the SOFA file
+		*    \param [in]	_title		string contains title
+		*/
+		void SetTitle(std::string _title) {
+			title = _title;
+		}
+
+		/** \brief Set the title of the SOFA file
+		*    \param [in]	_title		string contains title
+		*/
+		void SetDatabaseName(std::string _databaseName) {
+			databaseName = _databaseName;
+		}
+
+		/** \brief Set the title of the SOFA file
+		*    \param [in]	_title		string contains title
+		*/
+		void SetListenerShortName(std::string _listenerShortName) {
+			listenerShortName = _listenerShortName;
+		}
+
 
 		/** \brief Set the name of the SOFA file 
 		*    \param [in]	_fileName		string contains filename
@@ -823,6 +847,9 @@ namespace BRTServices
 		bool enableCustomizedITD;					// Indicate the use of a customized delay
 		int gapThreshold;							// Max distance between pole and next elevation to be consider as a gap
 
+		std::string title;
+		std::string databaseName;
+		std::string listenerShortName;
 		std::string fileName;
 
 		// HRTF tables			
