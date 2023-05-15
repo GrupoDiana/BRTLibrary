@@ -222,16 +222,7 @@ namespace BRTServices
 				float partitions = (float)HRIRLength / (float)bufferSize;
 				HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
 
-				//Clear every table			
-				t_HRTF_DataBase.clear();
-				t_HRTF_Resampled_frequency.clear();
-				t_HRTF_Resampled_partitioned.clear();
-
-				//Change class state
-				setupInProgress = true;
-				HRTFLoaded = false;
-
-				sphereBorder = SPHERE_BORDER; 
+				sphereBorder = SPHERE_BORDER;
 
 
 				aziMin = DEFAULT_MIN_AZIMUTH;
@@ -240,6 +231,15 @@ namespace BRTServices
 				eleMax = DEFAULT_MAX_ELEVATION;
 				eleNorth = GetPoleElevation(TPole::north);
 				eleSouth = GetPoleElevation(TPole::south);
+
+				//Clear every table			
+				t_HRTF_DataBase.clear();
+				t_HRTF_Resampled_frequency.clear();
+				t_HRTF_Resampled_partitioned.clear();
+
+				//Change class state
+				setupInProgress = true;
+				HRTFLoaded = false;
 
 
 				SET_RESULT(RESULT_OK, "HRTF Setup started");
@@ -1331,87 +1331,87 @@ namespace BRTServices
 		//	Calculate the HRIR of a specific orientation (newazimuth, newelevation) using the Barycentric interpolation Method
 		//param newAzimuth		azimuth of the orientation of interest (the one whose HRIR will be calculated)
 		//param newElevation	elevation of the orientation of interest (the one whose HRIR will be calculated)		
-		THRIRStruct CalculateHRIR_offlineMethod(int newAzimuth, int newElevation)
-		{
-			THRIRStruct newHRIR;
-			//int iNewAzimuth = RoundWithOffset(newAzimuth);
-			//int iNewElevation = RoundWithOffset(newElevation);
+		//THRIRStruct CalculateHRIR_offlineMethod(int newAzimuth, int newElevation)
+		//{
+		//	THRIRStruct newHRIR;
+		//	//int iNewAzimuth = RoundWithOffset(newAzimuth);
+		//	//int iNewElevation = RoundWithOffset(newElevation);
 
-			// Get a list sorted by distances to the orientation of interest
-			std::list<T_PairDistanceOrientation> sortedList = GetSortedDistancesList(newAzimuth, newElevation);
+		//	// Get a list sorted by distances to the orientation of interest
+		//	std::list<T_PairDistanceOrientation> sortedList = GetSortedDistancesList(newAzimuth, newElevation);
 
-			if (sortedList.size() != 0) {
-				// Obtain  the valid Barycentric coordinates:
-				TBarycentricCoordinatesStruct barycentricCoordinates;
-				std::vector<orientation> mygroup(sortedList.size());
-				auto it = sortedList.begin();
-				for (int copy = 0; copy < sortedList.size(); copy++) {
-					mygroup[copy] = it->second;
-					it++;
-				}
-				//Algorithm to get a triangle around the orientation of interest
-				for (int groupSize = 3; groupSize < sortedList.size(); groupSize++)
-				{
-					for (int i = 0; i < groupSize - 2; i++)
-					{
-						for (int j = i + 1; j < groupSize - 1; j++)
-						{
-							for (int k = j + 1; k < groupSize; k++)
-							{
-								//Azimuth and elevation transformation in order to get the barientric coordinates (due to we are working with a spehere not a plane)
-								float newAzimuthTransformed = TransformAzimuth(newAzimuth, newAzimuth);
-								float iAzimuthTransformed = TransformAzimuth(newAzimuth, mygroup[i].azimuth);
-								float jAzimuthTransformed = TransformAzimuth(newAzimuth, mygroup[j].azimuth);
-								float kAzimuthTransformed = TransformAzimuth(newAzimuth, mygroup[k].azimuth);
-								float newElevationTransformed = TransformElevation(newElevation, newElevation);
-								float iElevationTransformed = TransformElevation(newElevation, mygroup[i].elevation);
-								float jElevationTransformed = TransformElevation(newElevation, mygroup[j].elevation);
-								float kElevationTransformed = TransformElevation(newElevation, mygroup[k].elevation);
+		//	if (sortedList.size() != 0) {
+		//		// Obtain  the valid Barycentric coordinates:
+		//		TBarycentricCoordinatesStruct barycentricCoordinates;
+		//		std::vector<orientation> mygroup(sortedList.size());
+		//		auto it = sortedList.begin();
+		//		for (int copy = 0; copy < sortedList.size(); copy++) {
+		//			mygroup[copy] = it->second;
+		//			it++;
+		//		}
+		//		//Algorithm to get a triangle around the orientation of interest
+		//		for (int groupSize = 3; groupSize < sortedList.size(); groupSize++)
+		//		{
+		//			for (int i = 0; i < groupSize - 2; i++)
+		//			{
+		//				for (int j = i + 1; j < groupSize - 1; j++)
+		//				{
+		//					for (int k = j + 1; k < groupSize; k++)
+		//					{
+		//						//Azimuth and elevation transformation in order to get the barientric coordinates (due to we are working with a spehere not a plane)
+		//						float newAzimuthTransformed = TransformAzimuth(newAzimuth, newAzimuth);
+		//						float iAzimuthTransformed = TransformAzimuth(newAzimuth, mygroup[i].azimuth);
+		//						float jAzimuthTransformed = TransformAzimuth(newAzimuth, mygroup[j].azimuth);
+		//						float kAzimuthTransformed = TransformAzimuth(newAzimuth, mygroup[k].azimuth);
+		//						float newElevationTransformed = TransformElevation(newElevation, newElevation);
+		//						float iElevationTransformed = TransformElevation(newElevation, mygroup[i].elevation);
+		//						float jElevationTransformed = TransformElevation(newElevation, mygroup[j].elevation);
+		//						float kElevationTransformed = TransformElevation(newElevation, mygroup[k].elevation);
 
-								barycentricCoordinates = GetBarycentricCoordinates(newAzimuthTransformed, newElevationTransformed, iAzimuthTransformed, iElevationTransformed, jAzimuthTransformed, jElevationTransformed, kAzimuthTransformed, kElevationTransformed);
+		//						barycentricCoordinates = GetBarycentricCoordinates(newAzimuthTransformed, newElevationTransformed, iAzimuthTransformed, iElevationTransformed, jAzimuthTransformed, jElevationTransformed, kAzimuthTransformed, kElevationTransformed);
 
-								if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f) {
-									// Calculate the new HRIR with the barycentric coorfinates
-									auto it0 = t_HRTF_DataBase.find(orientation(mygroup[i].azimuth, mygroup[i].elevation));
-									auto it1 = t_HRTF_DataBase.find(orientation(mygroup[j].azimuth, mygroup[j].elevation));
-									auto it2 = t_HRTF_DataBase.find(orientation(mygroup[k].azimuth, mygroup[k].elevation));
+		//						if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f) {
+		//							// Calculate the new HRIR with the barycentric coorfinates
+		//							auto it0 = t_HRTF_DataBase.find(orientation(mygroup[i].azimuth, mygroup[i].elevation));
+		//							auto it1 = t_HRTF_DataBase.find(orientation(mygroup[j].azimuth, mygroup[j].elevation));
+		//							auto it2 = t_HRTF_DataBase.find(orientation(mygroup[k].azimuth, mygroup[k].elevation));
 
-									if (it0 != t_HRTF_DataBase.end() && it1 != t_HRTF_DataBase.end() && it2 != t_HRTF_DataBase.end()) {
+		//							if (it0 != t_HRTF_DataBase.end() && it1 != t_HRTF_DataBase.end() && it2 != t_HRTF_DataBase.end()) {
 
-										//FIXME!!! another way to initialize?
-										newHRIR = it0->second;
-										//END FIXME
+		//								//FIXME!!! another way to initialize?
+		//								newHRIR = it0->second;
+		//								//END FIXME
 
-										for (int i = 0; i < HRIRLength; i++) {
-											newHRIR.leftHRIR[i] = barycentricCoordinates.alpha * it0->second.leftHRIR[i] + barycentricCoordinates.beta * it1->second.leftHRIR[i] + barycentricCoordinates.gamma * it2->second.leftHRIR[i];
-											newHRIR.rightHRIR[i] = barycentricCoordinates.alpha * it0->second.rightHRIR[i] + barycentricCoordinates.beta * it1->second.rightHRIR[i] + barycentricCoordinates.gamma * it2->second.rightHRIR[i];
-										}
+		//								for (int i = 0; i < HRIRLength; i++) {
+		//									newHRIR.leftHRIR[i] = barycentricCoordinates.alpha * it0->second.leftHRIR[i] + barycentricCoordinates.beta * it1->second.leftHRIR[i] + barycentricCoordinates.gamma * it2->second.leftHRIR[i];
+		//									newHRIR.rightHRIR[i] = barycentricCoordinates.alpha * it0->second.rightHRIR[i] + barycentricCoordinates.beta * it1->second.rightHRIR[i] + barycentricCoordinates.gamma * it2->second.rightHRIR[i];
+		//								}
 
-										// Calculate delay
-										newHRIR.leftDelay = barycentricCoordinates.alpha * it0->second.leftDelay + barycentricCoordinates.beta * it1->second.leftDelay + barycentricCoordinates.gamma * it2->second.leftDelay;
-										newHRIR.rightDelay = barycentricCoordinates.alpha * it0->second.rightDelay + barycentricCoordinates.beta * it1->second.rightDelay + barycentricCoordinates.gamma * it2->second.rightDelay;
-										//SET_RESULT(RESULT_OK, "HRIR calculated with interpolation method succesfully");
-										return newHRIR;
-									}
-									else {
-										SET_RESULT(RESULT_WARNING, "GetHRIR_InterpolationMethod return empty because HRIR with a specific orientation was not found");
-										return emptyHRIR;
-									}
-								}
-							}
-						}
-					}
-				}
-				//SET_RESULT(RESULT_OK, "");
-			}
-			else {
-				SET_RESULT(RESULT_ERROR_NOTSET, "Orientation List sorted by distances in GetHRIR_InterpolationMethod is empty");
-			}
+		//								// Calculate delay
+		//								newHRIR.leftDelay = barycentricCoordinates.alpha * it0->second.leftDelay + barycentricCoordinates.beta * it1->second.leftDelay + barycentricCoordinates.gamma * it2->second.leftDelay;
+		//								newHRIR.rightDelay = barycentricCoordinates.alpha * it0->second.rightDelay + barycentricCoordinates.beta * it1->second.rightDelay + barycentricCoordinates.gamma * it2->second.rightDelay;
+		//								//SET_RESULT(RESULT_OK, "HRIR calculated with interpolation method succesfully");
+		//								return newHRIR;
+		//							}
+		//							else {
+		//								SET_RESULT(RESULT_WARNING, "GetHRIR_InterpolationMethod return empty because HRIR with a specific orientation was not found");
+		//								return emptyHRIR;
+		//							}
+		//						}
+		//					}
+		//				}
+		//			}
+		//		}
+		//		//SET_RESULT(RESULT_OK, "");
+		//	}
+		//	else {
+		//		SET_RESULT(RESULT_ERROR_NOTSET, "Orientation List sorted by distances in GetHRIR_InterpolationMethod is empty");
+		//	}
 
-			SET_RESULT(RESULT_WARNING, "GetHRIR_InterpolationMethod returns empty");
-			return emptyHRIR;
+		//	SET_RESULT(RESULT_WARNING, "GetHRIR_InterpolationMethod returns empty");
+		//	return emptyHRIR;
 
-		}
+		//}
 
 		THRIRStruct CalculateHRIR_offlineMethod_v2(int newAzimuth, int newElevation, std::list<T_PairDistanceOrientation> sortedList, int pole)
 		{
@@ -1438,7 +1438,7 @@ namespace BRTServices
 						{
 							for (int k = j + 1; k < groupSize; k++)
 							{
-								if (pole == ELEVATION_SOUTH_POLE || pole == ELEVATION_NORTH_POLE)
+								if (pole == eleSouth || pole == eleNorth)
 								{
 									mygroup[i].azimuth = newAzimuth;
 									mygroup[i].elevation = pole;
@@ -1557,33 +1557,33 @@ namespace BRTServices
 		//param	newAzimuth		azimuth of the orientation of interest in degrees
 		//param	newElevation	elevation of the orientation of interest in degrees
 		//return the distances sorted list
-		std::list<T_PairDistanceOrientation> GetSortedDistancesList(int newAzimuth, int newElevation)
-		{
-			T_PairDistanceOrientation temp;
-			float distance;
-			std::list<T_PairDistanceOrientation> sortedList; 
+		//std::list<T_PairDistanceOrientation> GetSortedDistancesList(int newAzimuth, int newElevation)
+		//{
+		//	T_PairDistanceOrientation temp;
+		//	float distance;
+		//	std::list<T_PairDistanceOrientation> sortedList; 
 
-			// Algorithm to calculate the three shortest distances between the point (newAzimuth, newelevation) and all the points in the HRTF table (t)
-			for (auto it = t_HRTF_DataBase.begin(); it != t_HRTF_DataBase.end(); ++it)
-			{
-				distance = CalculateDistance_HaversineFormula(newAzimuth, newElevation,it->first.azimuth, it->first.elevation);
+		//	// Algorithm to calculate the three shortest distances between the point (newAzimuth, newelevation) and all the points in the HRTF table (t)
+		//	for (auto it = t_HRTF_DataBase.begin(); it != t_HRTF_DataBase.end(); ++it)
+		//	{
+		//		distance = CalculateDistance_HaversineFormula(newAzimuth, newElevation,it->first.azimuth, it->first.elevation);
 
-				temp.first = distance;
-				temp.second = orientation(it->first.azimuth, it->first.elevation);
+		//		temp.first = distance;
+		//		temp.second = orientation(it->first.azimuth, it->first.elevation);
 
-				sortedList.push_back(temp);
-			}
+		//		sortedList.push_back(temp);
+		//	}
 
-			if (sortedList.size() != 0) {
-				sortedList.sort([](const T_PairDistanceOrientation& a, const T_PairDistanceOrientation& b) { return a.first < b.first; });
-				//SET_RESULT(RESULT_OK, "Sorted distances list obtained succesfully");
-			}
-			else {
-				SET_RESULT(RESULT_WARNING, "Orientation list sorted by distances is empty");
-			}
+		//	if (sortedList.size() != 0) {
+		//		sortedList.sort([](const T_PairDistanceOrientation& a, const T_PairDistanceOrientation& b) { return a.first < b.first; });
+		//		//SET_RESULT(RESULT_OK, "Sorted distances list obtained succesfully");
+		//	}
+		//	else {
+		//		SET_RESULT(RESULT_WARNING, "Orientation list sorted by distances is empty");
+		//	}
 
-			return sortedList;
-		}
+		//	return sortedList;
+		//}
 
 
 
