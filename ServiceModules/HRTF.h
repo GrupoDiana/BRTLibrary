@@ -187,6 +187,10 @@ namespace BRTServices
 
 		enum class TPole { north, south };
 
+		/** \brief Get Pole Elevation
+		*	\param [in] Tpole var that indicates of which pole we need elevation
+		*   \eh  On error, an error code is reported to the error handler.
+		*/
 		int GetPoleElevation(TPole _pole)const
 		{
 			if (_pole == TPole::north) { return ELEVATION_NORTH_POLE; }
@@ -1076,7 +1080,12 @@ namespace BRTServices
 			}
 		}
 
-		void FillSphericalCap_HRTF(int _gapTreshold, int _resamplingStep)
+		/// <summary>
+		/// Fill Spherical Cap Gap of an HRTF making Interpolation between pole and the 2 nearest points.
+		/// </summary>
+		/// <param name="_gapThreshold"></param>
+		/// <param name="_resamplingStep"></param>
+		void FillSphericalCap_HRTF(int _gapThreshold, int _resamplingStep)
 		{
 			// Initialize some variables
 			int max_dist_elev = 0;
@@ -1106,7 +1115,7 @@ namespace BRTServices
 
 			CalculateDistanceBetweenPoleandLastRing(south_hemisphere, max_dist_elev, elev_south);
 
-			if (max_dist_elev > _gapTreshold)
+			if (max_dist_elev > _gapThreshold)
 			{
 				//pole = ELEVATION_SOUTH_POLE; // 270
 				Calculate_and_EmplaceHRIR(eleSouth, south_hemisphere, elev_south, elev_Step);
@@ -1119,12 +1128,19 @@ namespace BRTServices
 
 			CalculateDistanceBetweenPoleandLastRing(north_hemisphere, max_dist_elev, elev_north);
 
-			if (max_dist_elev > _gapTreshold)
+			if (max_dist_elev > _gapThreshold)
 			{
 				//pole = ELEVATION_NORTH_POLE; //90
 				Calculate_and_EmplaceHRIR(eleNorth, north_hemisphere, elev_north, elev_Step);
 			}
 		}
+
+		/// <summary>
+		/// Calculate the max distance between pole and the nearest ring, to know if there is a gap in any spherical cap
+		/// </summary>
+		/// <param name="_hemisphere"></param>
+		/// <param name="_max_dist_elev"></param>
+		/// <param name="elevationLastRing"></param>
 		void CalculateDistanceBetweenPoleandLastRing(std::vector<orientation> _hemisphere, int& _max_dist_elev, int& elevationLastRing)
 		{
 			for (int jj = 1; jj < _hemisphere.size(); jj++)
@@ -1138,6 +1154,13 @@ namespace BRTServices
 				}
 			}
 		}
+
+		/// <summary>
+		/// Calculate the HRIR we need by interpolation and emplace it in the database
+		/// </summary>
+		/// <param name="_hemisphere"></param>
+		/// <param name="elevationLastRing"></param>
+		/// <param name="_fillStep"></param>
 		void Calculate_and_EmplaceHRIR(int _pole, std::vector<orientation> _hemisphere, int _elevationLastRing, int _fillStep)
 		{
 			std::list<orientation> onlythatelev;
