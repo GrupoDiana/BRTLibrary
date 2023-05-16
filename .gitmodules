@@ -1,3 +1,0 @@
-[submodule "third_party_libraries/sofacoustics"]
-	path = third_party_libraries/sofacoustics
-	url = https://github.com/lmtanco/API_Cpp.git
