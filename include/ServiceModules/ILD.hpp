@@ -26,6 +26,7 @@
 #include <Common/FiltersChain.hpp>
 #include <Common/Buffer.h>
 #include <Common/CommonDefinitions.h>
+#include <ServiceModules/ServiceModuleInterfaces.hpp>
 
 //#define NEAR_FIELD_TABLE_AZIMUTH_STEP 5
 //#define NEAR_FIELD_TABLE_DISTANCE_STEP 10
