@@ -3,7 +3,7 @@
 
 #include <Common/UPCAnechoic.h>
 #include <Common/Buffer.h>
-#include <ServiceModules/HRTF.h>
+#include <ServiceModules/HRTF.hpp>
 
 #include <memory>
 #include <vector>

@@ -25,7 +25,7 @@
 #include <ostream>
 #include <string>
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
-#include <ServiceModules/HRTF.h>
+#include <ServiceModules/HRTF.hpp>
 #include <Common/ErrorHandler.hpp>
 //#include <SOFA.h>
 //#include <SOFAExceptions.h>

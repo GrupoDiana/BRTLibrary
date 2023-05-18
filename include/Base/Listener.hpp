@@ -6,7 +6,7 @@
 #include "ExitPoint.hpp"
 #include "ExitPointPtr.hpp"
 #include <Common/CommonDefinitions.h>
-#include <ServiceModules/HRTF.h>
+#include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/ILD.hpp>
 
 namespace BRTServices {
