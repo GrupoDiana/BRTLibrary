@@ -37,13 +37,14 @@ namespace BRTReaders {
 
 	public:
 
-		enum class TSofaConvention { SimpleFreeFieldHRIR, SimpleFreeFieldHRSOS };
+		enum class TSofaConvention { SimpleFreeFieldHRIR, SimpleFreeFieldHRSOS, FreeFieldDirectivityTF};
 		const char* SofaConventioToString(TSofaConvention e) noexcept
 		{
 			switch (e)
 			{
 			case TSofaConvention::SimpleFreeFieldHRIR: return "SimpleFreeFieldHRIR";
 			case TSofaConvention::SimpleFreeFieldHRSOS: return "SimpleFreeFieldHRSOS";
+			case TSofaConvention::FreeFieldDirectivityTF: return "FreeFieldDirectivityTF";
 
 			}
 		}
@@ -74,6 +75,16 @@ namespace BRTReaders {
 		MYSOFA_ARRAY* GetDataSOS() {
 
 			return mysofa_getVariable(hrtf->hrtf->variables, "Data.SOS");
+		}
+
+		MYSOFA_ARRAY* GetDataRealDirectivity() {
+
+			return mysofa_getVariable(hrtf->hrtf->variables, "Data.Real");
+		}
+
+		MYSOFA_ARRAY* GetDataImagDirectivity() {
+
+			return mysofa_getVariable(hrtf->hrtf->variables, "Data.Imag");
 		}
 
 

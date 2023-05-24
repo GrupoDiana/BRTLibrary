@@ -77,6 +77,17 @@ namespace BRTReaders {
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerILD;
 			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS);			
 		}
+
+		/** \brief Loads an SRTF from a sofa file
+		*	\param [in] path of the sofa file
+		*	\param [out] source affected by the srtf
+		*   \eh On error, an error code is reported to the error handler.
+		*/
+		bool ReadSRTFFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CSRTF> sourceSRTF, int _resamplingStep) {
+
+			std::shared_ptr<BRTServices::CServicesBase> data = sourceSRTF;
+			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::FreeFieldDirectivityTF, _resamplingStep);
+		}
 				
 	private:
 				
@@ -93,14 +104,17 @@ namespace BRTReaders {
 			SET_RESULT(RESULT_OK, "Open a valid SOFA file");
 
 			// Get and Save data			
-			GetAndSaveGlobalAttributes(loader, sofafile, data);		// GET and Save Global Attributes 
-			CheckCoordinateSystemsToSpherical(loader);					// Check coordiante system and change to spherical in case
-			CheckListenerOrientation(loader);							// Check listener view			
-			GetAndSaveReceiverPosition(loader, data);					// Get and Save listener ear positions
+			GetAndSaveGlobalAttributes(loader, _SOFAConvention, sofafile, data); // GET and Save Global Attributes 
+			CheckCoordinateSystems(loader, _SOFAConvention);					// Check coordiante system for Source and Receiver positions
+			CheckListenerOrientation(loader);									// Check listener view			
 			
+			if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR || _SOFAConvention == CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS) {
+				GetAndSaveReceiverPosition(loader, data); // Get and Save listener ear 
+			} 
 			bool result;
 			if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR) {		result = GetHRIRs(loader, data); }
 			else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS) {	result = GetCoefficients(loader, data);	}
+			else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::FreeFieldDirectivityTF) { result = GetDirectivityTF(loader, data); }
 						
 			if (!result) {
 				SET_RESULT(RESULT_ERROR_UNKNOWN, "An error occurred creating the data structure from the SOFA file, please consider previous messages.");
@@ -111,6 +125,7 @@ namespace BRTReaders {
 			if (_resamplingStep != -1) { data->SetResamplingStep(_resamplingStep); }
 			data->EndSetup();
 			return true;
+
 		}
 
 				
@@ -119,7 +134,7 @@ namespace BRTReaders {
 		/////////////////////////
 		
 		// Read GLOBAL data from sofa struct and save into HRTF class
-		void GetAndSaveGlobalAttributes(BRTReaders::CLibMySOFALoader& loader, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& dataHRTF) {
+		void GetAndSaveGlobalAttributes(BRTReaders::CLibMySOFALoader& loader, CLibMySOFALoader::TSofaConvention _SOFAConvention, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& dataHRTF) {
 			// GET and Save Global Attributes 
 			std::string _title = mysofa_getAttribute(loader.getHRTF()->attributes, "Title");
 			dataHRTF->SetTitle(_title);
@@ -127,8 +142,10 @@ namespace BRTReaders {
 			std::string _databaseName = mysofa_getAttribute(loader.getHRTF()->attributes, "DatabaseName");
 			dataHRTF->SetDatabaseName(_databaseName);
 
-			std::string _listenerShortName = mysofa_getAttribute(loader.getHRTF()->attributes, "ListenerShortName");
-			dataHRTF->SetListenerShortName(_listenerShortName);
+			if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR || _SOFAConvention == CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS) {
+				std::string _listenerShortName = mysofa_getAttribute(loader.getHRTF()->attributes, "ListenerShortName");
+				dataHRTF->SetListenerShortName(_listenerShortName);
+			}
 
 			std::filesystem::path p(sofafile);
 			std::string fileName{ p.filename().u8string() };
@@ -136,13 +153,33 @@ namespace BRTReaders {
 
 		}
 
+		void CheckCoordinateSystems(BRTReaders::CLibMySOFALoader& loader, CLibMySOFALoader::TSofaConvention _SOFAConvention) {
 
-		void CheckCoordinateSystemsToSpherical(BRTReaders::CLibMySOFALoader& loader) {
+			if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR || _SOFAConvention == CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS) {
+				CheckSourcePositionCoordinateSystems(loader, "spherical");
+				CheckReceiverPositionCoordinateSystems(loader, "cartesian");
+			}
+			else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::FreeFieldDirectivityTF) {
+				CheckSourcePositionCoordinateSystems(loader, "cartesian");
+				CheckReceiverPositionCoordinateSystems(loader, "spherical");
+			}
+			else{ SET_RESULT(RESULT_WARNING, "CoordinateSystem could not be checked"); }	
+		}
+
+		void CheckSourcePositionCoordinateSystems(BRTReaders::CLibMySOFALoader& loader, std::string _coordinateSystem) {
 
 			std::string sourcePostionsCoordianteSystem = mysofa_getAttribute(loader.getHRTF()->SourcePosition.attributes, "Type");
-			if (sourcePostionsCoordianteSystem == "cartesian") {
-				loader.Cartesian2Spherical();
-				SET_RESULT(RESULT_WARNING, "Source positions from SOFA file has been converted to spherical ");
+			if (sourcePostionsCoordianteSystem != _coordinateSystem) {
+				//loader.Cartesian2Spherical();
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Source positions from SOFA file do not have the expected coordinate system");
+			};
+		}
+
+		void CheckReceiverPositionCoordinateSystems(BRTReaders::CLibMySOFALoader& loader, std::string _coordinateSystem) {
+
+			std::string receiverPostionsCoordianteSystem = mysofa_getAttribute(loader.getHRTF()->ReceiverPosition.attributes, "Type");
+			if (receiverPostionsCoordianteSystem != _coordinateSystem) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "positions from SOFA file do not have the expected coordinate system");
 			};
 		}
 
@@ -194,8 +231,6 @@ namespace BRTReaders {
 			std::vector< double > dataDelays(loader.getHRTF()->DataDelay.values, loader.getHRTF()->DataDelay.values + loader.getHRTF()->DataDelay.elements);													
 			std::vector< double > dataMeasurements(loader.getHRTF()->DataIR.values, loader.getHRTF()->DataIR.values + loader.getHRTF()->DataIR.elements);
 			
-									
-
 			// Constants
 			int numberOfMeasurements = loader.getHRTF()->M;
 			int numberOfCoordinates = loader.getHRTF()->C;
@@ -291,6 +326,46 @@ namespace BRTReaders {
 
 		}
 
+		bool GetDirectivityTF(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& dataSRTF) {
+			//Get source positions									
+			std::vector< double > receiverPositionsVector(loader.getHRTF()->ReceiverPosition.values, loader.getHRTF()->ReceiverPosition.values + loader.getHRTF()->ReceiverPosition.elements);
+
+			// GET Directivity Transfer Functions (Real dn Imag parts)
+			std::vector< double > dataMeasurementsRealPart(loader.GetDataRealDirectivity()->values, loader.GetDataRealDirectivity()->values + loader.GetDataRealDirectivity()->elements);
+			std::vector< double > dataMeasurementsImagPart(loader.GetDataImagDirectivity()->values, loader.GetDataImagDirectivity()->values + loader.GetDataImagDirectivity()->elements);
+
+			// Constants
+			int numberOfMeasurements = loader.getHRTF()->M;
+			if (numberOfMeasurements != 1) {
+				SET_RESULT(RESULT_WARNING, "Number of measurements (M) in SOFA file is different from 1 but only the first measurements are going to be taken into account.");
+				numberOfMeasurements = 1;
+			}
+			int numberOfCoordinates = loader.getHRTF()->C;
+			const unsigned int numberOfSamples = loader.getHRTF()->N;
+			int numberOfReceivers = loader.getHRTF()->R;
+
+			// Get and save TFs
+			//double distance = receiverPositionsVector[array2DIndex(0, 2, numberOfReceivers, numberOfCoordinates)];										
+			dataSRTF->BeginSetup(numberOfSamples);
+
+			// This outtermost loop iterates over TFs
+			for (std::size_t i = 0; i < numberOfMeasurements; i++)
+			{
+				BRTServices::TSRTFStruct srtf_data;
+				double azimuth = receiverPositionsVector[array2DIndex(i, 0, numberOfReceivers, numberOfCoordinates)];
+				double elevation = GetPositiveElevation(receiverPositionsVector[array2DIndex(i, 1, numberOfReceivers, numberOfCoordinates)]);
+				
+				//GetDirectivityData(dataMeasurementsRealPart, srtf_data.dataReal);
+				//GetDirectivityData(dataMeasurementsImagPart, srtf_data.dataImag);
+
+				//dataSRTF->AddHRIR(azimuth, elevation, std::move(hrir_value));
+			}
+			return true;
+		
+		}
+
+
+
 
 		/////////////////////////
 		// AUXILAR METHODS
@@ -311,6 +386,17 @@ namespace BRTReaders {
 			}
 			outIR = std::move(IR);
 		}
+
+		//void GetDirectivityData(const std::vector<double>& dataIR, std::vector<float>& outIR, int numberOfMeasurements, int numberOfReceivers, int numberOfSamples, int ear, int i) {
+		//	std::vector<float> TF(numberOfSamples, 0);
+
+		//	for (std::size_t k = 0; k < numberOfSamples; k++)
+		//	{
+		//		const std::size_t index = array3DIndex(i, ear, k, numberOfMeasurements, numberOfReceivers, numberOfSamples);
+		//		IR[k] = dataIR[index];
+		//	}
+		//	outIR = std::move(IR);
+		//}
 
 		const std::size_t array2DIndex(const unsigned long i, const unsigned long j, const unsigned long dim1, const unsigned long dim2)
 		{

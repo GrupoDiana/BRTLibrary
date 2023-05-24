@@ -22,6 +22,11 @@ namespace BRTServices {
 		CMonoBuffer<float> rightCoefs;	///< Right filters coefs
 	};
 
+	struct TSRTFStruct {
+		CMonoBuffer<float> dataReal;	
+		CMonoBuffer<float> dataImag;	
+	};
+
 	class CServicesBase {
 		
 	public:
@@ -29,17 +34,18 @@ namespace BRTServices {
 		virtual ~CServicesBase() {}		
 		
 		virtual void BeginSetup() {}
+		virtual void BeginSetup(int32_t _SRTFLength) {}
 		virtual void BeginSetup(int32_t _HRIRLength, float _distance) {}
 		virtual bool EndSetup() = 0;
 
 		virtual void SetResamplingStep(int _resamplingStep) {};
 		virtual void SetTitle(std::string _title) = 0;
 		virtual void SetDatabaseName(std::string _databaseName) =0;
-		virtual void SetListenerShortName(std::string _listenerShortName)=0;
+		virtual void SetListenerShortName(std::string _listenerShortName) {};
 		virtual void SetFilename(std::string _fileName) = 0;
 
 		virtual void SetNumberOfEars(int _numberOfEars) {}
-		virtual void SetEarPosition(Common::T_ear _ear, Common::CVector3 _earPosition) = 0;
+		virtual void SetEarPosition(Common::T_ear _ear, Common::CVector3 _earPosition) {};
 
 		virtual void AddHRIR(float _azimuth, float _elevation, THRIRStruct&& newHRIR) {}
 		virtual void AddCoefficients(float azimuth, float distance, TILDStruct&& newCoefs) {}
