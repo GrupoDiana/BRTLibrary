@@ -38,70 +38,9 @@
 #include <Common/CommonDefinitions.h>
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
 
-
-//#ifndef PI 
-//#define PI 3.14159265
-//#endif
-
-#ifndef DEFAULT_SRTFRESAMPLING_STEP
+#ifndef DEFAULT_SRTF_RESAMPLING_STEP
 #define DEFAULT_SRTF_RESAMPLING_STEP 5
 #endif
-//#define MAX_DISTANCE_BETWEEN_ELEVATIONS 5
-//#define NUMBER_OF_PARTS 4 
-//#define MARGIN 10
-//#define ELEVATION_NORTH_POLE 90
-//#define ELEVATION_SOUTH_POLE 270
-//
-//#define DEFAULT_GAP_THRESHOLD 10
-//
-//#define SPHERE_BORDER 360.0f
-//
-//#define DEFAULT_MIN_AZIMUTH 0
-//#define DEFAULT_MAX_AZIMUTH 360
-//#define DEFAULT_MIN_ELEVATION 0
-//#define DEFAULT_MAX_ELEVATION 360
-//
-//
-//#define ORIENTATION_RESOLUTION 0.01
-
-
-
-/*! \file */
-
-// Structs and types definitions 
-
-/** \brief Defines and holds data to work with orientations
-*/
-//struct orientation2
-//{
-//	float azimuth;		///< Azimuth angle in degrees
-//	float elevation;	///< Elevation angle in degrees	
-//	orientation2(float _azimuth, float _elevation) :azimuth{ _azimuth }, elevation{ _elevation } {}
-//	orientation2() :orientation2{ 0,0 } {}
-//	bool operator==(const orientation2& other) const
-//	{
-//		return ((Common::AreSame(this->azimuth, other.azimuth, ORIENTATION_RESOLUTION)) && (Common::AreSame(this->elevation, other.elevation, ORIENTATION_RESOLUTION)));
-//	}
-//};
-//namespace std
-//{
-//	template<>
-//	struct hash<orientation2>
-//	{
-//		// adapted from http://en.cppreference.com/w/cpp/utility/hash
-//		size_t operator()(const orientation2& key) const
-//		{
-//			int keyAzimuth_hundredth = static_cast<int> (round(key.azimuth / ORIENTATION_RESOLUTION));
-//			int keyElevation_hundredth = static_cast<int> (round(key.elevation / ORIENTATION_RESOLUTION));
-//
-//			size_t h1 = std::hash<int32_t>()(keyAzimuth_hundredth);
-//			size_t h2 = std::hash<int32_t>()(keyElevation_hundredth);
-//			return h1 ^ (h2 << 1);  // exclusive or of hash functions for each int.
-//		}
-//	};
-//}
-
-
 
 /** \brief Type definition for the SRTF table
 */
@@ -157,20 +96,19 @@ namespace BRTServices
 		/// 
 		/// </summary>
 		void BeginSetup(){
-			////Update parameters			
-			//sphereBorder = SPHERE_BORDER;
+			//Update parameters			
+			sphereBorder = SPHERE_BORDER;
 
-			//aziMin = DEFAULT_MIN_AZIMUTH;
-			//aziMax = DEFAULT_MAX_AZIMUTH;
-			//eleMin = DEFAULT_MIN_ELEVATION;
-			//eleMax = DEFAULT_MAX_ELEVATION;
-			//eleNorth = GetPoleElevation(TPole::north);
-			//eleSouth = GetPoleElevation(TPole::south);
+			aziMin = DEFAULT_MIN_AZIMUTH;
+			aziMax = DEFAULT_MAX_AZIMUTH;
+			eleMin = DEFAULT_MIN_ELEVATION;
+			eleMax = DEFAULT_MAX_ELEVATION;
+			eleNorth = GetPoleElevation(TPole::north);
+			eleSouth = GetPoleElevation(TPole::south);
 
-			////Clear every table			
-			//t_HRTF_DataBase.clear();
-			//t_HRTF_Resampled_frequency.clear();
-			//t_HRTF_Resampled_partitioned.clear();
+			//Clear every table			
+			t_SRTF_DataBase.clear();
+			t_SRTF_Resampled.clear();
 
 			////Change class state
 			setupSRTFInProgress = true;
@@ -180,7 +118,7 @@ namespace BRTServices
 			SET_RESULT(RESULT_OK, "HRTF Setup started");
 		}
 
-		/** \brief Stop the HRTF configuration
+		/** \brief Stop the SRTF configuration
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
@@ -189,14 +127,11 @@ namespace BRTServices
 			if (setupSRTFInProgress) {
 				if (!t_SRTF_DataBase.empty())
 				{
-					//Delete the common delay of every HRIR functions of the DataBase Table
-					//RemoveCommonDelay_HRTFDataBaseTable();
-
 					//HRTF Resampling methdos
 					//CalculateHRIR_InPoles(resamplingStep);
 					//FillOutTableOfAzimuth360(resamplingStep);
 					//FillSphericalCap_HRTF(gapThreshold, resamplingStep);
-					//CalculateResampled_HRTFTable(resamplingStep);
+					CalculateResampled_SRTFTable(resamplingStep);
 
 
 					//Setup values
@@ -238,6 +173,54 @@ namespace BRTServices
 			}
 		}
 
+	
+		/// <summary>
+		/// Calculate the regular resampled-table using an interpolation method
+		/// </summary>
+		/// <param name="_resamplingStep" step for both azimuth and elevation></param>
+		void CalculateResampled_SRTFTable(int _resamplingStep)
+		{
+			int numOfInterpolatedHRIRs = 0;
+
+			//Resample Interpolation Algorithm
+			for (int newAzimuth = aziMin; newAzimuth < aziMax; newAzimuth = newAzimuth + _resamplingStep)
+			{
+				for (int newElevation = eleMin; newElevation <= eleNorth; newElevation = newElevation + _resamplingStep)
+				{
+					if (CalculateAndEmplaceNewDirectivityTF(newAzimuth, newElevation)) { numOfInterpolatedHRIRs++; }
+				}
+
+				for (int newElevation = eleSouth; newElevation < eleMax; newElevation = newElevation + _resamplingStep)
+				{
+					if (CalculateAndEmplaceNewDirectivityTF(newAzimuth, newElevation)) { numOfInterpolatedHRIRs++; }
+				}
+			}
+			SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
+		}
+
+		/// <summary>
+		/// Calculate the DirectivityTF using the an interpolation Method 
+		/// </summary>
+		/// <param name="newAzimuth"></param>
+		/// <param name="newElevation"></param>
+		/// <returns>interpolatedDTFs: true if the Directivity TF has been calculated using the interpolation</returns>
+		bool CalculateAndEmplaceNewDirectivityTF(float _azimuth, float _elevation) {
+			TDirectivityTFStruct interpolatedHRIR;
+			bool bDirectivityTFInterpolated = false;
+			auto it = t_SRTF_DataBase.find(orientation(_azimuth, _elevation));
+			if (it != t_SRTF_DataBase.end()){
+				//Fill out Directivity TF from the original Database
+				auto returnValue =  t_SRTF_Resampled.emplace(orientation(_azimuth, _elevation), std::forward<TDirectivityTFStruct>(it->second));
+				//Error handler
+				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing DirectivityTF into t_SRTF_Resampled map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
+			}
+			else
+			{
+				SET_RESULT(RESULT_WARNING, "Resampling SRTF: cannot find Directivity TF in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "], in the database table");
+			}
+			return bDirectivityTFInterpolated;
+		}
+
 	private:
 		std::string title;
 		std::string databaseName;
@@ -247,6 +230,25 @@ namespace BRTServices
 		bool setupSRTFInProgress;
 		
 		T_SRTFTable	t_SRTF_DataBase;
+		T_SRTFTable	t_SRTF_Resampled;
+
+		int aziMin, aziMax, eleMin, eleMax, eleNorth, eleSouth;	// Variables that define limits of work area
+		float sphereBorder;
+
+		enum class TPole { north, south };
+		/** \brief Get Pole Elevation
+		*	\param [in] Tpole var that indicates of which pole we need elevation
+		*   \eh  On error, an error code is reported to the error handler.
+		*/
+		int GetPoleElevation(TPole _pole)const
+		{
+			if (_pole == TPole::north) { return ELEVATION_NORTH_POLE; }
+			else if (_pole == TPole::south) { return ELEVATION_SOUTH_POLE; }
+			else {
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get a non-existent pole");
+				return 0;
+			}
+		}
 
 	};
 }

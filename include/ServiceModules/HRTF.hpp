@@ -50,42 +50,42 @@
 #define DEFAULT_HRTF_MEASURED_DISTANCE 1.95f
 #endif
 
-#define MAX_DISTANCE_BETWEEN_ELEVATIONS 5
-#define NUMBER_OF_PARTS 4 
-#define MARGIN 10
-#define ELEVATION_NORTH_POLE 90
-#define ELEVATION_SOUTH_POLE 270
-
-#define DEFAULT_GAP_THRESHOLD 10
-
-#define SPHERE_BORDER 360.0f
-
-#define DEFAULT_MIN_AZIMUTH 0
-#define DEFAULT_MAX_AZIMUTH 360
-#define DEFAULT_MIN_ELEVATION 0
-#define DEFAULT_MAX_ELEVATION 360
-
-
-#define ORIENTATION_RESOLUTION 0.01
+//#define MAX_DISTANCE_BETWEEN_ELEVATIONS 5
+//#define NUMBER_OF_PARTS 4 
+//#define MARGIN 10
+//#define ELEVATION_NORTH_POLE 90
+//#define ELEVATION_SOUTH_POLE 270
+//
+//#define DEFAULT_GAP_THRESHOLD 10
+//
+//#define SPHERE_BORDER 360.0f
+//
+//#define DEFAULT_MIN_AZIMUTH 0
+//#define DEFAULT_MAX_AZIMUTH 360
+//#define DEFAULT_MIN_ELEVATION 0
+//#define DEFAULT_MAX_ELEVATION 360
+//
+//
+//#define ORIENTATION_RESOLUTION 0.01
 
 
 /*! \file */
 
-// Structs and types definitions 
-
-/** \brief Defines and holds data to work with orientations
-*/
-struct orientation
-{
-	float azimuth;		///< Azimuth angle in degrees
-	float elevation;	///< Elevation angle in degrees	
-	orientation(float _azimuth, float _elevation) :azimuth{ _azimuth }, elevation{ _elevation } {}
-	orientation() :orientation{ 0,0 } {}
-	bool operator==(const orientation& other) const
-	{
-		return ((Common::AreSame(this->azimuth, other.azimuth, ORIENTATION_RESOLUTION)) && (Common::AreSame(this->elevation, other.elevation, ORIENTATION_RESOLUTION)));
-	}
-};
+//// Structs and types definitions 
+//
+///** \brief Defines and holds data to work with orientations
+//*/
+//struct orientation
+//{
+//	float azimuth;		///< Azimuth angle in degrees
+//	float elevation;	///< Elevation angle in degrees	
+//	orientation(float _azimuth, float _elevation) :azimuth{ _azimuth }, elevation{ _elevation } {}
+//	orientation() :orientation{ 0,0 } {}
+//	bool operator==(const orientation& other) const
+//	{
+//		return ((Common::AreSame(this->azimuth, other.azimuth, ORIENTATION_RESOLUTION)) && (Common::AreSame(this->elevation, other.elevation, ORIENTATION_RESOLUTION)));
+//	}
+//};
 
 /** \brief Type definition for a left-right pair of impulse response subfilter set with the ITD removed and stored in a specific struct field
 */
@@ -118,23 +118,23 @@ struct TBarycentricCoordinatesStruct {
 	float gamma;	///< Coordinate gamma
 };
 
-namespace std
-{
-	template<>
-	struct hash<orientation>
-	{
-		// adapted from http://en.cppreference.com/w/cpp/utility/hash
-		size_t operator()(const orientation& key) const
-		{
-			int keyAzimuth_hundredth = static_cast<int> (round(key.azimuth / ORIENTATION_RESOLUTION));
-			int keyElevation_hundredth = static_cast<int> (round(key.elevation / ORIENTATION_RESOLUTION));
-
-			size_t h1 = std::hash<int32_t>()(keyAzimuth_hundredth);
-			size_t h2 = std::hash<int32_t>()(keyElevation_hundredth);
-			return h1 ^ (h2 << 1);  // exclusive or of hash functions for each int.
-		}
-	};
-}
+//namespace std
+//{
+//	template<>
+//	struct hash<orientation>
+//	{
+//		// adapted from http://en.cppreference.com/w/cpp/utility/hash
+//		size_t operator()(const orientation& key) const
+//		{
+//			int keyAzimuth_hundredth = static_cast<int> (round(key.azimuth / ORIENTATION_RESOLUTION));
+//			int keyElevation_hundredth = static_cast<int> (round(key.elevation / ORIENTATION_RESOLUTION));
+//
+//			size_t h1 = std::hash<int32_t>()(keyAzimuth_hundredth);
+//			size_t h2 = std::hash<int32_t>()(keyElevation_hundredth);
+//			return h1 ^ (h2 << 1);  // exclusive or of hash functions for each int.
+//		}
+//	};
+//}
 
 
 
