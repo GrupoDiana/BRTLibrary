@@ -72,7 +72,7 @@ namespace BRTReaders {
 		*	\param [out] listener affected by the hrtf
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		bool ReadILDFromSofa(const std::string& sofafile, shared_ptr<BRTServices::CILD>& listenerILD)
+		bool ReadILDFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CILD>& listenerILD)
 		{
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerILD;
 			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS);			
@@ -92,7 +92,7 @@ namespace BRTReaders {
 	private:
 				
 		// Methods
-		bool ReadFromSofa(const std::string& sofafile, shared_ptr<BRTServices::CServicesBase>& data, CLibMySOFALoader::TSofaConvention _SOFAConvention, int _resamplingStep = -1) {
+		bool ReadFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, CLibMySOFALoader::TSofaConvention _SOFAConvention, int _resamplingStep = -1) {
 
 			// Open file
 			BRTReaders::CLibMySOFALoader loader(sofafile);
