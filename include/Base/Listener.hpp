@@ -119,7 +119,7 @@ namespace BRTBase {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		void SetHRTF(std::shared_ptr< BRTServices::CHRTF >& _listenerHRTF) {
+		void SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) {
 			//listenerHRTF = std::move(_listenerHRTF);	
 			listenerHRTF = _listenerHRTF;
 			hrtfExitPoint->sendData(listenerHRTF);
@@ -146,7 +146,7 @@ namespace BRTBase {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		void SetILD(std::shared_ptr< BRTServices::CILD >& _listenerILD) {			
+		void SetILD(std::shared_ptr< BRTServices::CILD > _listenerILD) {
 			listenerILD = _listenerILD;
 			ildExitPoint->sendData(listenerILD);			
 		}
