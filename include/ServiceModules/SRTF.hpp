@@ -1,7 +1,7 @@
 /**
 * \class CSRTF
 *
-* \brief Declaration of CSRTF class interface
+* \brief Declaration of CSRTF class interface to store directivity data
 * \version 
 * \date	May 2023
 *
@@ -25,7 +25,7 @@
 #ifndef _CSRTF_H_
 #define _CSRTF_H_
 
-//#include <unordered_map>
+#include <unordered_map>
 //#include <vector>
 //#include <utility>
 //#include <list>
@@ -46,6 +46,23 @@
 #ifndef DEFAULT_SRTFRESAMPLING_STEP
 #define DEFAULT_SRTF_RESAMPLING_STEP 5
 #endif
+//#define MAX_DISTANCE_BETWEEN_ELEVATIONS 5
+//#define NUMBER_OF_PARTS 4 
+//#define MARGIN 10
+//#define ELEVATION_NORTH_POLE 90
+//#define ELEVATION_SOUTH_POLE 270
+//
+//#define DEFAULT_GAP_THRESHOLD 10
+//
+//#define SPHERE_BORDER 360.0f
+//
+//#define DEFAULT_MIN_AZIMUTH 0
+//#define DEFAULT_MAX_AZIMUTH 360
+//#define DEFAULT_MIN_ELEVATION 0
+//#define DEFAULT_MAX_ELEVATION 360
+//
+//
+//#define ORIENTATION_RESOLUTION 0.01
 
 
 
@@ -55,45 +72,24 @@
 
 /** \brief Defines and holds data to work with orientations
 */
-//struct orientation
+//struct orientation2
 //{
 //	float azimuth;		///< Azimuth angle in degrees
 //	float elevation;	///< Elevation angle in degrees	
-//	orientation(float _azimuth, float _elevation) :azimuth{ _azimuth }, elevation{ _elevation } {}
-//	orientation() :orientation{ 0,0 } {}
-//	bool operator==(const orientation& other) const
+//	orientation2(float _azimuth, float _elevation) :azimuth{ _azimuth }, elevation{ _elevation } {}
+//	orientation2() :orientation2{ 0,0 } {}
+//	bool operator==(const orientation2& other) const
 //	{
 //		return ((Common::AreSame(this->azimuth, other.azimuth, ORIENTATION_RESOLUTION)) && (Common::AreSame(this->elevation, other.elevation, ORIENTATION_RESOLUTION)));
 //	}
 //};
-
-///** \brief Type definition for a left-right pair of impulse response with the ITD removed and stored in a specific struct field
-//*/
-//struct THRIRStruct {
-//	uint64_t leftDelay;				///< Left delay, in number of samples
-//	uint64_t rightDelay;			///< Right delay, in number of samples
-//	CMonoBuffer<float> leftHRIR;	///< Left impulse response data
-//	CMonoBuffer<float> rightHRIR;	///< Right impulse response data
-//};
-
-/** \brief Type definition for a left-right pair of impulse response subfilter set with the ITD removed and stored in a specific struct field
-*/
-//struct THRIRPartitionedStruct {
-//	uint64_t leftDelay;				///< Left delay, in number of samples
-//	uint64_t rightDelay;			///< Right delay, in number of samples
-//	std::vector<CMonoBuffer<float>> leftHRIR_Partitioned;	///< Left partitioned impulse response data
-//	std::vector<CMonoBuffer<float>> rightHRIR_Partitioned;	///< Right partitioned impulse response data
-//};
-
-
-
 //namespace std
 //{
 //	template<>
-//	struct hash<orientation>
+//	struct hash<orientation2>
 //	{
 //		// adapted from http://en.cppreference.com/w/cpp/utility/hash
-//		size_t operator()(const orientation& key) const
+//		size_t operator()(const orientation2& key) const
 //		{
 //			int keyAzimuth_hundredth = static_cast<int> (round(key.azimuth / ORIENTATION_RESOLUTION));
 //			int keyElevation_hundredth = static_cast<int> (round(key.elevation / ORIENTATION_RESOLUTION));
@@ -107,11 +103,11 @@
 
 
 
-/** \brief Type definition for the HRTF table
+/** \brief Type definition for the SRTF table
 */
-//typedef std::unordered_map<orientation, BRTServices::THRIRStruct> T_HRTFTable;
+typedef std::unordered_map<orientation, BRTServices::TDirectivityTFStruct> T_SRTFTable;
 
-namespace BRTBase { /*class CListener;*/ }
+//namespace BRTBase { }
 
 namespace BRTServices
 {
@@ -124,7 +120,8 @@ namespace BRTServices
 		*	\details By default, customized ITD is switched off, resampling step is set to 5 degrees and listener is a null pointer
 		*   \eh Nothing is reported to the error handler.
 		*/
-		CSRTF():resamplingStep{ DEFAULT_SRTF_RESAMPLING_STEP }
+		CSRTF()
+			:resamplingStep{ DEFAULT_SRTF_RESAMPLING_STEP }, SRTFloaded{ false }, setupSRTFInProgress{ false }
 			
 		{}
 
@@ -159,16 +156,63 @@ namespace BRTServices
 		/// <summary>
 		/// 
 		/// </summary>
-		void BeginSetup()
-		{}
+		void BeginSetup(){
+			////Update parameters			
+			//sphereBorder = SPHERE_BORDER;
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <returns></returns>
+			//aziMin = DEFAULT_MIN_AZIMUTH;
+			//aziMax = DEFAULT_MAX_AZIMUTH;
+			//eleMin = DEFAULT_MIN_ELEVATION;
+			//eleMax = DEFAULT_MAX_ELEVATION;
+			//eleNorth = GetPoleElevation(TPole::north);
+			//eleSouth = GetPoleElevation(TPole::south);
+
+			////Clear every table			
+			//t_HRTF_DataBase.clear();
+			//t_HRTF_Resampled_frequency.clear();
+			//t_HRTF_Resampled_partitioned.clear();
+
+			////Change class state
+			setupSRTFInProgress = true;
+			SRTFloaded = false;
+
+
+			SET_RESULT(RESULT_OK, "HRTF Setup started");
+		}
+
+		/** \brief Stop the HRTF configuration
+		*   \eh On success, RESULT_OK is reported to the error handler.
+		*       On error, an error code is reported to the error handler.
+		*/
 		bool EndSetup()
 		{
-			return true;
+			if (setupSRTFInProgress) {
+				if (!t_SRTF_DataBase.empty())
+				{
+					//Delete the common delay of every HRIR functions of the DataBase Table
+					//RemoveCommonDelay_HRTFDataBaseTable();
+
+					//HRTF Resampling methdos
+					//CalculateHRIR_InPoles(resamplingStep);
+					//FillOutTableOfAzimuth360(resamplingStep);
+					//FillSphericalCap_HRTF(gapThreshold, resamplingStep);
+					//CalculateResampled_HRTFTable(resamplingStep);
+
+
+					//Setup values
+					setupSRTFInProgress = false;
+					SRTFloaded = true;
+
+					SET_RESULT(RESULT_OK, "SRTF Table completed succesfully");
+					return true;
+				}
+				else
+				{
+					// TO DO: Should be ASSERT?
+					SET_RESULT(RESULT_ERROR_NOTSET, "The t_SRTF_DataBase map has not been set");
+				}
+			}
+			return false;
 		}
 
 		void SetResamplingStep(int _resamplingStep) {
@@ -179,11 +223,30 @@ namespace BRTServices
 			return resamplingStep;
 		}
 
+		/** \brief Add a new TF to the SRTF table
+		*	\param [in] azimuth azimuth angle in degrees
+		*	\param [in] elevation elevation angle in degrees
+		*	\param [in] newDirectivityTF DirectivityTF data for both ears
+		*   \eh Warnings may be reported to the error handler.
+		*/
+		void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF)
+		{
+			if (setupSRTFInProgress) {
+				auto returnValue = t_SRTF_DataBase.emplace(orientation(_azimuth, _elevation), std::forward<TDirectivityTFStruct>(DirectivityTF));
+				//Error handler
+				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
+			}
+		}
+
 	private:
 		std::string title;
 		std::string databaseName;
 		std::string fileName;
-		int resamplingStep; 		
+		int resamplingStep;
+		bool SRTFloaded;
+		bool setupSRTFInProgress;
+		
+		T_SRTFTable	t_SRTF_DataBase;
 
 	};
 }

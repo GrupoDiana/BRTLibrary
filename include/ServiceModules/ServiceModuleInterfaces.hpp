@@ -22,7 +22,7 @@ namespace BRTServices {
 		CMonoBuffer<float> rightCoefs;	///< Right filters coefs
 	};
 
-	struct TSRTFStruct {
+	struct TDirectivityTFStruct {
 		CMonoBuffer<float> dataReal;	
 		CMonoBuffer<float> dataImag;	
 	};
@@ -49,6 +49,7 @@ namespace BRTServices {
 
 		virtual void AddHRIR(float _azimuth, float _elevation, THRIRStruct&& newHRIR) {}
 		virtual void AddCoefficients(float azimuth, float distance, TILDStruct&& newCoefs) {}
+		virtual void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF){}
 		
 	};}
 

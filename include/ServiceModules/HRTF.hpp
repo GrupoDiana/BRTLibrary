@@ -87,15 +87,6 @@ struct orientation
 	}
 };
 
-///** \brief Type definition for a left-right pair of impulse response with the ITD removed and stored in a specific struct field
-//*/
-//struct THRIRStruct {
-//	uint64_t leftDelay;				///< Left delay, in number of samples
-//	uint64_t rightDelay;			///< Right delay, in number of samples
-//	CMonoBuffer<float> leftHRIR;	///< Left impulse response data
-//	CMonoBuffer<float> rightHRIR;	///< Right impulse response data
-//};
-
 /** \brief Type definition for a left-right pair of impulse response subfilter set with the ITD removed and stored in a specific struct field
 */
 struct THRIRPartitionedStruct {

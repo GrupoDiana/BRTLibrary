@@ -346,19 +346,19 @@ namespace BRTReaders {
 
 			// Get and save TFs
 			//double distance = receiverPositionsVector[array2DIndex(0, 2, numberOfReceivers, numberOfCoordinates)];										
-			dataSRTF->BeginSetup(numberOfSamples);
+			dataSRTF->BeginSetup();
 
 			// This outtermost loop iterates over TFs
-			for (std::size_t i = 0; i < numberOfMeasurements; i++)
+			for (std::size_t i = 0; i < numberOfReceivers; i++)
 			{
-				BRTServices::TSRTFStruct srtf_data;
-				double azimuth = receiverPositionsVector[array2DIndex(i, 0, numberOfReceivers, numberOfCoordinates)];
-				double elevation = GetPositiveElevation(receiverPositionsVector[array2DIndex(i, 1, numberOfReceivers, numberOfCoordinates)]);
+				BRTServices::TDirectivityTFStruct srtf_data;
+				double azimuth = receiverPositionsVector[array2DIndex(i, 0, 0, numberOfCoordinates)];
+				double elevation = GetPositiveElevation(receiverPositionsVector[array2DIndex(i, 1, 0, numberOfCoordinates)]);
 				
-				//GetDirectivityData(dataMeasurementsRealPart, srtf_data.dataReal);
-				//GetDirectivityData(dataMeasurementsImagPart, srtf_data.dataImag);
+				GetDirectivityData(dataMeasurementsRealPart, srtf_data.dataReal, numberOfSamples, i);
+				GetDirectivityData(dataMeasurementsImagPart, srtf_data.dataImag, numberOfSamples, i);
 
-				//dataSRTF->AddHRIR(azimuth, elevation, std::move(hrir_value));
+				dataSRTF->AddDirectivityTF(azimuth, elevation, std::move(srtf_data));
 			}
 			return true;
 		
@@ -387,16 +387,16 @@ namespace BRTReaders {
 			outIR = std::move(IR);
 		}
 
-		//void GetDirectivityData(const std::vector<double>& dataIR, std::vector<float>& outIR, int numberOfMeasurements, int numberOfReceivers, int numberOfSamples, int ear, int i) {
-		//	std::vector<float> TF(numberOfSamples, 0);
+		void GetDirectivityData(const std::vector<double>& dataTF, std::vector<float>& outTF, int numberOfSamples, int i) {
+			std::vector<float> TF(numberOfSamples, 0);
 
-		//	for (std::size_t k = 0; k < numberOfSamples; k++)
-		//	{
-		//		const std::size_t index = array3DIndex(i, ear, k, numberOfMeasurements, numberOfReceivers, numberOfSamples);
-		//		IR[k] = dataIR[index];
-		//	}
-		//	outIR = std::move(IR);
-		//}
+			for (std::size_t k = 0; k < numberOfSamples; k++)
+			{
+				const std::size_t index = array2DIndex(i, k, 0, numberOfSamples);
+				TF[k] = dataTF[index];
+			}
+			outTF = std::move(TF);
+		}
 
 		const std::size_t array2DIndex(const unsigned long i, const unsigned long j, const unsigned long dim1, const unsigned long dim2)
 		{
