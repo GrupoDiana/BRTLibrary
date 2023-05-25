@@ -331,6 +331,10 @@ namespace BRTServices {
 			{					
 				if (ear == Common::T_ear::LEFT)			{	return itEar->second.leftCoefs;	} 
 				else if (ear == Common::T_ear::RIGHT) {		return itEar->second.rightCoefs; }
+				else { // Should never get here but keep compiler happy
+					SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get Near Field ILD coefficients for a wrong ear (BOTH or NONE)");
+					return std::vector<float>();
+				}
 			}
 			else
 			{

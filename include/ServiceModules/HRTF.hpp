@@ -782,7 +782,7 @@ namespace BRTServices
 			else {
 				if (_ear == Common::T_ear::LEFT)		{ return leftEarLocalPosition; }
 				else if (_ear == Common::T_ear::RIGHT)	{ return rightEarLocalPosition; }
-				else if (_ear == Common::T_ear::BOTH || _ear == Common::T_ear::NONE)
+				else // either _ear == Common::T_ear::BOTH || _ear == Common::T_ear::NONE
 				{
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to set listener ear transform for BOTH or NONE ears");
 					return Common::CVector3();

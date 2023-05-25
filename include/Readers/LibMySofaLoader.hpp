@@ -130,6 +130,7 @@ namespace BRTReaders {
 			catch (...)
 			{
 				SET_RESULT(RESULT_ERROR_UNKNOWN, "Unknown error when reading samplerate from SOFA");
+				return -1;
 			}
 		}
 
@@ -221,10 +222,12 @@ namespace BRTReaders {
 			{
 				// the description of the exception will be printed when raised
 				SET_RESULT(RESULT_ERROR_UNKNOWN, "Sofa exception, please consider previous messages from the sofa library");
+				return false;
 			}
 			catch (...)
 			{
 				SET_RESULT(RESULT_ERROR_UNKNOWN, "Unknown error when reading samplerate from SOFA");
+				return false;
 			}
 		}
 
