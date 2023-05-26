@@ -54,8 +54,8 @@ namespace BRTReaders {
 		}
 
 		~CLibMySOFALoader() {
-			if (hrtf) {
-				mysofa_close(hrtf);
+			if (hrtf && hrtf->hrtf) {
+				mysofa_close(hrtf);				
 			}
 		}
 
@@ -160,7 +160,7 @@ namespace BRTReaders {
 		bool IsValidHRTFFile() {
 			bool error = mysofa_check(hrtf->hrtf);
 			if (error != MYSOFA_OK) {
-				mysofa_close(hrtf);
+				//mysofa_close(hrtf);
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Not a valid HRTF SOFA file");
 				return false;
 			}
