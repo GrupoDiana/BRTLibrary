@@ -132,6 +132,7 @@ namespace BRTServices
 					//FillOutTableOfAzimuth360(resamplingStep);
 					//FillSphericalCap_HRTF(gapThreshold, resamplingStep);
 					CalculateResampled_SRTFTable(resamplingStep);
+					//std::vector<std::pair<float, float>>  vector = CreateStepVector();  
 
 
 					//Setup values
@@ -250,41 +251,105 @@ namespace BRTServices
 			}
 		}
 
-		void CreateStepVector()
+		std::unordered_map<orientation, float> CreateStepVector()
 		{
-			std::vector<orientation> orientations;
-			int elevation, actual_ele = -1;
-			std::pair<orientation, BRTServices::TDirectivityTFStruct> next_iterator;
+			std::unordered_map<orientation, float> stepVector;
+			float elevation, aziStep, actual_ele = -1.0f;
+			int secondTime = 0;
 
-			for (auto& itr : t_SRTF_DataBase)
+			for (auto& it : t_SRTF_DataBase)
 			{
 				// Maybe stop in each different elevation and make the difference between the start azimuth, 0, and the next azimuth in this elevation
 				// with this form, we could save a vector like this [aziStep elevation]
 				
-				elevation = itr.first.elevation;
-				next_iterator = itr;
-				std::advance(next_iterator, 1);
+				elevation = it.first.elevation;
 
 				if (actual_ele != elevation)
 				{
-					
 
-					actual_ele = elevation;
+					if (secondTime == 1)
+					{
+						stepVector.emplace(orientation(0, actual_ele), aziStep);
+
+						actual_ele = elevation;
+						secondTime = 0;
+					}
+					secondTime = 1;
 				}
-
-
-
-				orientations.push_back(itr.first);
-
 			}
-
+			return stepVector;
 		}
 
-		void GetData_InterpolationMethod()
+		const TDirectivityTFStruct GetSRIR_frequency(float _azimuth, float _elevation, std::unordered_map<orientation,float> _stepsMap) const 
 		{
+			// HARCODE ELEVATION STEP TO 10
+			int eleStep = 10;
 
+			TDirectivityTFStruct newSRIR;
+
+			int idxEle = ceil(_elevation / eleStep);
+			float eleCeil = eleStep * idxEle;
+			float eleFloor = eleStep * (idxEle - 1);
+
+			auto it = _stepsMap.find(orientation(0, eleCeil));
+			float aziStepCeil = it->second;
+			int idxAziCeil = ceil(_azimuth / aziStepCeil);
+			float aziCeilFront = idxAziCeil * aziStepCeil;
+			float aziCeilBack = (idxAziCeil - 1) * aziStepCeil;
+
+			auto it = _stepsMap.find(orientation(0, eleFloor));
+			float aziStepFloor = it->second;									//			   Back	  Front
+			int idxAziFloor = ceil(_azimuth / aziStepFloor);					//	Ceil		A		B
+			float aziFloorFront = idxAziFloor * aziStepFloor;
+			float aziFloorBack = (idxAziFloor - 1) * aziStepFloor;				//	Floor		D		C
+
+			float pntMid_azimuth = (aziFloorBack + aziStepFloor * 0.5f);
+			float pntMid_elevation = (eleFloor + eleStep * 0.5f);
+
+
+			if (_azimuth >= pntMid_azimuth)
+			{
+				if (_elevation >= pntMid_elevation)
+				{
+					//Second quadrant
+					auto it = t_SRTF_DataBase.find(orientation(aziCeilFront, eleCeil));
+		
+					newSRIR.dataReal = it->second.dataReal;
+					newSRIR.dataImag = it->second.dataImag;
+					
+				}
+				else if (_elevation < pntMid_elevation)
+				{
+					//Forth quadrant
+					auto it = t_SRTF_DataBase.find(orientation(aziFloorFront, eleFloor));
+
+					newSRIR.dataReal = it->second.dataReal;
+					newSRIR.dataImag = it->second.dataImag;
+				}
+			}
+			else if (_azimuth < pntMid_azimuth)
+			{
+				if (_elevation >= pntMid_elevation)
+				{
+					//First quadrant
+					auto it = t_SRTF_DataBase.find(orientation(aziCeilBack, eleCeil));
+
+					newSRIR.dataReal = it->second.dataReal;
+					newSRIR.dataImag = it->second.dataImag;
+				}
+				else if (_elevation < pntMid_elevation) {
+					//Third quadrant
+					auto it = t_SRTF_DataBase.find(orientation(aziFloorFront, eleFloor));
+
+					newSRIR.dataReal = it->second.dataReal;
+					newSRIR.dataImag = it->second.dataImag;
+				}
+			}
+			else { return newSRIR = {}; }
+
+			//SET_RESULT(RESULT_OK, "CalculateHRIR_InterpolationMethod completed succesfully");
+			return newSRIR;
 		}
-
 
 	};
 }
