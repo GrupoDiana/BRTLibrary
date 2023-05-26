@@ -23,6 +23,8 @@
 
 #define ORIENTATION_RESOLUTION 0.01
 
+#define EPSILON_SEWING 0.001
+
 // Structs and types definitions 
 
 /** \brief Defines and holds data to work with orientations

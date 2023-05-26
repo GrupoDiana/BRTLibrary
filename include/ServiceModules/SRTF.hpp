@@ -60,9 +60,8 @@ namespace BRTServices
 		*   \eh Nothing is reported to the error handler.
 		*/
 		CSRTF()
-			:resamplingStep{ DEFAULT_SRTF_RESAMPLING_STEP }, SRTFloaded{ false }, setupSRTFInProgress{ false }, aziMin{ DEFAULT_MIN_AZIMUTH }, aziMax{ DEFAULT_MAX_AZIMUTH }, 
-			eleMin{ DEFAULT_MIN_ELEVATION }, eleMax{DEFAULT_MAX_ELEVATION}
-			
+			:resamplingStep{ DEFAULT_SRTF_RESAMPLING_STEP }, SRTFloaded{ false }, setupSRTFInProgress{ false }, aziMin{ DEFAULT_MIN_AZIMUTH }, aziMax{ DEFAULT_MAX_AZIMUTH },
+			eleMin{ DEFAULT_MIN_ELEVATION }, eleMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER }, epsilon_sewing { EPSILON_SEWING	}
 		{}
 
 		/** \brief Set the title of the SOFA file
@@ -98,12 +97,6 @@ namespace BRTServices
 		/// </summary>
 		void BeginSetup(){
 			//Update parameters			
-			sphereBorder = SPHERE_BORDER;
-
-			/*aziMin = DEFAULT_MIN_AZIMUTH;
-			aziMax = DEFAULT_MAX_AZIMUTH;
-			eleMin = DEFAULT_MIN_ELEVATION;
-			eleMax = DEFAULT_MAX_ELEVATION;*/
 			eleNorth = GetPoleElevation(TPole::north);
 			eleSouth = GetPoleElevation(TPole::south);
 
@@ -181,22 +174,23 @@ namespace BRTServices
 		/// <param name="_resamplingStep" step for both azimuth and elevation></param>
 		void CalculateResampled_SRTFTable(int _resamplingStep)
 		{
-			int numOfInterpolatedHRIRs = 0;
+			t_SRTF_Resampled = t_SRTF_DataBase;
+			//int numOfInterpolatedHRIRs = 0;
 
-			//Resample Interpolation Algorithm
-			for (int newAzimuth = aziMin; newAzimuth < aziMax; newAzimuth = newAzimuth + _resamplingStep)
-			{
-				for (int newElevation = eleMin; newElevation <= eleNorth; newElevation = newElevation + _resamplingStep)
-				{
-					if (CalculateAndEmplaceNewDirectivityTF(newAzimuth, newElevation)) { numOfInterpolatedHRIRs++; }
-				}
+			////Resample Interpolation Algorithm
+			//for (int newAzimuth = aziMin; newAzimuth < aziMax; newAzimuth = newAzimuth + _resamplingStep)
+			//{
+			//	for (int newElevation = eleMin; newElevation <= eleNorth; newElevation = newElevation + _resamplingStep)
+			//	{
+			//		if (CalculateAndEmplaceNewDirectivityTF(newAzimuth, newElevation)) { numOfInterpolatedHRIRs++; }
+			//	}
 
-				for (int newElevation = eleSouth; newElevation < eleMax; newElevation = newElevation + _resamplingStep)
-				{
-					if (CalculateAndEmplaceNewDirectivityTF(newAzimuth, newElevation)) { numOfInterpolatedHRIRs++; }
-				}
-			}
-			SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
+			//	for (int newElevation = eleSouth; newElevation < eleMax; newElevation = newElevation + _resamplingStep)
+			//	{
+			//		if (CalculateAndEmplaceNewDirectivityTF(newAzimuth, newElevation)) { numOfInterpolatedHRIRs++; }
+			//	}
+			//}
+			//SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
 		}
 
 		/// <summary>
@@ -221,6 +215,15 @@ namespace BRTServices
 			}
 			return bDirectivityTFInterpolated;
 		}
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="_azimuth"></param>
+		/// <param name="_elevation"></param>
+		/// <returns></returns>
+		const TDirectivityTFStruct GetDirectivityTF(float _azimuth, float _elevation) const {
+			return  t_SRTF_Resampled.begin()->second;
+		}
 
 	private:
 		std::string title;
@@ -235,7 +238,7 @@ namespace BRTServices
 
 		int aziMin, aziMax, eleMin, eleMax, eleNorth, eleSouth;	// Variables that define limits of work area
 		float sphereBorder;
-
+		float epsilon_sewing;
 		enum class TPole { north, south };
 		/** \brief Get Pole Elevation
 		*	\param [in] Tpole var that indicates of which pole we need elevation
@@ -250,36 +253,6 @@ namespace BRTServices
 				return 0;
 			}
 		}
-
-		void CreateStepVector()
-		{
-			std::vector<orientation> orientations;
-			int elevation, actual_ele = -1;
-			std::pair<orientation, BRTServices::TDirectivityTFStruct> next_iterator;
-
-			for (auto& itr : t_SRTF_DataBase)
-			{
-				// Maybe stop in each different elevation and make the difference between the start azimuth, 0, and the next azimuth in this elevation
-				// with this form, we could save a vector like this [aziStep elevation]
-				
-				elevation = itr.first.elevation;
-				//next_iterator = itr;
-				//std::advance(next_iterator, 1);
-
-				if (actual_ele != elevation)
-				{
-					actual_ele = elevation;
-				}
-				orientations.push_back(itr.first);
-			}
-		}
-
-		void GetData_InterpolationMethod()
-		{
-
-		}
-
-
 	};
 }
 #endif
