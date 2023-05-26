@@ -60,7 +60,8 @@ namespace BRTServices
 		*   \eh Nothing is reported to the error handler.
 		*/
 		CSRTF()
-			:resamplingStep{ DEFAULT_SRTF_RESAMPLING_STEP }, SRTFloaded{ false }, setupSRTFInProgress{ false }
+			:resamplingStep{ DEFAULT_SRTF_RESAMPLING_STEP }, SRTFloaded{ false }, setupSRTFInProgress{ false }, aziMin{ DEFAULT_MIN_AZIMUTH }, aziMax{ DEFAULT_MAX_AZIMUTH }, 
+			eleMin{ DEFAULT_MIN_ELEVATION }, eleMax{DEFAULT_MAX_ELEVATION}
 			
 		{}
 
@@ -99,10 +100,10 @@ namespace BRTServices
 			//Update parameters			
 			sphereBorder = SPHERE_BORDER;
 
-			aziMin = DEFAULT_MIN_AZIMUTH;
+			/*aziMin = DEFAULT_MIN_AZIMUTH;
 			aziMax = DEFAULT_MAX_AZIMUTH;
 			eleMin = DEFAULT_MIN_ELEVATION;
-			eleMax = DEFAULT_MAX_ELEVATION;
+			eleMax = DEFAULT_MAX_ELEVATION;*/
 			eleNorth = GetPoleElevation(TPole::north);
 			eleSouth = GetPoleElevation(TPole::south);
 
@@ -250,40 +251,33 @@ namespace BRTServices
 			}
 		}
 
-		//void CreateStepVector()
-		//{
-		//	std::vector<orientation> orientations;
-		//	int elevation, actual_ele = -1;
-		//	std::pair<orientation, BRTServices::TDirectivityTFStruct> next_iterator;
+		void CreateStepVector()
+		{
+			std::vector<orientation> orientations;
+			int elevation, actual_ele = -1;
+			std::pair<orientation, BRTServices::TDirectivityTFStruct> next_iterator;
 
-		//	for (auto& itr : t_SRTF_DataBase)
-		//	{
-		//		// Maybe stop in each different elevation and make the difference between the start azimuth, 0, and the next azimuth in this elevation
-		//		// with this form, we could save a vector like this [aziStep elevation]
-		//		
-		//		elevation = itr.first.elevation;
-		//		next_iterator = itr;
-		//		std::advance(next_iterator, 1);
+			for (auto& itr : t_SRTF_DataBase)
+			{
+				// Maybe stop in each different elevation and make the difference between the start azimuth, 0, and the next azimuth in this elevation
+				// with this form, we could save a vector like this [aziStep elevation]
+				
+				elevation = itr.first.elevation;
+				//next_iterator = itr;
+				//std::advance(next_iterator, 1);
 
-		//		if (actual_ele != elevation)
-		//		{
-		//			
+				if (actual_ele != elevation)
+				{
+					actual_ele = elevation;
+				}
+				orientations.push_back(itr.first);
+			}
+		}
 
-		//			actual_ele = elevation;
-		//		}
+		void GetData_InterpolationMethod()
+		{
 
-
-
-		//		orientations.push_back(itr.first);
-
-		//	}
-
-		//}
-
-		//void GetData_InterpolationMethod()
-		//{
-
-		//}
+		}
 
 
 	};
