@@ -266,14 +266,14 @@ namespace BRTServices
 			float eleCeil = eleStep * idxEle;
 			float eleFloor = eleStep * (idxEle - 1);
 
-			auto it = _stepsMap.find(orientation(0, eleCeil));
-			float aziStepCeil = it->second;
+			auto stepItr = _stepsMap.find(orientation(0, eleCeil));
+			float aziStepCeil = stepItr->second;
 			int idxAziCeil = ceil(_azimuth / aziStepCeil);
 			float aziCeilFront = idxAziCeil * aziStepCeil;
 			float aziCeilBack = (idxAziCeil - 1) * aziStepCeil;
 
-			auto it = _stepsMap.find(orientation(0, eleFloor));
-			float aziStepFloor = it->second;									//			   Back	  Front
+			auto stepIt = _stepsMap.find(orientation(0, eleFloor));
+			float aziStepFloor = stepIt->second;									//			   Back	  Front
 			int idxAziFloor = ceil(_azimuth / aziStepFloor);					//	Ceil		A		B
 			float aziFloorFront = idxAziFloor * aziStepFloor;
 			float aziFloorBack = (idxAziFloor - 1) * aziStepFloor;				//	Floor		D		C
