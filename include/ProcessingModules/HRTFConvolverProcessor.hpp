@@ -31,7 +31,7 @@ namespace BRTProcessing {
 
         void Update(std::string _entryPointId) {            
 			
-			std::lock_guard<std::mutex> l(_mtx);
+			std::lock_guard<std::mutex> l(mutex);
 
 			CMonoBuffer<float> outLeftBuffer;
 			CMonoBuffer<float> outRightBuffer;
@@ -52,7 +52,7 @@ namespace BRTProcessing {
 
 		void UpdateCommand() {					
 			
-			std::lock_guard<std::mutex> l(_mtx);
+			std::lock_guard<std::mutex> l(mutex);
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
 															
 			//if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
@@ -75,7 +75,7 @@ namespace BRTProcessing {
       
     private:
        
-		mutable std::mutex _mtx;
+		mutable std::mutex mutex;
 
 		bool IsToMySoundSource(std::string _sourceID) {
 			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
