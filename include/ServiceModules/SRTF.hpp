@@ -126,6 +126,7 @@ namespace BRTServices
 					//FillOutTableOfAzimuth360(resamplingStep);
 					//FillSphericalCap_HRTF(gapThreshold, resamplingStep);
 					CalculateResampled_SRTFTable(resamplingStep);
+					auto stepVector = CalculateStep();
 
 
 					//Setup values
@@ -224,26 +225,44 @@ namespace BRTServices
 		std::unordered_map<orientation, float> CalculateStep()
 		{
 			std::unordered_map<orientation, float> stepVector;
-			float elevation, aziStep, actual_ele = -1.0f;
+			float elevation, aziStep, diff = 360, actual_ele = -1.0f;
 			int secondTime = 0;
+			std::vector<orientation> orientations;
 
-			for (auto& it : t_SRTF_DataBase)
+			// Create a vector with all the orientations of the Database
+			orientations.reserve(t_SRTF_DataBase.size());
+			for (auto& itr : t_SRTF_DataBase)
+			{
+				orientations.push_back(itr.first);
+			}
+			//  Sort orientations of the DataBase with a lambda function in sort.
+			std::sort(orientations.begin(), orientations.end(), [](orientation a, orientation b) {return (a.elevation < b.elevation); });
+
+
+			for (int ori = 0; ori< orientations.size(); ori++)
 			{
 				// Maybe stop in each different elevation and make the difference between the start azimuth, 0, and the next azimuth in this elevation
 				// with this form, we could save a vector like this [aziStep elevation]
 
-				elevation = it.first.elevation;
+				elevation = orientations[ori].elevation;
 
 				if (actual_ele != elevation)
 				{
-					if (secondTime == 1)
+					for (int ele = ori+1; ele < orientations.size(); ele++)
 					{
-						stepVector.emplace(orientation(0, actual_ele), aziStep);
+						if (orientations[ele].elevation != elevation)
+						{	
+							stepVector.emplace(orientation(0, elevation), diff);
+							diff = 360;
+							break;
+						}
+						if (abs(orientations[ele].azimuth - orientations[ele -1].azimuth) < diff) { diff = abs(orientations[ele].azimuth - orientations[ele - 1].azimuth); }
 
-						actual_ele = elevation;
-						secondTime = 0;
+
+
 					}
-					secondTime = 1;
+					actual_ele = elevation;
+
 				}
 			}
 			return stepVector;
