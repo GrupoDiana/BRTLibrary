@@ -25,8 +25,7 @@ namespace BRTProcessing {
 			CreateIDEntryPoint("sourceID");
 			CreateIDEntryPoint("listenerID");
 
-            CreateSamplesExitPoint("outSamples");
-            //CreateSamplesExitPoint("rightEar");   									
+            CreateSamplesExitPoint("outSamples");  									
         }
 
         void Update(std::string _entryPointId) {            
@@ -41,7 +40,7 @@ namespace BRTProcessing {
 				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();												
 				std::weak_ptr<BRTServices::CSRTF> sourceSRTF = GetSRTFPtrEntryPoint("sourceSRTF")->GetData();
 				if (buffer.size() != 0) {
-					//Process(buffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, sourceSRTF);
+					//Process(buffer, outBuffer, sourcePosition, listenerPosition, sourceSRTF);
 					GetSamplesExitPoint("outSamples")->sendData(outBuffer);
 				}				
 				this->resetUpdatingStack();				

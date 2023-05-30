@@ -276,69 +276,75 @@ namespace BRTServices
 		/// <returns></returns>
 		const TDirectivityTFStruct GetDirectivityTF(float _azimuth, float _elevation, std::unordered_map<orientation, float> _stepsMap) const {
 
-			// HARCODE ELEVATION STEP TO 10
-			int eleStep = 10;
-
 			TDirectivityTFStruct newSRIR;
-
-			int idxEle = ceil(_elevation / eleStep);
-			float eleCeil = eleStep * idxEle;
-			float eleFloor = eleStep * (idxEle - 1);
-
-			auto stepItr = _stepsMap.find(orientation(0, eleCeil));
-			float aziStepCeil = stepItr->second;
-			int idxAziCeil = ceil(_azimuth / aziStepCeil);
-			float aziCeilFront = idxAziCeil * aziStepCeil;
-			float aziCeilBack = (idxAziCeil - 1) * aziStepCeil;
-
-			auto stepIt = _stepsMap.find(orientation(0, eleFloor));
-			float aziStepFloor = stepIt->second;									//			   Back	  Front
-			int idxAziFloor = ceil(_azimuth / aziStepFloor);					//	Ceil		A		B
-			float aziFloorFront = idxAziFloor * aziStepFloor;
-			float aziFloorBack = (idxAziFloor - 1) * aziStepFloor;				//	Floor		D		C
-
-			float pntMid_azimuth = (aziFloorBack + aziStepFloor * 0.5f);
-			float pntMid_elevation = (eleFloor + eleStep * 0.5f);
-
-			if (_azimuth >= pntMid_azimuth)
-			{
-				if (_elevation >= pntMid_elevation)
-				{
-					//Second quadrant
-					auto it = t_SRTF_DataBase.find(orientation(aziCeilFront, eleCeil));
-
-					newSRIR.dataReal = it->second.dataReal;
-					newSRIR.dataImag = it->second.dataImag;
-
-				}
-				else if (_elevation < pntMid_elevation)
-				{
-					//Forth quadrant
-					auto it = t_SRTF_DataBase.find(orientation(aziFloorFront, eleFloor));
-
-					newSRIR.dataReal = it->second.dataReal;
-					newSRIR.dataImag = it->second.dataImag;
-				}
+			auto it0 = t_SRTF_DataBase.find(orientation(_azimuth, _elevation));
+			if (it0 != t_SRTF_DataBase.end()) {
+				newSRIR.dataReal = it0->second.dataReal;
+				newSRIR.dataImag = it0->second.dataImag;
 			}
-			else if (_azimuth < pntMid_azimuth)
-			{
-				if (_elevation >= pntMid_elevation)
+			else {
+
+				// HARCODE ELEVATION STEP TO 10
+				int eleStep = 10;
+				int idxEle = ceil(_elevation / eleStep);
+				float eleCeil = eleStep * idxEle;
+				float eleFloor = eleStep * (idxEle - 1);
+
+				auto stepItr = _stepsMap.find(orientation(0, eleCeil));
+				float aziStepCeil = stepItr->second;
+				int idxAziCeil = ceil(_azimuth / aziStepCeil);
+				float aziCeilFront = idxAziCeil * aziStepCeil;
+				float aziCeilBack = (idxAziCeil - 1) * aziStepCeil;
+
+				auto stepIt = _stepsMap.find(orientation(0, eleFloor));
+				float aziStepFloor = stepIt->second;								//			   Back	  Front
+				int idxAziFloor = ceil(_azimuth / aziStepFloor);					//	Ceil		A		B
+				float aziFloorFront = idxAziFloor * aziStepFloor;
+				float aziFloorBack = (idxAziFloor - 1) * aziStepFloor;				//	Floor		D		C
+
+				float pntMid_azimuth = (aziFloorBack + aziStepFloor * 0.5f);
+				float pntMid_elevation = (eleFloor + eleStep * 0.5f);
+
+				if (_azimuth >= pntMid_azimuth)
 				{
-					//First quadrant
-					auto it = t_SRTF_DataBase.find(orientation(aziCeilBack, eleCeil));
+					if (_elevation >= pntMid_elevation)
+					{
+						//Second quadrant
+						auto it = t_SRTF_DataBase.find(orientation(aziCeilFront, eleCeil));
 
-					newSRIR.dataReal = it->second.dataReal;
-					newSRIR.dataImag = it->second.dataImag;
-				}
-				else if (_elevation < pntMid_elevation) {
-					//Third quadrant
-					auto it = t_SRTF_DataBase.find(orientation(aziFloorFront, eleFloor));
+						newSRIR.dataReal = it->second.dataReal;
+						newSRIR.dataImag = it->second.dataImag;
 
-					newSRIR.dataReal = it->second.dataReal;
-					newSRIR.dataImag = it->second.dataImag;
+					}
+					else if (_elevation < pntMid_elevation)
+					{
+						//Forth quadrant
+						auto it = t_SRTF_DataBase.find(orientation(aziFloorFront, eleFloor));
+
+						newSRIR.dataReal = it->second.dataReal;
+						newSRIR.dataImag = it->second.dataImag;
+					}
 				}
+				else if (_azimuth < pntMid_azimuth)
+				{
+					if (_elevation >= pntMid_elevation)
+					{
+						//First quadrant
+						auto it = t_SRTF_DataBase.find(orientation(aziCeilBack, eleCeil));
+
+						newSRIR.dataReal = it->second.dataReal;
+						newSRIR.dataImag = it->second.dataImag;
+					}
+					else if (_elevation < pntMid_elevation) {
+						//Third quadrant
+						auto it = t_SRTF_DataBase.find(orientation(aziFloorFront, eleFloor));
+
+						newSRIR.dataReal = it->second.dataReal;
+						newSRIR.dataImag = it->second.dataImag;
+					}
+				}
+				else { return newSRIR = {}; }
 			}
-			else { return newSRIR = {}; }
 
 			//SET_RESULT(RESULT_OK, "CalculateHRIR_InterpolationMethod completed succesfully");
 			return newSRIR;

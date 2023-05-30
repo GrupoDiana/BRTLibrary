@@ -43,43 +43,42 @@ namespace BRTProcessing {
 		*   \eh The error handler is informed if the size of the input buffer differs from that stored in the global
 		*       parameters and if the HRTF of the listener is null.		   
 		*/
-		void Process(CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CSRTF>& _sourceSRTFWeak) {
+		void Process(CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::shared_ptr<BRTServices::CSRTF>& _sourceSRTF) {
 
 			ASSERT(_inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");
 						
 			// Check process flag
-			if (!enableSourceDirectivity)
-			{
-				outLeftBuffer = _inBuffer;
-				outRightBuffer = _inBuffer;
-				return;
-			}
+			//if (!enableSourceDirectivity)
+			//{
+			//	outBuffer = _inBuffer;
+			//	return;
+			//}
 
-			// Check listener HRTF
-			std::shared_ptr<BRTServices::CSRTF> _sourceSRTF = _sourceSRTFWeak.lock();
-			if (!_sourceSRTF) {
-				SET_RESULT(RESULT_ERROR_NULLPOINTER, "source SRTF pointer is null when trying to use in DirectivityConvolver");
-				outLeftBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
-				outRightBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
-				return;
-			}
+			//// Check listener HRTF
+			//// TODOOOO: change to weak ptr
+			////std::shared_ptr<BRTServices::CSRTF> _sourceSRTF = _sourceSRTFWeak.lock();
+			//if (!_sourceSRTF) {
+			//	SET_RESULT(RESULT_ERROR_NULLPOINTER, "source SRTF pointer is null when trying to use in DirectivityConvolver");
+			//	outBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
+			//	return;
+			//}
 
 			// First time - Initialize convolution buffers
 			//if (!convolutionBuffersInitialized) { InitializedSourceConvolutionBuffers(_sourceSRTF); }
 
 			// Calculate Source coordinates taking into account Source and Listener transforms
-			float listener_azimuth;
-			float listener_elevation;
+			float listener_azimuth = 0;
+			float listener_elevation = 0;
 
+			//CalculateListenerCoordinates(sourceTransform, listenerTransform, _sourceSRTF, listener_elevation, listener_azimuth);
 
-			CalculateListenerCoordinates(sourceTransform, listenerTransform, _sourceSRTF, listener_elevation, listener_azimuth);
-
-			// GET HRTF
+			// GET SRTF
 			CMonoBuffer<float>  dataDirectivityTF_real;
 			CMonoBuffer<float>  dataDirectivityTF_imag;
+			std::unordered_map<orientation, float> stepVector = _sourceSRTF->CalculateStep();
 			
-			//dataDirectivityTF_real = _sourceSRTF->GetDirectivityTF(listener_azimuth, listener_elevation).dataReal;
-			//dataDirectivityTF_imag = _sourceSRTF->GetDirectivityTF(listener_azimuth, listener_elevation).dataImag;
+			dataDirectivityTF_real = _sourceSRTF->GetDirectivityTF(listener_azimuth, listener_elevation, stepVector).dataReal;
+			dataDirectivityTF_imag = _sourceSRTF->GetDirectivityTF(listener_azimuth, listener_elevation, stepVector).dataImag;
 
 
 		// DO CONVOLUTION			
