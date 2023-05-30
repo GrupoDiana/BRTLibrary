@@ -1,5 +1,5 @@
-#ifndef _DIRECTIVITY_CONVOLVER_
-#define _DIRECTIVITY_CONVOLVER_
+#ifndef _SRTF_CONVOLVER_
+#define _SRTF_CONVOLVER_
 
 #include <Common/UPCAnechoic.h>
 #include <Common/Buffer.h>
@@ -12,22 +12,22 @@
 #define EPSILON_GETSOURCECOORDINATES 0.0001f
 
 namespace BRTProcessing {
-	class CDirectivityConvolver  {
+	class CSRTFConvolver  {
 	public:
-		CDirectivityConvolver() : enableInterpolation{ true }, enableSourceDirectionality{ true }, convolutionBuffersInitialized{false} { }
+		CSRTFConvolver() : enableInterpolation{ true }, enableSourceDirectivity{ true }, convolutionBuffersInitialized{false} { }
 
 
 		///Enable spatialization process for this source	
-		void EnableSourceDirectionality() { enableSourceDirectionality = true; }
+		void EnableSourceDirectionality() { enableSourceDirectivity = true; }
 		///Disable spatialization process for this source	
-		void DisableSourceDirectionality() { enableSourceDirectionality = false; }
+		void DisableSourceDirectionality() { enableSourceDirectivity = false; }
 		///Get the flag for spatialization process enabling
-		bool IsSourceDirectionalityEnabled() { return enableSourceDirectionality; }
+		bool IsSourceDirectionalityEnabled() { return enableSourceDirectivity; }
 		
 		/////Enable HRTF interpolation method	
 		//void EnableInterpolation() { enableInterpolation = true; }
 		/////Disable HRTF interpolation method
-		//void DisableInterpolation() { enableInterpolation = false; }
+		//void DisableInterpolation() { enableInterpolation = false; } 
 		/////Get the flag for HRTF interpolation method
 		//bool IsInterpolationEnabled() { return enableInterpolation; }
 
@@ -48,7 +48,7 @@ namespace BRTProcessing {
 			ASSERT(_inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");
 						
 			// Check process flag
-			if (!enableSourceDirectionality)
+			if (!enableSourceDirectivity)
 			{
 				outLeftBuffer = _inBuffer;
 				outRightBuffer = _inBuffer;
@@ -77,15 +77,14 @@ namespace BRTProcessing {
 			// GET HRTF
 			CMonoBuffer<float>  dataDirectivityTF_real;
 			CMonoBuffer<float>  dataDirectivityTF_imag;
+			
+			//dataDirectivityTF_real = _sourceSRTF->GetDirectivityTF(listener_azimuth, listener_elevation).dataReal;
+			//dataDirectivityTF_imag = _sourceSRTF->GetDirectivityTF(listener_azimuth, listener_elevation).dataImag;
 
-			dataDirectivityTF_real = (_sourceSRTF->GetDirectivityTF(listener_azimuth, listener_elevation)).dataReal;
-			dataDirectivityTF_imag = (_sourceSRTF->GetDirectivityTF(listener_azimuth, listener_elevation)).dataImag;
 
-
-			// DO CONVOLUTION			
+		// DO CONVOLUTION			
 		//	outputLeftUPConvolution.ProcessUPConvolutionWithMemory(_inBuffer, leftHRIR_partitioned, leftChannel_withoutDelay);
 		//	outputRightUPConvolution.ProcessUPConvolutionWithMemory(_inBuffer, rightHRIR_partitioned, rightChannel_withoutDelay);
-
 		}
 
 		/// Reset convolvers and convolution buffers
@@ -109,7 +108,7 @@ namespace BRTProcessing {
 		//CMonoBuffer<float> leftChannelDelayBuffer;			// To store the delay of the left channel of the expansion method
 		//CMonoBuffer<float> rightChannelDelayBuffer;			// To store the delay of the right channel of the expansion method
 
-		bool enableSourceDirectionality;								// Flags for independent control of processes
+		bool enableSourceDirectivity;								// Flags for independent control of processes
 		bool enableInterpolation;							// Enables/Disables the interpolation on run time
 		bool convolutionBuffersInitialized;
 		
