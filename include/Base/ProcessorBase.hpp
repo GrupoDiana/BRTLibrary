@@ -54,6 +54,12 @@ namespace BRTBase {
             addToUpdateStack(entryPointID, _multiplicity);
         }
 
+        void CreateSRTFPtrEntryPoint(std::string entryPointID, int _multiplicity = 0) {
+            std::shared_ptr<CEntryPointSRTFPtr> _newEntryPoint = std::make_shared<BRTBase::CEntryPointSRTFPtr>(std::bind(&CProcessorBase::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+            srtfPtrEntryPoints.push_back(_newEntryPoint);
+            addToUpdateStack(entryPointID, _multiplicity);
+        }
+
         void CreateIDEntryPoint(std::string entryPointID, int _multiplicity = 0) {
             std::shared_ptr<CEntryPointID> _newEntryPoint = std::make_shared<BRTBase::CEntryPointID >(std::bind(&CProcessorBase::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
             idEntryPoints.push_back(_newEntryPoint);
@@ -218,6 +224,13 @@ namespace BRTBase {
             return nullptr;
         }
 
+        std::shared_ptr<BRTBase::CEntryPointSRTFPtr >  GetSRTFPtrEntryPoint(std::string _id) {
+            for (auto& it : srtfPtrEntryPoints) {
+                if (it->GetID() == _id) { return it; }
+            }
+            return nullptr;
+        }
+
         std::shared_ptr<BRTBase::CEntryPointTransform >  GetPositionEntryPoint(std::string _id) {
             for (auto& it : positionEntryPoints) {
                 if (it->GetID() == _id) { return it; }
@@ -321,6 +334,7 @@ namespace BRTBase {
         
         std::vector<std::shared_ptr <BRTBase::CEntryPointHRTFPtr>> hrtfPtrEntryPoints;
         std::vector<std::shared_ptr <BRTBase::CEntryPointILDPtr>> ildPtrEntryPoints;
+        std::vector<std::shared_ptr <BRTBase::CEntryPointSRTFPtr>> srtfPtrEntryPoints;
 
         std::vector<std::shared_ptr<BRTBase::CEntryPointID> > idEntryPoints;
 

@@ -43,6 +43,7 @@ namespace BRTBase {
 
     using CEntryPointHRTFPtr = CEntryPointPtrBase<BRTServices::CHRTF>;
     using CEntryPointILDPtr = CEntryPointPtrBase<BRTServices::CILD>;
+    using CEntryPointSRTFPtr = CEntryPointPtrBase<BRTServices::CSRTF>;
 }
 
 #endif
