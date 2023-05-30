@@ -250,15 +250,14 @@ namespace BRTServices
 				{
 					for (int ele = ori+1; ele < orientations.size(); ele++)
 					{
-						if (orientations[ele].elevation != elevation)
+						if (orientations[ele].elevation != elevation || orientations[ele] == orientations.back())
 						{	
 							stepVector.emplace(orientation(0, elevation), diff);
 							diff = 360;
 							break;
 						}
 						if (abs(orientations[ele].azimuth - orientations[ele -1].azimuth) < diff) { diff = abs(orientations[ele].azimuth - orientations[ele - 1].azimuth); }
-
-
+						
 
 					}
 					actual_ele = elevation;
@@ -289,6 +288,8 @@ namespace BRTServices
 				int idxEle = ceil(_elevation / eleStep);
 				float eleCeil = eleStep * idxEle;
 				float eleFloor = eleStep * (idxEle - 1);
+
+				if (eleFloor < 0) { eleFloor = eleFloor + 360; }
 
 				auto stepItr = _stepsMap.find(orientation(0, eleCeil));
 				float aziStepCeil = stepItr->second;
