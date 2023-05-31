@@ -290,18 +290,28 @@ namespace BRTServices
 				float eleFloor = eleStep * (idxEle - 1);
 
 				if (eleFloor < 0) { eleFloor = eleFloor + 360; }
-
+			
 				auto stepItr = _stepsMap.find(orientation(0, eleCeil));
 				float aziStepCeil = stepItr->second;
 				int idxAziCeil = ceil(_azimuth / aziStepCeil);
 				float aziCeilFront = idxAziCeil * aziStepCeil;
 				float aziCeilBack = (idxAziCeil - 1) * aziStepCeil;
 
+				if (aziCeilBack < 0) { aziCeilBack = aziCeilBack + 360; }
+				else if (aziCeilBack > 360) { aziCeilBack = aziCeilBack - 360; }
+
+				if (aziCeilFront > 360) { aziCeilFront = aziCeilFront - 360; }
+
 				auto stepIt = _stepsMap.find(orientation(0, eleFloor));
 				float aziStepFloor = stepIt->second;								//			   Back	  Front
 				int idxAziFloor = ceil(_azimuth / aziStepFloor);					//	Ceil		A		B
 				float aziFloorFront = idxAziFloor * aziStepFloor;
 				float aziFloorBack = (idxAziFloor - 1) * aziStepFloor;				//	Floor		D		C
+
+				if (aziFloorBack < 0) { aziFloorBack = aziFloorBack + 360; }
+				else if (aziFloorBack > 360) { aziFloorBack = aziFloorBack - 360; }
+
+				if (aziFloorFront > 360) { aziFloorFront = aziFloorFront - 360; }
 
 				float pntMid_azimuth = (aziFloorBack + aziStepFloor * 0.5f);
 				float pntMid_elevation = (eleFloor + eleStep * 0.5f);
