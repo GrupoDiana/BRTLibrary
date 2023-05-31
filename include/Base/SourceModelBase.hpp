@@ -2,6 +2,7 @@
 #define _SOUND_SOURCE_MODEL_BASE_HPP
 
 #include "ExitPoint.hpp"
+#include "EntryPoint.hpp"
 #include <vector>
 
 namespace BRTBase {
@@ -12,11 +13,7 @@ namespace BRTBase {
 		virtual void Update(std::string entryPointID) = 0;
 
 		CSourceModelBase(std::string _sourceID) : dataReady{ false }, sourceID{ _sourceID} {
-			//samplesExitPoint = std::make_shared<CExitPointSamplesVector>("samples");
-			//sourcePositionExitPoint = std::make_shared<CExitPointTransform>("sourceTransform");
-			//sourceIDExitPoint = std::make_shared<CExitPointID>("sourceID");
-			//sourceIDExitPoint->sendData(sourceID);
-
+			
 			CreateSamplesExitPoint("samples");
 			CreateTransformExitPoint("sourceTransform");
 			CreateIDExitPoint("sourceID");
@@ -71,6 +68,13 @@ namespace BRTBase {
 			return sourceIDExitPoint;
 		}
 
+
+		// Update callback
+		void updateFromEntryPoint(std::string entryPointID) {
+			Update(entryPointID);
+		}
+
+
 		void CreateSamplesExitPoint(std::string exitPointID) {
 			samplesExitPoint = std::make_shared<CExitPointSamplesVector>(exitPointID);
 		}
@@ -81,6 +85,14 @@ namespace BRTBase {
 			sourceIDExitPoint = std::make_shared<CExitPointID>(exitPointID);
 			sourceIDExitPoint->sendData(sourceID);
 		}
+		void CreateListenerTransformEntryPoint(std::string entryPointID) {			
+			listenerPositionEntryPoint = std::make_shared<BRTBase::CEntryPointTransform >(std::bind(&CSourceModelBase::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, 1);
+		}
+		
+
+		std::shared_ptr<BRTBase::CEntryPointTransform >  GetListenerTransformEntryPoint() {			
+			return listenerPositionEntryPoint;
+		}
 
 	private:
 		std::string sourceID;
@@ -89,9 +101,12 @@ namespace BRTBase {
 		Common::CTransform sourceTransform;
 		CMonoBuffer<float> samplesBuffer;
 						
+
 		std::shared_ptr<CExitPointSamplesVector> samplesExitPoint;
 		std::shared_ptr<CExitPointTransform> sourcePositionExitPoint;
 		std::shared_ptr<CExitPointID> sourceIDExitPoint;
+		
+		std::shared_ptr<CEntryPointTransform> listenerPositionEntryPoint;		
 	};
 }
 #endif
