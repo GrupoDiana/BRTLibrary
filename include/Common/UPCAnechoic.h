@@ -116,7 +116,7 @@ namespace Common {
 			CMonoBuffer<float> temp;
 
 			if (!setupDone) { 
-				SET_RESULT(RESULT_ERROR_NOTSET, "HRTF storage buffer to perform UP convolution has not been initialized");
+				SET_RESULT(RESULT_ERROR_NOTSET, "Storage buffer to perform UP convolution has not been initialized");
 				return; 
 			}
 

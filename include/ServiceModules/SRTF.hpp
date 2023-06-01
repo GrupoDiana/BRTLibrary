@@ -95,16 +95,22 @@ namespace BRTServices
 		/// <summary>
 		/// 
 		/// </summary>
-		void BeginSetup(){
+		void BeginSetup(int32_t _directivityTFLength){
 			//Update parameters			
 			eleNorth = GetPoleElevation(TPole::north);
 			eleSouth = GetPoleElevation(TPole::south);
+
+			directivityTF_length = _directivityTFLength;
+			if (directivityTF_length != globalParameters.GetBufferSize()) {
+				SET_RESULT(RESULT_WARNING, "Number of samples (N) in SOFA file is different from BUffer Size");
+			}
+			directivityTF_numberOfSubfilters = 1;
 
 			//Clear every table			
 			t_SRTF_DataBase.clear();
 			t_SRTF_Resampled.clear();
 
-			////Change class state
+			//Change class state
 			setupSRTFInProgress = true;
 			SRTFloaded = false;
 
@@ -152,6 +158,10 @@ namespace BRTServices
 		int GetResamplingStep() {
 			return resamplingStep;
 		}
+
+		int GetDirectivityTFLength() { return directivityTF_length; }
+
+		int GetDirectivityTFNumOfSubfilters() { return directivityTF_numberOfSubfilters; }
 
 		/** \brief Add a new TF to the SRTF table
 		*	\param [in] azimuth azimuth angle in degrees
@@ -368,9 +378,13 @@ namespace BRTServices
 		int resamplingStep;
 		bool SRTFloaded;
 		bool setupSRTFInProgress;
+		int32_t directivityTF_length;	
+		int32_t directivityTF_numberOfSubfilters;	
 		
 		T_SRTFTable	t_SRTF_DataBase;
 		T_SRTFTable	t_SRTF_Resampled;
+
+		Common::CGlobalParameters globalParameters;
 
 		int aziMin, aziMax, eleMin, eleMax, eleNorth, eleSouth;	// Variables that define limits of work area
 		float sphereBorder;

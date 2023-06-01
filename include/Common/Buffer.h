@@ -441,17 +441,17 @@ namespace Common {
 			}
 		}
 
-		/** \brief Interlace two mono buffers into one stereo buffer
+		/** \brief Interlace two mono buffers into one buffer
 		*	\param [in] left mono buffer for left channel
 		*	\param [in] right mono buffer for right channel
-		*	\pre this must be a stereo buffer
+		*	\pre this must be a stereo buffer (not anymore)
 		*	\pre left and right must have the same size
 		*   \eh On error, an error code is reported to the error handler.
 		*/
 		void Interlace(CBuffer<1, stored> & left, CBuffer<1, stored> & right)
 		{
 			// Preconditions check
-			ASSERT(GetNChannels() == 2, RESULT_ERROR_BADSIZE, "Attempt to interlace into a non-stereo buffer", "");
+			//ASSERT(GetNChannels() == 2, RESULT_ERROR_BADSIZE, "Attempt to interlace into a non-stereo buffer", "");
 			ASSERT(left.size() == right.size(), RESULT_ERROR_BADSIZE, "Attempt to interlace two mono buffers of different length", "");
 			//SET_RESULT(RESULT_OK, "Stereo buffer interlaced from two mono buffers succesfully");
 

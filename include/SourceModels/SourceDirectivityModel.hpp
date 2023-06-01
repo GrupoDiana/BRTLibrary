@@ -26,7 +26,7 @@ namespace BRTSourceModel {
 				Common::CTransform sourcePosition = GetCurrentSourceTransform();
 				Common::CTransform listenerPosition = GetListenerTransformEntryPoint()->GetData();
 				if (inBuffer.size() != 0) {
-					Process(inBuffer, outBuffer, sourcePosition, listenerPosition, sourceSRTF);
+					//Process(inBuffer, outBuffer, sourcePosition, listenerPosition, sourceSRTF);
 					SendData(outBuffer);
 				}
 			}			

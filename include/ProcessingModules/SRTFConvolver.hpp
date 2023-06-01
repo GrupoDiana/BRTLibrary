@@ -48,42 +48,51 @@ namespace BRTProcessing {
 			ASSERT(_inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");
 						
 			// Check process flag
-			//if (!enableSourceDirectivity)
-			//{
-			//	outBuffer = _inBuffer;
-			//	return;
-			//}
+			if (!enableSourceDirectivity)
+			{
+				outBuffer = _inBuffer;
+				return;
+			}
 
-			//// Check listener HRTF
-			//// TODOOOO: change to weak ptr
-			////std::shared_ptr<BRTServices::CSRTF> _sourceSRTF = _sourceSRTFWeak.lock();
-			//if (!_sourceSRTF) {
-			//	SET_RESULT(RESULT_ERROR_NULLPOINTER, "source SRTF pointer is null when trying to use in DirectivityConvolver");
-			//	outBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
-			//	return;
-			//}
+			// Check listener HRTF
+			if (!_sourceSRTF) {
+				SET_RESULT(RESULT_ERROR_NULLPOINTER, "source SRTF pointer is null when trying to use in DirectivityConvolver");
+				outBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
+				return;
+			}
 
 			// First time - Initialize convolution buffers
-			//if (!convolutionBuffersInitialized) { InitializedSourceConvolutionBuffers(_sourceSRTF); }
+			if (!convolutionBuffersInitialized) { 
+				InitializedSourceConvolutionBuffers(_sourceSRTF); 
+			}
 
 			// Calculate Source coordinates taking into account Source and Listener transforms
-			float listener_azimuth = 0;
-			float listener_elevation = 0;
+			float listener_azimuth;
+			float listener_elevation;
 
-			//CalculateListenerCoordinates(sourceTransform, listenerTransform, _sourceSRTF, listener_elevation, listener_azimuth);
+			CalculateListenerCoordinates(sourceTransform, listenerTransform, _sourceSRTF, listener_elevation, listener_azimuth);
+
+			//To do TESTING:
+			listener_azimuth = 5;
+			listener_elevation = 10;
 
 			// GET SRTF
 			CMonoBuffer<float>  dataDirectivityTF_real;
 			CMonoBuffer<float>  dataDirectivityTF_imag;
+			CMonoBuffer<float>  dataDirectivityTF;
+			std::vector<CMonoBuffer<float>>  dataDirectivityTF_vector;
+
 			std::unordered_map<orientation, float> stepVector = _sourceSRTF->CalculateStep();
 			
 			dataDirectivityTF_real = _sourceSRTF->GetDirectivityTF(listener_azimuth, listener_elevation, stepVector).dataReal;
 			dataDirectivityTF_imag = _sourceSRTF->GetDirectivityTF(listener_azimuth, listener_elevation, stepVector).dataImag;
 
+			dataDirectivityTF.Interlace(dataDirectivityTF_real, dataDirectivityTF_imag);
+			dataDirectivityTF_vector.push_back(dataDirectivityTF);
 
-		// DO CONVOLUTION			
-		//	outputLeftUPConvolution.ProcessUPConvolutionWithMemory(_inBuffer, leftHRIR_partitioned, leftChannel_withoutDelay);
-		//	outputRightUPConvolution.ProcessUPConvolutionWithMemory(_inBuffer, rightHRIR_partitioned, rightChannel_withoutDelay);
+
+			// DO CONVOLUTION			
+			//outputUPConvolution.ProcessUPConvolution(_inBuffer, dataDirectivityTF_vector, outBuffer);
 		}
 
 		/// Reset convolvers and convolution buffers
@@ -101,32 +110,20 @@ namespace BRTProcessing {
 		// Atributes
 		Common::CGlobalParameters globalParameters;
 
-		Common::CUPCAnechoic outputLeftUPConvolution;		// Object to make the inverse fft of the left channel with the UPC method
-		Common::CUPCAnechoic outputRightUPConvolution;		// Object to make the inverse fft of the rigth channel with the UPC method
-
-		//CMonoBuffer<float> leftChannelDelayBuffer;			// To store the delay of the left channel of the expansion method
-		//CMonoBuffer<float> rightChannelDelayBuffer;			// To store the delay of the right channel of the expansion method
+		Common::CUPCAnechoic outputUPConvolution;		// Object to make the inverse fft of the left channel with the UPC method
 
 		bool enableSourceDirectivity;								// Flags for independent control of processes
 		bool enableInterpolation;							// Enables/Disables the interpolation on run time
 		bool convolutionBuffersInitialized;
 		
-		/// Initialize convolvers and convolition buffers		
-		//void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CSRTF>& _sourceSRTF) {
-
-		//	int numOfSubfilters = _sourceSRTF->GetHRIRNumberOfSubfilters();
-		//	int subfilterLength = _sourceSRTF->GetHRIRSubfilterLength();
-
-		//	//Common::CGlobalParameters globalParameters;
-		//	outputLeftUPConvolution.Setup(globalParameters.GetBufferSize(), subfilterLength, numOfSubfilters, true);
-		//	outputRightUPConvolution.Setup(globalParameters.GetBufferSize(), subfilterLength, numOfSubfilters, true);
-		//	//Init buffer to store delay to be used in the ProcessAddDelay_ExpansionMethod method
-		//	leftChannelDelayBuffer.clear();
-		//	rightChannelDelayBuffer.clear();
-
-		//	// Declare variable
-		//	convolutionBuffersInitialized = true;
-		//}
+		// Initialize convolvers and convolition buffers		
+		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CSRTF>& _sourceSRTF) {
+			int directivityTFLength = _sourceSRTF->GetDirectivityTFLength();
+			int numOfSubfilters = _sourceSRTF->GetDirectivityTFNumOfSubfilters();
+			outputUPConvolution.Setup(globalParameters.GetBufferSize(), directivityTFLength, numOfSubfilters, false);
+			// Declare variable
+			convolutionBuffersInitialized = true;
+		}
 
 
 		/// Calculates the parameters derived from the source and listener position
@@ -148,7 +145,6 @@ namespace BRTProcessing {
 				_listenerAzimuth = vectorToListener.GetAzimuthDegrees();		//Get azimuth from the head center
 			}
 		}
-
 	};
 }
 #endif

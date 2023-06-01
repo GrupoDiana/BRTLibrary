@@ -346,7 +346,7 @@ namespace BRTReaders {
 
 			// Get and save TFs
 			//double distance = receiverPositionsVector[array2DIndex(0, 2, numberOfReceivers, numberOfCoordinates)];										
-			dataSRTF->BeginSetup();
+			dataSRTF->BeginSetup(numberOfSamples);
 
 			// This outtermost loop iterates over TFs
 			for (std::size_t i = 0; i < numberOfReceivers; i++)
