@@ -341,22 +341,26 @@ namespace BRTReaders {
 				numberOfMeasurements = 1;
 			}
 			int numberOfCoordinates = loader.getHRTF()->C;
-			const unsigned int numberOfSamples = loader.getHRTF()->N;
+			const unsigned int numberOfSamples_RealPart = loader.getHRTF()->N;
 			int numberOfReceivers = loader.getHRTF()->R;
 
 			// Get and save TFs
-			//double distance = receiverPositionsVector[array2DIndex(0, 2, numberOfReceivers, numberOfCoordinates)];										
-			dataSRTF->BeginSetup(numberOfSamples);
+									
+			dataSRTF->BeginSetup(numberOfSamples_RealPart);
 
 			// This outtermost loop iterates over TFs
 			for (std::size_t i = 0; i < numberOfReceivers; i++)
 			{
 				BRTServices::TDirectivityTFStruct srtf_data;
+				CMonoBuffer<float> dataRealPart;
+				CMonoBuffer <float> dataImagPart;
 				double azimuth = receiverPositionsVector[array2DIndex(i, 0, 0, numberOfCoordinates)];
 				double elevation = GetPositiveElevation(receiverPositionsVector[array2DIndex(i, 1, 0, numberOfCoordinates)]);
 				
-				GetDirectivityData(dataMeasurementsRealPart, srtf_data.dataReal, numberOfSamples, i);
-				GetDirectivityData(dataMeasurementsImagPart, srtf_data.dataImag, numberOfSamples, i);
+				GetDirectivityData(dataMeasurementsRealPart, dataRealPart, numberOfSamples_RealPart, i);
+				GetDirectivityData(dataMeasurementsImagPart, dataImagPart, numberOfSamples_RealPart, i);
+
+				srtf_data.data.Interlace(dataRealPart, dataImagPart);
 
 				dataSRTF->AddDirectivityTF(azimuth, elevation, std::move(srtf_data));
 			}

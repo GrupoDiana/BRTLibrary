@@ -72,27 +72,24 @@ namespace BRTProcessing {
 
 			CalculateListenerCoordinates(sourceTransform, listenerTransform, _sourceSRTF, listener_elevation, listener_azimuth);
 
+			//std::cout << "azimuth: " << listener_azimuth << ", elevation; " << listener_elevation << endl;
+
 			//To do TESTING:
-			listener_azimuth = 5;
-			listener_elevation = 10;
+			//listener_azimuth = 5;
+			//listener_elevation = 10;
 
 			// GET SRTF
-			CMonoBuffer<float>  dataDirectivityTF_real;
-			CMonoBuffer<float>  dataDirectivityTF_imag;
 			CMonoBuffer<float>  dataDirectivityTF;
 			std::vector<CMonoBuffer<float>>  dataDirectivityTF_vector;
 
 			std::unordered_map<orientation, float> stepVector = _sourceSRTF->CalculateStep();
 			
-			dataDirectivityTF_real = _sourceSRTF->GetDirectivityTF(listener_azimuth, listener_elevation, stepVector).dataReal;
-			dataDirectivityTF_imag = _sourceSRTF->GetDirectivityTF(listener_azimuth, listener_elevation, stepVector).dataImag;
-
-			dataDirectivityTF.Interlace(dataDirectivityTF_real, dataDirectivityTF_imag);
+			dataDirectivityTF = _sourceSRTF->GetDirectivityTF(listener_azimuth, listener_elevation, stepVector).data;
 			dataDirectivityTF_vector.push_back(dataDirectivityTF);
 
 
 			// DO CONVOLUTION			
-			//outputUPConvolution.ProcessUPConvolution(_inBuffer, dataDirectivityTF_vector, outBuffer);
+			outputUPConvolution.ProcessUPConvolution(_inBuffer, dataDirectivityTF_vector, outBuffer);
 		}
 
 		/// Reset convolvers and convolution buffers
@@ -131,6 +128,7 @@ namespace BRTProcessing {
 		{
 			//Get azimuth and elevation between listener and source
 			Common::CVector3 vectorToListener = _sourceTransform.GetVectorTo(_listenerTransform);
+			//std::cout << "Vector to Listener: " << vectorToListener << std::endl;
 			float distance = vectorToListener.GetDistance();
 
 			//Check listener and source are in the same position

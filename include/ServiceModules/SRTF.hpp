@@ -95,21 +95,23 @@ namespace BRTServices
 		/// <summary>
 		/// 
 		/// </summary>
-		void BeginSetup(int32_t _directivityTFLength){
+		void BeginSetup(int32_t _directivityTFRealPartLength){
 			//Update parameters			
 			eleNorth = GetPoleElevation(TPole::north);
 			eleSouth = GetPoleElevation(TPole::south);
 
-			directivityTF_length = _directivityTFLength;
-			if (directivityTF_length != globalParameters.GetBufferSize()) {
+			
+			if (_directivityTFRealPartLength != 2.0 * globalParameters.GetBufferSize()) //
+			{
 				SET_RESULT(RESULT_WARNING, "Number of samples (N) in SOFA file is different from BUffer Size");
 			}
+			directivityTF_length = 2.0 * _directivityTFRealPartLength; //directivityTF will store the Real and Img parts interlaced
 			directivityTF_numberOfSubfilters = 1;
 
 			//Clear every table			
 			t_SRTF_DataBase.clear();
 			t_SRTF_Resampled.clear();
-
+			 
 			//Change class state
 			setupSRTFInProgress = true;
 			SRTFloaded = false;
@@ -266,9 +268,9 @@ namespace BRTServices
 							diff = 360;
 							break;
 						}
-						if (abs(orientations[ele].azimuth - orientations[ele -1].azimuth) < diff) { diff = abs(orientations[ele].azimuth - orientations[ele - 1].azimuth); }
-						
-
+						if (abs(orientations[ele].azimuth - orientations[ele -1].azimuth) < diff) { 
+							diff = abs(orientations[ele].azimuth - orientations[ele - 1].azimuth); 
+						}
 					}
 					actual_ele = elevation;
 
@@ -288,8 +290,7 @@ namespace BRTServices
 			TDirectivityTFStruct newSRIR;
 			auto it0 = t_SRTF_DataBase.find(orientation(_azimuth, _elevation));
 			if (it0 != t_SRTF_DataBase.end()) {
-				newSRIR.dataReal = it0->second.dataReal;
-				newSRIR.dataImag = it0->second.dataImag;
+				newSRIR.data = it0->second.data;
 			}
 			else {
 
@@ -332,18 +333,14 @@ namespace BRTServices
 					{
 						//Second quadrant
 						auto it = t_SRTF_DataBase.find(orientation(aziCeilFront, eleCeil));
-
-						newSRIR.dataReal = it->second.dataReal;
-						newSRIR.dataImag = it->second.dataImag;
+						newSRIR.data = it->second.data;
 
 					}
 					else if (_elevation < pntMid_elevation)
 					{
 						//Forth quadrant
 						auto it = t_SRTF_DataBase.find(orientation(aziFloorFront, eleFloor));
-
-						newSRIR.dataReal = it->second.dataReal;
-						newSRIR.dataImag = it->second.dataImag;
+						newSRIR.data = it->second.data;
 					}
 				}
 				else if (_azimuth < pntMid_azimuth)
@@ -352,16 +349,12 @@ namespace BRTServices
 					{
 						//First quadrant
 						auto it = t_SRTF_DataBase.find(orientation(aziCeilBack, eleCeil));
-
-						newSRIR.dataReal = it->second.dataReal;
-						newSRIR.dataImag = it->second.dataImag;
+						newSRIR.data = it->second.data;
 					}
 					else if (_elevation < pntMid_elevation) {
 						//Third quadrant
 						auto it = t_SRTF_DataBase.find(orientation(aziFloorFront, eleFloor));
-
-						newSRIR.dataReal = it->second.dataReal;
-						newSRIR.dataImag = it->second.dataImag;
+						newSRIR.data = it->second.data;
 					}
 				}
 				else { return newSRIR = {}; }

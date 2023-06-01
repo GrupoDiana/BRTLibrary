@@ -76,8 +76,7 @@ namespace BRTServices {
 	};
 
 	struct TDirectivityTFStruct {
-		CMonoBuffer<float> dataReal;	
-		CMonoBuffer<float> dataImag;	
+		CMonoBuffer<float> data;	
 	};
 
 	class CServicesBase {
