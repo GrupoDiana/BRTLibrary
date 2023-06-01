@@ -264,6 +264,7 @@ namespace BRTServices
 					{
 						if (orientations[ele].elevation != elevation || orientations[ele] == orientations.back())
 						{	
+							if (diff == 360) { diff = 0; }
 							stepVector.emplace(orientation(0, elevation), diff);
 							diff = 360;
 							break;
@@ -300,7 +301,11 @@ namespace BRTServices
 				float eleCeil = eleStep * idxEle;
 				float eleFloor = eleStep * (idxEle - 1);
 
+				if (eleFloor > 90 && eleFloor < 270) { eleFloor = eleFloor - 270; }
 				if (eleFloor < 0) { eleFloor = eleFloor + 360; }
+				if (eleCeil > 90 && eleCeil < 270) { eleCeil = eleCeil - 270; }
+				if (eleCeil >= 360) { eleCeil = eleCeil - 360; }
+				if (eleCeil < 0) { eleCeil = eleCeil + 360; }
 			
 				auto stepItr = _stepsMap.find(orientation(0, eleCeil));
 				float aziStepCeil = stepItr->second;
