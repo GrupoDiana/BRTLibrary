@@ -40,6 +40,10 @@ namespace BRTSourceModel {
 			sourceSRTF = _sourceSRTF;			
 		}
 
+		std::shared_ptr< BRTServices::CSRTF > GetSRFT() {
+			return sourceSRTF;
+		}
+
 	private:		
 		mutable std::mutex mutex;
 
