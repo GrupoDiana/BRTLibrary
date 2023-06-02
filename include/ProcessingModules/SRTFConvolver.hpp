@@ -14,7 +14,7 @@
 namespace BRTProcessing {
 	class CSRTFConvolver  {
 	public:
-		CSRTFConvolver() : enableInterpolation{ true }, enableSourceDirectivity{ true }, convolutionBuffersInitialized{false} { }
+		CSRTFConvolver() : enableSourceDirectivity{ false }, convolutionBuffersInitialized{false} { }
 
 
 		///Enable spatialization process for this source	
@@ -93,32 +93,28 @@ namespace BRTProcessing {
 		}
 
 		/// Reset convolvers and convolution buffers
-		//void ResetSourceConvolutionBuffers() {
-		//	convolutionBuffersInitialized = false;
-		//	// Reset convolver classes
-		//	outputLeftUPConvolution.Reset();
-		//	outputRightUPConvolution.Reset();
-		//	//Init buffer to store delay to be used in the ProcessAddDelay_ExpansionMethod method
-		//	leftChannelDelayBuffer.clear();
-		//	rightChannelDelayBuffer.clear();
-		//}
+		void ResetSourceConvolutionBuffers() {
+			convolutionBuffersInitialized = false;
+			// Reset convolver classes
+			outputUPConvolution.Reset();
+		}
 	private:
 
 		// Atributes
 		Common::CGlobalParameters globalParameters;
-
 		Common::CUPCAnechoic outputUPConvolution;		// Object to make the inverse fft of the left channel with the UPC method
 
-		bool enableSourceDirectivity;								// Flags for independent control of processes
-		bool enableInterpolation;							// Enables/Disables the interpolation on run time
+		bool enableSourceDirectivity;					// Flags for independent control of processes		
 		bool convolutionBuffersInitialized;
 		
+
+
+		// METHODS
 		// Initialize convolvers and convolition buffers		
 		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CSRTF>& _sourceSRTF) {
 			int directivityTFLength = _sourceSRTF->GetDirectivityTFLength();
 			int numOfSubfilters = _sourceSRTF->GetDirectivityTFNumOfSubfilters();
-			outputUPConvolution.Setup(globalParameters.GetBufferSize(), directivityTFLength, numOfSubfilters, false);
-			// Declare variable
+			outputUPConvolution.Setup(globalParameters.GetBufferSize(), directivityTFLength, numOfSubfilters, false);			
 			convolutionBuffersInitialized = true;
 		}
 

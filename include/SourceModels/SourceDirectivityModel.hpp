@@ -44,6 +44,16 @@ namespace BRTSourceModel {
 			return sourceSRTF;
 		}
 
+		// TODO Move to command
+		void SetDirectivityEnable(bool _enabled) {
+			if (_enabled) { EnableSourceDirectionality(); }
+			else { DisableSourceDirectionality(); }
+		}
+		// TODO Move to command
+		void ResetBuffers() {
+			ResetSourceConvolutionBuffers();
+		}
+
 	private:		
 		mutable std::mutex mutex;
 
