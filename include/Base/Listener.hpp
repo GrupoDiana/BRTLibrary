@@ -3,39 +3,39 @@
 
 #include <memory>
 #include "EntryPoint.hpp"
-#include "ExitPoint.h"
+#include "ExitPoint.hpp"
 #include "ExitPointPtr.hpp"
 #include <Common/CommonDefinitions.h>
-#include "ServiceModules/HRTF.h"
+#include <ServiceModules/HRTF.hpp>
+#include <ServiceModules/ILD.hpp>
 
 namespace BRTServices {
-	class CHRTF;/* {
-	public:
-		void SetListener(BRTBase::CListener* _ownerListener);
-	};*/
+	class CHRTF;
 }
 
 namespace BRTBase {
 
 	class CListener {
 	public:
-		CListener() : listenerHeadRadius{ DEFAULT_LISTENER_HEAD_RADIOUS } {
-			//Create a empty HRTF
-			//std::unique_ptr<BRTServices::CHRTF> a(new BRTServices::CHRTF(this));
-			//listenerHRTF = std::move(a);			
-			listenerHRTF = std::make_shared<BRTServices::CHRTF>();
-
+		CListener(std::string _listenerID) : listenerHeadRadius{ DEFAULT_LISTENER_HEAD_RADIOUS } {
+			
+			listenerID = _listenerID;								// Save listenerID						
+			listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// Create a empty HRTF			
 
 			// Create entry Points
 			leftEarEntryPoint = std::make_shared<BRTBase::CEntryPointSamplesVector >(std::bind(&CListener::updateFromEntryPoint, this, std::placeholders::_1), "leftEar", 1);
 			rightEarEntryPoint = std::make_shared<BRTBase::CEntryPointSamplesVector >(std::bind(&CListener::updateFromEntryPoint, this, std::placeholders::_1), "rightEar", 1);
 			// Create exit point
-			listenerPositionExitPoint = std::make_shared<CExitPointTransform>("listenerTransform");
-			hrtfExitPoint = std::make_shared<CExitPointHRTFPtr>("listenerHRTF");
-
+			listenerPositionExitPoint	= std::make_shared<CExitPointTransform>("listenerTransform");
+			hrtfExitPoint				= std::make_shared<CExitPointHRTFPtr>("listenerHRTF");
+			ildExitPoint				= std::make_shared<CExitPointILDPtr>("listenerILD");
+			listenerIDExitPoint			= std::make_shared<CExitPointID>("listenerID");
+			
+			// Init vars
 			leftDataReady = false;
 			rightDataReady = false;
-
+			//Send this listener ID
+			listenerIDExitPoint->sendData(listenerID);
 		}
 
 		void connectSamplesEntryTo(std::shared_ptr<CExitPointSamplesVector> _exitPoint, std::string entryPointID) {
@@ -45,34 +45,59 @@ namespace BRTBase {
 			}
 		}
 
+		void disconnectSamplesEntryFrom(std::shared_ptr<CExitPointSamplesVector> _exitPoint, std::string entryPointID) {
+			if (entryPointID == "leftEar") { _exitPoint->detach(leftEarEntryPoint.get()); }
+			else if (entryPointID == "rightEar") { _exitPoint->detach(rightEarEntryPoint.get()); }
+			else { //TODO Notify error 
+			}
+		}
+
 		std::shared_ptr<CExitPointTransform> GetTransformExitPoint() {
 			return listenerPositionExitPoint;
 		}
-
 
 		std::shared_ptr<CExitPointHRTFPtr> GetHRTFPtrExitPoint(){
 			return hrtfExitPoint;
 		}
 
-		void updateFromEntryPoint(std::string id) {									
-			if (id == "leftEar") { 
-				leftBuffer = leftEarEntryPoint->GetData();
-				leftDataReady = true;
-			
-			} else if (id == "rightEar") { 
-				rightBuffer = rightEarEntryPoint->GetData();
-				rightDataReady = true;
+		std::shared_ptr<CExitPointILDPtr> GetILDPtrExitPoint() {
+			return ildExitPoint;
+		}
+		
+		std::shared_ptr<CExitPointID> GetIDExitPoint() {
+			return listenerIDExitPoint;
+		}
+
+		void updateFromEntryPoint(std::string id) {											
+			if (id == "leftEar") { 								
+				UpdateLeftBuffer();
+			} else if (id == "rightEar") { 								
+				UpdateRightBuffer();
 			}											
 		}
 
 		bool isDataReady() { return leftDataReady && rightDataReady; }
 				
-		void GetBuffers(std::vector<float>& _leftBuffer, std::vector<float>& _rightBuffer) {
-			_leftBuffer = leftBuffer;
-			_rightBuffer = rightBuffer;
-			leftDataReady = false;
-			rightDataReady = false;
+		void GetBuffers(CMonoBuffer<float>& _leftBuffer, CMonoBuffer<float>& _rightBuffer) {						
+			if (leftDataReady) {
+				_leftBuffer = leftBuffer;
+				leftDataReady = false;
+			}
+			else {
+				_leftBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
+			}
+			
+			if (rightDataReady) {
+				_rightBuffer = rightBuffer;
+				rightDataReady = false;
+			}
+			else {
+				_rightBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
+			}
+
 		}
+
+		std::string GetListenerID() { return listenerID; }
 
 		/** \brief Set listener position and orientation
 		*	\param [in] _listenerTransform new listener position and orientation
@@ -90,7 +115,11 @@ namespace BRTBase {
 		Common::CTransform GetListenerTransform() { return listenerTransform; }
 
 
-		void SetHRTF(std::shared_ptr< BRTServices::CHRTF >& _listenerHRTF) {
+		/** \brief SET HRTF of listener
+		*	\param[in] pointer to HRTF to be stored
+		*   \eh On error, NO error code is reported to the error handler.
+		*/
+		void SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) {
 			//listenerHRTF = std::move(_listenerHRTF);	
 			listenerHRTF = _listenerHRTF;
 			hrtfExitPoint->sendData(listenerHRTF);
@@ -100,10 +129,46 @@ namespace BRTBase {
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/		
-		BRTServices::CHRTF* GetHRTF() const
+		std::shared_ptr < BRTServices::CHRTF> GetHRTF() const
 		{
-			return listenerHRTF.get();
+			return listenerHRTF;
 		}
+
+		/** \brief Remove the HRTF of thelistener
+		*   \eh Nothing is reported to the error handler.
+		*/
+		void RemoveHRTF() {
+			listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// empty HRTF			
+		}
+
+		///
+		/** \brief SET HRTF of listener
+		*	\param[in] pointer to HRTF to be stored
+		*   \eh On error, NO error code is reported to the error handler.
+		*/
+		void SetILD(std::shared_ptr< BRTServices::CILD > _listenerILD) {
+			listenerILD = _listenerILD;
+			ildExitPoint->sendData(listenerILD);			
+		}
+
+		/** \brief Get HRTF of listener
+		*	\retval HRTF pointer to current listener HRTF
+		*   \eh On error, an error code is reported to the error handler.
+		*/
+		std::shared_ptr <BRTServices::CILD> GetILD() const
+		{
+			return listenerILD;
+		}
+
+		/** \brief Remove the HRTF of thelistener
+		*   \eh Nothing is reported to the error handler.
+		*/
+		void RemoveILD() {
+			listenerILD = std::make_shared<BRTServices::CILD>();	// empty HRTF			
+		}
+
+	
+
 
 		///** \brief Get ILD Near Field effect of listener
 		//*	\retval ILD pointer to current listener ILD Near Field effect
@@ -132,24 +197,51 @@ namespace BRTBase {
 		}
 
 	private:
-		
+		std::string listenerID;								// Store unique listener ID
 		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;	// HRTF of listener														
-		//std::unique_ptr<CILD> listenerILD;				// ILD of listener	
+		std::shared_ptr<BRTServices::CILD> listenerILD;		// ILD of listener	
 		Common::CTransform listenerTransform;				// Transform matrix (position and orientation) of listener  
 		float listenerHeadRadius;							// Head radius of listener 
+
+		Common::CGlobalParameters globalParameters;
 
 		std::shared_ptr<CEntryPointSamplesVector >		leftEarEntryPoint;
 		std::shared_ptr<CEntryPointSamplesVector >		rightEarEntryPoint;				
 		std::shared_ptr<CExitPointTransform>			listenerPositionExitPoint;
 		std::shared_ptr<CExitPointHRTFPtr>				hrtfExitPoint;
+		std::shared_ptr<CExitPointILDPtr>				ildExitPoint;
+		std::shared_ptr<CExitPointID>					listenerIDExitPoint;
 
-		std::vector<float> leftBuffer;
-		std::vector<float> rightBuffer;
+		CMonoBuffer<float> leftBuffer;
+		CMonoBuffer<float> rightBuffer;
 		
 		bool leftDataReady;
 		bool rightDataReady;	
 
-		//friend class BRTServices::CHRTF;							//Friend Class definition
+		// Private Methods
+		
+
+		void UpdateLeftBuffer() {
+			if (!leftDataReady) {
+				leftBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
+			}
+			CMonoBuffer<float> buffer = leftEarEntryPoint->GetData();
+			if (buffer.size() != 0) {
+				leftBuffer += buffer;
+				leftDataReady = true;
+			}
+		}
+
+		void UpdateRightBuffer() {
+			if (!rightDataReady) {
+				rightBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
+			}
+			CMonoBuffer<float> buffer = rightEarEntryPoint->GetData();
+			if (buffer.size() != 0) {
+				rightBuffer += buffer;
+				rightDataReady = true;
+			}
+		}		
 	};
 }
 #endif

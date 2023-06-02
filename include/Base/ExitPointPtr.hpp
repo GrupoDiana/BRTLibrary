@@ -2,7 +2,8 @@
 #define _EXIT_POINT_PTR_
 
 #include <Base/ObserverBase.hpp>
-#include <ServiceModules/HRTF.h>
+#include <ServiceModules/HRTF.hpp>
+#include <ServiceModules/ILD.hpp>
 
 namespace BRTServices { class CHRTF; }
 
@@ -31,6 +32,7 @@ namespace BRTBase {
     };
 
     using CExitPointHRTFPtr = CExitPointPtrBase<BRTServices::CHRTF>;
+    using CExitPointILDPtr = CExitPointPtrBase<BRTServices::CILD>;
 }
 
 #endif

@@ -3,10 +3,11 @@
 
 #include <functional>
 #include <Base/ObserverBase.hpp>
-#include <Base/ExitPoint.h>
+#include <Base/ExitPoint.hpp>
 #include <Common/Buffer.h>
 #include <Common/Transform.h>
 #include <Common/EarsTransform.hpp>
+#include <Base/Command.hpp>
 
 namespace BRTBase {
    
@@ -38,12 +39,10 @@ namespace BRTBase {
         std::string id;
         int multiplicity;
     };
-   
-    //typedef CEntryPointBase<CMonoBuffer<float>> CEntryPointSamplesVector;    
-    //typedef CEntryPointBase<Common::CTransform> CEntryPointTransform;
-    //typedef CEntryPointBase<Common::CEarsTransforms> CEntryPoinEarsTransform;
-    
+           
     using CEntryPointSamplesVector = CEntryPointBase<CMonoBuffer<float>>;
-    using CEntryPointTransform = CEntryPointBase<Common::CTransform>; 
+    using CEntryPointTransform = CEntryPointBase<Common::CTransform>;     
+    using CEntryPointCommand = CEntryPointBase<BRTBase::CCommand>;
+    using CEntryPointID = CEntryPointBase<std::string>;
 }
 #endif

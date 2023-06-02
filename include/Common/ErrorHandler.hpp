@@ -488,7 +488,7 @@ namespace Common {
 		*	\param [in] logOn switch on/off logging to file (default, true)
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void SetErrorLogFile(std::string filename, bool logOn = true)		
+		void SetErrorLogFile(std::string filename, bool logOn = true)
 		{
 			// TO DO: check errors!
 
@@ -507,7 +507,7 @@ namespace Common {
 		*	\param [in] logOn switch on/off logging to stream (default, true)
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void SetErrorLogStream(std::ostream* outStream, bool logOn = true)		
+		void SetErrorLogStream(std::ostream* outStream, bool logOn = true)
 		{
 			errorLogStream = outStream;
 			logToStream = logOn;
@@ -606,7 +606,7 @@ namespace Common {
 		*	\param [in] logOn switch on/off file logging for this war (default, true)
 		*	\pre Variable was added to watch first
 		*/
-		void SetWatcherLogFile(TWatcherVariable whichVar, std::string filename, bool logOn = true)		
+		void SetWatcherLogFile(TWatcherVariable whichVar, std::string filename, bool logOn = true)
 		{
 			// TO DO: check errors!
 

@@ -26,6 +26,12 @@
 
 namespace Common {
 
+	//inline constexpr std::string_view COMMAND_EXIT_POINT_ID{ "command" };
+	//inline constexpr std::string_view COMMAND_ENTRY_POINT_ID{ "command" };
+	const char COMMAND_EXIT_POINT_ID[] = "command";
+	const char COMMAND_ENTRY_POINT_ID[] = "command";
+
+
 	//----------------------------------------------------------------------
 	/** \brief Type definition for specifying one ear
 	*/
@@ -62,6 +68,6 @@ namespace Common {
 		float diff = std::fabs(a - b);
 
 		return diff < epsilon;
-	}
+	}	
 }
 #endif

@@ -1,18 +1,23 @@
 #ifndef _BRT_MANAGER_
 #define _BRT_MANAGER_
 
-#include "SoundSource.h"
+#include "SoundSource.hpp"
 #include "Listener.hpp"
 #include <thread>
 
-namespace BRTBase {
+//#include <json.hpp>
+#include "third_party_libraries/nlohmann/json.hpp"
 
+namespace BRTBase {
+	using json = nlohmann::json;
 
 	class CBRTManager {
 
 	public:
 
-		CBRTManager() noexcept : initialized{ false }, setupModeActivated{ false } {}
+		CBRTManager() : initialized{ false }, setupModeActivated{ false } {
+			commandsExitPoint = std::make_shared<BRTBase::CExitPointCommand>(static_cast<std::string>(Common::COMMAND_EXIT_POINT_ID));
+		}
 
 		void BeginSetup() {
 			setupModeActivated = true;
@@ -28,12 +33,13 @@ namespace BRTBase {
 			return control;
 		}
 
-
-		std::shared_ptr<CSoundSource> CreateSoundSource() {
-			// Create new source and add it to this core sources
+		/** \brief Create new source and add it to this core sources
+		*   \eh Warnings may be reported to the error handler.
+		*/
+		std::shared_ptr<CSoundSource> CreateSoundSource(std::string sourceID) {			
 			try
 			{
-				std::shared_ptr<CSoundSource> newSource(new CSoundSource());
+				std::shared_ptr<CSoundSource> newSource(new CSoundSource(sourceID));
 				audioSources.push_back(newSource);
 				SET_RESULT(RESULT_OK, "Single source DSP created succesfully");
 				return newSource;
@@ -45,11 +51,11 @@ namespace BRTBase {
 			}
 		}
 
-		std::shared_ptr<CListener> CreateListener() {
+		std::shared_ptr<CListener> CreateListener(std::string listenerID) {
 			// Create new source and add it to this core sources
 			try
 			{
-				std::shared_ptr<CListener> newListener = std::make_shared<CListener>();
+				std::shared_ptr<CListener> newListener = std::make_shared<CListener>(listenerID);
 				listeners.push_back(newListener);
 				SET_RESULT(RESULT_OK, "Listener created succesfully");
 				return newListener;
@@ -66,7 +72,7 @@ namespace BRTBase {
 			try
 			{
 				std::shared_ptr<T> newProcessor = std::make_shared<T>();
-				
+				ConnectModulesCommand(newProcessor);
 				SET_RESULT(RESULT_OK, "Processor created succesfully");
 				return newProcessor;
 			}
@@ -77,8 +83,20 @@ namespace BRTBase {
 			}
 		}
 
+		void RemoveSoundSource(std::string _sourceID) {			
+			auto it = std::find_if(audioSources.begin(), audioSources.end(), [&_sourceID](std::shared_ptr<CSoundSource>& sourceItem) { return sourceItem->GetSourceID() == _sourceID; });
+			if (it != audioSources.end()) { 
+				audioSources.erase(it); 				
+				//it->reset();
+			}				
+		}
 		
-		
+		template <typename T>
+		void RemoveProcessor(std::shared_ptr<T> _processor) {
+			DisconnectModulesCommand(_processor);
+			_processor.reset();
+		}
+
 		///////////////////////////////
 		// SOUND SOURCE CONNECTIONS
 		//////////////////////////////
@@ -96,6 +114,13 @@ namespace BRTBase {
 		}
 		
 		template <typename U>
+		bool DisconnectModuleToSoundSourceSamples(std::shared_ptr<CSoundSource>& soundSourceModule, std::shared_ptr<U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectSamplesEntryTo(soundSourceModule->GetSamplesVectorExitPoint(), entryPointID);
+			return true;
+		}
+
+		template <typename U>
 		bool ConnectModuleToSoundSourceTransform(std::shared_ptr<CSoundSource>& soundSourceModule, U& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2.connectPositionEntryTo(soundSourceModule->GetTransformExitPoint(), entryPointID);
@@ -105,6 +130,27 @@ namespace BRTBase {
 		bool ConnectModuleToSoundSourceTransform(std::shared_ptr<CSoundSource>& soundSourceModule, std::shared_ptr <U>& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->connectPositionEntryTo(soundSourceModule->GetTransformExitPoint(), entryPointID);
+			return true;
+		}
+
+		template <typename U>
+		bool DisconnectModuleToSoundSourceTransform(std::shared_ptr<CSoundSource>& soundSourceModule, std::shared_ptr <U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectPositionEntryTo(soundSourceModule->GetTransformExitPoint(), entryPointID);
+			return true;
+		}
+
+		template <typename U>
+		bool ConnectModuleToSoundSourceID(std::shared_ptr<CSoundSource>& soundSourceModule, std::shared_ptr <U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectIDEntryTo(soundSourceModule->GetIDExitPoint(), entryPointID);
+			return true;
+		}
+
+		template <typename U>
+		bool DisconnectModuleToSoundSourceID(std::shared_ptr<CSoundSource>& soundSourceModule, std::shared_ptr <U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectIDEntryTo(soundSourceModule->GetIDExitPoint(), entryPointID);
 			return true;
 		}
 
@@ -125,11 +171,26 @@ namespace BRTBase {
 		}
 
 		template <typename U>
+		bool DisconnectListenerFromModuleSamples(std::shared_ptr <U>& module1, std::string exitPointID, std::shared_ptr<CListener>& listenerModule, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			listenerModule->disconnectSamplesEntryFrom(module1->GetSamplesExitPoint(exitPointID), entryPointID);
+			return true;		
+		}
+
+		template <typename U>
 		bool ConnectModuleToListenerTransform(std::shared_ptr<CListener>& listenerModule, U& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2.connectPositionEntryTo(listenerModule->GetTransformExitPoint(), entryPointID);
 			return true;
 		}
+
+		template <typename U>
+		bool DisconnectModuleToListenerTransform(std::shared_ptr<CListener>& listenerModule, U& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2.disconnectPositionEntryTo(listenerModule->GetTransformExitPoint(), entryPointID);
+			return true;
+		}
+
 		template <typename U>
 		bool ConnectModuleToListenerTransform(std::shared_ptr<CListener>& listenerModule, std::shared_ptr < U>& module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
@@ -137,16 +198,12 @@ namespace BRTBase {
 			return true;
 		}
 		
-		//template <typename U>
-		//bool ConnectModuleToListenerEarsTransform(std::shared_ptr<CListener>& listenerModule, U& module2, std::string entryPointID) {
-		//	if (!setupModeActivated) return false;
-		//	module2.connectEarsPositionEntryTo(listenerModule->GetEarsTransformExitPoint(), entryPointID);
-		//}
-		//template <typename U>
-		//bool ConnectModuleToListenerEarsTransform(std::shared_ptr<CListener>& listenerModule, std::shared_ptr < U>& module2, std::string entryPointID) {
-		//	if (!setupModeActivated) return false;
-		//	module2->connectEarsPositionEntryTo(listenerModule->GetEarsTransformExitPoint(), entryPointID);
-		//}
+		template <typename U>
+		bool DisconnectModuleToListenerTransform(std::shared_ptr<CListener>& listenerModule, std::shared_ptr < U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectPositionEntryTo(listenerModule->GetTransformExitPoint(), entryPointID);
+			return true;
+		}
 
 		template <typename U>
 		bool ConnectModuleToListenerHRTF(std::shared_ptr<CListener>& listenerModule, U& module2, std::string entryPointID) {
@@ -161,6 +218,40 @@ namespace BRTBase {
 			return true;
 		}
 
+		template <typename U>
+		bool DisconnectModuleToListenerHRTF(std::shared_ptr<CListener>& listenerModule, std::shared_ptr < U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectHRTFEntryTo(listenerModule->GetHRTFPtrExitPoint(), entryPointID);
+			return true;
+		}
+		
+		template <typename U>
+		bool ConnectModuleToListenerILD(std::shared_ptr<CListener>& listenerModule, std::shared_ptr < U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectILDEntryTo(listenerModule->GetILDPtrExitPoint(), entryPointID);
+			return true;
+		}
+
+		template <typename U>
+		bool DisconnectModuleToListenerILD(std::shared_ptr<CListener>& listenerModule, std::shared_ptr < U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectILDEntryTo(listenerModule->GetILDPtrExitPoint(), entryPointID);
+			return true;
+		}
+
+		template <typename U>
+		bool ConnectModuleToListenerID(std::shared_ptr<CListener>& listenerModule, std::shared_ptr < U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectIDEntryTo(listenerModule->GetIDExitPoint(), entryPointID);
+			return true;
+		}
+
+		template <typename U>
+		bool DisconnectModuleToListenerID(std::shared_ptr<CListener>& listenerModule, std::shared_ptr < U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectIDEntryTo(listenerModule->GetIDExitPoint(), entryPointID);
+			return true;
+		}
 
 		///////////////////////////////////////////
 		// GENERIC PROCESSOR MODULES CONNECTIONs
@@ -178,6 +269,26 @@ namespace BRTBase {
 			return true;
 		}
 
+		template <typename T, typename U>
+		bool DisconnectModulesSamples(std::shared_ptr <T>& module1, std::string exitPointID, std::shared_ptr <U>& module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectSamplesEntryTo(module1->GetSamplesExitPoint(exitPointID), entryPointID);
+			return true;
+		}
+
+		template <typename T>
+		bool ConnectModulesCommand(std::shared_ptr <T>& module1) {
+			//if (!setupModeActivated) return false;
+			module1->connectCommandEntryTo(commandsExitPoint);
+			return true;
+		}
+		template <typename T>
+		bool DisconnectModulesCommand(std::shared_ptr <T>& module1) {
+			//if (!setupModeActivated) return false;
+			module1->disconnectCommandEntryTo(commandsExitPoint);
+			return true;
+		}
+
 		//////////////////////
 		// PROCESS METHODs
 		/////////////////////
@@ -189,16 +300,18 @@ namespace BRTBase {
 
 		//////////////////////
 		// GET SET
-		/////////////////////
-
-
-
+		/////////////////////		
+		void ExecuteCommand(std::string commandJson) {
+			//std::cout << "Command received by brt: " << commandJson << endl;
+			BRTBase::CCommand command(commandJson);
+			commandsExitPoint->sendData(command);																		
+		}
 
 	private:
-		//Common::CMagnitudes commonMagnitudes(); // TODO Magnitudes should be a singletone
+		std::shared_ptr<BRTBase::CExitPointCommand> commandsExitPoint;		// Exit point to emit control commands
 
-		std::vector<std::shared_ptr<CSoundSource>> audioSources;	// List of audio sources 
-		std::vector<std::shared_ptr<CListener>> listeners;			// List of audio sources 
+		std::vector<std::shared_ptr<CSoundSource>> audioSources;			// List of audio sources 
+		std::vector<std::shared_ptr<CListener>> listeners;					// List of audio sources 
 		bool initialized;
 		bool setupModeActivated;
 
