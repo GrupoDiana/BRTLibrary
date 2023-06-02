@@ -138,6 +138,9 @@ namespace BRTProcessing {
 			{
 				_listenerAzimuth = vectorToListener.GetAzimuthDegrees();		//Get azimuth from the head center
 			}
+			else {
+				_listenerAzimuth = 0.0f;
+			}
 		}
 	};
 }
