@@ -32,6 +32,20 @@ namespace BRTSourceModel {
 			}			
 		}
 				
+		void UpdateCommand() {
+			std::lock_guard<std::mutex> l(mutex);
+			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
+			
+			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
+				if (command.GetCommand() == "/source/enableDirectivity") {
+					if (command.GetBoolParameter("enable")) { EnableSourceDirectionality(); }
+					else { DisableSourceDirectionality(); }
+				} else if (command.GetCommand() == "/source/resetBuffers") {
+					ResetSourceConvolutionBuffers();
+				}
+			}
+		}
+
 		/** \brief SET SRTF of source
 		*	\param[in] pointer to SRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
@@ -56,8 +70,12 @@ namespace BRTSourceModel {
 
 	private:		
 		mutable std::mutex mutex;
-
 		std::shared_ptr<BRTServices::CSRTF> sourceSRTF;			// SHRTF of source
+
+		// METHODS
+		bool IsToMySoundSource(std::string _sourceID) {			
+			return GetSourceID() == _sourceID;
+		}
 	};
 }
 #endif

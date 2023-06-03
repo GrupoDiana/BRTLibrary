@@ -10,7 +10,7 @@ namespace BRTBase {
     class CCommandEntryPointManager {
     public:
 
-        virtual void updateFromCommandEntryPoint(std::string entryPointID) {};
+        virtual void updateFromCommandEntryPoint(std::string entryPointID) = 0;
 
         void CreateCommandEntryPoint(/*std::string entryPointID = "command", int _multiplicity = 1*/) {
             std::string entryPointID = static_cast<std::string>(Common::COMMAND_ENTRY_POINT_ID);

@@ -2,21 +2,24 @@
 #define _SOUND_SOURCE_MODEL_BASE_HPP
 
 #include "ExitPoint.hpp"
-#include "EntryPoint.hpp"
+//#include "EntryPoint.hpp"
+#include <Base/CommandEntryPointManager.hpp>
 #include <vector>
 
 namespace BRTBase {
 
-	class CSourceModelBase {
+	class CSourceModelBase: public  CCommandEntryPointManager {
 	public:		
 		virtual ~CSourceModelBase() {}						
 		virtual void Update(std::string entryPointID) = 0;
+		virtual void UpdateCommand() = 0;
 
 		CSourceModelBase(std::string _sourceID) : dataReady{ false }, sourceID{ _sourceID} {
 			
 			CreateSamplesExitPoint("samples");
 			CreateTransformExitPoint("sourceTransform");
 			CreateIDExitPoint("sourceID");
+			CreateCommandEntryPoint();
 		}
 
 		void SetBuffer(CMonoBuffer<float>& _buffer) { 
@@ -73,6 +76,14 @@ namespace BRTBase {
 		void updateFromEntryPoint(std::string entryPointID) {
 			Update(entryPointID);
 		}
+		void updateFromCommandEntryPoint(std::string entryPointID) {			   
+			BRTBase::CCommand _command = GetCommandEntryPoint()->GetData();
+			if (!_command.isNull()) {
+				UpdateCommand();
+			}
+		}
+
+
 
 
 		void CreateSamplesExitPoint(std::string exitPointID) {
