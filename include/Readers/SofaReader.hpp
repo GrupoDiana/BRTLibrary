@@ -359,8 +359,20 @@ namespace BRTReaders {
 				
 				GetDirectivityData(dataMeasurementsRealPart, dataRealPart, numberOfSamples_RealPart, i);
 				GetDirectivityData(dataMeasurementsImagPart, dataImagPart, numberOfSamples_RealPart, i);
-
+				
 				srtf_data.data.Interlace(dataRealPart, dataImagPart);
+
+
+				/// DANI								
+				/*CMonoBuffer<float> data, dataFFT;				
+				int dataRealPartSize = dataRealPart.size() / 2;
+				data = CreatingFunction3(dataRealPartSize);				
+				srtf_data.data.clear();
+				srtf_data.data = GetFFT(data);*/
+				// END DANI
+
+
+				
 
 				dataSRTF->AddDirectivityTF(azimuth, elevation, std::move(srtf_data));
 			}
@@ -368,8 +380,63 @@ namespace BRTReaders {
 		
 		}
 
+		CMonoBuffer<float> CreatingFunction(int dataSize) {
+			CMonoBuffer <float> data;
+			data.Fill(dataSize, 0);
+			for (int i = 0; i < dataSize/4; i++) {
+				data[i] = 1;
+			}
+			for (int i = 3*dataSize/4; i < dataSize; i++) {
+				data[i] = 1;
+			}
+			return data;
+		}
+
+		CMonoBuffer<float> CreatingFunction2(int dataSize) {
+			CMonoBuffer <float> data;
+			data.Fill(dataSize, 0);
+			for (int i = 0; i < dataSize; i++) {
+				data[i] = float(i) / float(dataSize);
+			}
+			return data;
+		}
+
+		CMonoBuffer<float> CreatingFunction3(int dataSize) {
+			CMonoBuffer <float> data;
+			data.Fill(dataSize, 0);
+			for (int i = 0; i < dataSize / 4; i++) {
+				data[i] = 1;
+			}			
+			return data;
+		}
 
 
+		CMonoBuffer<float> GetFFT(CMonoBuffer <float> newData_time) {
+			
+			int dataSize = newData_time.size();
+			int blockSize = dataSize;
+			int data_time_size = dataSize;
+			CMonoBuffer<float> data_FFT_doubleSize;
+			//Resize with double size and zeros to make the zero-padded demanded by the algorithm
+			data_FFT_doubleSize.resize(blockSize * 2, 0.0f);
+			
+			//Fill each AIR block (question about this comment: AIR???)
+			int index;
+			int i = 0;
+			for (int j = 0; j < blockSize; j++) {
+				index = i + j;
+				if (index < data_time_size) {
+					data_FFT_doubleSize[j] = newData_time[index];					
+				}
+			}
+			//FFT
+			CMonoBuffer<float> left_data_FFT, right_data_FFT;
+			Common::CFprocessor::CalculateFFT(data_FFT_doubleSize, left_data_FFT);			
+
+
+
+			return left_data_FFT;
+		}
 
 		/////////////////////////
 		// AUXILAR METHODS

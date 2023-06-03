@@ -90,6 +90,7 @@ namespace BRTProcessing {
 
 			// DO CONVOLUTION			
 			outputUPConvolution.ProcessUPConvolution(_inBuffer, dataDirectivityTF_vector, outBuffer);
+			//outputUPConvolution.ProcessUPConvolutionWithMemory(_inBuffer, dataDirectivityTF_vector, outBuffer);
 		}
 
 		/// Reset convolvers and convolution buffers
