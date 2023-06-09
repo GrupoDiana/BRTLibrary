@@ -341,38 +341,46 @@ namespace BRTReaders {
 				numberOfMeasurements = 1;
 			}
 			int numberOfCoordinates = loader.getHRTF()->C;
-			const unsigned int numberOfSamples_RealPart = loader.getHRTF()->N;
+			const unsigned int numberOfFrequencySamples = loader.getHRTF()->N;
 			int numberOfReceivers = loader.getHRTF()->R;
 
 			// Get and save TFs
 									
-			dataSRTF->BeginSetup(numberOfSamples_RealPart);
+			dataSRTF->BeginSetup(numberOfFrequencySamples *2);
 
 			// This outtermost loop iterates over TFs
 			for (std::size_t i = 0; i < numberOfReceivers; i++)
 			{
 				BRTServices::TDirectivityTFStruct srtf_data;
-				CMonoBuffer<float> dataRealPart;
-				CMonoBuffer <float> dataImagPart;
+				CMonoBuffer<float> dataRealPartPI;
+				CMonoBuffer <float> dataImagPartPI;
 				double azimuth = receiverPositionsVector[array2DIndex(i, 0, 0, numberOfCoordinates)];
 				double elevation = GetPositiveElevation(receiverPositionsVector[array2DIndex(i, 1, 0, numberOfCoordinates)]);
 				
-				GetDirectivityData(dataMeasurementsRealPart, dataRealPart, numberOfSamples_RealPart, i);
-				GetDirectivityData(dataMeasurementsImagPart, dataImagPart, numberOfSamples_RealPart, i);
+				GetDirectivityData(dataMeasurementsRealPart, dataRealPartPI, numberOfFrequencySamples, i);
+				GetDirectivityData(dataMeasurementsImagPart, dataImagPartPI, numberOfFrequencySamples, i);
 				
-				srtf_data.data.Interlace(dataRealPart, dataImagPart);
+				//srtf_data.data.Interlace(dataRealPartPI, dataImagPartPI);
+				CMonoBuffer<float> dataRealPart2PI;
+				CMonoBuffer<float> dataImagPart2PI;
+				CalculateFrecuencyResponseTO2PI_RealPart(dataRealPartPI, dataRealPart2PI);
+				CalculateFrecuencyResponseTO2PI_ImaginaryPart(dataImagPartPI, dataImagPart2PI);
+				
+				for (int i = 0; i < dataImagPart2PI.size(); i++) {
+					dataImagPart2PI[i] = dataImagPart2PI[i] * -1;
+				}
 
 
+				srtf_data.data.Interlace(dataRealPart2PI, dataImagPart2PI);			
+				//CoutVector(srtf_data.data);
 				/// DANI								
-				/*CMonoBuffer<float> data, dataFFT;				
-				int dataRealPartSize = dataRealPart.size() / 2;
-				data = CreatingFunction3(dataRealPartSize);				
-				srtf_data.data.clear();
-				srtf_data.data = GetFFT(data);*/
+				//CMonoBuffer<float> data, dataFFT;
+				//int dataRealPartSize = dataRealPartPI.size();
+				//data = CreatingFunction3(dataRealPartSize);				
+				//srtf_data.data.clear();
+				//srtf_data.data = GetFFT(data);
 				// END DANI
-
-
-				
+				//CoutVector(srtf_data.data);
 
 				dataSRTF->AddDirectivityTF(azimuth, elevation, std::move(srtf_data));
 			}
@@ -380,13 +388,33 @@ namespace BRTReaders {
 		
 		}
 
+		void CalculateFrecuencyResponseTO2PI_RealPart(const CMonoBuffer<float> &inBuffer, CMonoBuffer<float> &outBuffer) {			
+			outBuffer.reserve(inBuffer.size() * 2);
+			outBuffer.insert(outBuffer.begin(), inBuffer.begin(), inBuffer.end());
+			outBuffer.insert(outBuffer.end(), 0);
+			outBuffer.insert(outBuffer.end(), inBuffer.rbegin(), inBuffer.rend() - 1);			
+		}
+		void CalculateFrecuencyResponseTO2PI_ImaginaryPart(const CMonoBuffer<float>& inBuffer, CMonoBuffer<float>& outBuffer) {
+			outBuffer.reserve(inBuffer.size() * 2);
+			outBuffer.insert(outBuffer.begin(), inBuffer.begin(), inBuffer.end());
+			outBuffer.insert(outBuffer.end(), 0);
+
+			CMonoBuffer<float> temp;
+			temp.reserve(inBuffer.size()-1);
+			temp.insert(temp.begin(), inBuffer.begin()+1, inBuffer.end());
+			std::transform(temp.begin(), temp.end(), temp.begin(), [](float v) -> float { return -v; });
+			
+			outBuffer.insert(outBuffer.end(), temp.rbegin(), temp.rend());
+		}
+
+
 		CMonoBuffer<float> CreatingFunction(int dataSize) {
 			CMonoBuffer <float> data;
 			data.Fill(dataSize, 0);
-			for (int i = 0; i < dataSize/4; i++) {
+			for (int i = 0; i < 50; i++) {
 				data[i] = 1;
 			}
-			for (int i = 3*dataSize/4; i < dataSize; i++) {
+			for (int i = 50; i < dataSize; i++) {
 				data[i] = 1;
 			}
 			return data;
@@ -404,12 +432,18 @@ namespace BRTReaders {
 		CMonoBuffer<float> CreatingFunction3(int dataSize) {
 			CMonoBuffer <float> data;
 			data.Fill(dataSize, 0);
-			for (int i = 0; i < dataSize / 4; i++) {
+			for (int i = 0; i < 50; i++) {
 				data[i] = 1;
 			}			
 			return data;
 		}
-
+		void CoutVector(const CMonoBuffer<float>& inBuffer) {
+			cout <<endl;
+			for (int i = 0; i < inBuffer.size(); i++) {
+				cout<<inBuffer[i]<<", ";
+			}
+			cout << endl;
+		}
 
 		CMonoBuffer<float> GetFFT(CMonoBuffer <float> newData_time) {
 			
@@ -430,12 +464,12 @@ namespace BRTReaders {
 				}
 			}
 			//FFT
-			CMonoBuffer<float> left_data_FFT, right_data_FFT;
-			Common::CFprocessor::CalculateFFT(data_FFT_doubleSize, left_data_FFT);			
+			CMonoBuffer<float> data_FFT;
+			Common::CFprocessor::CalculateFFT(data_FFT_doubleSize, data_FFT);			
 
 
 
-			return left_data_FFT;
+			return data_FFT;
 		}
 
 		/////////////////////////
