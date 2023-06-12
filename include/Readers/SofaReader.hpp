@@ -361,17 +361,20 @@ namespace BRTReaders {
 				GetDirectivityData(dataMeasurementsImagPart, dataImagPartPI, numberOfFrequencySamples, i);
 				
 				//srtf_data.data.Interlace(dataRealPartPI, dataImagPartPI);
-				CMonoBuffer<float> dataRealPart2PI;
+				/*CMonoBuffer<float> dataRealPart2PI;
 				CMonoBuffer<float> dataImagPart2PI;
 				CalculateFrecuencyResponseTO2PI_RealPart(dataRealPartPI, dataRealPart2PI);
-				CalculateFrecuencyResponseTO2PI_ImaginaryPart(dataImagPartPI, dataImagPart2PI);
+				CalculateFrecuencyResponseTO2PI_ImaginaryPart(dataImagPartPI, dataImagPart2PI);*/
 				
-				for (int i = 0; i < dataImagPart2PI.size(); i++) {
+				/*for (int i = 0; i < dataImagPart2PI.size(); i++) {
 					dataImagPart2PI[i] = dataImagPart2PI[i] * -1;
-				}
+				}*/
 
 
-				srtf_data.data.Interlace(dataRealPart2PI, dataImagPart2PI);			
+				//srtf_data.data.Interlace(dataRealPart2PI, dataImagPart2PI);			
+				srtf_data.realPart = dataRealPartPI;
+				srtf_data.imagPart = dataImagPartPI;
+
 				//CoutVector(srtf_data.data);
 				/// DANI								
 				//CMonoBuffer<float> data, dataFFT;

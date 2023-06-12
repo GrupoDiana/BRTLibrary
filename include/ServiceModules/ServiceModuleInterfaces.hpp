@@ -76,7 +76,8 @@ namespace BRTServices {
 	};
 
 	struct TDirectivityTFStruct {
-		CMonoBuffer<float> data;	
+		CMonoBuffer<float> realPart;
+		CMonoBuffer<float> imagPart;
 	};
 
 	class CServicesBase {
@@ -101,7 +102,7 @@ namespace BRTServices {
 
 		virtual void AddHRIR(float _azimuth, float _elevation, THRIRStruct&& newHRIR) {}
 		virtual void AddCoefficients(float azimuth, float distance, TILDStruct&& newCoefs) {}
-		virtual void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF){}
+		virtual void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF) {}
 		
 	};}
 

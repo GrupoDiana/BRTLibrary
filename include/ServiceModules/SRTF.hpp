@@ -43,11 +43,9 @@
 #endif
 
 
-
-//namespace BRTBase { }
-
 namespace BRTServices
 {
+	
 	struct TDirectivityInterlacedTFStruct {
 		CMonoBuffer<float> data;
 	};
@@ -197,7 +195,20 @@ namespace BRTServices
 		/// <param name="_resamplingStep" step for both azimuth and elevation></param>
 		void CalculateResampled_SRTFTable(int _resamplingStep)
 		{
-			t_SRTF_Resampled = t_SRTF_DataBase;
+			
+			// RECORRER TODA LA TABLA
+			
+			
+				// Extend to 2PI real part
+				// Extend to 2PI imag part
+				// Invert sign of imag part
+				// Interlaced real and imag part
+				// meter en la tabla interlaced  ///srtf_data.data.Interlace(dataRealPart2PI, dataImagPart2PI);	
+			//
+			
+
+
+			//t_SRTF_Resampled = t_SRTF_DataBase;
 			//int numOfInterpolatedHRIRs = 0;
 
 			////Resample Interpolation Algorithm
@@ -223,12 +234,13 @@ namespace BRTServices
 		/// <param name="newElevation"></param>
 		/// <returns>interpolatedDTFs: true if the Directivity TF has been calculated using the interpolation</returns>
 		bool CalculateAndEmplaceNewDirectivityTF(float _azimuth, float _elevation) {
-			TDirectivityTFStruct interpolatedHRIR;
+			TDirectivityInterlacedTFStruct interpolatedHRIR;
 			bool bDirectivityTFInterpolated = false;
 			auto it = t_SRTF_DataBase.find(orientation(_azimuth, _elevation));
-			if (it != t_SRTF_DataBase.end()){
-				//Fill out Directivity TF from the original Database
-				auto returnValue =  t_SRTF_Resampled.emplace(orientation(_azimuth, _elevation), std::forward<TDirectivityTFStruct>(it->second));
+			if (it != t_SRTF_DataBase.end()){				
+				interpolatedHRIR.data.Interlace(it->second.realPart, it->second.imagPart);	// Interlaced
+				//Fill out Directivity TF from the original Database	
+				auto returnValue =  t_SRTF_Resampled.emplace(orientation(_azimuth, _elevation), std::forward<TDirectivityInterlacedTFStruct>(interpolatedHRIR));
 				//Error handler
 				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing DirectivityTF into t_SRTF_Resampled map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
 			}
@@ -296,11 +308,11 @@ namespace BRTServices
 		/// <param name="_azimuth"></param>
 		/// <param name="_elevation"></param>
 		/// <returns></returns>
-		const TDirectivityTFStruct GetDirectivityTF(float _azimuth, float _elevation, std::unordered_map<orientation, float> _stepsMap) const {
+		const TDirectivityInterlacedTFStruct GetDirectivityTF(float _azimuth, float _elevation, std::unordered_map<orientation, float> _stepsMap) const {
 
-			TDirectivityTFStruct newSRIR;
-			auto it0 = t_SRTF_DataBase.find(orientation(_azimuth, _elevation));
-			if (it0 != t_SRTF_DataBase.end()) {
+			TDirectivityInterlacedTFStruct newSRIR;
+			auto it0 = t_SRTF_Resampled.find(orientation(_azimuth, _elevation));
+			if (it0 != t_SRTF_Resampled.end()) {
 				newSRIR.data = it0->second.data;
 			}
 			else {
@@ -335,14 +347,14 @@ namespace BRTServices
 					if (_elevation >= pntMid_elevation)
 					{
 						//Second quadrant
-						auto it = t_SRTF_DataBase.find(orientation(aziCeilFront, eleCeil));
+						auto it = t_SRTF_Resampled.find(orientation(aziCeilFront, eleCeil));
 						newSRIR.data = it->second.data;
 
 					}
 					else if (_elevation < pntMid_elevation)
 					{
 						//Forth quadrant
-						auto it = t_SRTF_DataBase.find(orientation(aziFloorFront, eleFloor));
+						auto it = t_SRTF_Resampled.find(orientation(aziFloorFront, eleFloor));
 						newSRIR.data = it->second.data;
 					}
 				}
@@ -351,12 +363,12 @@ namespace BRTServices
 					if (_elevation >= pntMid_elevation)
 					{
 						//First quadrant
-						auto it = t_SRTF_DataBase.find(orientation(aziCeilBack, eleCeil));
+						auto it = t_SRTF_Resampled.find(orientation(aziCeilBack, eleCeil));
 						newSRIR.data = it->second.data;
 					}
 					else if (_elevation < pntMid_elevation) {
 						//Third quadrant
-						auto it = t_SRTF_DataBase.find(orientation(aziFloorFront, eleFloor));
+						auto it = t_SRTF_Resampled.find(orientation(aziFloorFront, eleFloor));
 						newSRIR.data = it->second.data;
 					}
 				}
@@ -412,6 +424,13 @@ namespace BRTServices
 		float sphereBorder;
 		float epsilon_sewing;
 		enum class TPole { north, south };
+		
+
+
+		///////////////////
+		///// METHODS
+		///////////////////
+
 		/** \brief Get Pole Elevation
 		*	\param [in] Tpole var that indicates of which pole we need elevation
 		*   \eh  On error, an error code is reported to the error handler.
@@ -424,6 +443,15 @@ namespace BRTServices
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get a non-existent pole");
 				return 0;
 			}
+		}
+
+
+
+		void CalculateRealPartFrecuencyResponseTo2PI(const CMonoBuffer<float>& inBuffer, CMonoBuffer<float>& outBuffer) {
+			outBuffer.reserve(inBuffer.size() * 2);
+			outBuffer.insert(outBuffer.begin(), inBuffer.begin(), inBuffer.end());
+			outBuffer.insert(outBuffer.end(), 0);
+			outBuffer.insert(outBuffer.end(), inBuffer.rbegin(), inBuffer.rend() - 1);
 		}
 	};
 }
