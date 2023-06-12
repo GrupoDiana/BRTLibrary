@@ -42,14 +42,21 @@
 #define DEFAULT_SRTF_RESAMPLING_STEP 5
 #endif
 
-/** \brief Type definition for the SRTF table
-*/
-typedef std::unordered_map<orientation, BRTServices::TDirectivityTFStruct> T_SRTFTable;
+
 
 //namespace BRTBase { }
 
 namespace BRTServices
 {
+	struct TDirectivityInterlacedTFStruct {
+		CMonoBuffer<float> data;
+	};
+
+	/** \brief Type definition for the SRTF table */
+	typedef std::unordered_map<orientation, BRTServices::TDirectivityTFStruct> T_SRTFTable;
+	typedef std::unordered_map<orientation, BRTServices::TDirectivityInterlacedTFStruct> T_SRTFInterlacedDataTable;
+
+
 	/** \details This class gets impulse response data to compose HRTFs and implements different algorithms to interpolate the HRIR functions.
 	*/
 	class CSRTF : public CServicesBase
@@ -103,8 +110,9 @@ namespace BRTServices
 			
 			if (_directivityTFRealPartLength != 2.0 * globalParameters.GetBufferSize()) //
 			{
-				SET_RESULT(RESULT_WARNING, "Number of samples (N) in SOFA file is different from BUffer Size");
+				SET_RESULT(RESULT_ERROR_BADSIZE, "Number of frequency samples (N) in SOFA file is different from Buffer Size");
 			}
+
 			directivityTF_length = 2.0 * _directivityTFRealPartLength; //directivityTF will store the Real and Img parts interlaced
 			directivityTF_numberOfSubfilters = 1;
 
@@ -135,6 +143,8 @@ namespace BRTServices
 					//FillSphericalCap_HRTF(gapThreshold, resamplingStep);
 					CalculateResampled_SRTFTable(resamplingStep);
 					auto stepVector = CalculateStep();
+
+					//CalculateExtendUpTo2PI();
 
 
 					//Setup values
@@ -379,8 +389,8 @@ namespace BRTServices
 		int32_t directivityTF_length;	
 		int32_t directivityTF_numberOfSubfilters;	
 		
-		T_SRTFTable	t_SRTF_DataBase;
-		T_SRTFTable	t_SRTF_Resampled;
+		T_SRTFTable					t_SRTF_DataBase;
+		T_SRTFInterlacedDataTable	t_SRTF_Resampled;
 
 		Common::CGlobalParameters globalParameters;
 
