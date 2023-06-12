@@ -198,16 +198,19 @@ namespace BRTServices
 			
 			// RECORRER TODA LA TABLA
 			for (auto& it : t_SRTF_DataBase){
+				TDirectivityInterlacedTFStruct interlacedData;
 				// Extend to 2PI real part
 				CMonoBuffer<float> dataRealPart2PI;				
-				CalculateRealPartFrecuencyResponseTo2PI(it.second.realPart , dataRealPart2PI);								
+				CalculateTFRealPartTo2PI(it.second.realPart , dataRealPart2PI);								
 				// Extend to 2PI imag part
 				CMonoBuffer<float> dataImagPart2PI;				
-				CalculateImaginaryPartFrecuencyResponseTo2PI(it.second.imagPart, dataImagPart2PI);				 				
+				CalculateTFImagPartTo2PI(it.second.imagPart, dataImagPart2PI);				 				
 				// Invert sign of imag part
-				CalculateImaginaryPartFrecuencyResponseToBeCompatibleWithOouraFFTLibrary(dataImagPart2PI);
+				CalculateTFImagPartToBeCompatibleWithOouraFFTLibrary(dataImagPart2PI);
 				// Interlaced real and imag part
-				// meter en la tabla interlaced  ///srtf_data.data.Interlace(dataRealPart2PI, dataImagPart2PI);	
+				interlacedData.data.Interlace(dataRealPart2PI, dataImagPart2PI);
+				//Add data to the Resampled Table
+				t_SRTF_Resampled.emplace(it.first, interlacedData);
 			}
 			//
 			
@@ -452,14 +455,14 @@ namespace BRTServices
 
 
 
-		void CalculateRealPartFrecuencyResponseTo2PI(const CMonoBuffer<float>& inBuffer, CMonoBuffer<float>& outBuffer) {
+		void CalculateTFRealPartTo2PI(const CMonoBuffer<float>& inBuffer, CMonoBuffer<float>& outBuffer) {
 			outBuffer.reserve(inBuffer.size() * 2);
 			outBuffer.insert(outBuffer.begin(), inBuffer.begin(), inBuffer.end());
 			outBuffer.insert(outBuffer.end(), 0);
 			outBuffer.insert(outBuffer.end(), inBuffer.rbegin(), inBuffer.rend() - 1);
 		}
 		
-		void CalculateImaginaryPartFrecuencyResponseTo2PI(const CMonoBuffer<float>& inBuffer, CMonoBuffer<float>& outBuffer) {
+		void CalculateTFImagPartTo2PI(const CMonoBuffer<float>& inBuffer, CMonoBuffer<float>& outBuffer) {
 			outBuffer.reserve(inBuffer.size() * 2);
 			outBuffer.insert(outBuffer.begin(), inBuffer.begin(), inBuffer.end());
 			outBuffer.insert(outBuffer.end(), 0);
@@ -471,7 +474,7 @@ namespace BRTServices
 
 			outBuffer.insert(outBuffer.end(), temp.rbegin(), temp.rend());
 		}
-		void CalculateImaginaryPartFrecuencyResponseToBeCompatibleWithOouraFFTLibrary(CMonoBuffer<float>& buffer) {
+		void CalculateTFImagPartToBeCompatibleWithOouraFFTLibrary(CMonoBuffer<float>& buffer) {
 			for (int i = 0; i < buffer.size(); i++) {
 				buffer[i] = buffer[i] * -1;
 			}
