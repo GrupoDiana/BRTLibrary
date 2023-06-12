@@ -192,7 +192,7 @@ namespace BRTReaders {
 				
 				hrtf->hrtf = mysofa_load(sofafile.data(), &error);
 				if (!hrtf->hrtf) {
-					mysofa_close(hrtf);
+					//mysofa_close(hrtf);
 					SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Error opening SOFA file");
 					return false;
 				}
