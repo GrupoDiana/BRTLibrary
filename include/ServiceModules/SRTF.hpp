@@ -197,13 +197,18 @@ namespace BRTServices
 		{
 			
 			// RECORRER TODA LA TABLA
-			
-			
+			for (auto& it : t_SRTF_DataBase){
 				// Extend to 2PI real part
+				CMonoBuffer<float> dataRealPart2PI;				
+				CalculateRealPartFrecuencyResponseTo2PI(it.second.realPart , dataRealPart2PI);								
 				// Extend to 2PI imag part
+				CMonoBuffer<float> dataImagPart2PI;				
+				CalculateImaginaryPartFrecuencyResponseTo2PI(it.second.imagPart, dataImagPart2PI);				 				
 				// Invert sign of imag part
+				CalculateImaginaryPartFrecuencyResponseToBeCompatibleWithOouraFFTLibrary(dataImagPart2PI);
 				// Interlaced real and imag part
 				// meter en la tabla interlaced  ///srtf_data.data.Interlace(dataRealPart2PI, dataImagPart2PI);	
+			}
 			//
 			
 
@@ -453,6 +458,25 @@ namespace BRTServices
 			outBuffer.insert(outBuffer.end(), 0);
 			outBuffer.insert(outBuffer.end(), inBuffer.rbegin(), inBuffer.rend() - 1);
 		}
+		
+		void CalculateImaginaryPartFrecuencyResponseTo2PI(const CMonoBuffer<float>& inBuffer, CMonoBuffer<float>& outBuffer) {
+			outBuffer.reserve(inBuffer.size() * 2);
+			outBuffer.insert(outBuffer.begin(), inBuffer.begin(), inBuffer.end());
+			outBuffer.insert(outBuffer.end(), 0);
+
+			CMonoBuffer<float> temp;
+			temp.reserve(inBuffer.size() - 1);
+			temp.insert(temp.begin(), inBuffer.begin() + 1, inBuffer.end());
+			std::transform(temp.begin(), temp.end(), temp.begin(), [](float v) -> float { return -v; });
+
+			outBuffer.insert(outBuffer.end(), temp.rbegin(), temp.rend());
+		}
+		void CalculateImaginaryPartFrecuencyResponseToBeCompatibleWithOouraFFTLibrary(CMonoBuffer<float>& buffer) {
+			for (int i = 0; i < buffer.size(); i++) {
+				buffer[i] = buffer[i] * -1;
+			}
+		}
+
 	};
 }
 #endif
