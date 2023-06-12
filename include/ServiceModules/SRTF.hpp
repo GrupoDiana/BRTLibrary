@@ -307,37 +307,25 @@ namespace BRTServices
 
 				// HARCODE ELEVATION STEP TO 10
 				int eleStep = 10;
+
+				float aziCeilBack, aziCeilFront, aziFloorBack, aziFloorFront;
 				int idxEle = ceil(_elevation / eleStep);
 				float eleCeil = eleStep * idxEle;
 				float eleFloor = eleStep * (idxEle - 1);
 
-				if (eleFloor > 90 && eleFloor < 270) { eleFloor = eleFloor - 270; }
-				if (eleFloor < 0) { eleFloor = eleFloor + 360; }
-				if (eleCeil > 90 && eleCeil < 270) { eleCeil = eleCeil - 270; }
-				if (eleCeil >= 360) { eleCeil = eleCeil - 360; }
-				if (eleCeil < 0) { eleCeil = eleCeil + 360; }
-			
-				auto stepItr = _stepsMap.find(orientation(0, eleCeil));
+				eleCeil = CheckLimitsElevation_and_Transform(eleCeil);										//			   Back	  Front
+				eleFloor = CheckLimitsElevation_and_Transform(eleFloor);									//	Ceil		A		B
+
+				auto stepItr = _stepsMap.find(orientation(0, eleCeil));										//	Floor		D		C
 				float aziStepCeil = stepItr->second;
-				int idxAziCeil = ceil(_azimuth / aziStepCeil);
-				float aziCeilFront = idxAziCeil * aziStepCeil;
-				float aziCeilBack = (idxAziCeil - 1) * aziStepCeil;
-
-				if (aziCeilBack < 0) { aziCeilBack = aziCeilBack + 360; }
-				else if (aziCeilBack > 360) { aziCeilBack = aziCeilBack - 360; }
-
-				if (aziCeilFront > 360) { aziCeilFront = aziCeilFront - 360; }
+																										
+				CalculateAzimuth_BackandFront(aziCeilBack, aziCeilFront, aziStepCeil, _azimuth);
+				// azimuth values passed by reference
 
 				auto stepIt = _stepsMap.find(orientation(0, eleFloor));
-				float aziStepFloor = stepIt->second;								//			   Back	  Front
-				int idxAziFloor = ceil(_azimuth / aziStepFloor);					//	Ceil		A		B
-				float aziFloorFront = idxAziFloor * aziStepFloor;
-				float aziFloorBack = (idxAziFloor - 1) * aziStepFloor;				//	Floor		D		C
+				float aziStepFloor = stepIt->second;							
 
-				if (aziFloorBack < 0) { aziFloorBack = aziFloorBack + 360; }
-				else if (aziFloorBack > 360) { aziFloorBack = aziFloorBack - 360; }
-
-				if (aziFloorFront > 360) { aziFloorFront = aziFloorFront - 360; }
+				CalculateAzimuth_BackandFront(aziFloorBack, aziFloorFront, aziStepFloor, _azimuth); 
 
 				float pntMid_azimuth = (aziFloorBack + aziStepFloor * 0.5f);
 				float pntMid_elevation = (eleFloor + eleStep * 0.5f);
@@ -377,6 +365,32 @@ namespace BRTServices
 
 			//SET_RESULT(RESULT_OK, "CalculateHRIR_InterpolationMethod completed succesfully");
 			return newSRIR;
+		}
+
+		float CheckLimitsElevation_and_Transform(float elevation)const
+		{
+			if (elevation < 0) { elevation = elevation + 360; }
+			if (elevation >= 360) { elevation = elevation - 360; }
+			return elevation;
+
+		}
+		float CheckLimitsAzimuth_and_Transform(float azimuth)const
+		{
+			if (azimuth < 0) { azimuth = azimuth + 360; }
+			else if (azimuth > 360) { azimuth = azimuth - 360; }
+			return azimuth;
+		}
+
+		void CalculateAzimuth_BackandFront(float& aziBack, float& aziFront, float aziStep, float _azimuth)const
+		{
+
+			int idxAzi = ceil(_azimuth / aziStep);
+
+			aziFront = idxAzi * aziStep;
+			aziBack = (idxAzi - 1) * aziStep;
+
+			aziFront = CheckLimitsAzimuth_and_Transform(aziFront);
+			aziBack = CheckLimitsAzimuth_and_Transform(aziBack);
 		}
 
 	private:
