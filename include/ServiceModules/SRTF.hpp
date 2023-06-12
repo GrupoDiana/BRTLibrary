@@ -100,18 +100,18 @@ namespace BRTServices
 		/// <summary>
 		/// 
 		/// </summary>
-		void BeginSetup(int32_t _directivityTFRealPartLength){
+		void BeginSetup(int32_t directivityTFPartLength){
 			//Update parameters			
 			eleNorth = GetPoleElevation(TPole::north);
 			eleSouth = GetPoleElevation(TPole::south);
 
 			
-			if (_directivityTFRealPartLength != 2.0 * globalParameters.GetBufferSize()) //
+			if (directivityTFPartLength != globalParameters.GetBufferSize()) //
 			{
 				SET_RESULT(RESULT_ERROR_BADSIZE, "Number of frequency samples (N) in SOFA file is different from Buffer Size");
 			}
 
-			directivityTF_length = 2.0 * _directivityTFRealPartLength; //directivityTF will store the Real and Img parts interlaced
+			directivityTF_length = 4.0 * directivityTFPartLength; //directivityTF will store the Real and Img parts interlaced
 			directivityTF_numberOfSubfilters = 1;
 
 			//Clear every table			
