@@ -346,7 +346,7 @@ namespace BRTReaders {
 
 			// Get and save TFs
 									
-			dataSRTF->BeginSetup(numberOfFrequencySamples *2);
+			dataSRTF->BeginSetup(numberOfFrequencySamples);
 
 			// This outtermost loop iterates over TFs
 			for (std::size_t i = 0; i < numberOfReceivers; i++)
@@ -391,7 +391,7 @@ namespace BRTReaders {
 		
 		}
 
-		void CalculateFrecuencyResponseTO2PI_RealPart(const CMonoBuffer<float> &inBuffer, CMonoBuffer<float> &outBuffer) {			
+		/*void CalculateFrecuencyResponseTO2PI_RealPart(const CMonoBuffer<float> &inBuffer, CMonoBuffer<float> &outBuffer) {			
 			outBuffer.reserve(inBuffer.size() * 2);
 			outBuffer.insert(outBuffer.begin(), inBuffer.begin(), inBuffer.end());
 			outBuffer.insert(outBuffer.end(), 0);
@@ -408,10 +408,10 @@ namespace BRTReaders {
 			std::transform(temp.begin(), temp.end(), temp.begin(), [](float v) -> float { return -v; });
 			
 			outBuffer.insert(outBuffer.end(), temp.rbegin(), temp.rend());
-		}
+		}*/
 
 
-		CMonoBuffer<float> CreatingFunction(int dataSize) {
+		/*CMonoBuffer<float> CreatingFunction(int dataSize) {
 			CMonoBuffer <float> data;
 			data.Fill(dataSize, 0);
 			for (int i = 0; i < 50; i++) {
@@ -446,34 +446,34 @@ namespace BRTReaders {
 				cout<<inBuffer[i]<<", ";
 			}
 			cout << endl;
-		}
+		}*/
 
-		CMonoBuffer<float> GetFFT(CMonoBuffer <float> newData_time) {
-			
-			int dataSize = newData_time.size();
-			int blockSize = dataSize;
-			int data_time_size = dataSize;
-			CMonoBuffer<float> data_FFT_doubleSize;
-			//Resize with double size and zeros to make the zero-padded demanded by the algorithm
-			data_FFT_doubleSize.resize(blockSize * 2, 0.0f);
-			
-			//Fill each AIR block (question about this comment: AIR???)
-			int index;
-			int i = 0;
-			for (int j = 0; j < blockSize; j++) {
-				index = i + j;
-				if (index < data_time_size) {
-					data_FFT_doubleSize[j] = newData_time[index];					
-				}
-			}
-			//FFT
-			CMonoBuffer<float> data_FFT;
-			Common::CFprocessor::CalculateFFT(data_FFT_doubleSize, data_FFT);			
+		//CMonoBuffer<float> GetFFT(CMonoBuffer <float> newData_time) {
+		//	
+		//	int dataSize = newData_time.size();
+		//	int blockSize = dataSize;
+		//	int data_time_size = dataSize;
+		//	CMonoBuffer<float> data_FFT_doubleSize;
+		//	//Resize with double size and zeros to make the zero-padded demanded by the algorithm
+		//	data_FFT_doubleSize.resize(blockSize * 2, 0.0f);
+		//	
+		//	//Fill each AIR block (question about this comment: AIR???)
+		//	int index;
+		//	int i = 0;
+		//	for (int j = 0; j < blockSize; j++) {
+		//		index = i + j;
+		//		if (index < data_time_size) {
+		//			data_FFT_doubleSize[j] = newData_time[index];					
+		//		}
+		//	}
+		//	//FFT
+		//	CMonoBuffer<float> data_FFT;
+		//	Common::CFprocessor::CalculateFFT(data_FFT_doubleSize, data_FFT);			
 
 
 
-			return data_FFT;
-		}
+		//	return data_FFT;
+		//}
 
 		/////////////////////////
 		// AUXILAR METHODS
