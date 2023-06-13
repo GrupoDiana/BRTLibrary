@@ -83,6 +83,18 @@ namespace BRTBase {
 
 			return tempV3;
 		}
+
+		Common::CQuaternion GetQuaternionParameter(std::string fieldName) {
+
+			std::vector<double> _parameter;
+			if (!j[fieldName].is_null() && j[fieldName].is_structured()) {
+				_parameter = j[fieldName].get<std::vector<double>>();
+			}
+			Common::CQuaternion tempV4;
+			if (_parameter.size() == 4) { tempV4 = Common::CQuaternion(_parameter[0], _parameter[1], _parameter[2], _parameter[3]); }
+
+			return tempV4;
+		}
 	};
 }
 #endif
