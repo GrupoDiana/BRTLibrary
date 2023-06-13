@@ -41,6 +41,7 @@ namespace BRTBase {
 			try
 			{
 				std::shared_ptr<T> newSource(new T(sourceID));
+				ConnectModulesCommand(newSource);
 				audioSources.push_back(newSource);
 				SET_RESULT(RESULT_OK, "Single source DSP created succesfully");
 				return newSource;
