@@ -20,10 +20,30 @@ namespace BRTSourceModel {
 				SendData(buffer);
 			}
 		}
-				
+			
+		void UpdateCommand() {
+			std::lock_guard<std::mutex> l(mutex);
+			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
+
+			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
+				if (command.GetCommand() == "/source/location") {
+					Common::CVector3 location = command.GetVector3Parameter("location");
+					Common::CTransform sourceTransform = GetCurrentSourceTransform();
+					sourceTransform.SetPosition(location);
+					SetSourceTransform(sourceTransform);
+				}
+				else if (command.GetCommand() == "/source/orientation") {
+					Common::CQuaternion orientation = command.GetQuaternionParameter("orientation");
+					Common::CTransform sourceTransform = GetCurrentSourceTransform();
+					sourceTransform.SetOrientation(orientation);
+					SetSourceTransform(sourceTransform);
+				}				
+			}
+		}
 
 	private:		
 		mutable std::mutex mutex;
+
 
 	};
 }
