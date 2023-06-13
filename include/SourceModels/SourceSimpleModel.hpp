@@ -33,11 +33,20 @@ namespace BRTSourceModel {
 					SetSourceTransform(sourceTransform);
 				}
 				else if (command.GetCommand() == "/source/orientation") {
+					Common::CVector3 orientationYawPitchRoll = command.GetVector3Parameter("orientation");
+					Common::CQuaternion orientation;
+					orientation = orientation.FromYawPitchRoll(orientationYawPitchRoll.x, orientationYawPitchRoll.y, orientationYawPitchRoll.z);
+
+					Common::CTransform sourceTransform = GetCurrentSourceTransform();
+					sourceTransform.SetOrientation(orientation);
+					SetSourceTransform(sourceTransform);
+				}
+				else if (command.GetCommand() == "/source/orientationQuaternion") {
 					Common::CQuaternion orientation = command.GetQuaternionParameter("orientation");
 					Common::CTransform sourceTransform = GetCurrentSourceTransform();
 					sourceTransform.SetOrientation(orientation);
 					SetSourceTransform(sourceTransform);
-				}				
+				}
 			}
 		}
 
