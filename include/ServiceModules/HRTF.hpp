@@ -1212,19 +1212,26 @@ namespace BRTServices
 			int n_rings_hemisphere = std::ceil(90 / _resamplingStep);
 			float actual_Ele_Step = 90.0f / n_rings_hemisphere;
 
+			// Saving in -1,-1 the Elevation Step, same for all grid
+			stepVector.emplace(orientation(-1, -1), actual_Ele_Step); 
+
 			for (float newElevation = -90.0f; newElevation <= 90.0f; newElevation = newElevation + actual_Ele_Step)
 			{
 				int n_divisions_by_elev = std::ceil(n_divisions * std::cos(newElevation * PI / 180));
 				float actual_Azi_Step = 360.0f / n_divisions_by_elev;
 
 				// Calculate new Elevation to be in range [270,360] and use it to create the vector and to emplace data
+				elevationInRange = newElevation;
 				if (newElevation < 0) { elevationInRange = newElevation + 360; }
 
 				// Create the vector
-				stepVector.emplace(orientation(0, newElevation), actual_Azi_Step);
+				stepVector.emplace(orientation(0, elevationInRange), actual_Azi_Step);
 
-				for (float newAzimuth = aziMin; newAzimuth <= aziMax; newAzimuth = newAzimuth + actual_Azi_Step)
+				// Ceil to avoid error with the sum of decimal digits and not emplace 360 azimuth
+				for (float newAzimuth = aziMin; std::ceil(newAzimuth) < aziMax; newAzimuth = newAzimuth + actual_Azi_Step)
 				{
+					/*float azimuthInRange = newAzimuth;
+					if (actual_Azi_Step == 360) { azimuthInRange = 0; }*/
 					if (CalculateAndEmplaceNewPartitionedHRIR(newAzimuth, elevationInRange)) { numOfInterpolatedHRIRs++; }
 				}
 			}
@@ -1648,14 +1655,15 @@ namespace BRTServices
 			orientation orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoP;
 			float aziCeilBack, aziCeilFront, aziFloorBack, aziFloorFront;
 
-			int idxEle = ceil(_elevation / _resamplingStep);
-			float eleCeil = _resamplingStep * idxEle;
-			float eleFloor = _resamplingStep * (idxEle - 1);
+			float eleStep = stepMap.find(orientation(-1, -1))->second; // Elevation Step -- Same always
+			int idxEle = ceil(_elevation / eleStep);
+			float eleCeil = eleStep * idxEle;
+			float eleFloor = eleStep * (idxEle - 1);
 
 			eleCeil = CheckLimitsElevation_and_Transform(eleCeil);										//			   Back	  Front
 			eleFloor = CheckLimitsElevation_and_Transform(eleFloor);									//	Ceil		A		B
 
-			auto stepItr = stepMap.find(orientation(0, eleCeil));										//	Floor		D		C
+			auto stepItr = stepMap.find(orientation(0, eleCeil));										//	Floor		C		D
 			float aziStepCeil = stepItr->second;
 
 			CalculateAzimuth_BackandFront(aziCeilBack, aziCeilFront, aziStepCeil, _azimuth);
@@ -1667,17 +1675,16 @@ namespace BRTServices
 			CalculateAzimuth_BackandFront(aziFloorBack, aziFloorFront, aziStepFloor, _azimuth);
 
 			//Calculate the quadrant points A, B, C and D and the middle quadrant point P
-			orientation_ptoC.azimuth = trunc(_azimuth / resamplingStep) * resamplingStep;
-			orientation_ptoC.elevation = trunc(_elevation / resamplingStep) * resamplingStep;
-			orientation_ptoA.azimuth = orientation_ptoC.azimuth;
-			orientation_ptoA.elevation = orientation_ptoC.elevation + resamplingStep;
-			orientation_ptoB.azimuth = orientation_ptoC.azimuth + resamplingStep;
-			orientation_ptoB.elevation = orientation_ptoC.elevation + resamplingStep;
-			orientation_ptoD.azimuth = orientation_ptoC.azimuth + resamplingStep;
-			orientation_ptoD.elevation = orientation_ptoC.elevation;
-			orientation_ptoP.azimuth = orientation_ptoC.azimuth + (resamplingStep * 0.5f);
-			float azimuth_ptoP = orientation_ptoC.azimuth + (resamplingStep * 0.5f);
-			float elevation_ptoP = orientation_ptoC.elevation + (resamplingStep * 0.5f);
+			orientation_ptoC.azimuth = aziFloorBack;
+			orientation_ptoC.elevation = eleFloor;
+			orientation_ptoA.azimuth = aziCeilBack;
+			orientation_ptoA.elevation = eleCeil;
+			orientation_ptoB.azimuth = aziCeilFront; 
+			orientation_ptoB.elevation = eleCeil;
+			orientation_ptoD.azimuth = aziFloorFront;
+			orientation_ptoD.elevation = eleFloor;
+			float azimuth_ptoP =  (aziFloorBack + aziStepFloor * 0.5f);
+			float elevation_ptoP = (eleFloor + _resamplingStep * 0.5f);
 
 			//Depend on the quadrant where the point of interest is situated obtain the Barycentric coordinates and the HRIR of the orientation of interest (azimuth, elevation)
 			if (_azimuth >= azimuth_ptoP)
