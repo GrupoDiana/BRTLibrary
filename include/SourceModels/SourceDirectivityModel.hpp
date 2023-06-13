@@ -37,7 +37,19 @@ namespace BRTSourceModel {
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
 			
 			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
-				if (command.GetCommand() == "/source/enableDirectivity") {
+				if (command.GetCommand() == "/source/location") {
+					Common::CVector3 location = command.GetVector3Parameter("location");										
+					Common::CTransform sourceTransform = GetCurrentSourceTransform();
+					sourceTransform.SetPosition(location);
+					SetSourceTransform(sourceTransform);
+				}
+				else if (command.GetCommand() == "/source/orientation") {
+					Common::CQuaternion orientation = command.GetQuaternionParameter("orientation");
+					Common::CTransform sourceTransform = GetCurrentSourceTransform();
+					sourceTransform.SetOrientation(orientation);
+					SetSourceTransform(sourceTransform);
+				}
+				else if(command.GetCommand() == "/source/enableDirectivity") {
 					if (command.GetBoolParameter("enable")) { EnableSourceDirectionality(); }
 					else { DisableSourceDirectionality(); }
 				} else if (command.GetCommand() == "/source/resetBuffers") {
@@ -72,10 +84,10 @@ namespace BRTSourceModel {
 		mutable std::mutex mutex;
 		std::shared_ptr<BRTServices::CSRTF> sourceSRTF;			// SHRTF of source
 
-		// METHODS
-		bool IsToMySoundSource(std::string _sourceID) {			
-			return GetSourceID() == _sourceID;
-		}
+		//// METHODS
+		//bool IsToMySoundSource(std::string _sourceID) {			
+		//	return GetSourceID() == _sourceID;
+		//}
 	};
 }
 #endif

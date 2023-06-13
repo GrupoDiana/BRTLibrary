@@ -104,6 +104,10 @@ namespace BRTBase {
 		std::shared_ptr<BRTBase::CEntryPointTransform >  GetListenerTransformEntryPoint() {			
 			return listenerPositionEntryPoint;
 		}
+		
+		bool IsToMySoundSource(std::string _sourceID) {
+			return GetSourceID() == _sourceID;
+		}
 
 	private:
 		std::string sourceID;
