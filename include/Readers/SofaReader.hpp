@@ -27,14 +27,9 @@
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <Common/ErrorHandler.hpp>
-//#include <SOFA.h>
-//#include <SOFAExceptions.h>
 #include <Readers/LibMySofaLoader.hpp>
 #include "ofxlibMySofa.h"
 
-
-//#define HRTFCONVENTION "SimpleFreeFieldHRIR"
-//#define ILDCONVENTION "SimpleFreeFieldHRSOS"
 
 namespace BRTReaders {
 
@@ -359,122 +354,15 @@ namespace BRTReaders {
 				
 				GetDirectivityData(dataMeasurementsRealPart, dataRealPartPI, numberOfFrequencySamples, i);
 				GetDirectivityData(dataMeasurementsImagPart, dataImagPartPI, numberOfFrequencySamples, i);
-				
-				//srtf_data.data.Interlace(dataRealPartPI, dataImagPartPI);
-				/*CMonoBuffer<float> dataRealPart2PI;
-				CMonoBuffer<float> dataImagPart2PI;
-				CalculateFrecuencyResponseTO2PI_RealPart(dataRealPartPI, dataRealPart2PI);
-				CalculateFrecuencyResponseTO2PI_ImaginaryPart(dataImagPartPI, dataImagPart2PI);*/
-				
-				/*for (int i = 0; i < dataImagPart2PI.size(); i++) {
-					dataImagPart2PI[i] = dataImagPart2PI[i] * -1;
-				}*/
-
-
-				//srtf_data.data.Interlace(dataRealPart2PI, dataImagPart2PI);			
+					
 				srtf_data.realPart = dataRealPartPI;
-				srtf_data.imagPart = dataImagPartPI;
-
-				//CoutVector(srtf_data.data);
-				/// DANI								
-				//CMonoBuffer<float> data, dataFFT;
-				//int dataRealPartSize = dataRealPartPI.size();
-				//data = CreatingFunction3(dataRealPartSize);				
-				//srtf_data.data.clear();
-				//srtf_data.data = GetFFT(data);
-				// END DANI
-				//CoutVector(srtf_data.data);
+				srtf_data.imagPart = dataImagPartPI;				
 
 				dataSRTF->AddDirectivityTF(azimuth, elevation, std::move(srtf_data));
 			}
-			return true;
+			return true;		
+		}
 		
-		}
-
-		/*void CalculateFrecuencyResponseTO2PI_RealPart(const CMonoBuffer<float> &inBuffer, CMonoBuffer<float> &outBuffer) {			
-			outBuffer.reserve(inBuffer.size() * 2);
-			outBuffer.insert(outBuffer.begin(), inBuffer.begin(), inBuffer.end());
-			outBuffer.insert(outBuffer.end(), 0);
-			outBuffer.insert(outBuffer.end(), inBuffer.rbegin(), inBuffer.rend() - 1);			
-		}
-		void CalculateFrecuencyResponseTO2PI_ImaginaryPart(const CMonoBuffer<float>& inBuffer, CMonoBuffer<float>& outBuffer) {
-			outBuffer.reserve(inBuffer.size() * 2);
-			outBuffer.insert(outBuffer.begin(), inBuffer.begin(), inBuffer.end());
-			outBuffer.insert(outBuffer.end(), 0);
-
-			CMonoBuffer<float> temp;
-			temp.reserve(inBuffer.size()-1);
-			temp.insert(temp.begin(), inBuffer.begin()+1, inBuffer.end());
-			std::transform(temp.begin(), temp.end(), temp.begin(), [](float v) -> float { return -v; });
-			
-			outBuffer.insert(outBuffer.end(), temp.rbegin(), temp.rend());
-		}*/
-
-
-		/*CMonoBuffer<float> CreatingFunction(int dataSize) {
-			CMonoBuffer <float> data;
-			data.Fill(dataSize, 0);
-			for (int i = 0; i < 50; i++) {
-				data[i] = 1;
-			}
-			for (int i = 50; i < dataSize; i++) {
-				data[i] = 1;
-			}
-			return data;
-		}
-
-		CMonoBuffer<float> CreatingFunction2(int dataSize) {
-			CMonoBuffer <float> data;
-			data.Fill(dataSize, 0);
-			for (int i = 0; i < dataSize; i++) {
-				data[i] = float(i) / float(dataSize);
-			}
-			return data;
-		}
-
-		CMonoBuffer<float> CreatingFunction3(int dataSize) {
-			CMonoBuffer <float> data;
-			data.Fill(dataSize, 0);
-			for (int i = 0; i < 50; i++) {
-				data[i] = 1;
-			}			
-			return data;
-		}
-		void CoutVector(const CMonoBuffer<float>& inBuffer) {
-			cout <<endl;
-			for (int i = 0; i < inBuffer.size(); i++) {
-				cout<<inBuffer[i]<<", ";
-			}
-			cout << endl;
-		}*/
-
-		//CMonoBuffer<float> GetFFT(CMonoBuffer <float> newData_time) {
-		//	
-		//	int dataSize = newData_time.size();
-		//	int blockSize = dataSize;
-		//	int data_time_size = dataSize;
-		//	CMonoBuffer<float> data_FFT_doubleSize;
-		//	//Resize with double size and zeros to make the zero-padded demanded by the algorithm
-		//	data_FFT_doubleSize.resize(blockSize * 2, 0.0f);
-		//	
-		//	//Fill each AIR block (question about this comment: AIR???)
-		//	int index;
-		//	int i = 0;
-		//	for (int j = 0; j < blockSize; j++) {
-		//		index = i + j;
-		//		if (index < data_time_size) {
-		//			data_FFT_doubleSize[j] = newData_time[index];					
-		//		}
-		//	}
-		//	//FFT
-		//	CMonoBuffer<float> data_FFT;
-		//	Common::CFprocessor::CalculateFFT(data_FFT_doubleSize, data_FFT);			
-
-
-
-		//	return data_FFT;
-		//}
-
 		/////////////////////////
 		// AUXILAR METHODS
 		/////////////////////////
