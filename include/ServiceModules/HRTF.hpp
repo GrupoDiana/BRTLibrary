@@ -1230,8 +1230,6 @@ namespace BRTServices
 				// Ceil to avoid error with the sum of decimal digits and not emplace 360 azimuth
 				for (float newAzimuth = aziMin; std::ceil(newAzimuth) < aziMax; newAzimuth = newAzimuth + actual_Azi_Step)
 				{
-					/*float azimuthInRange = newAzimuth;
-					if (actual_Azi_Step == 360) { azimuthInRange = 0; }*/
 					if (CalculateAndEmplaceNewPartitionedHRIR(newAzimuth, elevationInRange)) { numOfInterpolatedHRIRs++; }
 				}
 			}
@@ -1674,6 +1672,8 @@ namespace BRTServices
 
 			CalculateAzimuth_BackandFront(aziFloorBack, aziFloorFront, aziStepFloor, _azimuth);
 
+			eleCeil = eleStep * idxEle;
+
 			//Calculate the quadrant points A, B, C and D and the middle quadrant point P
 			orientation_ptoC.azimuth = aziFloorBack;
 			orientation_ptoC.elevation = eleFloor;
@@ -1683,8 +1683,11 @@ namespace BRTServices
 			orientation_ptoB.elevation = eleCeil;
 			orientation_ptoD.azimuth = aziFloorFront;
 			orientation_ptoD.elevation = eleFloor;
-			float azimuth_ptoP =  (aziFloorBack + aziStepFloor * 0.5f);
-			float elevation_ptoP = (eleFloor + _resamplingStep * 0.5f);
+
+			// Mid Point of a trapezoid can be compute by averaging all azimuths
+			float azimuth_ptoP = (aziCeilBack + aziCeilFront + aziFloorBack + aziFloorFront) / 4;
+			// to avoid take points above under 0 like 345,350,355 and compare with them
+			float elevation_ptoP = (eleCeil - eleStep * 0.5f);
 
 			//Depend on the quadrant where the point of interest is situated obtain the Barycentric coordinates and the HRIR of the orientation of interest (azimuth, elevation)
 			if (_azimuth >= azimuth_ptoP)
