@@ -1,14 +1,15 @@
 #ifndef _SOUND_SOURCE_MODEL_BASE_HPP
 #define _SOUND_SOURCE_MODEL_BASE_HPP
 
-#include "ExitPoint.hpp"
+//#include "ExitPoint.hpp"
 //#include "EntryPoint.hpp"
 #include <Base/CommandEntryPointManager.hpp>
+#include <Base/ExitPointManager.hpp>
 #include <vector>
 
 namespace BRTBase {
 
-	class CSourceModelBase: public  CCommandEntryPointManager {
+	class CSourceModelBase: public  CCommandEntryPointManager, public  CExitPointManager{
 	public:		
 		virtual ~CSourceModelBase() {}						
 		virtual void Update(std::string entryPointID) = 0;
@@ -17,8 +18,11 @@ namespace BRTBase {
 		CSourceModelBase(std::string _sourceID) : dataReady{ false }, sourceID{ _sourceID} {
 			
 			CreateSamplesExitPoint("samples");
-			CreateTransformExitPoint("sourceTransform");
-			CreateIDExitPoint("sourceID");
+			CreateTransformExitPoint();
+			
+			CreateIDExitPoint();
+			GetIDExitPoint()->sendData(sourceID);
+
 			CreateCommandEntryPoint();
 		}
 
@@ -34,7 +38,7 @@ namespace BRTBase {
 		void SetDataReady() {
 			if (!dataReady) { return; }
 			//samplesExitPoint->sendData(samplesBuffer); 
-			Update(samplesExitPoint->GetID());
+			Update(GetSamplesExitPoint("samples")->GetID());
 			//dataReady = false;
 		}
 
@@ -42,34 +46,36 @@ namespace BRTBase {
 			//samplesExitPoint->sendData(samplesBuffer);
 			//Update();
 			//dataReady = false;
-			Update(samplesExitPoint->GetID());
+			Update(GetSamplesExitPoint("samples")->GetID());
 		}
 
 		void SendData(CMonoBuffer<float>& _buffer) {
-			samplesExitPoint->sendData(_buffer);
+			GetSamplesExitPoint("samples")->sendData(_buffer);
 			dataReady = false;
 		}
 
 		void SetSourceTransform(Common::CTransform _transform) { 
 			sourceTransform = _transform;
-			sourcePositionExitPoint->sendData(sourceTransform);			
+			//sourcePositionExitPoint->sendData(sourceTransform);
+			GetTransformExitPoint()->sendData(sourceTransform);
 		}
 		
+
 		const Common::CTransform& GetCurrentSourceTransform() const { return sourceTransform; };		
 		
 		std::string GetSourceID() { return sourceID; }
 
-		std::shared_ptr<BRTBase::CExitPointSamplesVector> GetSamplesExitPoint(std::string exitPointID) {
+		/*std::shared_ptr<BRTBase::CExitPointSamplesVector> GetSamplesExitPoint(std::string exitPointID) {
 			return samplesExitPoint;						
-		}
+		}*/
 	
-		std::shared_ptr<BRTBase::CExitPointTransform> GetTransformExitPoint() {
+		/*std::shared_ptr<BRTBase::CExitPointTransform> GetTransformExitPoint() {
 			return sourcePositionExitPoint;			
-		}
+		}*/
 
-		std::shared_ptr<BRTBase::CExitPointID> GetIDExitPoint() {
+		/*std::shared_ptr<BRTBase::CExitPointID> GetIDExitPoint() {
 			return sourceIDExitPoint;
-		}
+		}*/
 
 
 		// Update callback
@@ -86,16 +92,16 @@ namespace BRTBase {
 
 
 
-		void CreateSamplesExitPoint(std::string exitPointID) {
+		/*void CreateSamplesExitPoint(std::string exitPointID) {
 			samplesExitPoint = std::make_shared<CExitPointSamplesVector>(exitPointID);
-		}
-		void CreateTransformExitPoint(std::string exitPointID) {
+		}*/
+		/*void CreateTransformExitPoint(std::string exitPointID) {
 			sourcePositionExitPoint = std::make_shared<CExitPointTransform>(exitPointID);
-		}
-		void CreateIDExitPoint(std::string exitPointID) {
+		}*/
+		/*void CreateIDExitPoint(std::string exitPointID) {
 			sourceIDExitPoint = std::make_shared<CExitPointID>(exitPointID);
 			sourceIDExitPoint->sendData(sourceID);
-		}
+		}*/
 		void CreateListenerTransformEntryPoint(std::string entryPointID) {			
 			listenerPositionEntryPoint = std::make_shared<BRTBase::CEntryPointTransform >(std::bind(&CSourceModelBase::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, 1);
 		}
@@ -117,9 +123,9 @@ namespace BRTBase {
 		CMonoBuffer<float> samplesBuffer;
 						
 
-		std::shared_ptr<CExitPointSamplesVector> samplesExitPoint;
-		std::shared_ptr<CExitPointTransform> sourcePositionExitPoint;
-		std::shared_ptr<CExitPointID> sourceIDExitPoint;
+		//std::shared_ptr<CExitPointSamplesVector> samplesExitPoint;
+		/*std::shared_ptr<CExitPointTransform> sourcePositionExitPoint;*/
+		//std::shared_ptr<CExitPointID> sourceIDExitPoint;
 		
 		std::shared_ptr<CEntryPointTransform> listenerPositionEntryPoint;		
 	};

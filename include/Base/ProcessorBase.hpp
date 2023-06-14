@@ -2,12 +2,15 @@
 #define _PROCESSOR_BASE_
 
 //#include <Base/EntryPoint.hpp>
-#include <Base/ExitPoint.hpp>
+//#include <Base/ExitPoint.hpp>
 //#include <Base/EntryPointPtr.hpp>
+
+//#include <vector>
 #include <Common/CommonDefinitions.h>
 #include <Base/EntryPointManager.hpp>
 #include <Base/CommandEntryPointManager.hpp>
-#include <vector>
+#include <Base/ExitPointManager.hpp>
+
 
 namespace BRTBase {    
     class CWaitingEntrypoint {
@@ -19,7 +22,7 @@ namespace BRTBase {
         bool received;
     };
 
-    class CProcessorBase : public CEntryPointManager, public  CCommandEntryPointManager {
+    class CProcessorBase : public CEntryPointManager, public  CCommandEntryPointManager, public CExitPointManager {
     public:
         CProcessorBase() {
             CreateCommandEntryPoint();
@@ -75,10 +78,10 @@ namespace BRTBase {
         //    //addToUpdateStack(entryPointID, _multiplicity);            
         //}
 
-        void CreateSamplesExitPoint(std::string exitPointID) {
+/*        void CreateSamplesExitPoint(std::string exitPointID) {
             std::shared_ptr<BRTBase::CExitPointSamplesVector> _newExitPoint = std::make_shared<BRTBase::CExitPointSamplesVector>(exitPointID);
             samplesExitPoints.push_back(_newExitPoint);
-        }      
+        }   */   
 
         //// Connections
         ////void connectSamplesEntryTo(std::shared_ptr<BRTBase::CExitPointSamplesVector> _exitPoint, std::string entryPointID) {
@@ -251,12 +254,12 @@ namespace BRTBase {
         ////    return commandsEntryPoint;            
         ////}
 
-        std::shared_ptr<BRTBase::CExitPointSamplesVector > GetSamplesExitPoint(std::string _id) {
-            for (auto& it : samplesExitPoints) {
-                if (it->GetID() == _id) { return it; }
-            }
-            return nullptr;
-        }
+        //std::shared_ptr<BRTBase::CExitPointSamplesVector > GetSamplesExitPoint(std::string _id) {
+        //    for (auto& it : samplesExitPoints) {
+        //        if (it->GetID() == _id) { return it; }
+        //    }
+        //    return nullptr;
+        //}
 
         ////std::shared_ptr<BRTBase::CEntryPointID> GetIDEntryPoint(std::string _id) {
         ////    for (auto& it : idEntryPoints) {
@@ -329,7 +332,7 @@ namespace BRTBase {
         
     private:                                
         //std::vector<std::shared_ptr<BRTBase::CEntryPointSamplesVector> > samplesEntryPoints;        
-        std::vector<std::shared_ptr<BRTBase::CExitPointSamplesVector >> samplesExitPoints;
+        //cstd::vector<std::shared_ptr<BRTBase::CExitPointSamplesVector >> samplesExitPoints;
 
         //std::vector<std::shared_ptr <BRTBase::CEntryPointTransform > > positionEntryPoints;
         //std::shared_ptr<BRTBase::CEntryPointCommand> commandsEntryPoint;
