@@ -79,6 +79,10 @@ namespace BRTSourceModel {
 			return sourceSRTF;
 		}
 
+		void RemoveSRTF() {
+			sourceSRTF = std::make_shared<BRTServices::CSRTF>();	// empty HRTF		
+		}
+
 		// TODO Move to command
 		void SetDirectivityEnable(bool _enabled) {
 			if (_enabled) { EnableSourceDirectionality(); }
