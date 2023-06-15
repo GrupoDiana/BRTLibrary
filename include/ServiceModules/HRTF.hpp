@@ -1202,9 +1202,9 @@ namespace BRTServices
 		//param resamplingStep	HRTF resample matrix step for both azimuth and elevation		
 		std::unordered_map<orientation, float> CalculateResampled_HRTFTable(int _resamplingStep)
 		{
-			int numOfInterpolatedHRIRs = 0;
+			int numOfInterpolatedHRIRs = 0, n_divisions_by_elev;
 
-			float elevationInRange;
+			float elevationInRange, actual_Azi_Step;
 
 			std::unordered_map<orientation, float> stepVector;
 
@@ -1218,8 +1218,8 @@ namespace BRTServices
 			for (float newElevation = -90.0f; newElevation <= 90.0f; newElevation = newElevation + actual_Ele_Step)
 			{
 
-				int n_divisions_by_elev = std::ceil(n_divisions * std::cos(newElevation * PI / 180));
-				float actual_Azi_Step = 360.0f / n_divisions_by_elev;
+				n_divisions_by_elev = std::ceil(n_divisions * std::cos(newElevation * PI / 180));
+				actual_Azi_Step = 360.0f / n_divisions_by_elev;
 
 				// Calculate new Elevation to be in range [270,360] and use it to create the vector and to emplace data
 				elevationInRange = newElevation;
@@ -1682,8 +1682,7 @@ namespace BRTServices
 			float elevation_ptoP = (eleCeil - eleStep * 0.5f);
 			
 			// Particular case of points near poles
-			if (eleCeil == eleNorth) { aziCeilFront = aziFloorFront; /*azimuth_ptoP = aziFloorBack + (aziStepFloor * 0.5f);*/ }
-			else if (eleFloor == eleSouth) { aziFloorFront = aziCeilFront;  /*azimuth_ptoP = aziCeilBack + (aziStepCeil * 0.5f);*/ }
+			if (eleCeil == eleNorth) { aziCeilFront = aziFloorFront; } else if (eleFloor == eleSouth) { aziFloorFront = aziCeilFront; }
 
 			//Calculate the quadrant points A, B, C and D and the middle quadrant point P
 			orientation_ptoC.azimuth = aziFloorBack;
@@ -1704,8 +1703,7 @@ namespace BRTServices
 					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
 					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoB, orientation_ptoD, orientation_ptoC); }
 
-					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; }
-					else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
+					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; } else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
 
 					newHRIR = CalculateHRIR_partitioned_FromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoB, orientation_ptoD);
 				}
@@ -1715,8 +1713,7 @@ namespace BRTServices
 					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
 					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoA); }
 
-					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; }
-					else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
+					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; } else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
 
 					newHRIR = CalculateHRIR_partitioned_FromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoB, orientation_ptoC, orientation_ptoD);
 				}
@@ -1729,8 +1726,7 @@ namespace BRTServices
 					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation);
 					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD); }
 
-					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; }
-					else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
+					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; }	else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
 
 					newHRIR = CalculateHRIR_partitioned_FromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoB, orientation_ptoC);
 				}
@@ -1739,8 +1735,7 @@ namespace BRTServices
 					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
 					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoC, orientation_ptoD, orientation_ptoB); }
 
-					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; }
-					else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
+					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; } else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
 
 					newHRIR = CalculateHRIR_partitioned_FromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoC, orientation_ptoD);
 				}
