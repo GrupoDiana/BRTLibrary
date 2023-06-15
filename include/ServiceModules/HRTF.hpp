@@ -1953,8 +1953,7 @@ namespace BRTServices
 			float elevation_ptoP = (eleCeil - eleStep * 0.5f);
 
 			// Particular case of points near poles
-			if (eleCeil == eleNorth) { aziCeilFront = aziFloorFront; /*azimuth_ptoP = aziFloorBack + (aziStepFloor * 0.5f);*/ }
-			else if (eleFloor == eleSouth) { aziFloorFront = aziCeilFront;  /*azimuth_ptoP = aziCeilBack + (aziStepCeil * 0.5f);*/ }
+			if (eleCeil == eleNorth) { aziCeilFront = aziFloorFront;  } else if (eleFloor == eleSouth) { aziFloorFront = aziCeilFront;  }
 
 			//Calculate the quadrant points A, B, C and D and the middle quadrant point P
 			orientation_ptoC.azimuth = aziFloorBack;
@@ -1976,8 +1975,7 @@ namespace BRTServices
 					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
 					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoB, orientation_ptoD, orientation_ptoC); }
 
-					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; }
-					else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
+					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; } else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
 
 					newHRIRDelay = CalculateHRIRDelayFromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoB, orientation_ptoD);
 				}
@@ -1987,8 +1985,7 @@ namespace BRTServices
 					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
 					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoA); }
 
-					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; }
-					else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
+					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; } else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
 
 					newHRIRDelay = CalculateHRIRDelayFromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoB, orientation_ptoC, orientation_ptoD);
 				}
@@ -2001,8 +1998,7 @@ namespace BRTServices
 					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation);
 					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD); }
 
-					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; }
-					else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
+					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; } else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
 
 					newHRIRDelay = CalculateHRIRDelayFromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoB, orientation_ptoC);
 				}
@@ -2011,8 +2007,7 @@ namespace BRTServices
 					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
 					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoC, orientation_ptoD, orientation_ptoB); }
 
-					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; }
-					else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
+					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; } else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
 
 					newHRIRDelay = CalculateHRIRDelayFromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoC, orientation_ptoD);
 				}
