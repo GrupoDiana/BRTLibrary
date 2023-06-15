@@ -1,7 +1,7 @@
 #ifndef _SOUND_SOURCE_BASIC_MODEL_HPP
 #define _SOUND_SOURCE_BASIC_MODEL_HPP
 
-#include "ExitPoint.hpp"
+//#include "ExitPoint.hpp"
 #include "SourceModelBase.hpp"
 #include <vector>
 
