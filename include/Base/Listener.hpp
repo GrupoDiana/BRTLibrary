@@ -122,7 +122,7 @@ namespace BRTBase {
 		void SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) {
 			//listenerHRTF = std::move(_listenerHRTF);	
 			listenerHRTF = _listenerHRTF;
-			hrtfExitPoint->sendData(listenerHRTF);
+			hrtfExitPoint->sendDataPtr(listenerHRTF);
 		}
 
 		/** \brief Get HRTF of listener
@@ -148,7 +148,7 @@ namespace BRTBase {
 		*/
 		void SetILD(std::shared_ptr< BRTServices::CILD > _listenerILD) {
 			listenerILD = _listenerILD;
-			ildExitPoint->sendData(listenerILD);			
+			ildExitPoint->sendDataPtr(listenerILD);			
 		}
 
 		/** \brief Get HRTF of listener

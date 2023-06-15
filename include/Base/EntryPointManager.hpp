@@ -11,9 +11,11 @@ namespace BRTBase {
 
     public:
 
-        virtual void updateFromEntryPoint(std::string entryPointID) = 0;
-       /* virtual void updateFromCommandEntryPoint(std::string entryPointID) {};*/
+        virtual void updateFromEntryPoint(std::string entryPointID) = 0;       
         virtual void addToUpdateStack(std::string _id, int _multiplicity) {};
+
+
+    
 
         void CreateSamplesEntryPoint(std::string entryPointID, int _multiplicity = 1) {
             std::shared_ptr<BRTBase::CEntryPointSamplesVector> _newEntryPoint = std::make_shared<BRTBase::CEntryPointSamplesVector >(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
