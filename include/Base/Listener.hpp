@@ -4,7 +4,6 @@
 #include <memory>
 #include "EntryPoint.hpp"
 #include "ExitPoint.hpp"
-#include "ExitPointPtr.hpp"
 #include <Common/CommonDefinitions.h>
 #include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/ILD.hpp>

@@ -4,7 +4,6 @@
 #include <vector>
 #include <memory>
 #include <EntryPoint.hpp>
-#include <EntryPointPtr.hpp>
 
 namespace BRTBase {
     class CEntryPointManager {
