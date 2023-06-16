@@ -432,7 +432,7 @@ namespace BRTServices
 					else
 					{
 						//Run time interpolation ON
-						newHRIR = GetHRIR_partitioned_InterpolationMethod(ear, _azimuth, _elevation, resamplingStep, stepVector);
+						newHRIR = GetHRIR_partitioned_InterpolationMethod(ear, _azimuth, _elevation, stepVector);
 					}
 
 					return newHRIR;
@@ -1224,7 +1224,10 @@ namespace BRTServices
 				// Calculate new Elevation to be in range [270,360] and use it to create the vector and to emplace data
 				elevationInRange = newElevation;
 				if (newElevation < 0) { elevationInRange = newElevation + 360; }
-
+				if (elevationInRange == 300.0f)
+				{
+					elevationInRange = elevationInRange;
+				}
 				// Create the vector
 				stepVector.emplace(orientation(0, elevationInRange), actual_Azi_Step);
 
@@ -1648,11 +1651,68 @@ namespace BRTServices
 		//}
 
 		//	Calculate from resample table HRIR subfilters using a barycentric interpolation of the three nearest orientation.
-		const std::vector<CMonoBuffer<float>> GetHRIR_partitioned_InterpolationMethod(Common::T_ear ear, float _azimuth, float _elevation, int _resamplingStep, std::unordered_map<orientation, float> stepMap) const
+		const std::vector<CMonoBuffer<float>> GetHRIR_partitioned_InterpolationMethod(Common::T_ear ear, float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap) const
 		{
 			std::vector<CMonoBuffer<float>> newHRIR;
 			TBarycentricCoordinatesStruct barycentricCoordinates;
  			orientation orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoP;
+
+			std::pair<float, float>nearestElevations = find_4Nearest_Points(_azimuth, _elevation, stepMap, orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoP);
+			float eleCeil = nearestElevations.first;
+			float eleFloor = nearestElevations.second;
+
+			//Depend on the quadrant where the point of interest is situated obtain the Barycentric coordinates and the HRIR of the orientation of interest (azimuth, elevation)
+			if (_azimuth >= orientation_ptoP.azimuth)
+			{
+				if (_elevation >= orientation_ptoP.elevation)
+				{
+					//Second quadrant
+					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
+					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoB, orientation_ptoD, orientation_ptoC); }
+
+					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; } else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
+
+					newHRIR = CalculateHRIR_partitioned_FromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoB, orientation_ptoD);
+				}
+				else if (_elevation < orientation_ptoP.elevation)
+				{
+					//Forth quadrant
+					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
+					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoA); }
+
+					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; } else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
+
+					newHRIR = CalculateHRIR_partitioned_FromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoB, orientation_ptoC, orientation_ptoD);
+				}
+			}
+			else if (_azimuth < orientation_ptoP.azimuth)
+			{
+				if (_elevation >= orientation_ptoP.elevation)
+				{
+					//First quadrant
+					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation);
+					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD); }
+
+					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; }	else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
+
+					newHRIR = CalculateHRIR_partitioned_FromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoB, orientation_ptoC);
+				}
+				else if (_elevation < orientation_ptoP.elevation) {
+					//Third quadrant
+					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
+					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoC, orientation_ptoD, orientation_ptoB); }
+
+					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; } else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
+
+					newHRIR = CalculateHRIR_partitioned_FromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoC, orientation_ptoD);
+				}
+			}
+			//SET_RESULT(RESULT_OK, "GetHRIR_partitioned_InterpolationMethod completed succesfully");
+			return newHRIR;
+		}
+
+		std::pair<float, float> find_4Nearest_Points(float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap, orientation& orientation_ptoA, orientation& orientation_ptoB, orientation& orientation_ptoC, orientation& orientation_ptoD, orientation& orientation_ptoP)const
+		{	
 			float aziCeilBack, aziCeilFront, aziFloorBack, aziFloorFront;
 
 			float eleStep = stepMap.find(orientation(-1, -1))->second; // Elevation Step -- Same always
@@ -1677,71 +1737,27 @@ namespace BRTServices
 			eleCeil = eleStep * idxEle;
 
 			// Mid Point of a trapezoid can be compute by averaging all azimuths
-			float azimuth_ptoP = (aziCeilBack + aziCeilFront + aziFloorBack + aziFloorFront) *0.25;
+			float azimuth_ptoP = (aziCeilBack + aziCeilFront + aziFloorBack + aziFloorFront) * 0.25;
 			// to avoid take points above under 0 like 345,350,355 and compare with them
 			float elevation_ptoP = (eleCeil - eleStep * 0.5f);
-			
+
+			orientation_ptoP = orientation(azimuth_ptoP, elevation_ptoP);
+
 			// Particular case of points near poles
-			if (eleCeil == eleNorth) { aziCeilFront = aziFloorFront; } else if (eleFloor == eleSouth) { aziFloorFront = aziCeilFront; }
+			if (eleCeil == eleNorth) { aziCeilFront = aziFloorFront; }
+			else if (eleFloor == eleSouth) { aziFloorFront = aziCeilFront; }
 
 			//Calculate the quadrant points A, B, C and D and the middle quadrant point P
 			orientation_ptoC.azimuth = aziFloorBack;
 			orientation_ptoC.elevation = eleFloor;
 			orientation_ptoA.azimuth = aziCeilBack;
 			orientation_ptoA.elevation = eleCeil;
-			orientation_ptoB.azimuth = aziCeilFront; 
+			orientation_ptoB.azimuth = aziCeilFront;
 			orientation_ptoB.elevation = eleCeil;
 			orientation_ptoD.azimuth = aziFloorFront;
 			orientation_ptoD.elevation = eleFloor;
 
-			//Depend on the quadrant where the point of interest is situated obtain the Barycentric coordinates and the HRIR of the orientation of interest (azimuth, elevation)
-			if (_azimuth >= azimuth_ptoP)
-			{
-				if (_elevation >= elevation_ptoP)
-				{
-					//Second quadrant
-					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
-					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoB, orientation_ptoD, orientation_ptoC); }
-
-					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; } else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
-
-					newHRIR = CalculateHRIR_partitioned_FromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoB, orientation_ptoD);
-				}
-				else if (_elevation < elevation_ptoP)
-				{
-					//Forth quadrant
-					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
-					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoA); }
-
-					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; } else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
-
-					newHRIR = CalculateHRIR_partitioned_FromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoB, orientation_ptoC, orientation_ptoD);
-				}
-			}
-			else if (_azimuth < azimuth_ptoP)
-			{
-				if (_elevation >= elevation_ptoP)
-				{
-					//First quadrant
-					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation);
-					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD); }
-
-					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; }	else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
-
-					newHRIR = CalculateHRIR_partitioned_FromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoB, orientation_ptoC);
-				}
-				else if (_elevation < elevation_ptoP) {
-					//Third quadrant
-					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
-					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoC, orientation_ptoD, orientation_ptoB); }
-
-					if (eleCeil == eleNorth) { orientation_ptoB.azimuth = aziMin; } else if (eleFloor == eleSouth) { orientation_ptoD.azimuth = aziMin; }
-
-					newHRIR = CalculateHRIR_partitioned_FromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoC, orientation_ptoD);
-				}
-			}
-			//SET_RESULT(RESULT_OK, "GetHRIR_partitioned_InterpolationMethod completed succesfully");
-			return newHRIR;
+			return std::pair(eleCeil, eleFloor);
 		}
 
 		float CheckLimitsElevation_and_Transform(float elevation)const
@@ -1924,52 +1940,17 @@ namespace BRTServices
 			float newHRIRDelay;
 			TBarycentricCoordinatesStruct barycentricCoordinates;
 			orientation orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoP;
-			float aziCeilBack, aziCeilFront, aziFloorBack, aziFloorFront;
 
-			float eleStep = stepMap.find(orientation(-1, -1))->second; // Elevation Step -- Same always
-			int idxEle = ceil(_elevation / eleStep);
-			float eleCeil = eleStep * idxEle;
-			float eleFloor = eleStep * (idxEle - 1);
 
-			eleCeil = CheckLimitsElevation_and_Transform(eleCeil);										//			   Back	  Front
-			eleFloor = CheckLimitsElevation_and_Transform(eleFloor);									//	Ceil		A		B
-
-			auto stepItr = stepMap.find(orientation(0, eleCeil));										//	Floor		C		D
-			float aziStepCeil = stepItr->second;
-
-			CalculateAzimuth_BackandFront(aziCeilBack, aziCeilFront, aziStepCeil, _azimuth);
-			// azimuth values passed by reference
-
-			auto stepIt = stepMap.find(orientation(0, eleFloor));
-			float aziStepFloor = stepIt->second;
-
-			CalculateAzimuth_BackandFront(aziFloorBack, aziFloorFront, aziStepFloor, _azimuth);
-
-			eleCeil = eleStep * idxEle;
-
-			// Mid Point of a trapezoid can be compute by averaging all azimuths
-			float azimuth_ptoP = (aziCeilBack + aziCeilFront + aziFloorBack + aziFloorFront) * 0.25;
-			// to avoid take points above under 0 like 345,350,355 and compare with them
-			float elevation_ptoP = (eleCeil - eleStep * 0.5f);
-
-			// Particular case of points near poles
-			if (eleCeil == eleNorth) { aziCeilFront = aziFloorFront;  } else if (eleFloor == eleSouth) { aziFloorFront = aziCeilFront;  }
-
-			//Calculate the quadrant points A, B, C and D and the middle quadrant point P
-			orientation_ptoC.azimuth = aziFloorBack;
-			orientation_ptoC.elevation = eleFloor;
-			orientation_ptoA.azimuth = aziCeilBack;
-			orientation_ptoA.elevation = eleCeil;
-			orientation_ptoB.azimuth = aziCeilFront;
-			orientation_ptoB.elevation = eleCeil;
-			orientation_ptoD.azimuth = aziFloorFront;
-			orientation_ptoD.elevation = eleFloor;
+			std::pair<float, float>nearestElevations = find_4Nearest_Points(_azimuth, _elevation, stepMap, orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoP);
+			float eleCeil = nearestElevations.first;
+			float eleFloor = nearestElevations.second;
 
 			//Depend on the quadrant where the point of interest is situated obtain the Barycentric coordinates and the HRIR of the orientation of interest (azimuth, elevation)
 
-			if (_azimuth >= azimuth_ptoP)
+			if (_azimuth >= orientation_ptoP.azimuth)
 			{
-				if (_elevation >= elevation_ptoP)
+				if (_elevation >= orientation_ptoP.elevation)
 				{
 					//Second quadrant
 					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
@@ -1979,7 +1960,7 @@ namespace BRTServices
 
 					newHRIRDelay = CalculateHRIRDelayFromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoB, orientation_ptoD);
 				}
-				else if (_elevation < elevation_ptoP)
+				else if (_elevation < orientation_ptoP.elevation)
 				{
 					//Forth quadrant
 					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
@@ -1990,9 +1971,9 @@ namespace BRTServices
 					newHRIRDelay = CalculateHRIRDelayFromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoB, orientation_ptoC, orientation_ptoD);
 				}
 			}
-			else if (_azimuth < azimuth_ptoP)
+			else if (_azimuth < orientation_ptoP.azimuth)
 			{
-				if (_elevation >= elevation_ptoP)
+				if (_elevation >= orientation_ptoP.elevation)
 				{
 					//First quadrant
 					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation);
@@ -2002,7 +1983,7 @@ namespace BRTServices
 
 					newHRIRDelay = CalculateHRIRDelayFromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoB, orientation_ptoC);
 				}
-				else if (_elevation < elevation_ptoP) {
+				else if (_elevation < orientation_ptoP.elevation) {
 					//Third quadrant
 					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
 					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoC, orientation_ptoD, orientation_ptoB); }
