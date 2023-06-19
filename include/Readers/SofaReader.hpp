@@ -1,22 +1,23 @@
 /**
+* \class CSOFAReader
 *
-* \brief Functions to handle HRTFs
+* \brief Declaration of CSOFAReader class
+* \date	June 2023
 *
-* \date May 2023
+* \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
+* Coordinated by , A. Reyes-Lecuona (University of Malaga)||
+* \b Contact: areyes@uma.es
 *
-* \authors 
-* 
-* 
-* \b Contributions : (additional authors / contributors can be added here)
+* \b Contributions: (additional authors/contributors can be added here)
 *
-* \b Project : 
-*\b Website : 
+* \b Project: SONICOM ||
+* \b Website: https://www.sonicom.eu/
 *
-* \b Copyright : 
+* \b Copyright: University of Malaga
 *
-* \b Licence : 
+* \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 *
-* \b Acknowledgement : 
+* \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 
 #ifndef _SOFA_READER_
@@ -27,14 +28,9 @@
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <Common/ErrorHandler.hpp>
-//#include <SOFA.h>
-//#include <SOFAExceptions.h>
 #include <Readers/LibMySofaLoader.hpp>
 #include "ofxlibMySofa.h"
 
-
-//#define HRTFCONVENTION "SimpleFreeFieldHRIR"
-//#define ILDCONVENTION "SimpleFreeFieldHRSOS"
 
 namespace BRTReaders {
 
@@ -341,32 +337,33 @@ namespace BRTReaders {
 				numberOfMeasurements = 1;
 			}
 			int numberOfCoordinates = loader.getHRTF()->C;
-			const unsigned int numberOfSamples = loader.getHRTF()->N;
+			const unsigned int numberOfFrequencySamples = loader.getHRTF()->N;
 			int numberOfReceivers = loader.getHRTF()->R;
 
 			// Get and save TFs
-			//double distance = receiverPositionsVector[array2DIndex(0, 2, numberOfReceivers, numberOfCoordinates)];										
-			dataSRTF->BeginSetup();
+									
+			dataSRTF->BeginSetup(numberOfFrequencySamples);
 
 			// This outtermost loop iterates over TFs
 			for (std::size_t i = 0; i < numberOfReceivers; i++)
 			{
 				BRTServices::TDirectivityTFStruct srtf_data;
+				CMonoBuffer<float> dataRealPartPI;
+				CMonoBuffer <float> dataImagPartPI;
 				double azimuth = receiverPositionsVector[array2DIndex(i, 0, 0, numberOfCoordinates)];
 				double elevation = GetPositiveElevation(receiverPositionsVector[array2DIndex(i, 1, 0, numberOfCoordinates)]);
 				
-				GetDirectivityData(dataMeasurementsRealPart, srtf_data.dataReal, numberOfSamples, i);
-				GetDirectivityData(dataMeasurementsImagPart, srtf_data.dataImag, numberOfSamples, i);
+				GetDirectivityData(dataMeasurementsRealPart, dataRealPartPI, numberOfFrequencySamples, i);
+				GetDirectivityData(dataMeasurementsImagPart, dataImagPartPI, numberOfFrequencySamples, i);
+					
+				srtf_data.realPart = dataRealPartPI;
+				srtf_data.imagPart = dataImagPartPI;				
 
 				dataSRTF->AddDirectivityTF(azimuth, elevation, std::move(srtf_data));
 			}
-			return true;
-		
+			return true;		
 		}
-
-
-
-
+		
 		/////////////////////////
 		// AUXILAR METHODS
 		/////////////////////////

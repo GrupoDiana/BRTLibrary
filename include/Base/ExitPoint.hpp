@@ -2,9 +2,8 @@
 #define _EXIT_POINT_
 
 #include <Base/ObserverBase.hpp>
-#include <Common/Buffer.h>
-#include <Common/Transform.h>
-#include <Common/EarsTransform.hpp>
+#include <Common/Buffer.hpp>
+#include <Common/Transform.hpp>
 #include <Base/Command.hpp>
 #include <iostream>
 

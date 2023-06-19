@@ -4,6 +4,7 @@
 #include <Base/ObserverBase.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/ILD.hpp>
+#include <ServiceModules/SRTF.hpp>
 
 namespace BRTServices { class CHRTF; }
 
@@ -33,6 +34,7 @@ namespace BRTBase {
 
     using CExitPointHRTFPtr = CExitPointPtrBase<BRTServices::CHRTF>;
     using CExitPointILDPtr = CExitPointPtrBase<BRTServices::CILD>;
+    using CExitPointSRTFPtr = CExitPointPtrBase<BRTServices::CSRTF>;
 }
 
 #endif

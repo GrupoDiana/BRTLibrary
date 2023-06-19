@@ -3,8 +3,8 @@
 
 #include <Base/ProcessorBase.hpp>
 #include <Base/EntryPoint.hpp>
-#include <Common/UPCAnechoic.h>
-#include <Common/Buffer.h>
+#include <Common/UPCAnechoic.hpp>
+#include <Common/Buffer.hpp>
 #include <ProcessingModules/HRTFConvolver.hpp>
 
 #include <memory>
@@ -30,6 +30,8 @@ namespace BRTProcessing {
         }
 
         void Update(std::string _entryPointId) {            
+			
+			std::lock_guard<std::mutex> l(mutex);
 
 			CMonoBuffer<float> outLeftBuffer;
 			CMonoBuffer<float> outRightBuffer;
@@ -49,6 +51,8 @@ namespace BRTProcessing {
         }
 
 		void UpdateCommand() {					
+			
+			std::lock_guard<std::mutex> l(mutex);
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
 															
 			//if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
@@ -71,6 +75,8 @@ namespace BRTProcessing {
       
     private:
        
+		mutable std::mutex mutex;
+
 		bool IsToMySoundSource(std::string _sourceID) {
 			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
 			return mySourceID == _sourceID;

@@ -2,23 +2,22 @@
 * \class CHRTF
 *
 * \brief Declaration of CHRTF class interface
-* \version 
-* \date	July 2016
+* \date	June 2023
 *
-* \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, C. Garre,  D. Gonzalez-Toledo, E.J. de la Rubia-Cuestas, L. Molina-Tanco ||
-* Coordinated by , A. Reyes-Lecuona (University of Malaga) and L.Picinali (Imperial College London) ||
-* \b Contact: areyes@uma.es and l.picinali@imperial.ac.uk
+* \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
+* Coordinated by , A. Reyes-Lecuona (University of Malaga)||
+* \b Contact: areyes@uma.es
 *
 * \b Contributions: (additional authors/contributors can be added here)
 *
-* \b Project: 3DTI (3D-games for TUNing and lEarnINg about hearing aids) ||
-* \b Website: http://3d-tune-in.eu/
+* \b Project: SONICOM ||
+* \b Website: https://www.sonicom.eu/
 *
-* \b Copyright: University of Malaga and Imperial College London - 2018
+* \b Copyright: University of Malaga 2023. Code based in the 3DTI Toolkit library (https://github.com/3DTune-In/3dti_AudioToolkit) with Copyright University of Malaga and Imperial College London - 2018
 *
-* \b Licence: This copy of 3dti_AudioToolkit is licensed to you under the terms described in the 3DTI_AUDIOTOOLKIT_LICENSE file included in this distribution.
+* \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 *
-* \b Acknowledgement: This project has received funding from the European Union's Horizon 2020 research and innovation programme under grant agreement No 644051
+* \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 
 
@@ -31,11 +30,11 @@
 #include <list>
 #include <cstdint>
 #include <Base/Listener.hpp>
-#include <Common/Buffer.h>
+#include <Common/Buffer.hpp>
 #include <Common/ErrorHandler.hpp>
-#include <Common/Fprocessor.h>
+#include <Common/Fprocessor.hpp>
 #include <Common/GlobalParameters.hpp>
-#include <Common/CommonDefinitions.h>
+#include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
 
 
@@ -50,42 +49,6 @@
 #define DEFAULT_HRTF_MEASURED_DISTANCE 1.95f
 #endif
 
-//#define MAX_DISTANCE_BETWEEN_ELEVATIONS 5
-//#define NUMBER_OF_PARTS 4 
-//#define MARGIN 10
-//#define ELEVATION_NORTH_POLE 90
-//#define ELEVATION_SOUTH_POLE 270
-//
-//#define DEFAULT_GAP_THRESHOLD 10
-//
-//#define SPHERE_BORDER 360.0f
-//
-//#define DEFAULT_MIN_AZIMUTH 0
-//#define DEFAULT_MAX_AZIMUTH 360
-//#define DEFAULT_MIN_ELEVATION 0
-//#define DEFAULT_MAX_ELEVATION 360
-//
-//
-//#define ORIENTATION_RESOLUTION 0.01
-
-
-/*! \file */
-
-//// Structs and types definitions 
-//
-///** \brief Defines and holds data to work with orientations
-//*/
-//struct orientation
-//{
-//	float azimuth;		///< Azimuth angle in degrees
-//	float elevation;	///< Elevation angle in degrees	
-//	orientation(float _azimuth, float _elevation) :azimuth{ _azimuth }, elevation{ _elevation } {}
-//	orientation() :orientation{ 0,0 } {}
-//	bool operator==(const orientation& other) const
-//	{
-//		return ((Common::AreSame(this->azimuth, other.azimuth, ORIENTATION_RESOLUTION)) && (Common::AreSame(this->elevation, other.elevation, ORIENTATION_RESOLUTION)));
-//	}
-//};
 
 /** \brief Type definition for a left-right pair of impulse response subfilter set with the ITD removed and stored in a specific struct field
 */
@@ -118,25 +81,6 @@ struct TBarycentricCoordinatesStruct {
 	float gamma;	///< Coordinate gamma
 };
 
-//namespace std
-//{
-//	template<>
-//	struct hash<orientation>
-//	{
-//		// adapted from http://en.cppreference.com/w/cpp/utility/hash
-//		size_t operator()(const orientation& key) const
-//		{
-//			int keyAzimuth_hundredth = static_cast<int> (round(key.azimuth / ORIENTATION_RESOLUTION));
-//			int keyElevation_hundredth = static_cast<int> (round(key.elevation / ORIENTATION_RESOLUTION));
-//
-//			size_t h1 = std::hash<int32_t>()(keyAzimuth_hundredth);
-//			size_t h2 = std::hash<int32_t>()(keyElevation_hundredth);
-//			return h1 ^ (h2 << 1);  // exclusive or of hash functions for each int.
-//		}
-//	};
-//}
-
-
 
 /** \brief Type definition for the HRTF table
 */
@@ -165,7 +109,9 @@ namespace BRTServices
 		*/
 		CHRTF()
 			:enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, gapThreshold{ DEFAULT_GAP_THRESHOLD }, HRIRLength{ 0 }, fileName {""},
-			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, headRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }, leftEarLocalPosition {Common::CVector3()}, rightEarLocalPosition{ Common::CVector3() }
+			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, headRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }, leftEarLocalPosition {Common::CVector3()}, rightEarLocalPosition{ Common::CVector3() },
+			aziMin{ DEFAULT_MIN_AZIMUTH }, aziMax{ DEFAULT_MAX_AZIMUTH }, eleMin{ DEFAULT_MIN_ELEVATION }, eleMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER },
+			epsilon_sewing { EPSILON_SEWING}
 		{}
 
 		/** \brief Get size of each HRIR buffer
@@ -218,13 +164,6 @@ namespace BRTServices
 				float partitions = (float)HRIRLength / (float)bufferSize;
 				HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
 
-				sphereBorder = SPHERE_BORDER;
-
-
-				aziMin = DEFAULT_MIN_AZIMUTH;
-				aziMax = DEFAULT_MAX_AZIMUTH;
-				eleMin = DEFAULT_MIN_ELEVATION;
-				eleMax = DEFAULT_MAX_ELEVATION;
 				eleNorth = GetPoleElevation(TPole::north);
 				eleSouth = GetPoleElevation(TPole::south);
 
@@ -831,7 +770,7 @@ namespace BRTServices
 
 
 		float sphereBorder;						// Define spheere "sewing"
-		float epsilon_sewing = 0.001f;
+		float epsilon_sewing;
 
 		int aziMin, aziMax, eleMin, eleMax, eleNorth, eleSouth;	// Variables that define limits of work area
 
