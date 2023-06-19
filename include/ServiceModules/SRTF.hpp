@@ -350,8 +350,12 @@ namespace BRTServices
 
 				CalculateAzimuth_BackandFront(aziFloorBack, aziFloorFront, aziStepFloor, _azimuth); 
 
-				float pntMid_azimuth = (aziFloorBack + aziStepFloor * 0.5f);
-				float pntMid_elevation = (eleFloor + eleStep * 0.5f);
+				// Mid Point of a trapezoid can be compute by averaging all azimuths
+				float pntMid_azimuth = (aziCeilBack + aziCeilFront + aziFloorBack + aziFloorFront) / 4;
+				float pntMid_elevation = (eleCeil - eleStep * 0.5f);
+
+				// compute eleCeil being 360 to find triangles at border
+				//eleCeil = eleStep * idxEle;
 
 				if (_azimuth >= pntMid_azimuth)
 				{
