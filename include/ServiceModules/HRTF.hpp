@@ -205,12 +205,22 @@ namespace BRTServices
 		void AddHRIR(float _azimuth, float _elevation, THRIRStruct && newHRIR)		
 		{
 			if (setupInProgress) {
-				Common::CVector3 cartessianPos;
-				cartessianPos.SetFromAED(_azimuth, _elevation, GetHRTFDistanceOfMeasurement());
-				auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), std::forward<THRIRStruct>(newHRIR));
-				//Error handler
-				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
+				//auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation), std::forward<THRIRStruct>(newHRIR));
+				bool returnValue = EmplaceHRIRinHRTFTable(_azimuth, _elevation, std::move(newHRIR));
+				if (!returnValue) { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
 			}
+		}
+
+		/** \brief Emplace a new HRIR to the HRTF table with the position in both polar and cartessian coordinate system
+		*	\param [in] _azimuth azimuth angle in degrees
+		*	\param [in] _elevation elevation angle in degrees
+		*	\param [in] _newHRIR HRIR data for both ears
+		*/
+		bool EmplaceHRIRinHRTFTable(float _azimuth, float _elevation, THRIRStruct& _newHRIR) {
+			Common::CVector3 cartessianPos;
+			cartessianPos.SetFromAED(_azimuth, _elevation, GetHRTFDistanceOfMeasurement());
+			auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), _newHRIR);
+			return returnValue.second;
 		}
 
 		/** \brief Stop the HRTF configuration		
@@ -873,9 +883,11 @@ namespace BRTServices
 			for (int az = aziMin; az < aziMax; az = az + _resamplingStep)
 			{
 				//Elevation 90 degrees
-				t_HRTF_DataBase.emplace(orientation(az, iElevationNorthPole), precalculatedHRIR_90);
+				//t_HRTF_DataBase.emplace(orientation(az, iElevationNorthPole), precalculatedHRIR_90);
+				EmplaceHRIRinHRTFTable(az, iElevationNorthPole, precalculatedHRIR_90);
 				//Elevation 270 degrees
-				t_HRTF_DataBase.emplace(orientation(az, iElevationSouthPole), precalculatedHRIR_270);
+				//t_HRTF_DataBase.emplace(orientation(az, iElevationSouthPole), precalculatedHRIR_270);
+				EmplaceHRIRinHRTFTable(az, iElevationSouthPole, precalculatedHRIR_270);
 			}
 		}
 
@@ -1038,7 +1050,9 @@ namespace BRTServices
 		void GetAndEmplaceHRIRinAzimuth360(float _elevation) {
 			auto it = t_HRTF_DataBase.find(orientation(aziMin, _elevation));
 			if (it != t_HRTF_DataBase.end()) {
-				t_HRTF_DataBase.emplace(orientation(aziMax, _elevation), it->second);
+				THRIRStruct temp = it->second;
+				EmplaceHRIRinHRTFTable(aziMax, _elevation, temp);
+				//t_HRTF_DataBase.emplace(orientation(aziMax, _elevation), it->second);
 			}
 		}
 
@@ -1146,13 +1160,10 @@ namespace BRTServices
 				{
 					for (int azim = aziMin; azim <= aziMax; azim = azim + azimuth_Step)
 					{
-
 						sortedList = GetSortedDistancesList_v2(azim, elevat, onlythatelev);
-
 						HRIR_interpolated = CalculateHRIR_offlineMethod_v2(azim, elevat, sortedList, _pole);
-
-						t_HRTF_DataBase.emplace(orientation(azim, elevat), HRIR_interpolated);
-
+						//t_HRTF_DataBase.emplace(orientation(azim, elevat), HRIR_interpolated);
+						EmplaceHRIRinHRTFTable(azim, elevat, HRIR_interpolated);
 					}
 				}
 			}	// NORTH HEMISPHERE
@@ -1163,18 +1174,13 @@ namespace BRTServices
 				{
 					for (int azim = aziMin; azim <= aziMax; azim = azim + azimuth_Step)
 					{
-
 						sortedList = GetSortedDistancesList_v2(azim, elevat, onlythatelev);
-
 						HRIR_interpolated = CalculateHRIR_offlineMethod_v2(azim, elevat, sortedList, _pole);
-
-						t_HRTF_DataBase.emplace(orientation(azim, elevat), HRIR_interpolated);
-
+						//t_HRTF_DataBase.emplace(orientation(azim, elevat), HRIR_interpolated);
+						EmplaceHRIRinHRTFTable(azim, elevat, HRIR_interpolated);
 					}
 				}
-
 			}
-
 		}
 
 	//	//	Calculate the resample matrix using the Barycentric interpolation Method (copy the HRIR function of the nearest orientation)
