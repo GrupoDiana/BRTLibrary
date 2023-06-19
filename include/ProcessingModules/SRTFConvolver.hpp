@@ -1,8 +1,8 @@
 #ifndef _SRTF_CONVOLVER_
 #define _SRTF_CONVOLVER_
 
-#include <Common/UPCAnechoic.h>
-#include <Common/Buffer.h>
+#include <Common/UPCAnechoic.hpp>
+#include <Common/Buffer.hpp>
 #include <ServiceModules/SRTF.hpp>
 
 #include <memory>

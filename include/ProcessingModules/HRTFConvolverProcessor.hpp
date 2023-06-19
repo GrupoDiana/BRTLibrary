@@ -3,8 +3,8 @@
 
 #include <Base/ProcessorBase.hpp>
 #include <Base/EntryPoint.hpp>
-#include <Common/UPCAnechoic.h>
-#include <Common/Buffer.h>
+#include <Common/UPCAnechoic.hpp>
+#include <Common/Buffer.hpp>
 #include <ProcessingModules/HRTFConvolver.hpp>
 
 #include <memory>

@@ -3,7 +3,7 @@
 
 #include <Base/ProcessorBase.hpp>
 #include <Base/EntryPoint.hpp>
-#include <Common/Buffer.h>
+#include <Common/Buffer.hpp>
 #include <ProcessingModules/NearFieldEffect.hpp>
 
 #include <memory>

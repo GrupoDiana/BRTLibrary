@@ -5,7 +5,7 @@
 * \version 
 * \date	May 2023
 *
-* \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco ||
+* \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
 * Coordinated by , A. Reyes-Lecuona (University of Malaga)||
 * \b Contact: areyes@uma.es 
 *
@@ -26,16 +26,9 @@
 #define _CSRTF_H_
 
 #include <unordered_map>
-//#include <vector>
-//#include <utility>
-//#include <list>
-//#include <cstdint>
-//#include <Base/Listener.hpp>
-//#include <Common/Buffer.h>
 #include <Common/ErrorHandler.hpp>
-//#include <Common/Fprocessor.h>
 #include <Common/GlobalParameters.hpp>
-#include <Common/CommonDefinitions.h>
+#include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
 
 #ifndef DEFAULT_SRTF_RESAMPLING_STEP
@@ -96,16 +89,17 @@ namespace BRTServices
 		std::string GetFilename() {
 			return fileName;
 		}
-
-		/// <summary>
-		/// 
-		/// </summary>
+		
+		/** \Start a new SRTF configuration
+		*	\param [in] directivityTFPartLength number of samples in the frequency domain (size of the real part or the imaginary part)
+		*   \eh On success, RESULT_OK is reported to the error handler.
+		*       On error, an error code is reported to the error handler.
+		*/
 		void BeginSetup(int32_t directivityTFPartLength){
 			//Update parameters			
 			eleNorth = GetPoleElevation(TPole::north);
 			eleSouth = GetPoleElevation(TPole::south);
 
-			
 			if (directivityTFPartLength != globalParameters.GetBufferSize()) //
 			{
 				SET_RESULT(RESULT_ERROR_BADSIZE, "Number of frequency samples (N) in SOFA file is different from Buffer Size");
@@ -122,7 +116,6 @@ namespace BRTServices
 			setupSRTFInProgress = true;
 			SRTFloaded = false;
 
-
 			SET_RESULT(RESULT_OK, "HRTF Setup started");
 		}
 
@@ -135,15 +128,13 @@ namespace BRTServices
 			if (setupSRTFInProgress) {
 				if (!t_SRTF_DataBase.empty())
 				{
-					//HRTF Resampling methdos
+					//SRTF Resampling methdos
 					//CalculateHRIR_InPoles(resamplingStep);
 					//FillOutTableOfAzimuth360(resamplingStep);
 					//FillSphericalCap_HRTF(gapThreshold, resamplingStep);
 					CalculateResampled_SRTFTable(resamplingStep);
 					auto stepVector = CalculateStep();
-
 					//CalculateExtendUpTo2PI();
-
 
 					//Setup values
 					setupSRTFInProgress = false;
@@ -161,16 +152,29 @@ namespace BRTServices
 			return false;
 		}
 
+
+		/** \brief Set the step for the SRTF resampled table
+		*	\param [in] Step to create the resampled table
+		*/
 		void SetResamplingStep(int _resamplingStep) {
 			resamplingStep = _resamplingStep;
 		}
-
+		
+		/** \brief Ask for the step used to create the resampled table
+		*	\retval Step used to create the resampling step
+		*/
 		int GetResamplingStep() {
 			return resamplingStep;
 		}
 
+		/** \brief Get the number of samples of the Directivity TF
+		*	\retval Length of the TF with the Real and Img parts interlaced
+		*/
 		int GetDirectivityTFLength() { return directivityTF_length; }
 
+		/** \brief Get the number of subfilters if the TF is partitioned
+		*	\retval Number of partitions or 1 if there is no partition
+		*/
 		int GetDirectivityTFNumOfSubfilters() { return directivityTF_numberOfSubfilters; }
 
 		/** \brief Add a new TF to the SRTF table
@@ -188,15 +192,13 @@ namespace BRTServices
 			}
 		}
 
-	
-		/// <summary>
-		/// Calculate the regular resampled-table using an interpolation method
-		/// </summary>
-		/// <param name="_resamplingStep" step for both azimuth and elevation></param>
+		/** \brief Calculate the regular resampled-table using an interpolation method
+		*	\param [in] _resamplingStep step for both azimuth and elevation
+		*   \eh Warnings may be reported to the error handler.
+		*/
 		void CalculateResampled_SRTFTable(int _resamplingStep)
 		{
-			
-			// RECORRER TODA LA TABLA
+			// COPY the loaded table:
 			for (auto& it : t_SRTF_DataBase){
 				TDirectivityInterlacedTFStruct interlacedData;
 				// Extend to 2PI real part
@@ -213,10 +215,6 @@ namespace BRTServices
 				t_SRTF_Resampled.emplace(it.first, interlacedData);
 			}
 			//
-			
-
-
-			//t_SRTF_Resampled = t_SRTF_DataBase;
 			//int numOfInterpolatedHRIRs = 0;
 
 			////Resample Interpolation Algorithm
@@ -235,12 +233,16 @@ namespace BRTServices
 			//SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
 		}
 
-		/// <summary>
-		/// Calculate the DirectivityTF using the an interpolation Method 
-		/// </summary>
-		/// <param name="newAzimuth"></param>
-		/// <param name="newElevation"></param>
-		/// <returns>interpolatedDTFs: true if the Directivity TF has been calculated using the interpolation</returns>
+
+		/// <returns></returns>
+		
+		
+		/** \brief  Calculate the DirectivityTF using the an interpolation Method 
+		*	\param [in] _azimuth orientation of the sound source (relative to the listener)
+		*	\param [in] _elevation orientation of the sound source (relative to the listener)
+		*	\retval interpolatedDTFs: true if the Directivity TF has been calculated using the interpolation
+		*   \eh Warnings may be reported to the error handler.
+		*/
 		bool CalculateAndEmplaceNewDirectivityTF(float _azimuth, float _elevation) {
 			TDirectivityInterlacedTFStruct interpolatedHRIR;
 			bool bDirectivityTFInterpolated = false;
@@ -259,11 +261,11 @@ namespace BRTServices
 			return bDirectivityTFInterpolated;
 		}
 
-		/// <summary>
-		/// Calculate the azimuth step for each orientation
-		/// </summary>
-		/// <param name=""></param>
-		/// <returns></returns>
+		
+		/** \brief  Calculate the azimuth step for each orientation
+		*	\retval unordered map with all the orientations of the resampled table 
+		*   \eh Warnings may be reported to the error handler.
+		*/
 		std::unordered_map<orientation, float> CalculateStep()
 		{
 			std::unordered_map<orientation, float> stepVector;
@@ -310,12 +312,13 @@ namespace BRTServices
 			return stepVector;
 		}
 
-		/// <summary>
-		/// Get the Directivity TF of the nearest point to  the given one
-		/// </summary>
-		/// <param name="_azimuth"></param>
-		/// <param name="_elevation"></param>
-		/// <returns></returns>
+	
+		/** \brief  Get the Directivity TF of the nearest point to  the given one
+		*	\param [in] _azimuth orientation of the sound source (relative to the listener)
+		*	\param [in] _elevation orientation of the sound source (relative to the listener)
+		* *	\param [in] _stepsMap map that contains orientations of the grid
+		*	\retval  Directivity TF with the Real and Imag part interlaced
+		*/
 		const TDirectivityInterlacedTFStruct GetDirectivityTF(float _azimuth, float _elevation, std::unordered_map<orientation, float> _stepsMap) const {
 
 			TDirectivityInterlacedTFStruct newSRIR;
@@ -387,13 +390,19 @@ namespace BRTServices
 			return newSRIR;
 		}
 
+		/** \brief  Check limit values for elevation and transform to the desired intervals
+		*	\retval elevation value within the desired intervals
+		*/
 		float CheckLimitsElevation_and_Transform(float elevation)const
 		{
 			if (elevation < 0) { elevation = elevation + 360; }
 			if (elevation >= 360) { elevation = elevation - 360; }
 			return elevation;
-
 		}
+
+		/** \brief  Check limit values for elevation and transform to the desired intervals
+		*	\retval azimuth value within the desired intervals
+		*/
 		float CheckLimitsAzimuth_and_Transform(float azimuth)const
 		{
 			if (azimuth < 0) { azimuth = azimuth + 360; }
@@ -433,8 +442,6 @@ namespace BRTServices
 		float epsilon_sewing;
 		enum class TPole { north, south };
 		
-
-
 		///////////////////
 		///// METHODS
 		///////////////////
@@ -453,15 +460,21 @@ namespace BRTServices
 			}
 		}
 
-
-
+		/** \brief Transform Real part of the Directivity TF to 2PI
+		*	\param [in] inBuffer Samples with the original Real part
+		* *	\param [in] outBuffer Samples transformed to 2PI
+		*/
 		void CalculateTFRealPartTo2PI(const CMonoBuffer<float>& inBuffer, CMonoBuffer<float>& outBuffer) {
 			outBuffer.reserve(inBuffer.size() * 2);
 			outBuffer.insert(outBuffer.begin(), inBuffer.begin(), inBuffer.end());
 			outBuffer.insert(outBuffer.end(), 0);
 			outBuffer.insert(outBuffer.end(), inBuffer.rbegin(), inBuffer.rend() - 1);
 		}
-		
+
+		/** \brief Transform Imag part of the Directivity TF to 2PI
+		*	\param [in] inBuffer Samples with the original IMAG part
+		* *	\param [in] outBuffer Samples transformed to 2PI
+		*/		
 		void CalculateTFImagPartTo2PI(const CMonoBuffer<float>& inBuffer, CMonoBuffer<float>& outBuffer) {
 			outBuffer.reserve(inBuffer.size() * 2);
 			outBuffer.insert(outBuffer.begin(), inBuffer.begin(), inBuffer.end());
@@ -474,6 +487,10 @@ namespace BRTServices
 
 			outBuffer.insert(outBuffer.end(), temp.rbegin(), temp.rend());
 		}
+
+		/** \brief Invert the Imag part to prepare the data in the way that the Ooura Library is expecting to do the complex multiplication
+		*	\param [in] buffer with the samples to be inverted (multiplied by -1)
+		*/
 		void CalculateTFImagPartToBeCompatibleWithOouraFFTLibrary(CMonoBuffer<float>& buffer) {
 			for (int i = 0; i < buffer.size(); i++) {
 				buffer[i] = buffer[i] * -1;

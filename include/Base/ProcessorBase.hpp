@@ -4,7 +4,7 @@
 //#include <Base/EntryPoint.hpp>
 #include <Base/ExitPoint.hpp>
 //#include <Base/EntryPointPtr.hpp>
-#include <Common/CommonDefinitions.h>
+#include <Common/CommonDefinitions.hpp>
 #include <Base/EntryPointManager.hpp>
 #include <Base/CommandEntryPointManager.hpp>
 #include <vector>

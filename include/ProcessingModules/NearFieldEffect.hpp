@@ -2,7 +2,7 @@
 #define _NEAR_FIELD_EFFECT_HPP
 
 
-#include <Common/Buffer.h>
+#include <Common/Buffer.hpp>
 #include <ServiceModules/ILD.hpp>
 #include <Common/GlobalParameters.hpp>
 //#define EPSILON 0.0001f

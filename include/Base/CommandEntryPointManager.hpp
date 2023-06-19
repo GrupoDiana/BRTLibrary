@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 #include <EntryPoint.hpp>
-#include <CommonDefinitions.h>
+#include <CommonDefinitions.hpp>
 
 namespace BRTBase {
     class CCommandEntryPointManager {

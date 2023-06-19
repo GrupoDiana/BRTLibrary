@@ -3,8 +3,8 @@
 
 //#include <Base/ProcessorBase.hpp>
 //#include <Base/EntryPoint.hpp>
-#include <Common/CommonDefinitions.h>
-#include <Common/Buffer.h>
+#include <Common/CommonDefinitions.hpp>
+#include <Common/Buffer.hpp>
 //#include <Common/ErrorHandler.hpp>
 
 #include <memory>
