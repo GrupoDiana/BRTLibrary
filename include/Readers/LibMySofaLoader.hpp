@@ -25,12 +25,8 @@
 
 #include <ostream>
 #include <string>
-//#include <ServiceModules/HRTF.h>
 #include <Common/ErrorHandler.hpp>
-//#include <SOFA.h>
-//#include <SOFAExceptions.h>
 #include "ofxlibMySofa.h"
-
 
 namespace BRTReaders {
 
