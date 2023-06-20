@@ -79,11 +79,37 @@ namespace BRTBase {
             ASSERT(false, RESULT_ERROR_NOTINITIALIZED, "The exit point of type ID has not been initialised.", "Call CExitPointManager::CreateIDExitPoint() in your constructor.");
             return nullptr;
         }
+
+        /////////////////////
+       // HRTFs 
+       /////////////////////
+        void CreateHRTFExitPoint() {
+            hrtfExitPoint = std::make_shared<CExitPointHRTFPtr>("moduleHRTF");
+        }
+
+        std::shared_ptr<CExitPointHRTFPtr> GetHRTFExitPoint() {
+            return hrtfExitPoint;
+        }
+
+        /////////////////////
+       // ILDs 
+       /////////////////////
+        void CreateILDExitPoint() {
+            ildExitPoint = std::make_shared<CExitPointILDPtr>("listenerILD");
+        }
+
+        std::shared_ptr<CExitPointILDPtr> GetILDExitPoint() {
+            return ildExitPoint;
+        }
     
     private:
         std::shared_ptr<CExitPointTransform> transformExitPoint;
-        std::vector<std::shared_ptr<BRTBase::CExitPointSamplesVector >> samplesExitPoints;
+        std::vector<std::shared_ptr<BRTBase::CExitPointSamplesVector >> samplesExitPoints;        
         std::shared_ptr<CExitPointID> moduleIDExitPoint;
+        
+        std::shared_ptr<CExitPointHRTFPtr>  hrtfExitPoint;
+        std::shared_ptr<CExitPointILDPtr>   ildExitPoint;
+
     };
 }
 #endif

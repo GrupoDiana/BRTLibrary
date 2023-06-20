@@ -1,12 +1,13 @@
 #ifndef _EXIT_POINT_
 #define _EXIT_POINT_
 
+#include <iostream>
+#include <memory>
 #include <Base/ObserverBase.hpp>
 #include <Common/Buffer.h>
 #include <Common/Transform.h>
 #include <Common/EarsTransform.hpp>
 #include <Base/Command.hpp>
-#include <iostream>
 
 
 namespace BRTServices { class CHRTF; class CILD; class CSRTF; }

@@ -61,10 +61,9 @@ namespace BRTBase {
 			GetTransformExitPoint()->sendData(sourceTransform);
 		}
 		
-
 		const Common::CTransform& GetCurrentSourceTransform() const { return sourceTransform; };		
 		
-		std::string GetSourceID() { return sourceID; }
+		std::string GetID() { return sourceID; }
 
 		// Update callback
 		void updateFromEntryPoint(std::string entryPointID) {
@@ -88,7 +87,7 @@ namespace BRTBase {
 		}*/
 		
 		bool IsToMySoundSource(std::string _sourceID) {
-			return GetSourceID() == _sourceID;
+			return GetID() == _sourceID;
 		}
 
 	private:
