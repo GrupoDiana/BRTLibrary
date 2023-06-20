@@ -340,8 +340,7 @@ namespace BRTReaders {
 			const unsigned int numberOfFrequencySamples = loader.getHRTF()->N;
 			int numberOfReceivers = loader.getHRTF()->R;
 
-			// Get and save TFs
-									
+			// Get and save TFs			
 			dataSRTF->BeginSetup(numberOfFrequencySamples);
 
 			// This outtermost loop iterates over TFs
@@ -352,6 +351,7 @@ namespace BRTReaders {
 				CMonoBuffer <float> dataImagPartPI;
 				double azimuth = receiverPositionsVector[array2DIndex(i, 0, 0, numberOfCoordinates)];
 				double elevation = GetPositiveElevation(receiverPositionsVector[array2DIndex(i, 1, 0, numberOfCoordinates)]);
+				//double distance = receiverPositionsVector[array2DIndex(i, 2, 0, numberOfCoordinates)];
 				
 				GetDirectivityData(dataMeasurementsRealPart, dataRealPartPI, numberOfFrequencySamples, i);
 				GetDirectivityData(dataMeasurementsImagPart, dataImagPartPI, numberOfFrequencySamples, i);

@@ -54,9 +54,9 @@ struct orientation
 {
 	float azimuth;					///< Azimuth angle in degrees
 	float elevation;				///< Elevation angle in degrees	
-	Common::CVector3 cartessianPos; ///< Position in X, Y and Z
+	Common::CVector3 normalizedCartesianCoordinates; ///< Position in X, Y and Z
 	orientation(float _azimuth, float _elevation) :azimuth{ _azimuth }, elevation{ _elevation } {}
-	orientation(float _azimuth, float _elevation, Common::CVector3 _cartessianPos) :azimuth{ _azimuth }, elevation{ _elevation }, cartessianPos{ _cartessianPos } {}
+	orientation(float _azimuth, float _elevation, Common::CVector3 _NormcartessianPos) :azimuth{ _azimuth }, elevation{ _elevation }, normalizedCartesianCoordinates{ _NormcartessianPos } {}
 	orientation() :orientation{ 0,0 } {}
 	bool operator==(const orientation& other) const
 	{
