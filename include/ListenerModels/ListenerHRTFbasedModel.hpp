@@ -2,8 +2,6 @@
 #define _CLISTENER_HRTFBASED_MODEL_HPP_
 
 #include <memory>
-//#include "EntryPoint.hpp"
-//#include "ExitPoint.hpp"
 #include "Base/ListenerModelBase.hpp"
 #include <Common/CommonDefinitions.h>
 #include <ServiceModules/HRTF.hpp>
@@ -11,7 +9,6 @@
 #include <ProcessingModules/HRTFConvolverProcessor.hpp>
 #include <ProcessingModules/NearFieldEffectProcessor.hpp>
 #include <Base/SourceModelBase.hpp>
-#include <SourceModels/SourceDirectivityModel.hpp>
 #include <Base/BRTManager.hpp>
 
 namespace BRTServices {
@@ -22,7 +19,7 @@ namespace BRTListenerModel {
 
 	class CListenerHRTFbasedModel: public BRTBase::CListenerModelBase {
 		
-	class CSourceProcessors {
+		class CSourceProcessors {
 		public:
 			
 			CSourceProcessors(std::string _sourceID, BRTBase::CBRTManager* brtManager) : sourceID{ _sourceID} {
@@ -41,18 +38,10 @@ namespace BRTListenerModel {
 		};
 
 	public:
-		CListenerHRTFbasedModel(std::string _listenerID) : BRTBase::CListenerModelBase(_listenerID){
-			
-			
-			listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// Create a empty HRTF						
-			// Create exit point			
-			//hrtfExitPoint				= std::make_shared<CExitPointHRTFPtr>("listenerHRTF");
-			//ildExitPoint				= std::make_shared<CExitPointILDPtr>("listenerILD");
+		CListenerHRTFbasedModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) : brtManager{_brtManager}, BRTBase::CListenerModelBase(_listenerID) {						
+			listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// Create a empty HRTF									
 			CreateHRTFExitPoint();
-			CreateILDExitPoint();
-			
-			
-			
+			CreateILDExitPoint();									
 		}
 
 		
@@ -62,8 +51,7 @@ namespace BRTListenerModel {
 		*/
 		void SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) {			
 			listenerHRTF = _listenerHRTF;			
-			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
-			//hrtfExitPoint->sendDataPtr(listenerHRTF);
+			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);			
 		}
 
 		/** \brief Get HRTF of listener
@@ -108,111 +96,92 @@ namespace BRTListenerModel {
 			listenerILD = std::make_shared<BRTServices::CILD>();	// empty HRTF			
 		}
 
+		/**
+		 * @brief Connect a new source to this listener
+		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
+		 * @param _source Pointer to the source
+		 * @return True if the connection success
+		*/
 		template <typename T>
-		void ConnectSoundSource(std::shared_ptr<T> _source, BRTBase::CBRTManager* brtManager) {
-
-			
+		bool ConnectSoundSource(std::shared_ptr<T> _source) {						
 			CSourceProcessors _newSourceProcessors(_source->GetID(), brtManager);
+			
+			bool control = brtManager->ConnectModuleTransform(_source, _newSourceProcessors.binauralConvolverProcessor, "sourcePosition");
+			control = control && brtManager->ConnectModuleTransform(_source, _newSourceProcessors.nearFieldEffectProcessor, "sourcePosition");
+			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.binauralConvolverProcessor, "sourceID");
+							  
+			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.binauralConvolverProcessor, "listenerPosition");
+			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerPosition");
+			control = control && brtManager->ConnectModuleHRTF(this, _newSourceProcessors.binauralConvolverProcessor, "listenerHRTF");
+			control = control && brtManager->ConnectModuleILD(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerILD");
+			control = control && brtManager->ConnectModuleID(this, _newSourceProcessors.binauralConvolverProcessor, "listenerID");
+							  
+			control = control && brtManager->ConnectModulesSamples(_source, "samples", _newSourceProcessors.binauralConvolverProcessor, "inputSamples");
+			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.binauralConvolverProcessor, "leftEar", _newSourceProcessors.nearFieldEffectProcessor, "leftEar");
+			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.binauralConvolverProcessor, "rightEar", _newSourceProcessors.nearFieldEffectProcessor, "rightEar");
+			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.nearFieldEffectProcessor, "leftEar", this, "leftEar");
+			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.nearFieldEffectProcessor, "rightEar", this, "rightEar");
 
-			brtManager->ConnectModuleTransform(_source, _newSourceProcessors.binauralConvolverProcessor, "sourcePosition");
-			brtManager->ConnectModuleTransform(_source, _newSourceProcessors.nearFieldEffectProcessor, "sourcePosition");
-			brtManager->ConnectModuleID(_source, _newSourceProcessors.binauralConvolverProcessor, "sourceID");
-
-			brtManager->ConnectModuleTransform(this, _newSourceProcessors.binauralConvolverProcessor, "listenerPosition");
-			brtManager->ConnectModuleTransform(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerPosition");
-			brtManager->ConnectModuleHRTF(this, _newSourceProcessors.binauralConvolverProcessor, "listenerHRTF");
-			brtManager->ConnectModuleILD(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerILD");
-			brtManager->ConnectModuleID(this, _newSourceProcessors.binauralConvolverProcessor, "listenerID");
-
-			brtManager->ConnectModulesSamples(_source, "samples", _newSourceProcessors.binauralConvolverProcessor, "inputSamples");
-			brtManager->ConnectModulesSamples(_newSourceProcessors.binauralConvolverProcessor, "leftEar", _newSourceProcessors.nearFieldEffectProcessor, "leftEar");
-			brtManager->ConnectModulesSamples(_newSourceProcessors.binauralConvolverProcessor, "rightEar", _newSourceProcessors.nearFieldEffectProcessor, "rightEar");
-			brtManager->ConnectModulesSamples(_newSourceProcessors.nearFieldEffectProcessor, "leftEar", this, "leftEar");
-			brtManager->ConnectModulesSamples(_newSourceProcessors.nearFieldEffectProcessor, "rightEar", this, "rightEar");
-
-			sourcesConnectedProcessors.push_back(std::move(_newSourceProcessors));
+			if (control) {
+				sourcesConnectedProcessors.push_back(std::move(_newSourceProcessors));
+				return true;
+			}			
+			return false;
 		}
 
+		/**
+		 * @brief Disconnect a new source to this listener
+		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
+		 * @param _source Pointer to the source
+		*  @return True if the disconnection success
+		*/
 		template <typename T>
-		void DisconnectSoundSource(std::shared_ptr<T> _source, BRTBase::CBRTManager* brtManager) {
-
+		bool DisconnectSoundSource(std::shared_ptr<T> _source) {
 			std::string _sourceID = _source->GetID();
 			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSourceProcessors& sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
-			if (it != sourcesConnectedProcessors.end()) {
+			if (it != sourcesConnectedProcessors.end()) {							
+				bool control = brtManager->DisconnectModulesSamples(it->nearFieldEffectProcessor, "leftEar", this, "leftEar");
+				control = control && brtManager->DisconnectModulesSamples(it->nearFieldEffectProcessor, "rightEar", this, "rightEar");
+				control = control && brtManager->DisconnectModulesSamples(it->binauralConvolverProcessor, "leftEar", it->nearFieldEffectProcessor, "leftEar");
+				control = control && brtManager->DisconnectModulesSamples(it->binauralConvolverProcessor, "rightEar", it->nearFieldEffectProcessor, "rightEar");
+				control = control && brtManager->DisconnectModulesSamples(_source, "samples", it->binauralConvolverProcessor, "inputSamples");
 				
-			
-				brtManager->DisconnectModulesSamples(it->nearFieldEffectProcessor, "leftEar", this, "leftEar");
-				brtManager->DisconnectModulesSamples(it->nearFieldEffectProcessor, "rightEar", this, "rightEar");
-				brtManager->DisconnectModulesSamples(it->binauralConvolverProcessor, "leftEar", it->nearFieldEffectProcessor, "leftEar");
-				brtManager->DisconnectModulesSamples(it->binauralConvolverProcessor, "rightEar", it->nearFieldEffectProcessor, "rightEar");
-				brtManager->DisconnectModulesSamples(_source, "samples", it->binauralConvolverProcessor, "inputSamples");
-
-				brtManager->DisconnectModuleID(this, it->binauralConvolverProcessor, "listenerID");
-				brtManager->DisconnectModuleILD(this, it->nearFieldEffectProcessor, "listenerILD");
-				brtManager->DisconnectModuleHRTF(this, it->binauralConvolverProcessor, "listenerHRTF");
-				brtManager->DisconnectModuleTransform(this, it->nearFieldEffectProcessor, "listenerPosition");
-				brtManager->DisconnectModuleTransform(this, it->binauralConvolverProcessor, "listenerPosition");
-
-				brtManager->DisconnectModuleID(_source, it->binauralConvolverProcessor, "sourceID");
-				brtManager->DisconnectModuleTransform(_source, it->nearFieldEffectProcessor, "sourcePosition");
-				brtManager->DisconnectModuleTransform(_source, it->binauralConvolverProcessor, "sourcePosition");
+				control = control && brtManager->DisconnectModuleID(this, it->binauralConvolverProcessor, "listenerID");
+				control = control && brtManager->DisconnectModuleILD(this, it->nearFieldEffectProcessor, "listenerILD");
+				control = control && brtManager->DisconnectModuleHRTF(this, it->binauralConvolverProcessor, "listenerHRTF");
+				control = control && brtManager->DisconnectModuleTransform(this, it->nearFieldEffectProcessor, "listenerPosition");
+				control = control && brtManager->DisconnectModuleTransform(this, it->binauralConvolverProcessor, "listenerPosition");
 				
-				/*brtManager->RemoveProcessor(nearFieldEffectProcessor);
-				brtManager->RemoveProcessor(binauralConvolverProcessor);*/
+				control = control && brtManager->DisconnectModuleID(_source, it->binauralConvolverProcessor, "sourceID");
+				control = control && brtManager->DisconnectModuleTransform(_source, it->nearFieldEffectProcessor, "sourcePosition");
+				control = control && brtManager->DisconnectModuleTransform(_source, it->binauralConvolverProcessor, "sourcePosition");
 
 				it->Clear(brtManager);
-				sourcesConnectedProcessors.erase(it); 					
+				sourcesConnectedProcessors.erase(it); 	
+				return true;
 			}			
+			return false;
 		}
 
 
 		void Update(std::string entryPointID) {
-		
+			// Nothing to do
 		}
 		void UpdateCommand() {
-		
+			// Nothing to do
 		}
 
 
 	private:
 
 		/////////////////
-		// Methods
-		/////////////////
-
-
-
-
-
-		/////////////////
 		// Attributes
 		/////////////////
 		std::string listenerID;								// Store unique listener ID
 		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;	// HRTF of listener														
-		std::shared_ptr<BRTServices::CILD> listenerILD;		// ILD of listener	
-		//Common::CTransform listenerTransform;				// Transform matrix (position and orientation) of listener  
-		//float listenerHeadRadius;							// Head radius of listener 
-
-		Common::CGlobalParameters globalParameters;
-
-		/*std::shared_ptr<CEntryPointSamplesVector >		leftEarEntryPoint;
-		std::shared_ptr<CEntryPointSamplesVector >		rightEarEntryPoint;				
-		std::shared_ptr<CExitPointTransform>			listenerPositionExitPoint;
-		std::shared_ptr<CExitPointHRTFPtr>				hrtfExitPoint;
-		std::shared_ptr<CExitPointILDPtr>				ildExitPoint;
-		std::shared_ptr<CExitPointID>					listenerIDExitPoint;*/
-
-		CMonoBuffer<float> leftBuffer;
-		CMonoBuffer<float> rightBuffer;
-		
-		bool leftDataReady;
-		bool rightDataReady;	
-
-
+		std::shared_ptr<BRTServices::CILD> listenerILD;		// ILD of listener						
 		std::vector< CSourceProcessors> sourcesConnectedProcessors;
-
-		
-		
+		BRTBase::CBRTManager* brtManager;				
 	};
 }
 #endif
