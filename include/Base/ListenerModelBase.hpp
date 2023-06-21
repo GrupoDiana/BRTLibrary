@@ -5,7 +5,7 @@
 #include <Base/EntryPointManager.hpp>
 #include <Base/CommandEntryPointManager.hpp>
 #include <Base/ExitPointManager.hpp>
-#include <Common/CommonDefinitions.h>
+#include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/ILD.hpp>
 

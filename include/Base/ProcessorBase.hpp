@@ -1,12 +1,7 @@
 #ifndef _PROCESSOR_BASE_
 #define _PROCESSOR_BASE_
 
-//#include <Base/EntryPoint.hpp>
-//#include <Base/ExitPoint.hpp>
-//#include <Base/EntryPointPtr.hpp>
-
-//#include <vector>
-#include <Common/CommonDefinitions.h>
+#include <Common/CommonDefinitions.hpp>
 #include <Base/EntryPointManager.hpp>
 #include <Base/CommandEntryPointManager.hpp>
 #include <Base/ExitPointManager.hpp>
