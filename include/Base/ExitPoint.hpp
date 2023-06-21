@@ -12,21 +12,7 @@
 
 namespace BRTServices { class CHRTF; class CILD; class CSRTF; }
 
-namespace BRTBase {
-
-    /*template<typename T> class CEntryExitPointData  {
-    public:
-        CEntryExitPointData() : mAttr(T()) { }
-        CEntryExitPointData(T pAttr) : mAttr(pAttr) { }
-        
-        void SetData(const T& pAttr) { mAttr = pAttr; }
-        T GetData() { return mAttr; }
-        
-    private:
-        T mAttr;        
-    };*/
-    
-   
+namespace BRTBase {          
     template <class T>
     class CExitPointBase : public Subject/*, public CEntryExitPointData<T>*/
     {
