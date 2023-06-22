@@ -19,10 +19,11 @@
 *
 * \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
+
 #ifndef _SOUND_SOURCE_BASIC_MODEL_HPP
 #define _SOUND_SOURCE_BASIC_MODEL_HPP
 
-#include "ExitPoint.hpp"
+//#include "ExitPoint.hpp"
 #include "SourceModelBase.hpp"
 #include <vector>
 

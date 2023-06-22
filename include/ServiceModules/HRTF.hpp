@@ -29,7 +29,6 @@
 #include <utility>
 #include <list>
 #include <cstdint>
-#include <Base/Listener.hpp>
 #include <Common/Buffer.hpp>
 #include <Common/ErrorHandler.hpp>
 #include <Common/Fprocessor.hpp>

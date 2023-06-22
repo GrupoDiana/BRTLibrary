@@ -13,7 +13,7 @@
 * \b Project: SONICOM ||
 * \b Website: https://www.sonicom.eu/
 *
-* \b Copyright: University of Malaga
+* \b Copyright: University of Malaga 2023. Code based in the 3DTI Toolkit library (https://github.com/3DTune-In/3dti_AudioToolkit) with Copyright University of Malaga and Imperial College London - 2018
 *
 * \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 *

@@ -1,14 +1,38 @@
+/**
+* \class CSourceModelBase
+*
+* \brief Declaration of CSourceModelBase class
+* \date	June 2023
+*
+* \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
+* Coordinated by , A. Reyes-Lecuona (University of Malaga)||
+* \b Contact: areyes@uma.es
+*
+* \b Contributions: (additional authors/contributors can be added here)
+*
+* \b Project: SONICOM ||
+* \b Website: https://www.sonicom.eu/
+*
+* \b Copyright: University of Malaga
+*
+* \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+*
+* \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
+*/
+
 #ifndef _SOUND_SOURCE_MODEL_BASE_HPP
 #define _SOUND_SOURCE_MODEL_BASE_HPP
 
-#include "ExitPoint.hpp"
-//#include "EntryPoint.hpp"
+
+#include <Base/EntryPointManager.hpp>
 #include <Base/CommandEntryPointManager.hpp>
+#include <Base/ExitPointManager.hpp>
+
 #include <vector>
 
 namespace BRTBase {
 
-	class CSourceModelBase: public  CCommandEntryPointManager {
+	class CSourceModelBase : public CCommandEntryPointManager, public CExitPointManager, public CEntryPointManager {
 	public:		
 		virtual ~CSourceModelBase() {}						
 		virtual void Update(std::string entryPointID) = 0;
@@ -17,8 +41,11 @@ namespace BRTBase {
 		CSourceModelBase(std::string _sourceID) : dataReady{ false }, sourceID{ _sourceID} {
 			
 			CreateSamplesExitPoint("samples");
-			CreateTransformExitPoint("sourceTransform");
-			CreateIDExitPoint("sourceID");
+			CreateTransformExitPoint();
+			
+			CreateIDExitPoint();
+			GetIDExitPoint()->sendData(sourceID);
+
 			CreateCommandEntryPoint();
 		}
 
@@ -34,7 +61,7 @@ namespace BRTBase {
 		void SetDataReady() {
 			if (!dataReady) { return; }
 			//samplesExitPoint->sendData(samplesBuffer); 
-			Update(samplesExitPoint->GetID());
+			Update(GetSamplesExitPoint("samples")->GetID());
 			//dataReady = false;
 		}
 
@@ -42,35 +69,22 @@ namespace BRTBase {
 			//samplesExitPoint->sendData(samplesBuffer);
 			//Update();
 			//dataReady = false;
-			Update(samplesExitPoint->GetID());
+			Update(GetSamplesExitPoint("samples")->GetID());
 		}
 
 		void SendData(CMonoBuffer<float>& _buffer) {
-			samplesExitPoint->sendData(_buffer);
+			GetSamplesExitPoint("samples")->sendData(_buffer);
 			dataReady = false;
 		}
 
 		void SetSourceTransform(Common::CTransform _transform) { 
-			sourceTransform = _transform;
-			sourcePositionExitPoint->sendData(sourceTransform);			
+			sourceTransform = _transform;			
+			GetTransformExitPoint()->sendData(sourceTransform);
 		}
 		
 		const Common::CTransform& GetCurrentSourceTransform() const { return sourceTransform; };		
 		
-		std::string GetSourceID() { return sourceID; }
-
-		std::shared_ptr<BRTBase::CExitPointSamplesVector> GetSamplesExitPoint(std::string exitPointID) {
-			return samplesExitPoint;						
-		}
-	
-		std::shared_ptr<BRTBase::CExitPointTransform> GetTransformExitPoint() {
-			return sourcePositionExitPoint;			
-		}
-
-		std::shared_ptr<BRTBase::CExitPointID> GetIDExitPoint() {
-			return sourceIDExitPoint;
-		}
-
+		std::string GetID() { return sourceID; }
 
 		// Update callback
 		void updateFromEntryPoint(std::string entryPointID) {
@@ -82,46 +96,16 @@ namespace BRTBase {
 				UpdateCommand();
 			}
 		}
-
-
-
-
-		void CreateSamplesExitPoint(std::string exitPointID) {
-			samplesExitPoint = std::make_shared<CExitPointSamplesVector>(exitPointID);
-		}
-		void CreateTransformExitPoint(std::string exitPointID) {
-			sourcePositionExitPoint = std::make_shared<CExitPointTransform>(exitPointID);
-		}
-		void CreateIDExitPoint(std::string exitPointID) {
-			sourceIDExitPoint = std::make_shared<CExitPointID>(exitPointID);
-			sourceIDExitPoint->sendData(sourceID);
-		}
-		void CreateListenerTransformEntryPoint(std::string entryPointID) {			
-			listenerPositionEntryPoint = std::make_shared<BRTBase::CEntryPointTransform >(std::bind(&CSourceModelBase::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, 1);
-		}
-		
-
-		std::shared_ptr<BRTBase::CEntryPointTransform >  GetListenerTransformEntryPoint() {			
-			return listenerPositionEntryPoint;
-		}
-		
+						
 		bool IsToMySoundSource(std::string _sourceID) {
-			return GetSourceID() == _sourceID;
+			return GetID() == _sourceID;
 		}
 
 	private:
 		std::string sourceID;
 		bool dataReady;
-
 		Common::CTransform sourceTransform;
-		CMonoBuffer<float> samplesBuffer;
-						
-
-		std::shared_ptr<CExitPointSamplesVector> samplesExitPoint;
-		std::shared_ptr<CExitPointTransform> sourcePositionExitPoint;
-		std::shared_ptr<CExitPointID> sourceIDExitPoint;
-		
-		std::shared_ptr<CEntryPointTransform> listenerPositionEntryPoint;		
+		CMonoBuffer<float> samplesBuffer;								
 	};
 }
 #endif

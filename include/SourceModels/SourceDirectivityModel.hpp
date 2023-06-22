@@ -19,11 +19,13 @@
 *
 * \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
+
 #ifndef _SOUND_SOURCE_DIRECTIVITY_MODEL_HPP
 #define _SOUND_SOURCE_DIRECTIVITY_MODEL_HPP
 
-#include "ExitPoint.hpp"
-#include "EntryPoint.hpp"
+//#include "ExitPoint.hpp"
+//#include "EntryPoint.hpp"
+//#include <Base/EntryPointManager.hpp>
 #include "SourceModelBase.hpp"
 #include <vector>
 #include <ProcessingModules/SRTFConvolver.hpp>
@@ -34,7 +36,8 @@ namespace BRTSourceModel {
 
 	public:			
 		CSourceDirectivityModel(std::string _sourceID) : BRTBase::CSourceModelBase(_sourceID) {
-			CreateListenerTransformEntryPoint("listenerPosition");
+			//CreateListenerTransformEntryPoint("listenerPosition");
+			CreatePositionEntryPoint("listenerPosition");
 		}
 
 		void Update(std::string _entryPointID) {
@@ -45,7 +48,7 @@ namespace BRTSourceModel {
 				CMonoBuffer<float> outBuffer;
 				CMonoBuffer<float> inBuffer = GetBuffer();
 				Common::CTransform sourcePosition = GetCurrentSourceTransform();
-				Common::CTransform listenerPosition = GetListenerTransformEntryPoint()->GetData();
+				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
 				if (inBuffer.size() != 0) {
 					Process(inBuffer, outBuffer, sourcePosition, listenerPosition, sourceSRTF);
 					SendData(outBuffer);
