@@ -1,7 +1,7 @@
 /**
-* \class CBuffer
+* \class CSourceModelBase
 *
-* \brief Declaration of CBuffer class
+* \brief Declaration of CSourceModelBase class
 * \date	June 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
