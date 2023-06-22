@@ -46,7 +46,7 @@ namespace BRTReaders {
 		{
 			BRTReaders::CLibMySOFALoader loader(sofafile);
 			int error = loader.getError();
-			if (error == -1) return error;
+			if (error != 0) return -1;
 
 			return loader.GetSamplingRate();
 		}
