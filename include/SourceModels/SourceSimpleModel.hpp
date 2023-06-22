@@ -1,7 +1,7 @@
 /**
-* \class CSourceSimpleModel
+* \class CBuffer
 *
-* \brief Declaration of CSourceSimpleModel class
+* \brief Declaration of CBuffer class
 * \date	June 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
@@ -19,6 +19,7 @@
 *
 * \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
+
 #ifndef _SOUND_SOURCE_BASIC_MODEL_HPP
 #define _SOUND_SOURCE_BASIC_MODEL_HPP
 
