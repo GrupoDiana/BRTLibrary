@@ -44,7 +44,7 @@
 
 #define ORIENTATION_RESOLUTION 0.01
 
-#define EPSILON_SEWING 0.001
+#define EPSILON_SEWING 0.0001
 
 // Structs and types definitions 
 
