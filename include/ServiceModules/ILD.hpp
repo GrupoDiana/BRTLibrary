@@ -109,7 +109,7 @@ namespace BRTServices {
 		*	\details Leaves ILD Table empty. Use SetILDNearFieldEffectTable to load.
 		*   \eh Nothing is reported to the error handler.
 		*/
-		CILD() : setupInProgress{ false }, ILDLoaded{ false }, samplingRate{ -1 }, numberOfEars{ -1 },azimuthStep{-1}, distanceStep{-1}, fileTitle{""}, fileName{""}
+		CILD() : setupInProgress{ false }, ILDLoaded{ false }, numberOfEars{ -1 },azimuthStep{-1}, distanceStep{-1}, fileTitle{""}, fileName{""}
 		{					
 		}
 
@@ -130,7 +130,7 @@ namespace BRTServices {
 				azimuthStep = CalculateTableAzimuthStep();
 				distanceStep = CalculateTableDistanceStep();
 
-				if (samplingRate != -1 && numberOfEars != -1 && azimuthStep != -1 && distanceStep != -1) {															
+				if (numberOfEars != -1 && azimuthStep != -1 && distanceStep != -1) {															
 					ILDLoaded = true;
 					SET_RESULT(RESULT_OK, "ILD Setup finished");
 					azimuthList.clear();
@@ -145,8 +145,7 @@ namespace BRTServices {
 		void Clear() {
 			t_ILDNearFieldEffect.clear();
 			azimuthList.clear();
-			distanceList.clear();
-			samplingRate = -1;
+			distanceList.clear();			
 			numberOfEars = -1;
 			azimuthStep = -1;
 			distanceStep = -1;
@@ -200,16 +199,16 @@ namespace BRTServices {
 		/** \brief Set the samplingRate of the SOFA file
 		*    \param [in]	samplingRate	int contains samplingRate
 		*/
-		void SetFileSamplingRate(int _samplingRate) {
-			samplingRate = _samplingRate;
-		}
+		//void SetFileSamplingRate(int _samplingRate) {
+		//	samplingRate = _samplingRate;
+		//}
 
-		/** \brief Get the samplingRate of the SOFA file
-		*   \return int contains samplingRate
-		*/
-		int GetFileSamplingRate() {
-			return samplingRate;
-		}
+		///** \brief Get the samplingRate of the SOFA file
+		//*   \return int contains samplingRate
+		//*/
+		//int GetFileSamplingRate() {
+		//	return samplingRate;
+		//}
 
 		/** \brief Set the samplingRate of the SOFA file
 		*    \param [in]	samplingRate	int contains samplingRate
@@ -466,7 +465,7 @@ namespace BRTServices {
 		std::string databaseName;
 		std::string listenerShortName;
 		
-		int samplingRate;
+		//int samplingRate;
 		int numberOfEars;
 	};
 }

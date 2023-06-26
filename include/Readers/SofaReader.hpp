@@ -29,8 +29,8 @@
 #include <ServiceModules/HRTF.hpp>
 #include <Common/ErrorHandler.hpp>
 #include <Readers/LibMySofaLoader.hpp>
-#include "ofxlibMySofa.h"
-
+//#include "ofxlibMySofa.h"
+#include <third_party_libraries/libmysofa/include/mysofa.h>
 
 namespace BRTReaders {
 
@@ -131,7 +131,7 @@ namespace BRTReaders {
 		
 		// Read GLOBAL data from sofa struct and save into HRTF class
 		void GetAndSaveGlobalAttributes(BRTReaders::CLibMySOFALoader& loader, CLibMySOFALoader::TSofaConvention _SOFAConvention, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& dataHRTF) {
-			// GET and Save Global Attributes 
+			// GET and Save Global Attributes 			
 			std::string _title = mysofa_getAttribute(loader.getHRTF()->attributes, "Title");
 			dataHRTF->SetTitle(_title);
 
@@ -148,7 +148,7 @@ namespace BRTReaders {
 			dataHRTF->SetFilename(fileName);
 
 		}
-
+		
 		void CheckCoordinateSystems(BRTReaders::CLibMySOFALoader& loader, CLibMySOFALoader::TSofaConvention _SOFAConvention) {
 
 			if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR || _SOFAConvention == CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS) {
@@ -285,7 +285,10 @@ namespace BRTReaders {
 			// Check number of receivers	
 			int numberOfReceivers = loader.getHRTF()->R;
 			if (numberOfReceivers == 1) {
-				SET_RESULT(RESULT_WARNING, "This ILD SOFA file does not contain coefficients for each ear. Therefore, the same filters will be used for both ears.");
+				SET_RESULT(RESULT_WARNING, "This ILD SOFA file does not contain coefficients for each ear. Therefore, the same filters will be used for both ears.");			
+			}
+			else if (numberOfReceivers == 2) {				
+				SET_RESULT(RESULT_OK, "This ILD SOFA file contains coefficients for both ears.");
 			}
 			else {
 				SET_RESULT(RESULT_ERROR_BADSIZE, "SOFA gives incoherent number of receivers and coefficients");
@@ -298,7 +301,7 @@ namespace BRTReaders {
 			const unsigned int numberOfSamples = loader.getHRTF()->N;		//number of coefficients
 			
 			data->BeginSetup();
-
+			data->SetNumberOfEars(numberOfReceivers);
 			const int left_ear = 0;
 			const int right_ear = 1;
 			// This outtermost loop iterates over HRIRs
