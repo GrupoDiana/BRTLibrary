@@ -25,7 +25,7 @@
 
 #include <vector>
 #include <memory>
-#include <EntryPoint.hpp>
+#include <Base/EntryPoint.hpp>
 
 namespace BRTBase {
     class CEntryPointManager {

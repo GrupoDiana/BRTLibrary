@@ -25,8 +25,8 @@
 
 #include <vector>
 #include <memory>
-#include <EntryPoint.hpp>
-#include <CommonDefinitions.hpp>
+#include <Base/EntryPoint.hpp>
+#include <Common/CommonDefinitions.hpp>
 
 namespace BRTBase {
     class CCommandEntryPointManager {
