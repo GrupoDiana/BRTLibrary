@@ -4,6 +4,10 @@ The BRT library is the core of the Binaural Rendering Toolbox (BRT), a set of so
 
 The BRT library is developed in the framework of the SONICOM project (www.sonicom.eu) and includes the algorithms developed in the 3D Tune-In Toolkit (https://github.com/3DTune-In/3dti\_AudioToolkit) in a new open, extensible architecture. 
 
+
+## Additional tools
+BRT Example: basic spatialization example implemented in C++ to show how to use the BRT library. Code available at: https://github.com/GrupoDiana/BRTLibrary_Examples 
+
 ## Credits
 
 This software is being developed by a team coordinated by 
