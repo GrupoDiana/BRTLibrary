@@ -24,7 +24,7 @@ The current members of the development team are (in alphabetical order):
 
 Copyright(c) University of Malaga – 2023 
 
-This library includes pieces of code from the 3DTI AudioToolkit, shared under GPLv3 license and copyright (c) by University of Málaga and Imperial College London. See headers in the source code files.
+This library includes pieces of code from the 3DTI AudioToolkit, shared under GPLv3 license and copyright (c) by University of Málaga (contact: areyes@uma.es) and Imperial College London (contact: l.picinali@imperial.ac.uk). See headers in the source code files.
 
 This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
