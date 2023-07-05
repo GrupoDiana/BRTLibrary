@@ -24,13 +24,14 @@
 #define _CLISTENER_HRTFBASED_MODEL_HPP_
 
 #include <memory>
-#include "Base/ListenerModelBase.hpp"
+#include <Base/ListenerModelBase.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/ILD.hpp>
 #include <ProcessingModules/HRTFConvolverProcessor.hpp>
 #include <ProcessingModules/NearFieldEffectProcessor.hpp>
 #include <Base/SourceModelBase.hpp>
 #include <Base/BRTManager.hpp>
+#include <third_party_libraries/nlohmann/json.hpp>
 
 namespace BRTServices {
 	class CHRTF;
@@ -183,6 +184,89 @@ namespace BRTListenerModel {
 			}			
 			return false;
 		}
+
+		/** \brief Enable binaural spatialization based in HRTF convolution
+		*   \eh Nothing is reported to the error handler.
+		*/
+		void EnableSpatialization() {
+			nlohmann::json j;
+			j["command"] = "/listener/enableSpatialization";
+			j["listenerID"] = listenerID;
+			j["enable"] = true;
+			brtManager->ExecuteCommand(j.dump());			
+		}
+
+		/** \brief Disable binaural spatialization based in HRTF convolution
+		*/
+		void DisableSpatialization()
+		{
+			nlohmann::json j;
+			j["command"] = "/listener/enableSpatialization";
+			j["listenerID"] = listenerID;
+			j["enable"] = false;
+			brtManager->ExecuteCommand(j.dump());
+		}
+
+		///** \brief Get the flag for run-time HRTF interpolation
+		//*	\retval IsInterpolationEnabled if true, run-time HRTF interpolation is enabled for this source
+		//*   \eh Nothing is reported to the error handler.
+		//*/
+		//bool IsSpatializationEnabled();
+
+		/** \brief Enable run-time HRTF interpolation
+		*   \eh Nothing is reported to the error handler.
+		*/
+		void EnableInterpolation() {
+			nlohmann::json j;
+			j["command"] = "/listener/enableInterpolation";
+			j["listenerID"] = listenerID;
+			j["enable"] = true;
+			brtManager->ExecuteCommand(j.dump());
+		}
+
+		/** \brief Disable run-time HRTF interpolation
+		*/
+		void DisableInterpolation() {
+			nlohmann::json j;
+			j["command"] = "/listener/enableInterpolation";
+			j["listenerID"] = listenerID;
+			j["enable"] = false;
+			brtManager->ExecuteCommand(j.dump());
+		}
+
+		/** \brief Get the flag for run-time HRTF interpolation
+		*	\retval IsInterpolationEnabled if true, run-time HRTF interpolation is enabled for this source
+		*   \eh Nothing is reported to the error handler.
+		*/
+		//bool IsInterpolationEnabled();
+
+		/** \brief Enable near field effect for this source
+		*   \eh Nothing is reported to the error handler.
+		*/
+		void EnableNearFieldEffect() {
+			nlohmann::json j;
+			j["command"] = "/listener/enableNearFiedlEffect";
+			j["listenerID"] = listenerID;
+			j["enable"] = true;
+			brtManager->ExecuteCommand(j.dump());
+		}
+
+		/** \brief Disable near field effect for this source
+		*   \eh Nothing is reported to the error handler.
+		*/
+		void DisableNearFieldEffect() {
+			nlohmann::json j;
+			j["command"] = "/listener/enableNearFiedlEffect";
+			j["listenerID"] = listenerID;
+			j["enable"] = false;
+			brtManager->ExecuteCommand(j.dump());
+		}
+
+		/** \brief Get the flag for near field effect enabling
+		*	\retval nearFieldEffectEnabled if true, near field effect is enabled for this source
+		*   \eh Nothing is reported to the error handler.
+		*/
+		//bool IsNearFieldEffectEnabled();
 
 
 		void Update(std::string entryPointID) {

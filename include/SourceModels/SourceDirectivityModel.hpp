@@ -23,11 +23,8 @@
 #ifndef _SOUND_SOURCE_DIRECTIVITY_MODEL_HPP
 #define _SOUND_SOURCE_DIRECTIVITY_MODEL_HPP
 
-//#include "ExitPoint.hpp"
-//#include "EntryPoint.hpp"
-//#include <Base/EntryPointManager.hpp>
-#include "SourceModelBase.hpp"
 #include <vector>
+#include <Base/SourceModelBase.hpp>
 #include <ProcessingModules/SRTFConvolver.hpp>
 #include <ServiceModules/SRTF.hpp>
 

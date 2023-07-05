@@ -26,7 +26,7 @@
 #include <ostream>
 #include <string>
 #include <Common/ErrorHandler.hpp>
-#include "ofxlibMySofa.h"
+#include <third_party_libraries/libmysofa/include/mysofa.h>
 
 namespace BRTReaders {
 
@@ -107,7 +107,7 @@ namespace BRTReaders {
 			if (error == -1) return -1;
 			
 			try
-			{
+			{				
 				std::string samplingRatesUnits = mysofa_getAttribute(hrtf->hrtf->DataSamplingRate.attributes, "Units");
 				if (samplingRatesUnits != "hertz")
 				{
@@ -237,7 +237,6 @@ namespace BRTReaders {
 			}
 			return NULL;
 		}
-		
 	};
 };
 #endif 
