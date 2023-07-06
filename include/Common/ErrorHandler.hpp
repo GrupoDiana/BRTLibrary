@@ -35,7 +35,7 @@
 /** \brief If SWITCH_ON_BRT_ERRORHANDLER is undefined, the error handler is completely disabled, causing 0 overhead
 */
 
-//#define SWITCH_ON_BRT_ERRORHANDLER
+#define SWITCH_ON_BRT_ERRORHANDLER
 
 #ifdef _BRT_ANDROID_ERRORHANDLER
 
@@ -43,7 +43,7 @@
 #define LOGV(...) ((void)__android_log_print(ANDROID_LOG_VERBOSE, "3DTI_CORE", __VA_ARGS__))
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "3DTI_CORE", __VA_ARGS__))
 
-#define ERRORHANDLER3DTI Common::CErrorHandler::Instance()
+#define ERRORHANDLERBRT Common::CErrorHandler::Instance()
 
 #define SET_RESULT(errorID, suggestion) Common::CErrorHandler::Instance().AndroidSetResult(errorID, suggestion, __FILE__, __LINE__)
 
@@ -66,7 +66,7 @@
 ///////////////////////////////////////////////////
 /// Dummy Macro definitions 
 
-#define ERRORHANDLER3DTI ((void)0)
+#define ERRORHANDLERBRT ((void)0)
 
 #define SET_RESULT(errorID, suggestion) ((void)0)
 
@@ -91,7 +91,7 @@
 
 /** \brief Macro used for easy access to error handler singleton
 */
-#define ERRORHANDLER3DTI Common::CErrorHandler::Instance()
+#define ERRORHANDLERBRT Common::CErrorHandler::Instance()
 
 /** \brief Macro used by internal classes for reporting results to error handler
 */
