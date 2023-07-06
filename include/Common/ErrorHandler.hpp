@@ -43,7 +43,7 @@
 #define LOGV(...) ((void)__android_log_print(ANDROID_LOG_VERBOSE, "3DTI_CORE", __VA_ARGS__))
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "3DTI_CORE", __VA_ARGS__))
 
-#define ERRORHANDLERBRT Common::CErrorHandler::Instance()
+#define BRT_ERRORHANDLER Common::CErrorHandler::Instance()
 
 #define SET_RESULT(errorID, suggestion) Common::CErrorHandler::Instance().AndroidSetResult(errorID, suggestion, __FILE__, __LINE__)
 
@@ -66,7 +66,7 @@
 ///////////////////////////////////////////////////
 /// Dummy Macro definitions 
 
-#define ERRORHANDLERBRT ((void)0)
+#define BRT_ERRORHANDLER ((void)0)
 
 #define SET_RESULT(errorID, suggestion) ((void)0)
 
@@ -91,7 +91,7 @@
 
 /** \brief Macro used for easy access to error handler singleton
 */
-#define ERRORHANDLERBRT Common::CErrorHandler::Instance()
+#define BRT_ERRORHANDLER Common::CErrorHandler::Instance()
 
 /** \brief Macro used by internal classes for reporting results to error handler
 */
