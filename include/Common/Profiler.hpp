@@ -59,7 +59,7 @@
 
 /** \brief Macro used for easy access to profiler singleton
 */
-#define PROFILERBRT CProfiler::Instance()
+#define BRT_PROFILER CProfiler::Instance()
 
 //
 // Defines that you may want to use
@@ -592,8 +592,8 @@ namespace Common {
 		// General methods:
 
 			/** \brief Access to singleton instance with lazy initialization
-			*	\details Use CProfiler::Instance().Method or the mabro PROFILERBRT.Method() to call any profiler method
-			*	\sa PROFILERBRT
+			*	\details Use CProfiler::Instance().Method or the mabro BRT_PROFILER.Method() to call any profiler method
+			*	\sa BRT_PROFILER
 			*/
 		static CProfiler& Instance()
 		{
