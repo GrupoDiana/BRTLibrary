@@ -32,12 +32,12 @@
 
 //using namespace std;
 
-/** \brief If SWITCH_ON_3DTI_ERRORHANDLER is undefined, the error handler is completely disabled, causing 0 overhead
+/** \brief If SWITCH_ON_BRT_ERRORHANDLER is undefined, the error handler is completely disabled, causing 0 overhead
 */
 
-#define SWITCH_ON_3DTI_ERRORHANDLER
+//#define SWITCH_ON_BRT_ERRORHANDLER
 
-#ifdef _3DTI_ANDROID_ERRORHANDLER
+#ifdef _BRT_ANDROID_ERRORHANDLER
 
 #define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, "3DTI_CORE", __VA_ARGS__))
 #define LOGV(...) ((void)__android_log_print(ANDROID_LOG_VERBOSE, "3DTI_CORE", __VA_ARGS__))
@@ -61,7 +61,7 @@
 
 #endif
 
-#if !defined (SWITCH_ON_3DTI_ERRORHANDLER) && !defined(_3DTI_ANDROID_ERRORHANDLER)
+#if !defined (SWITCH_ON_BRT_ERRORHANDLER) && !defined(_BRT_ANDROID_ERRORHANDLER)
 
 ///////////////////////////////////////////////////
 /// Dummy Macro definitions 
@@ -84,7 +84,7 @@
 
 #endif
 
-#if defined(SWITCH_ON_3DTI_ERRORHANDLER)
+#if defined(SWITCH_ON_BRT_ERRORHANDLER)
 
 ///////////////////////////////////////////////////
 /// Macro definitions for asserts, setting results and watching variables
@@ -130,7 +130,7 @@
 
 #endif
 
-#if defined(SWITCH_ON_3DTI_ERRORHANDLER) || defined(_3DTI_ANDROID_ERRORHANDLER)
+#if defined(SWITCH_ON_BRT_ERRORHANDLER) || defined(_BRT_ANDROID_ERRORHANDLER)
 
 //
 // Result/Error data structures
@@ -222,7 +222,7 @@ struct TVerbosityMode
 
 /** \brief Type definition of assert modes
 */
-enum TAssertMode	{ASSERT_MODE_EMPTY,		///< Do nothing. Ignore even result reporting. The error handler becomes useless with this setting. For maximum performance, undefine \link SWITCH_ON_3DTI_ERRORHANDLER \endlink
+enum TAssertMode	{ASSERT_MODE_EMPTY,		///< Do nothing. Ignore even result reporting. The error handler becomes useless with this setting. For maximum performance, undefine \link SWITCH_ON_BRT_ERRORHANDLER \endlink
 					ASSERT_MODE_CONTINUE,	///< Allow reporting of results, but do nothing with them. Will never terminate program execution
 					ASSERT_MODE_ABORT,		///< Abort execution when an ASSERT is evaluated as false. The error will be reported/logged before terminating
 					ASSERT_MODE_PARANOID	///< Abort execution if any error is reported to the error handler, even if it was reported using SET_RESULT rather than ASSERT. The error will be reported/logged before terminating
@@ -355,7 +355,7 @@ namespace Common {
 			}
 		}
 
-#if defined (_3DTI_ANDROID_ERRORHANDLER)
+#if defined (_BRT_ANDROID_ERRORHANDLER)
 		void AndroidSetResult(TResultID resultID, string suggestion, string filename, int linenumber)
 		{
 			string newdescription;
@@ -566,7 +566,7 @@ namespace Common {
 			}
 		}
 
-#if defined (_3DTI_ANDROID_ERRORHANDLER)
+#if defined (_BRT_ANDROID_ERRORHANDLER)
 		void AndroidAssertTest(bool condition, TResultID errorID, string suggestionError, string suggestionOK, string filename, int linenumber)
 		{
 			if (condition)
