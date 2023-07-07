@@ -804,6 +804,7 @@ namespace BRTServices
 
 		Common::CGlobalParameters globalParameters;
 
+		friend class CHRTFTester;
 		/////////////
 		// METHODS
 		/////////////
