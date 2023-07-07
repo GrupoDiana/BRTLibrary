@@ -442,31 +442,11 @@ namespace BRTServices
 				else
 				{
 					//Run time interpolation OFF
-					int nearestAzimuth = static_cast<int>(round(_azimuth / resamplingStep) * resamplingStep);
-					int nearestElevation = static_cast<int>(round(_elevation / resamplingStep) * resamplingStep);
-					// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
-					if (nearestAzimuth == aziMax) { nearestAzimuth = aziMin; }
-					if (nearestElevation == eleMax) { nearestElevation = eleMin; }
-					// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
-					if ((nearestElevation == eleNorth) || (nearestElevation == eleSouth)) { nearestAzimuth = aziMin; }
+					
+					//return InterpolationOff_OldGrid(_azimuth, _elevation, ear, newHRIR);
 
-					auto it = t_HRTF_Resampled_partitioned.find(orientation(nearestAzimuth, nearestElevation));
-					if (it != t_HRTF_Resampled_partitioned.end())
-					{
-						if (ear == Common::T_ear::LEFT)
-						{
-							newHRIR = it->second.leftHRIR_Partitioned;
-						}
-						else
-						{
-							newHRIR = it->second.rightHRIR_Partitioned;
-						}
-						return newHRIR;
-					}
-					else
-					{
-						SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");
-					}
+					return InterpolationOff_NewGrid(_azimuth, _elevation, ear, newHRIR, stepVector);
+					
 				}
 			}
 			else
@@ -475,6 +455,79 @@ namespace BRTServices
 			}
 			SET_RESULT(RESULT_WARNING, "GetHRIR_partitioned return empty");
 			return *new std::vector<CMonoBuffer<float>>();
+		}
+
+		const THRIR_partitioned& InterpolationOff_OldGrid(float _azimuth, float _elevation, Common::T_ear ear, THRIR_partitioned& newHRIR) const
+		{
+			THRIR_partitioned nullHRIR;
+
+			int nearestAzimuth = static_cast<int>(round(_azimuth / resamplingStep) * resamplingStep);
+			int nearestElevation = static_cast<int>(round(_elevation / resamplingStep) * resamplingStep);
+			// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
+			if (nearestAzimuth == aziMax) { nearestAzimuth = aziMin; }
+			if (nearestElevation == eleMax) { nearestElevation = eleMin; }
+			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
+			if ((nearestElevation == eleNorth) || (nearestElevation == eleSouth)) { nearestAzimuth = aziMin; }
+
+			auto it = t_HRTF_Resampled_partitioned.find(orientation(nearestAzimuth, nearestElevation));
+			if (it != t_HRTF_Resampled_partitioned.end())
+			{
+				if (ear == Common::T_ear::LEFT)
+				{
+					newHRIR = it->second.leftHRIR_Partitioned;
+				}
+				else
+				{
+					newHRIR = it->second.rightHRIR_Partitioned;
+				}
+				return newHRIR;
+			}
+			else
+			{
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");
+				nullHRIR;
+			}
+		}
+
+		const THRIR_partitioned& InterpolationOff_NewGrid(float _azimuth, float _elevation, Common::T_ear ear, THRIR_partitioned& newHRIR, const std::unordered_map<orientation, float>& stepMap) const
+		{
+			THRIR_partitioned nullHRIR;
+
+			float eleStep = stepMap.find(orientation(-1, -1))->second;
+
+			float nearestElevation = (round(_elevation / eleStep) * eleStep);
+
+			nearestElevation = CheckLimitsElevation_and_Transform(nearestElevation);
+
+			float aziStep = stepMap.find(orientation(0, nearestElevation))->second;
+			
+			
+			float nearestAzimuth = (round(_azimuth / aziStep) * aziStep);
+	
+			// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
+			if (nearestAzimuth == aziMax) { nearestAzimuth = aziMin; }
+			if (nearestElevation == eleMax) { nearestElevation = eleMin; }
+			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
+			if ((nearestElevation == eleNorth) || (nearestElevation == eleSouth)) { nearestAzimuth = aziMin; }
+
+			auto it = t_HRTF_Resampled_partitioned.find(orientation(nearestAzimuth, nearestElevation));
+			if (it != t_HRTF_Resampled_partitioned.end())
+			{
+				if (ear == Common::T_ear::LEFT)
+				{
+					newHRIR = it->second.leftHRIR_Partitioned;
+				}
+				else
+				{
+					newHRIR = it->second.rightHRIR_Partitioned;
+				}
+				return newHRIR;
+			}
+			else
+			{
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");
+				return nullHRIR;
+			}
 		}
 
 
