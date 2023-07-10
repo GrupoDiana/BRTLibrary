@@ -229,6 +229,8 @@ namespace BRTServices
 					FillOutTableOfAzimuth360(resamplingStep);
 					FillSphericalCap_HRTF(gapThreshold, resamplingStep);
 					stepVector = CalculateResampled_HRTFTable(resamplingStep);
+					FillResampledTable();
+
 
 
 					//Setup values
@@ -440,31 +442,11 @@ namespace BRTServices
 				else
 				{
 					//Run time interpolation OFF
-					int nearestAzimuth = static_cast<int>(round(_azimuth / resamplingStep) * resamplingStep);
-					int nearestElevation = static_cast<int>(round(_elevation / resamplingStep) * resamplingStep);
-					// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
-					if (nearestAzimuth == aziMax) { nearestAzimuth = aziMin; }
-					if (nearestElevation == eleMax) { nearestElevation = eleMin; }
-					// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
-					if ((nearestElevation == eleNorth) || (nearestElevation == eleSouth)) { nearestAzimuth = aziMin; }
+					
+					//return InterpolationOff_OldGrid(_azimuth, _elevation, ear, newHRIR);
 
-					auto it = t_HRTF_Resampled_partitioned.find(orientation(nearestAzimuth, nearestElevation));
-					if (it != t_HRTF_Resampled_partitioned.end())
-					{
-						if (ear == Common::T_ear::LEFT)
-						{
-							newHRIR = it->second.leftHRIR_Partitioned;
-						}
-						else
-						{
-							newHRIR = it->second.rightHRIR_Partitioned;
-						}
-						return newHRIR;
-					}
-					else
-					{
-						SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");
-					}
+					return InterpolationOff_NewGrid(_azimuth, _elevation, ear, newHRIR, stepVector);
+					
 				}
 			}
 			else
@@ -473,6 +455,79 @@ namespace BRTServices
 			}
 			SET_RESULT(RESULT_WARNING, "GetHRIR_partitioned return empty");
 			return *new std::vector<CMonoBuffer<float>>();
+		}
+
+		const THRIR_partitioned& InterpolationOff_OldGrid(float _azimuth, float _elevation, Common::T_ear ear, THRIR_partitioned& newHRIR) const
+		{
+			THRIR_partitioned nullHRIR;
+
+			int nearestAzimuth = static_cast<int>(round(_azimuth / resamplingStep) * resamplingStep);
+			int nearestElevation = static_cast<int>(round(_elevation / resamplingStep) * resamplingStep);
+			// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
+			if (nearestAzimuth == aziMax) { nearestAzimuth = aziMin; }
+			if (nearestElevation == eleMax) { nearestElevation = eleMin; }
+			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
+			if ((nearestElevation == eleNorth) || (nearestElevation == eleSouth)) { nearestAzimuth = aziMin; }
+
+			auto it = t_HRTF_Resampled_partitioned.find(orientation(nearestAzimuth, nearestElevation));
+			if (it != t_HRTF_Resampled_partitioned.end())
+			{
+				if (ear == Common::T_ear::LEFT)
+				{
+					newHRIR = it->second.leftHRIR_Partitioned;
+				}
+				else
+				{
+					newHRIR = it->second.rightHRIR_Partitioned;
+				}
+				return newHRIR;
+			}
+			else
+			{
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");
+				nullHRIR;
+			}
+		}
+
+		const THRIR_partitioned& InterpolationOff_NewGrid(float _azimuth, float _elevation, Common::T_ear ear, THRIR_partitioned& newHRIR, const std::unordered_map<orientation, float>& stepMap) const
+		{
+			THRIR_partitioned nullHRIR;
+
+			float eleStep = stepMap.find(orientation(-1, -1))->second;
+
+			float nearestElevation = (round(_elevation / eleStep) * eleStep);
+
+			nearestElevation = CheckLimitsElevation_and_Transform(nearestElevation);
+
+			float aziStep = stepMap.find(orientation(0, nearestElevation))->second;
+			
+			
+			float nearestAzimuth = (round(_azimuth / aziStep) * aziStep);
+	
+			// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
+			if (nearestAzimuth == aziMax) { nearestAzimuth = aziMin; }
+			if (nearestElevation == eleMax) { nearestElevation = eleMin; }
+			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
+			if ((nearestElevation == eleNorth) || (nearestElevation == eleSouth)) { nearestAzimuth = aziMin; }
+
+			auto it = t_HRTF_Resampled_partitioned.find(orientation(nearestAzimuth, nearestElevation));
+			if (it != t_HRTF_Resampled_partitioned.end())
+			{
+				if (ear == Common::T_ear::LEFT)
+				{
+					newHRIR = it->second.leftHRIR_Partitioned;
+				}
+				else
+				{
+					newHRIR = it->second.rightHRIR_Partitioned;
+				}
+				return newHRIR;
+			}
+			else
+			{
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");
+				return nullHRIR;
+			}
 		}
 
 
@@ -1203,11 +1258,12 @@ namespace BRTServices
 		//param resamplingStep	HRTF resample matrix step for both azimuth and elevation		
 		std::unordered_map<orientation, float> CalculateResampled_HRTFTable(int _resamplingStep)
 		{
-			int numOfInterpolatedHRIRs = 0, n_divisions_by_elev;
+			int n_divisions_by_elev;
 
 			float elevationInRange, actual_Azi_Step;
 
 			std::unordered_map<orientation, float> stepVector;
+			THRIRPartitionedStruct null;
 
 			int n_divisions = std::ceil(360 / _resamplingStep);
 			int n_rings_hemisphere = std::ceil(90 / _resamplingStep);
@@ -1235,27 +1291,23 @@ namespace BRTServices
 				// Ceil to avoid error with the sum of decimal digits and not emplace 360 azimuth
 				for (float newAzimuth = aziMin; std::ceil(newAzimuth) < aziMax; newAzimuth = newAzimuth + actual_Azi_Step)
 				{
-					//if (std::ceil(newAzimuth) == aziMax) { newAzimuth = aziMin; }
-					if (CalculateAndEmplaceNewPartitionedHRIR(newAzimuth, elevationInRange)) { numOfInterpolatedHRIRs++; }
+					t_HRTF_Resampled_partitioned.emplace(orientation(newAzimuth, elevationInRange), null);
+
+					//if (CalculateAndEmplaceNewPartitionedHRIR(newAzimuth, elevationInRange)) { numOfInterpolatedHRIRs++; }
 				}
 			}
-			SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
+			//SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
 
 			return stepVector;
-			////Resample Interpolation Algorithm
-			//for (int newAzimuth = aziMin; newAzimuth < aziMax; newAzimuth = newAzimuth + _resamplingStep)
-			//{
-			//	for (int newElevation = eleMin; newElevation <= eleNorth; newElevation = newElevation + _resamplingStep)
-			//	{
-			//		if (CalculateAndEmplaceNewPartitionedHRIR(newAzimuth, newElevation)) { numOfInterpolatedHRIRs++; }
-			//	}
 
-			//	for (int newElevation = eleSouth; newElevation < eleMax; newElevation = newElevation + _resamplingStep)
-			//	{
-			//		if (CalculateAndEmplaceNewPartitionedHRIR(newAzimuth, newElevation)) { numOfInterpolatedHRIRs++; }
-			//	}
-			//}
-			//SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
+		}
+		void FillResampledTable() {
+			int numOfInterpolatedHRIRs = 0;
+			for (auto& it : t_HRTF_Resampled_partitioned)
+			{
+				if (CalculateAndEmplaceNewPartitionedHRIR(it.first.azimuth, it.first.elevation)) { numOfInterpolatedHRIRs++; }
+			}
+			SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
 		}
 
 		/// <summary>
@@ -1273,9 +1325,9 @@ namespace BRTServices
 				//Fill out HRTF partitioned table.IR in frequency domain
 				THRIRPartitionedStruct newHRIR_partitioned;
 				newHRIR_partitioned = SplitAndGetFFT_HRTFData(it->second);
-				auto returnValue = t_HRTF_Resampled_partitioned.emplace(orientation(_azimuth, _elevation), std::forward<THRIRPartitionedStruct>(newHRIR_partitioned));
+				t_HRTF_Resampled_partitioned[orientation(_azimuth, _elevation)] = std::forward<THRIRPartitionedStruct>(newHRIR_partitioned);
 				//Error handler
-				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_partitioned map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
+				//if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_partitioned map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
 			}
 
 			else
@@ -1296,9 +1348,9 @@ namespace BRTServices
 				//Fill out HRTF partitioned table.IR in frequency domain
 				THRIRPartitionedStruct newHRIR_partitioned;
 				newHRIR_partitioned = SplitAndGetFFT_HRTFData(interpolatedHRIR);
-				auto returnValue = t_HRTF_Resampled_partitioned.emplace(orientation(_azimuth, _elevation), std::forward<THRIRPartitionedStruct>(newHRIR_partitioned));
+				t_HRTF_Resampled_partitioned[orientation(_azimuth, _elevation)] =  std::forward<THRIRPartitionedStruct>(newHRIR_partitioned);
 				//Error handler
-				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_partitioned map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
+				//if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_partitioned map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
 			}
 			return bHRIRInterpolated;
 		
