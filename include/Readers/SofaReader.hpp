@@ -61,7 +61,12 @@ namespace BRTReaders {
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerHRTF;
 			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR, _resamplingStep);			
 		}
+		
+		bool ReadHRTFFromSofaWithoutProcess(const std::string& sofafile, std::shared_ptr<BRTServices::CHRTF> listenerHRTF, int _resamplingStep) {
 
+			std::shared_ptr<BRTServices::CServicesBase> data = listenerHRTF;
+			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR, _resamplingStep, false);
+		}
 
 		/** \brief Loads an ILD from a sofa file
 		*	\param [in] path of the sofa file
@@ -71,7 +76,7 @@ namespace BRTReaders {
 		bool ReadILDFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CILD>& listenerILD)
 		{
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerILD;
-			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS);			
+			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS, -1);			
 		}
 
 		/** \brief Loads an SRTF from a sofa file
@@ -88,7 +93,7 @@ namespace BRTReaders {
 	private:
 				
 		// Methods
-		bool ReadFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, CLibMySOFALoader::TSofaConvention _SOFAConvention, int _resamplingStep = -1) {
+		bool ReadFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, CLibMySOFALoader::TSofaConvention _SOFAConvention, int _resamplingStep, bool process = true) {
 
 			// Open file
 			BRTReaders::CLibMySOFALoader loader(sofafile);
@@ -118,8 +123,8 @@ namespace BRTReaders {
 			}
 
 			// Finish setup
-			if (_resamplingStep != -1) { data->SetResamplingStep(_resamplingStep); }
-			data->EndSetup();
+			if (_resamplingStep != -1) { data->SetResamplingStep(_resamplingStep); }			
+			if (process) { data->EndSetup(); }
 			return true;
 
 		}
