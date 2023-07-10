@@ -32,12 +32,18 @@ namespace BRTServices
 	public:
 		CHRTFTester() {};
 
-		void TestGrid(std::shared_ptr<BRTServices::CHRTF> _hrtf) {
+		std::vector<orientation> TestGrid(std::shared_ptr<BRTServices::CHRTF> _hrtf) {
 			/// Testing the access to HRTF class
 
 			// Justa and example
 			std::cout << _hrtf->GetFilename() << std::endl;
 			std::cout << _hrtf->t_HRTF_DataBase.size() << std::endl;
+			// Justa and example
+			std::vector<orientation> temp;
+			for (auto position : _hrtf->t_HRTF_DataBase) {
+				temp.push_back(position.first);
+			}
+			return temp;
 		}
 
 	};
