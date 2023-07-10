@@ -445,7 +445,7 @@ namespace BRTServices
 					
 					//return InterpolationOff_OldGrid(_azimuth, _elevation, ear, newHRIR);
 
-					return FindNearestHRIR_NewGrid(_azimuth, _elevation, ear, newHRIR, stepVector);
+					return FindNearestHRIR_NewGrid(newHRIR, _azimuth, _elevation, ear,  stepVector);
 					
 				}
 			}
@@ -457,7 +457,7 @@ namespace BRTServices
 			return *new std::vector<CMonoBuffer<float>>();
 		}
 
-		const std::vector<CMonoBuffer<float>> FindNearestHRIR_OldGrid(float _azimuth, float _elevation, Common::T_ear ear, THRIR_partitioned& newHRIR) const
+		const std::vector<CMonoBuffer<float>> FindNearestHRIR_OldGrid(float _azimuth, float _elevation, Common::T_ear ear, std::vector<CMonoBuffer<float>>& newHRIR) const
 		{
 			int nearestAzimuth = static_cast<int>(round(_azimuth / resamplingStep) * resamplingStep);
 			int nearestElevation = static_cast<int>(round(_elevation / resamplingStep) * resamplingStep);
@@ -486,9 +486,8 @@ namespace BRTServices
 			}
 		}
 
-		const THRIR_partitioned& FindNearestHRIR_NewGrid(float _azimuth, float _elevation, Common::T_ear ear, THRIR_partitioned& newHRIR, const std::unordered_map<orientation, float>& stepMap) const
+		const std::vector<CMonoBuffer<float>> FindNearestHRIR_NewGrid(std::vector<CMonoBuffer<float>>& newHRIR, float _azimuth, float _elevation, Common::T_ear ear,  const std::unordered_map<orientation, float>& stepMap) const
 		{
-			THRIR_partitioned nullHRIR;
 
 			float eleStep = stepMap.find(orientation(-1, -1))->second;
 
@@ -497,7 +496,6 @@ namespace BRTServices
 			nearestElevation = CheckLimitsElevation_and_Transform(nearestElevation);
 
 			float aziStep = stepMap.find(orientation(0, nearestElevation))->second;
-			
 			
 			float nearestAzimuth = (round(_azimuth / aziStep) * aziStep);
 	
@@ -523,7 +521,7 @@ namespace BRTServices
 			else
 			{
 				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");
-				return nullHRIR;
+				return newHRIR;
 			}
 		}
 
@@ -1272,16 +1270,12 @@ namespace BRTServices
 			for (float newElevation = -90.0f; newElevation <= 90.0f; newElevation = newElevation + actual_Ele_Step)
 			{
 
-				n_divisions_by_elev = std::ceil(n_divisions * std::cos(newElevation * PI / 180));
+				n_divisions_by_elev = std::ceil(n_divisions * std::cos(d2r(newElevation)));
 				actual_Azi_Step = 360.0f / n_divisions_by_elev;
 
 				// Calculate new Elevation to be in range [270,360] and use it to create the vector and to emplace data
-				elevationInRange = newElevation;
-				if (newElevation < 0) { elevationInRange = newElevation + 360; }
-				if (elevationInRange == 300.0f)
-				{
-					elevationInRange = elevationInRange;
-				}
+				elevationInRange = AdjustElevationRange(newElevation);
+
 				// Create the vector
 				stepVector.emplace(orientation(0, elevationInRange), actual_Azi_Step);
 
@@ -1298,6 +1292,15 @@ namespace BRTServices
 			return stepVector;
 
 		}
+		float AdjustElevationRange(float elev) {
+			if (elev < 0) { elev = elev + 360; }
+			return elev;
+		}
+
+		double d2r(double d) {
+			return (d / 180.0) * ((double)M_PI);
+		}
+
 		void FillResampledTable() {
 			int numOfInterpolatedHRIRs = 0;
 			for (auto& it : t_HRTF_Resampled_partitioned)
@@ -1326,7 +1329,6 @@ namespace BRTServices
 				//Error handler
 				//if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_partitioned map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
 			}
-
 			else
 			{
 				std::list<orientation> orientations;
