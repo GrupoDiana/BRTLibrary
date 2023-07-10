@@ -445,7 +445,7 @@ namespace BRTServices
 					
 					//return InterpolationOff_OldGrid(_azimuth, _elevation, ear, newHRIR);
 
-					return InterpolationOff_NewGrid(_azimuth, _elevation, ear, newHRIR, stepVector);
+					return FindNearestHRIR_NewGrid(_azimuth, _elevation, ear, newHRIR, stepVector);
 					
 				}
 			}
@@ -457,10 +457,8 @@ namespace BRTServices
 			return *new std::vector<CMonoBuffer<float>>();
 		}
 
-		const THRIR_partitioned& InterpolationOff_OldGrid(float _azimuth, float _elevation, Common::T_ear ear, THRIR_partitioned& newHRIR) const
+		const std::vector<CMonoBuffer<float>> FindNearestHRIR_OldGrid(float _azimuth, float _elevation, Common::T_ear ear, THRIR_partitioned& newHRIR) const
 		{
-			THRIR_partitioned nullHRIR;
-
 			int nearestAzimuth = static_cast<int>(round(_azimuth / resamplingStep) * resamplingStep);
 			int nearestElevation = static_cast<int>(round(_elevation / resamplingStep) * resamplingStep);
 			// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
@@ -468,7 +466,6 @@ namespace BRTServices
 			if (nearestElevation == eleMax) { nearestElevation = eleMin; }
 			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
 			if ((nearestElevation == eleNorth) || (nearestElevation == eleSouth)) { nearestAzimuth = aziMin; }
-
 			auto it = t_HRTF_Resampled_partitioned.find(orientation(nearestAzimuth, nearestElevation));
 			if (it != t_HRTF_Resampled_partitioned.end())
 			{
@@ -485,11 +482,11 @@ namespace BRTServices
 			else
 			{
 				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");
-				nullHRIR;
+				return newHRIR;
 			}
 		}
 
-		const THRIR_partitioned& InterpolationOff_NewGrid(float _azimuth, float _elevation, Common::T_ear ear, THRIR_partitioned& newHRIR, const std::unordered_map<orientation, float>& stepMap) const
+		const THRIR_partitioned& FindNearestHRIR_NewGrid(float _azimuth, float _elevation, Common::T_ear ear, THRIR_partitioned& newHRIR, const std::unordered_map<orientation, float>& stepMap) const
 		{
 			THRIR_partitioned nullHRIR;
 
