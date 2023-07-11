@@ -218,14 +218,14 @@ namespace BRTServices
 			//int numOfInterpolatedHRIRs = 0;
 
 			////Resample Interpolation Algorithm
-			//for (int newAzimuth = aziMin; newAzimuth < aziMax; newAzimuth = newAzimuth + _resamplingStep)
+			//for (int newAzimuth = azimuthMin; newAzimuth < azimuthMax; newAzimuth = newAzimuth + _resamplingStep)
 			//{
-			//	for (int newElevation = eleMin; newElevation <= eleNorth; newElevation = newElevation + _resamplingStep)
+			//	for (int newElevation = elevationMin; newElevation <= elevationNorth; newElevation = newElevation + _resamplingStep)
 			//	{
 			//		if (CalculateAndEmplaceNewDirectivityTF(newAzimuth, newElevation)) { numOfInterpolatedHRIRs++; }
 			//	}
 
-			//	for (int newElevation = eleSouth; newElevation < eleMax; newElevation = newElevation + _resamplingStep)
+			//	for (int newElevation = elevationSouth; newElevation < elevationMax; newElevation = newElevation + _resamplingStep)
 			//	{
 			//		if (CalculateAndEmplaceNewDirectivityTF(newAzimuth, newElevation)) { numOfInterpolatedHRIRs++; }
 			//	}

@@ -93,10 +93,387 @@ typedef std::unordered_map<orientation, THRIRPartitionedStruct> T_HRTFPartitione
 */
 typedef std::pair <float, orientation> T_PairDistanceOrientation;
 
+
+
 namespace BRTBase { class CListener; }
 
 namespace BRTServices
 {
+	enum class TPole { north, south };
+
+	class CHRTFAuxiliarMethods {
+	public:
+
+		/** \brief Get Pole Elevation
+		*	\param [in] Tpole var that indicates of which pole we need elevation
+		*   \eh  On error, an error code is reported to the error handler.
+		*/
+		static int GetPoleElevation(TPole _pole)
+		{
+			if (_pole == TPole::north) { return ELEVATION_NORTH_POLE; }
+			else if (_pole == TPole::south) { return ELEVATION_SOUTH_POLE; }
+			else {
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get a non-existent pole");
+				return 0;
+			}
+		}
+
+
+		static float CheckLimitsElevation_and_Transform(float elevation)
+		{
+			if (elevation < 0) { elevation = elevation + 360; }
+			if (elevation >= 360) { elevation = elevation - 360; }
+			return elevation;
+
+		}
+
+		/**
+		 * @brief Calculate the distance between two points [(azimuth1, elevation1) and (azimuth2, elevation2)] using the Haversine formula
+		 * @param azimuth1 
+		 * @param elevation1 
+		 * @param azimuth2 
+		 * @param elevation2 
+		 * @return float	the distance value	
+		*/
+		static float CalculateDistance_HaversineFormula(float azimuth1, float elevation1, float azimuth2, float elevation2)
+		{
+			float incremento_azimuth = azimuth1 - azimuth2;
+			float incremento_elevacion = elevation1 - elevation2;
+			float term1 = sin(incremento_elevacion / 2 * PI / 180.0);
+			term1 = term1 * term1;
+			float term2 = std::cos(elevation1 * PI / 180.0);
+			float term3 = std::cos(elevation2 * PI / 180.0);
+			float term4 = std::sin(incremento_azimuth / 2 * PI / 180.0);
+			term4 = term4 * term4;
+			float raiz = term1 + term2 * term3 * term4;
+
+			ASSERT(raiz > 0, RESULT_ERROR_OUTOFRANGE, "Attempt to compute square root of a negative value using Haversine Formula to compute distance", "");
+			float sqrtDistance = std::sqrt(raiz);
+
+			ASSERT(sqrtDistance >= -1.0f && sqrtDistance <= 1.0f, RESULT_ERROR_OUTOFRANGE,
+				"Attempt to compute arcsin of a value outside [-1..1] using Harvesine Formula to compute distnace",
+				"");
+
+			float distance = std::asin(std::sqrt(raiz));
+
+			return distance;
+		}
+
+		//		Transform the orientation in order to move the orientation of interest to 180 degrees
+		//returnval	float	transformed azimuth		
+		static float TransformAzimuth(float azimuthOrientationOfInterest, float originalAzimuth)
+		{
+			float azimuth;
+			azimuth = originalAzimuth + 180 - azimuthOrientationOfInterest;
+
+			// Check limits (always return 0 instead of 360)
+			if (azimuth >= DEFAULT_MAX_AZIMUTH)
+				azimuth = std::fmod(azimuth, (float)360);
+
+			if (azimuth < DEFAULT_MIN_AZIMUTH)
+				azimuth = azimuth + 360;
+
+			return azimuth;
+		}
+
+		//		Transform the orientation in order to express the elevation in the interval [-90,90]
+		//returnval float transformed elevation		
+		static float TransformElevation(float elevationOrientationOfInterest, float originalElevation)
+		{
+			if (originalElevation >= ELEVATION_SOUTH_POLE) {
+				originalElevation = originalElevation - 360;
+			}
+			return originalElevation;
+		}
+
+						
+		/**
+		 * @brief Calculate the barycentric coordinates of three vertex [(x1,y1), (x2,y2), (x3,y3)] and the orientation of interest (x,y)
+		 * @param x 
+		 * @param y 
+		 * @param x1 
+		 * @param y1 
+		 * @param x2 
+		 * @param y2 
+		 * @param x3 
+		 * @param y3 
+		 * @return 
+		*/		
+		static const TBarycentricCoordinatesStruct GetBarycentricCoordinates(float x, float y, float x1, float y1, float x2, float y2, float x3, float y3)
+		{
+			// Obtain Barycentric coordinates:
+			TBarycentricCoordinatesStruct barycentricCoordinates;
+
+			float denominator = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+
+			if (round(denominator) == 0) {	//if denominator=0 -> no triangle -> barycentric coordinates NO VALID 
+				//SET_RESULT(RESULT_WARNING, "Barycentric coordinates can be computed only on triangles");
+				barycentricCoordinates.alpha = -1;
+				barycentricCoordinates.beta = -1;
+				barycentricCoordinates.gamma = -1;
+			}
+			else {
+				barycentricCoordinates.alpha = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) / denominator;
+				barycentricCoordinates.alpha = trunc(1000 * barycentricCoordinates.alpha) / 1000;
+				barycentricCoordinates.beta = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3)) / denominator;
+				barycentricCoordinates.beta = trunc(1000 * barycentricCoordinates.beta) / 1000;
+				barycentricCoordinates.gamma = 1.0f - barycentricCoordinates.alpha - barycentricCoordinates.beta;
+				barycentricCoordinates.gamma = trunc(1000 * barycentricCoordinates.gamma) / 1000;
+				//SET_RESULT(RESULT_OK, "Barycentric coordinates computed succesfully");
+			}
+			return barycentricCoordinates;
+		}
+	};
+
+
+	class CGridManagerInterface {		
+	public:
+		virtual void CreateGrid(T_HRTFPartitionedTable& table, std::unordered_map<orientation, float>& stepVector, int _resamplingStep) = 0;
+		virtual void FindNearestHRIR(const T_HRTFPartitionedTable& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<orientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int resamplingStep) const = 0;
+	};
+
+	class CAngularBasedDistribution : CGridManagerInterface {
+	public:
+		void CreateGrid(T_HRTFPartitionedTable& table, std::unordered_map<orientation, float>& stepVector, int _resamplingStep) {}
+		
+		void FindNearestHRIR(const T_HRTFPartitionedTable& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<orientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int resamplingStep) const
+		{
+			int nearestAzimuth = static_cast<int>(round(_azimuth / resamplingStep) * resamplingStep);
+			int nearestElevation = static_cast<int>(round(_elevation / resamplingStep) * resamplingStep);
+			// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
+			if (nearestAzimuth == DEFAULT_MAX_AZIMUTH) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
+			if (nearestElevation == DEFAULT_MAX_ELEVATION) { nearestElevation = DEFAULT_MIN_ELEVATION; }
+			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
+			if ((nearestElevation == CHRTFAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CHRTFAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
+			auto it = table.find(orientation(nearestAzimuth, nearestElevation));
+			if (it != table.end())
+			{
+				if (ear == Common::T_ear::LEFT)
+				{
+					newHRIR = it->second.leftHRIR_Partitioned;
+				}
+				else
+				{
+					newHRIR = it->second.rightHRIR_Partitioned;
+				}				
+			}
+			else
+			{
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");				
+			}
+		}
+	};
+
+	class CQuasiUniformSphereDistribution : CGridManagerInterface {
+	public:
+		void CreateGrid(T_HRTFPartitionedTable& table, std::unordered_map<orientation, float>& stepVector, int _resamplingStep) {
+			int n_divisions_by_elev;
+
+			float elevationInRange, actual_Azi_Step;
+
+			//std::unordered_map<orientation, float> stepVector;
+			THRIRPartitionedStruct null;
+
+			int n_divisions = std::ceil(360 / _resamplingStep);
+			int n_rings_hemisphere = std::ceil(90 / _resamplingStep);
+			float actual_Ele_Step = 90.0f / n_rings_hemisphere;
+
+			// Saving in -1,-1 the Elevation Step, same for all grid
+			stepVector.emplace(orientation(-1, -1), actual_Ele_Step);
+
+			for (float newElevation = -90.0f; newElevation <= 90.0f; newElevation = newElevation + actual_Ele_Step)
+			{
+
+				n_divisions_by_elev = std::ceil(n_divisions * std::cos(d2r(newElevation)));
+				actual_Azi_Step = 360.0f / n_divisions_by_elev;
+
+				// Calculate new Elevation to be in range [270,360] and use it to create the vector and to emplace data
+				elevationInRange = AdjustElevationRange(newElevation);
+
+				// Create the vector
+				stepVector.emplace(orientation(0, elevationInRange), actual_Azi_Step);
+
+				// Ceil to avoid error with the sum of decimal digits and not emplace 360 azimuth
+				for (float newAzimuth = DEFAULT_MIN_AZIMUTH; std::ceil(newAzimuth) < DEFAULT_MAX_AZIMUTH; newAzimuth = newAzimuth + actual_Azi_Step)
+				{
+					table.emplace(orientation(newAzimuth, elevationInRange), null);					
+				}
+			}
+			//SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));			
+		}
+		
+		void FindNearestHRIR(const T_HRTFPartitionedTable& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<orientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int resamplingStep = 0) const
+		{
+			float eleStep = stepMap.find(orientation(-1, -1))->second;
+
+			float nearestElevation = (round(_elevation / eleStep) * eleStep);
+
+			nearestElevation = CHRTFAuxiliarMethods::CheckLimitsElevation_and_Transform(nearestElevation);
+
+			float aziStep = stepMap.find(orientation(0, nearestElevation))->second;
+
+			float nearestAzimuth = (round(_azimuth / aziStep) * aziStep);
+
+			// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
+			if (nearestAzimuth == DEFAULT_MAX_AZIMUTH) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
+			if (nearestElevation == DEFAULT_MAX_ELEVATION) { nearestElevation = DEFAULT_MIN_ELEVATION; }
+			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
+			if ((nearestElevation == CHRTFAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CHRTFAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
+
+			auto it = table.find(orientation(nearestAzimuth, nearestElevation));
+			if (it != table.end())
+			{
+				if (ear == Common::T_ear::LEFT)
+				{
+					newHRIR = it->second.leftHRIR_Partitioned;
+				}
+				else
+				{
+					newHRIR = it->second.rightHRIR_Partitioned;
+				}
+
+			}
+			else
+			{
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");
+			}
+
+		}
+
+	private:
+		float AdjustElevationRange(float elev) {
+			if (elev < 0) { elev = elev + 360; }
+			return elev;
+		}
+
+		double d2r(double d) {
+			return (d / 180.0) * ((double)M_PI);
+		}
+	};
+
+	class CInterpolatorInterface {
+	public:
+		virtual std::vector<T_PairDistanceOrientation> GetSortedDistancesList(std::vector<orientation> listToSort, float newAzimuth, float newElevation) = 0;
+		virtual THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, const std::vector<T_PairDistanceOrientation>& sortedList, float newAzimuth, float newElevation, int HRIRLength, int pole) = 0;
+	};
+
+	class CDistanceBasedInterpolator : CInterpolatorInterface {
+	public:
+		
+		std::vector<T_PairDistanceOrientation> GetSortedDistancesList(std::vector<orientation> listToSort, float newAzimuth, float newElevation)
+		{
+
+			T_PairDistanceOrientation temp;
+			float distance;
+			std::vector<T_PairDistanceOrientation> sortedList;
+			sortedList.reserve(listToSort.size());
+
+			// Algorithm to calculate the three shortest distances between the point (newAzimuth, newelevation) and all the points in the given list
+			for (auto it = listToSort.begin(); it != listToSort.end(); ++it)
+			{
+				distance = CHRTFAuxiliarMethods::CalculateDistance_HaversineFormula(newAzimuth, newElevation, it->azimuth, it->elevation);
+
+				temp.first = distance;
+				temp.second.azimuth = it->azimuth;
+				temp.second.elevation = it->elevation;
+
+				sortedList.push_back(temp);
+			}
+
+			if (sortedList.size() != 0) {
+				std::sort(sortedList.begin(), sortedList.end(), [](const T_PairDistanceOrientation& a, const T_PairDistanceOrientation& b) { return a.first < b.first; });				
+			}
+			else {
+				SET_RESULT(RESULT_WARNING, "Orientation list sorted by distances is empty");
+			}
+
+			return sortedList;
+		}
+
+		THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, const std::vector<T_PairDistanceOrientation>& sortedList, float newAzimuth, float newElevation, int HRIRLength, int pole = 0)
+		{
+			THRIRStruct newHRIR;
+			//// Get a list sorted by distances to the orientation of interest
+			//std::list<T_PairDistanceOrientation> sortedList = GetSortedDistancesList(newAzimuth, newElevation);
+			// PASS THE SORTED LIST TO THE FUNCTION
+			if (sortedList.size() == 0) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "Orientation List sorted by distances in GetHRIR_InterpolationMethod is empty");
+				return newHRIR;
+			}
+			
+			// Obtain  the valid Barycentric coordinates:
+			TBarycentricCoordinatesStruct barycentricCoordinates;
+			std::vector<orientation> mygroup(sortedList.size());
+			auto it = sortedList.begin();
+			for (int copy = 0; copy < sortedList.size(); copy++) {
+				mygroup[copy] = it->second;
+				it++;
+			}
+			//Algorithm to get a triangle around the orientation of interest
+			for (int groupSize = 3; groupSize < sortedList.size(); groupSize++)
+			{
+				for (int i = 0; i < groupSize - 2; i++)
+				{
+					for (int j = i + 1; j < groupSize - 1; j++)
+					{
+						for (int k = j + 1; k < groupSize; k++)
+						{
+							if (pole == ELEVATION_SOUTH_POLE || pole == ELEVATION_NORTH_POLE)
+							{
+								mygroup[i].azimuth = newAzimuth;
+								mygroup[i].elevation = pole;
+							}
+
+							//Azimuth and elevation transformation in order to get the barientric coordinates (due to we are working with a spehere not a plane)
+							float newAzimuthTransformed		= CHRTFAuxiliarMethods::TransformAzimuth(newAzimuth, newAzimuth);
+							float iAzimuthTransformed		= CHRTFAuxiliarMethods::TransformAzimuth(newAzimuth, mygroup[i].azimuth);
+							float jAzimuthTransformed		= CHRTFAuxiliarMethods::TransformAzimuth(newAzimuth, mygroup[j].azimuth);
+							float kAzimuthTransformed		= CHRTFAuxiliarMethods::TransformAzimuth(newAzimuth, mygroup[k].azimuth);
+							float newElevationTransformed	= CHRTFAuxiliarMethods::TransformElevation(newElevation, newElevation);
+							float iElevationTransformed		= CHRTFAuxiliarMethods::TransformElevation(newElevation, mygroup[i].elevation);
+							float jElevationTransformed		= CHRTFAuxiliarMethods::TransformElevation(newElevation, mygroup[j].elevation);
+							float kElevationTransformed		= CHRTFAuxiliarMethods::TransformElevation(newElevation, mygroup[k].elevation);
+
+							barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(newAzimuthTransformed, newElevationTransformed, iAzimuthTransformed, iElevationTransformed, jAzimuthTransformed, jElevationTransformed, kAzimuthTransformed, kElevationTransformed);
+
+							if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f) {
+								// Calculate the new HRIR with the barycentric coorfinates
+								auto it0 = table.find(orientation(mygroup[i].azimuth, mygroup[i].elevation));
+								auto it1 = table.find(orientation(mygroup[j].azimuth, mygroup[j].elevation));
+								auto it2 = table.find(orientation(mygroup[k].azimuth, mygroup[k].elevation));
+
+								if (it0 != table.end() && it1 != table.end() && it2 != table.end()) {
+
+									//FIXME!!! another way to initialize?
+									newHRIR = it0->second;
+									//END FIXME
+
+									for (int i = 0; i < HRIRLength; i++) {
+										newHRIR.leftHRIR[i] = barycentricCoordinates.alpha * it0->second.leftHRIR[i] + barycentricCoordinates.beta * it1->second.leftHRIR[i] + barycentricCoordinates.gamma * it2->second.leftHRIR[i];
+										newHRIR.rightHRIR[i] = barycentricCoordinates.alpha * it0->second.rightHRIR[i] + barycentricCoordinates.beta * it1->second.rightHRIR[i] + barycentricCoordinates.gamma * it2->second.rightHRIR[i];
+									}
+
+									// Calculate delay
+									newHRIR.leftDelay = barycentricCoordinates.alpha * it0->second.leftDelay + barycentricCoordinates.beta * it1->second.leftDelay + barycentricCoordinates.gamma * it2->second.leftDelay;
+									newHRIR.rightDelay = barycentricCoordinates.alpha * it0->second.rightDelay + barycentricCoordinates.beta * it1->second.rightDelay + barycentricCoordinates.gamma * it2->second.rightDelay;
+									//SET_RESULT(RESULT_OK, "HRIR calculated with interpolation method succesfully");
+									return newHRIR;
+								}
+								else {
+									SET_RESULT(RESULT_WARNING, "GetHRIR_InterpolationMethod return empty because HRIR with a specific orientation was not found");
+									return newHRIR;
+								}
+							}
+						}
+					}
+				}
+			}
+			//SET_RESULT(RESULT_OK, "");			
+		}		
+	private:
+	};
+
+
 	/** \details This class gets impulse response data to compose HRTFs and implements different algorithms to interpolate the HRIR functions.
 	*/
 	class CHRTF : public CServicesBase
@@ -120,22 +497,6 @@ namespace BRTServices
 		int32_t GetHRIRLength() const
 		{
 			return HRIRLength;
-		}
-
-		enum class TPole { north, south };
-
-		/** \brief Get Pole Elevation
-		*	\param [in] Tpole var that indicates of which pole we need elevation
-		*   \eh  On error, an error code is reported to the error handler.
-		*/
-		int GetPoleElevation(TPole _pole)const
-		{
-			if (_pole == TPole::north) { return ELEVATION_NORTH_POLE; }
-			else if (_pole == TPole::south) { return ELEVATION_SOUTH_POLE; }
-			else {
-				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get a non-existent pole");
-				return 0;
-			}
 		}
 
 		void SetResamplingStep(int _resamplingStep) {
@@ -163,8 +524,8 @@ namespace BRTServices
 				float partitions = (float)HRIRLength / (float)bufferSize;
 				HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
 
-				elevationNorth = GetPoleElevation(TPole::north);
-				elevationSouth = GetPoleElevation(TPole::south);
+				elevationNorth = CHRTFAuxiliarMethods::GetPoleElevation(TPole::north);
+				elevationSouth = CHRTFAuxiliarMethods::GetPoleElevation(TPole::south);
 
 				//Clear every table			
 				t_HRTF_DataBase.clear();
@@ -220,18 +581,18 @@ namespace BRTServices
 		{
 			if (setupInProgress) {
 				if (!t_HRTF_DataBase.empty())
-				{
+				{				
 					//Delete the common delay of every HRIR functions of the DataBase Table
 					RemoveCommonDelay_HRTFDataBaseTable();
-
-					//HRTF Resampling methdos
+					// Preparation of table read from sofa file
 					CalculateHRIR_InPoles(resamplingStep);	
 					FillOutTableOfAzimuth360(resamplingStep);
 					FillSphericalCap_HRTF(gapThreshold, resamplingStep);
-					stepVector = CalculateResampled_HRTFTable(resamplingStep);
+					CalculateListOfOrientations_T_HRTF_DataBase();
+					
+					//Creation and filling of resampling HRTF table
+					quasiUniformSphereDistribution.CreateGrid(t_HRTF_Resampled_partitioned, stepVector, resamplingStep);										
 					FillResampledTable();
-
-
 
 					//Setup values
 					auto it = t_HRTF_Resampled_partitioned.begin();
@@ -249,6 +610,17 @@ namespace BRTServices
 				}
 			}
 			return false;
+		}
+
+		/**
+		 * @brief Fill vector with the list of orientations of the T_HRTF_DataBase table
+		*/
+		void CalculateListOfOrientations_T_HRTF_DataBase() {
+			t_HRTF_DataBase_ListOfOrientations.reserve(t_HRTF_DataBase.size());
+			for (auto& kv : t_HRTF_DataBase)
+			{
+				t_HRTF_DataBase_ListOfOrientations.push_back(kv.first);
+			}
 		}
 
 		/** \brief Switch on ITD customization in accordance with the listener head radius
@@ -404,7 +776,8 @@ namespace BRTServices
 
 			}
 			if (!runTimeInterpolation) {
-				FindNearestHRIR_NewGrid(newHRIR, _azimuth, _elevation, ear, stepVector);
+				//FindNearestHRIR_NewGrid(newHRIR, _azimuth, _elevation, ear, stepVector);
+				quasiUniformSphereDistribution.FindNearestHRIR(t_HRTF_Resampled_partitioned, newHRIR, stepVector, ear, _azimuth, _elevation);
 				return newHRIR;
 			}
 
@@ -446,72 +819,72 @@ namespace BRTServices
 		}
 
 
-		const std::vector<CMonoBuffer<float>> FindNearestHRIR_OldGrid(float _azimuth, float _elevation, Common::T_ear ear, std::vector<CMonoBuffer<float>>& newHRIR) const
-		{
-			int nearestAzimuth = static_cast<int>(round(_azimuth / resamplingStep) * resamplingStep);
-			int nearestElevation = static_cast<int>(round(_elevation / resamplingStep) * resamplingStep);
-			// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
-			if (nearestAzimuth == azimuthMax) { nearestAzimuth = azimuthMin; }
-			if (nearestElevation == elevationMax) { nearestElevation = elevationMin; }
-			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
-			if ((nearestElevation == elevationNorth) || (nearestElevation == elevationSouth)) { nearestAzimuth = azimuthMin; }
-			auto it = t_HRTF_Resampled_partitioned.find(orientation(nearestAzimuth, nearestElevation));
-			if (it != t_HRTF_Resampled_partitioned.end())
-			{
-				if (ear == Common::T_ear::LEFT)
-				{
-					newHRIR = it->second.leftHRIR_Partitioned;
-				}
-				else
-				{
-					newHRIR = it->second.rightHRIR_Partitioned;
-				}
-				return newHRIR;
-			}
-			else
-			{
-				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");
-				return newHRIR;
-			}
-		}
+		//const std::vector<CMonoBuffer<float>> FindNearestHRIR_OldGrid(float _azimuth, float _elevation, Common::T_ear ear, std::vector<CMonoBuffer<float>>& newHRIR) const
+		//{
+		//	int nearestAzimuth = static_cast<int>(round(_azimuth / resamplingStep) * resamplingStep);
+		//	int nearestElevation = static_cast<int>(round(_elevation / resamplingStep) * resamplingStep);
+		//	// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
+		//	if (nearestAzimuth == azimuthMax) { nearestAzimuth = azimuthMin; }
+		//	if (nearestElevation == elevationMax) { nearestElevation = elevationMin; }
+		//	// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
+		//	if ((nearestElevation == elevationNorth) || (nearestElevation == elevationSouth)) { nearestAzimuth = azimuthMin; }
+		//	auto it = t_HRTF_Resampled_partitioned.find(orientation(nearestAzimuth, nearestElevation));
+		//	if (it != t_HRTF_Resampled_partitioned.end())
+		//	{
+		//		if (ear == Common::T_ear::LEFT)
+		//		{
+		//			newHRIR = it->second.leftHRIR_Partitioned;
+		//		}
+		//		else
+		//		{
+		//			newHRIR = it->second.rightHRIR_Partitioned;
+		//		}
+		//		return newHRIR;
+		//	}
+		//	else
+		//	{
+		//		SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");
+		//		return newHRIR;
+		//	}
+		//}
 
-		void FindNearestHRIR_NewGrid(std::vector<CMonoBuffer<float>>& newHRIR, float _azimuth, float _elevation, Common::T_ear ear,  const std::unordered_map<orientation, float>& stepMap) const
-		{
+		//void FindNearestHRIR_NewGrid(std::vector<CMonoBuffer<float>>& newHRIR, float _azimuth, float _elevation, Common::T_ear ear,  const std::unordered_map<orientation, float>& stepMap) const
+		//{
 
-			float eleStep = stepMap.find(orientation(-1, -1))->second;
+		//	float eleStep = stepMap.find(orientation(-1, -1))->second;
 
-			float nearestElevation = (round(_elevation / eleStep) * eleStep);
+		//	float nearestElevation = (round(_elevation / eleStep) * eleStep);
 
-			nearestElevation = CheckLimitsElevation_and_Transform(nearestElevation);
+		//	nearestElevation = CheckLimitsElevation_and_Transform(nearestElevation);
 
-			float aziStep = stepMap.find(orientation(0, nearestElevation))->second;
-			
-			float nearestAzimuth = (round(_azimuth / aziStep) * aziStep);
+		//	float aziStep = stepMap.find(orientation(0, nearestElevation))->second;
+		//	
+		//	float nearestAzimuth = (round(_azimuth / aziStep) * aziStep);
 	
-			// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
-			if (nearestAzimuth == azimuthMax) { nearestAzimuth = azimuthMin; }
-			if (nearestElevation == elevationMax) { nearestElevation = elevationMin; }
-			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
-			if ((nearestElevation == elevationNorth) || (nearestElevation == elevationSouth)) { nearestAzimuth = azimuthMin; }
+		//	// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
+		//	if (nearestAzimuth == azimuthMax) { nearestAzimuth = azimuthMin; }
+		//	if (nearestElevation == elevationMax) { nearestElevation = elevationMin; }
+		//	// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
+		//	if ((nearestElevation == elevationNorth) || (nearestElevation == elevationSouth)) { nearestAzimuth = azimuthMin; }
 
-			auto it = t_HRTF_Resampled_partitioned.find(orientation(nearestAzimuth, nearestElevation));
-			if (it != t_HRTF_Resampled_partitioned.end())
-			{
-				if (ear == Common::T_ear::LEFT)
-				{
-					newHRIR = it->second.leftHRIR_Partitioned;
-				}
-				else
-				{
-					newHRIR = it->second.rightHRIR_Partitioned;
-				}
-				
-			}
-			else
-			{
-				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");				
-			}
-		}
+		//	auto it = t_HRTF_Resampled_partitioned.find(orientation(nearestAzimuth, nearestElevation));
+		//	if (it != t_HRTF_Resampled_partitioned.end())
+		//	{
+		//		if (ear == Common::T_ear::LEFT)
+		//		{
+		//			newHRIR = it->second.leftHRIR_Partitioned;
+		//		}
+		//		else
+		//		{
+		//			newHRIR = it->second.rightHRIR_Partitioned;
+		//		}
+		//		
+		//	}
+		//	else
+		//	{
+		//		SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");				
+		//	}
+		//}
 
 
 		/** \brief Get the HRIR delay, in number of samples, for one ear
@@ -547,7 +920,7 @@ namespace BRTServices
 						if (Common::AreSame(_azimuthCenter, sphereBorder, epsilon_sewing)) { _azimuthCenter = 0.0f; }
 						if (Common::AreSame(_elevationCenter, sphereBorder, epsilon_sewing)) { _elevationCenter = 0.0f; }
 
-						//If we are in the sphere poles, do not perform the interpolation (the HRIR value for this orientations have been calculated with a different method in the resampled methods, because our barycentric interpolation method doesn't work in the poles)
+						//If we are in the sphere poles, do not perform the interpolation (the HRIR value for this t_HRTF_DataBase_ListOfOrientations have been calculated with a different method in the resampled methods, because our barycentric interpolation method doesn't work in the poles)
 						int iazimuth = static_cast<int>(round(_azimuthCenter));
 						int ielevation = static_cast<int>(round(_elevationCenter));
 						if ((ielevation == elevationNorth) || (ielevation == elevationSouth))
@@ -828,9 +1201,11 @@ namespace BRTServices
 
 		// HRTF tables			
 		T_HRTFTable				t_HRTF_DataBase;
+		std::vector<orientation> t_HRTF_DataBase_ListOfOrientations;
+		
 		T_HRTFTable				t_HRTF_Resampled_frequency;
 		T_HRTFPartitionedTable	t_HRTF_Resampled_partitioned;
-
+		
 		// Empty object to return in some methods
 		THRIRStruct						emptyHRIR;
 		THRIRPartitionedStruct			emptyHRIR_partitioned;
@@ -839,6 +1214,10 @@ namespace BRTServices
 		TOneEarHRIRPartitionedStruct	emptyOneEarHRIR_partitioned;
 
 		Common::CGlobalParameters globalParameters;
+
+
+		CQuasiUniformSphereDistribution quasiUniformSphereDistribution;
+		CDistanceBasedInterpolator distanceBasedInterpolator;
 
 		friend class CHRTFTester;
 		/////////////
@@ -850,7 +1229,7 @@ namespace BRTServices
 		{
 			THRIRStruct precalculatedHRIR_270, precalculatedHRIR_90;
 			bool found = false;
-			//Clasify every HRIR of the HRTF into the two hemispheres by their orientations
+			//Clasify every HRIR of the HRTF into the two hemispheres by their t_HRTF_DataBase_ListOfOrientations
 			std::vector<orientation> keys_southernHemisphere, keys_northenHemisphere;
 			int iAzimuthPoles = azimuthMin;
 			int iElevationNorthPole = elevationNorth;
@@ -916,7 +1295,7 @@ namespace BRTServices
 		}
 
 		//	Calculate the HRIR in the pole of one of the hemispheres
-		//param hemisphereParts	vector of the HRTF orientations of the hemisphere		
+		//param hemisphereParts	vector of the HRTF t_HRTF_DataBase_ListOfOrientations of the hemisphere		
 		THRIRStruct CalculateHRIR_InOneHemispherePole(std::vector<orientation> keys_hemisphere)
 		{
 			THRIRStruct calculatedHRIR;
@@ -944,7 +1323,7 @@ namespace BRTServices
 					bool everyPartWithValues = true;
 					for (int j = 0; j < NUMBER_OF_PARTS; j++)
 					{
-						everyPartWithValues = everyPartWithValues & (hemisphereParts[j].size() > 0);
+						everyPartWithValues = everyPartWithValues && (hemisphereParts[j].size() > 0);
 					}
 
 					//If hemisphere every part has at list a value, the algorithm of select the interpolated HRIR finish
@@ -1092,17 +1471,17 @@ namespace BRTServices
 			std::vector<orientation> orientations, north_hemisphere, south_hemisphere;
 			orientation bufferOrientation;
 
-			// Create a vector with all the orientations of the Database
+			// Create a vector with all the t_HRTF_DataBase_ListOfOrientations of the Database
 			orientations.reserve(t_HRTF_DataBase.size());
 			for (auto& itr : t_HRTF_DataBase)
 			{
 				orientations.push_back(itr.first);
 			}
 
-			//  Sort orientations of the DataBase with a lambda function in sort.
+			//  Sort t_HRTF_DataBase_ListOfOrientations of the DataBase with a lambda function in sort.
 			std::sort(orientations.begin(), orientations.end(), [](orientation a, orientation b) {return a.elevation < b.elevation; });
 
-			//	Separating orientations of both hemispheres
+			//	Separating t_HRTF_DataBase_ListOfOrientations of both hemispheres
 			std::copy_if(orientations.begin(), orientations.end(), back_inserter(south_hemisphere), [](orientation n) {return n.elevation > 180; }); //SOUTH
 			std::copy_if(orientations.begin(), orientations.end(), back_inserter(north_hemisphere), [](orientation n) {return n.elevation < 180; }); //NORTH
 
@@ -1110,7 +1489,6 @@ namespace BRTServices
 			reverse(north_hemisphere.begin(), north_hemisphere.end());
 
 			// SOUTH HEMISPHERE
-
 			CalculateDistanceBetweenPoleandLastRing(south_hemisphere, max_dist_elev, elev_south);
 
 			if (max_dist_elev > _gapThreshold)
@@ -1118,12 +1496,10 @@ namespace BRTServices
 				//pole = ELEVATION_SOUTH_POLE; // 270
 				Calculate_and_EmplaceHRIR(elevationSouth, south_hemisphere, elev_south, elev_Step);
 			}
-
 			// Reset var to use it in north hemisphere
 			max_dist_elev = 0;
 
 			// NORTH HEMISPHERE
-
 			CalculateDistanceBetweenPoleandLastRing(north_hemisphere, max_dist_elev, elev_north);
 
 			if (max_dist_elev > _gapThreshold)
@@ -1139,11 +1515,11 @@ namespace BRTServices
 		/// <param name="_hemisphere"></param>
 		/// <param name="_max_dist_elev"></param>
 		/// <param name="elevationLastRing"></param>
-		void CalculateDistanceBetweenPoleandLastRing(std::vector<orientation> _hemisphere, int& _max_dist_elev, int& elevationLastRing)
+		void CalculateDistanceBetweenPoleandLastRing(std::vector<orientation>& _hemisphere, int& _max_dist_elev, int& elevationLastRing)
 		{
 			for (int jj = 1; jj < _hemisphere.size(); jj++)
 			{
-				// distance between 2 orientations, always positive
+				// distance between 2 t_HRTF_DataBase_ListOfOrientations, always positive
 				if (_hemisphere[jj].elevation != _hemisphere[0].elevation)
 				{
 					_max_dist_elev = abs(_hemisphere[jj].elevation - _hemisphere[0].elevation); // Distance positive for all poles
@@ -1161,8 +1537,8 @@ namespace BRTServices
 		/// <param name="_fillStep"></param>
 		void Calculate_and_EmplaceHRIR(int _pole, std::vector<orientation> _hemisphere, int _elevationLastRing, int _fillStep)
 		{
-			std::list<orientation> onlythatelev;
-			std::list<T_PairDistanceOrientation> sortedList;
+			std::vector<orientation> lastRingOrientationList;
+			std::vector<T_PairDistanceOrientation> sortedList;
 			int azimuth_Step = _fillStep;
 			THRIRStruct HRIR_interpolated;
 
@@ -1171,121 +1547,35 @@ namespace BRTServices
 			{
 				if (itr.elevation == _elevationLastRing)
 				{
-					onlythatelev.push_back(itr);
+					lastRingOrientationList.push_back(itr);
 				}
 			}
 			// SOUTH HEMISPHERE
-
 			if (_pole == ELEVATION_SOUTH_POLE)
 			{
 				for (int elevat = _pole + _fillStep; elevat < _elevationLastRing; elevat = elevat + _fillStep)
 				{
 					for (int azim = azimuthMin; azim <= azimuthMax; azim = azim + azimuth_Step)
 					{
-
-						sortedList = GetSortedDistancesList_v2(azim, elevat, onlythatelev);
-
-						HRIR_interpolated = CalculateHRIR_offlineMethod_v2(azim, elevat, sortedList, _pole);
-
+						sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
+						HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, sortedList, azim, elevat, HRIRLength, _pole);
 						t_HRTF_DataBase.emplace(orientation(azim, elevat), HRIR_interpolated);
-
 					}
 				}
 			}	// NORTH HEMISPHERE
 			else if (_pole == ELEVATION_NORTH_POLE)
 			{
-
 				for (int elevat = _elevationLastRing + _fillStep; elevat < _pole; elevat = elevat + _fillStep)
 				{
 					for (int azim = azimuthMin; azim <= azimuthMax; azim = azim + azimuth_Step)
 					{
-
-						sortedList = GetSortedDistancesList_v2(azim, elevat, onlythatelev);
-
-						HRIR_interpolated = CalculateHRIR_offlineMethod_v2(azim, elevat, sortedList, _pole);
-
+						sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
+						HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, sortedList, azim, elevat, HRIRLength, _pole);
 						t_HRTF_DataBase.emplace(orientation(azim, elevat), HRIR_interpolated);
-
 					}
 				}
-
 			}
-
-		}
-
-	//	//	Calculate the resample matrix using the Barycentric interpolation Method (copy the HRIR function of the nearest orientation)
-	//	//param resamplingStep	HRTF resample matrix step for both azimuth and elevation		
-	//	void CalculateResampled_HRTFTable(int _resamplingStep)
-	//	{
-	//		int numOfInterpolatedHRIRs = 0;
-
-	//		//Resample Interpolation Algorithm
-	//		for (int newAzimuth = azimuthMin; newAzimuth < azimuthMax; newAzimuth = newAzimuth + _resamplingStep)
-	//		{
-	//			for (int newElevation = elevationMin; newElevation <= elevationNorth; newElevation = newElevation + _resamplingStep)
-	//			{
-	//				if (CalculateAndEmplaceNewPartitionedHRIR(newAzimuth, newElevation)) { numOfInterpolatedHRIRs++; }
-	//			}
-
-	//			for (int newElevation = elevationSouth; newElevation < elevationMax; newElevation = newElevation + _resamplingStep)
-	//			{
-	//				if (CalculateAndEmplaceNewPartitionedHRIR(newAzimuth, newElevation)) { numOfInterpolatedHRIRs++; }
-	//			}
-	//		}
-	//		SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
-	//	}
-
-		//	Calculate the resample matrix using the Barycentric interpolation Method (copy the HRIR function of the nearest orientation)
-		//param resamplingStep	HRTF resample matrix step for both azimuth and elevation		
-		std::unordered_map<orientation, float> CalculateResampled_HRTFTable(int _resamplingStep)
-		{
-			int n_divisions_by_elev;
-
-			float elevationInRange, actual_Azi_Step;
-
-			std::unordered_map<orientation, float> stepVector;
-			THRIRPartitionedStruct null;
-
-			int n_divisions = std::ceil(360 / _resamplingStep);
-			int n_rings_hemisphere = std::ceil(90 / _resamplingStep);
-			float actual_Ele_Step = 90.0f / n_rings_hemisphere;
-
-			// Saving in -1,-1 the Elevation Step, same for all grid
-			stepVector.emplace(orientation(-1, -1), actual_Ele_Step); 
-
-			for (float newElevation = -90.0f; newElevation <= 90.0f; newElevation = newElevation + actual_Ele_Step)
-			{
-
-				n_divisions_by_elev = std::ceil(n_divisions * std::cos(d2r(newElevation)));
-				actual_Azi_Step = 360.0f / n_divisions_by_elev;
-
-				// Calculate new Elevation to be in range [270,360] and use it to create the vector and to emplace data
-				elevationInRange = AdjustElevationRange(newElevation);
-
-				// Create the vector
-				stepVector.emplace(orientation(0, elevationInRange), actual_Azi_Step);
-
-				// Ceil to avoid error with the sum of decimal digits and not emplace 360 azimuth
-				for (float newAzimuth = azimuthMin; std::ceil(newAzimuth) < azimuthMax; newAzimuth = newAzimuth + actual_Azi_Step)
-				{
-					t_HRTF_Resampled_partitioned.emplace(orientation(newAzimuth, elevationInRange), null);
-
-					//if (CalculateAndEmplaceNewPartitionedHRIR(newAzimuth, elevationInRange)) { numOfInterpolatedHRIRs++; }
-				}
-			}
-			//SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
-
-			return stepVector;
-
-		}
-		float AdjustElevationRange(float elev) {
-			if (elev < 0) { elev = elev + 360; }
-			return elev;
-		}
-
-		double d2r(double d) {
-			return (d / 180.0) * ((double)M_PI);
-		}
+		}	
 
 		void FillResampledTable() {
 			int numOfInterpolatedHRIRs = 0;
@@ -1311,31 +1601,20 @@ namespace BRTServices
 				//Fill out HRTF partitioned table.IR in frequency domain
 				THRIRPartitionedStruct newHRIR_partitioned;
 				newHRIR_partitioned = SplitAndGetFFT_HRTFData(it->second);
-				t_HRTF_Resampled_partitioned[orientation(_azimuth, _elevation)] = std::forward<THRIRPartitionedStruct>(newHRIR_partitioned);
-				//Error handler
-				//if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_partitioned map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
+				t_HRTF_Resampled_partitioned[orientation(_azimuth, _elevation)] = std::forward<THRIRPartitionedStruct>(newHRIR_partitioned);				
 			}
 			else
-			{
-				std::list<orientation> orientations;
-				//orientations.reserve(t_HRTF_DataBase.size());
-				for (auto& kv : t_HRTF_DataBase)
-				{
-					orientations.push_back(kv.first);
-				}
+			{				
 				// Get a list sorted by distances to the orientation of interest
-				std::list<T_PairDistanceOrientation> sortedList = GetSortedDistancesList_v2(_azimuth, _elevation, orientations);
-
+				std::vector<T_PairDistanceOrientation> sortedList = distanceBasedInterpolator.GetSortedDistancesList(t_HRTF_DataBase_ListOfOrientations, _azimuth, _elevation);
 				//Get the interpolated HRIR 
-				interpolatedHRIR = CalculateHRIR_offlineMethod_v2(_azimuth, _elevation, sortedList, 0);
+				interpolatedHRIR = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, sortedList, _azimuth, _elevation, HRIRLength);
 				bHRIRInterpolated = true;
 
 				//Fill out HRTF partitioned table.IR in frequency domain
 				THRIRPartitionedStruct newHRIR_partitioned;
 				newHRIR_partitioned = SplitAndGetFFT_HRTFData(interpolatedHRIR);
-				t_HRTF_Resampled_partitioned[orientation(_azimuth, _elevation)] =  std::forward<THRIRPartitionedStruct>(newHRIR_partitioned);
-				//Error handler
-				//if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR into t_HRTF_Resampled_partitioned map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
+				t_HRTF_Resampled_partitioned[orientation(_azimuth, _elevation)] =  std::forward<THRIRPartitionedStruct>(newHRIR_partitioned);				
 			}
 			return bHRIRInterpolated;
 		
@@ -1382,203 +1661,7 @@ namespace BRTServices
 
 			return new_DataFFT_Partitioned;
 		}
-
-		//		Calculate the distance between two points [(azimuth1, elevation1) and (azimuth2, elevation2)] using the Haversine formula
-		//return	float	the distance value		
-		float CalculateDistance_HaversineFormula(float azimuth1, float elevation1, float azimuth2, float elevation2)
-		{
-			float incremento_azimuth = azimuth1 - azimuth2;
-			float incremento_elevacion = elevation1 - elevation2;
-			float term1 = sin(incremento_elevacion / 2 * PI / 180.0);
-			term1 = term1 * term1;
-			float term2 = std::cos(elevation1 * PI / 180.0);
-			float term3 = std::cos(elevation2 * PI / 180.0);
-			float term4 = std::sin(incremento_azimuth / 2 * PI / 180.0);
-			term4 = term4 * term4;
-			float raiz = term1 + term2 * term3 * term4;
-
-			ASSERT(raiz > 0, RESULT_ERROR_OUTOFRANGE, "Attempt to compute square root of a negative value using Haversine Formula to compute distance", "");
-			float sqrtDistance = std::sqrt(raiz);
-
-			ASSERT(sqrtDistance >= -1.0f && sqrtDistance <= 1.0f, RESULT_ERROR_OUTOFRANGE,
-				"Attempt to compute arcsin of a value outside [-1..1] using Harvesine Formula to compute distnace",
-				"");
-
-			float distance = std::asin(std::sqrt(raiz));
-
-			return distance;
-		}
-
-
-		THRIRStruct CalculateHRIR_offlineMethod_v2(float newAzimuth, float newElevation, std::list<T_PairDistanceOrientation> sortedList, int pole)
-		{
-			THRIRStruct newHRIR;
-			//// Get a list sorted by distances to the orientation of interest
-			//std::list<T_PairDistanceOrientation> sortedList = GetSortedDistancesList(newAzimuth, newElevation);
-			// PASS THE SORTED LIST TO THE FUNCTION
-
-			if (sortedList.size() != 0) {
-				// Obtain  the valid Barycentric coordinates:
-				TBarycentricCoordinatesStruct barycentricCoordinates;
-				std::vector<orientation> mygroup(sortedList.size());
-				auto it = sortedList.begin();
-				for (int copy = 0; copy < sortedList.size(); copy++) {
-					mygroup[copy] = it->second;
-					it++;
-				}
-				//Algorithm to get a triangle around the orientation of interest
-				for (int groupSize = 3; groupSize < sortedList.size(); groupSize++)
-				{
-					for (int i = 0; i < groupSize - 2; i++)
-					{
-						for (int j = i + 1; j < groupSize - 1; j++)
-						{
-							for (int k = j + 1; k < groupSize; k++)
-							{
-								if (pole == elevationSouth || pole == elevationNorth)
-								{
-									mygroup[i].azimuth = newAzimuth;
-									mygroup[i].elevation = pole;
-								}
-
-								//Azimuth and elevation transformation in order to get the barientric coordinates (due to we are working with a spehere not a plane)
-								float newAzimuthTransformed = TransformAzimuth(newAzimuth, newAzimuth);
-								float iAzimuthTransformed = TransformAzimuth(newAzimuth, mygroup[i].azimuth);
-								float jAzimuthTransformed = TransformAzimuth(newAzimuth, mygroup[j].azimuth);
-								float kAzimuthTransformed = TransformAzimuth(newAzimuth, mygroup[k].azimuth);
-								float newElevationTransformed = TransformElevation(newElevation, newElevation);
-								float iElevationTransformed = TransformElevation(newElevation, mygroup[i].elevation);
-								float jElevationTransformed = TransformElevation(newElevation, mygroup[j].elevation);
-								float kElevationTransformed = TransformElevation(newElevation, mygroup[k].elevation);
-
-								barycentricCoordinates = GetBarycentricCoordinates(newAzimuthTransformed, newElevationTransformed, iAzimuthTransformed, iElevationTransformed, jAzimuthTransformed, jElevationTransformed, kAzimuthTransformed, kElevationTransformed);
-
-								if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f) {
-									// Calculate the new HRIR with the barycentric coorfinates
-									auto it0 = t_HRTF_DataBase.find(orientation(mygroup[i].azimuth, mygroup[i].elevation));
-									auto it1 = t_HRTF_DataBase.find(orientation(mygroup[j].azimuth, mygroup[j].elevation));
-									auto it2 = t_HRTF_DataBase.find(orientation(mygroup[k].azimuth, mygroup[k].elevation));
-
-									if (it0 != t_HRTF_DataBase.end() && it1 != t_HRTF_DataBase.end() && it2 != t_HRTF_DataBase.end()) {
-
-										//FIXME!!! another way to initialize?
-										newHRIR = it0->second;
-										//END FIXME
-
-										for (int i = 0; i < HRIRLength; i++) {
-											newHRIR.leftHRIR[i] = barycentricCoordinates.alpha * it0->second.leftHRIR[i] + barycentricCoordinates.beta * it1->second.leftHRIR[i] + barycentricCoordinates.gamma * it2->second.leftHRIR[i];
-											newHRIR.rightHRIR[i] = barycentricCoordinates.alpha * it0->second.rightHRIR[i] + barycentricCoordinates.beta * it1->second.rightHRIR[i] + barycentricCoordinates.gamma * it2->second.rightHRIR[i];
-										}
-
-										// Calculate delay
-										newHRIR.leftDelay = barycentricCoordinates.alpha * it0->second.leftDelay + barycentricCoordinates.beta * it1->second.leftDelay + barycentricCoordinates.gamma * it2->second.leftDelay;
-										newHRIR.rightDelay = barycentricCoordinates.alpha * it0->second.rightDelay + barycentricCoordinates.beta * it1->second.rightDelay + barycentricCoordinates.gamma * it2->second.rightDelay;
-										//SET_RESULT(RESULT_OK, "HRIR calculated with interpolation method succesfully");
-										return newHRIR;
-									}
-									else {
-										SET_RESULT(RESULT_WARNING, "GetHRIR_InterpolationMethod return empty because HRIR with a specific orientation was not found");
-										return emptyHRIR;
-									}
-								}
-							}
-						}
-					}
-				}
-				//SET_RESULT(RESULT_OK, "");
-			}
-			else {
-				SET_RESULT(RESULT_ERROR_NOTSET, "Orientation List sorted by distances in GetHRIR_InterpolationMethod is empty");
-			}
-
-			SET_RESULT(RESULT_WARNING, "GetHRIR_InterpolationMethod returns empty");
-			return emptyHRIR;
-
-		}
-
-		//		Calculate the barycentric coordinates of three vertex [(x1,y1), (x2,y2), (x3,y3)] and the orientation of interest (x,y)
-		//const TBarycentricCoordinatesStruct GetBarycentricCoordinates(float newAzimuth, float newElevation, float x1, float y1, float x2, float y2, float x3, float y3) const;
-		const TBarycentricCoordinatesStruct GetBarycentricCoordinates(float x, float y, float x1, float y1, float x2, float y2, float x3, float y3)const
-		{
-			// Obtain Barycentric coordinates:
-			TBarycentricCoordinatesStruct barycentricCoordinates;
-
-			float denominator = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
-
-			if (round(denominator) == 0) {	//if denominator=0 -> no triangle -> barycentric coordinates NO VALID 
-				//SET_RESULT(RESULT_WARNING, "Barycentric coordinates can be computed only on triangles");
-				barycentricCoordinates.alpha = -1;
-				barycentricCoordinates.beta = -1;
-				barycentricCoordinates.gamma = -1;
-			}
-			else {
-				barycentricCoordinates.alpha = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) / denominator;
-				barycentricCoordinates.alpha = trunc(1000 * barycentricCoordinates.alpha) / 1000;
-				barycentricCoordinates.beta = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3)) / denominator;
-				barycentricCoordinates.beta = trunc(1000 * barycentricCoordinates.beta) / 1000;
-				barycentricCoordinates.gamma = 1.0f - barycentricCoordinates.alpha - barycentricCoordinates.beta;
-				barycentricCoordinates.gamma = trunc(1000 * barycentricCoordinates.gamma) / 1000;
-				//SET_RESULT(RESULT_OK, "Barycentric coordinates computed succesfully");
-			}
-			return barycentricCoordinates;
-		}
-
-		//		Transform the orientation in order to move the orientation of interest to 180 degrees
-		//returnval	float	transformed azimuth		
-		float TransformAzimuth(float azimuthOrientationOfInterest, float originalAzimuth)
-		{
-			float azimuth;
-			azimuth = originalAzimuth + 180 - azimuthOrientationOfInterest;
-
-			// Check limits (always return 0 instead of 360)
-			if (azimuth >= azimuthMax)
-				azimuth = std::fmod(azimuth, (float)360);
-
-			if (azimuth < azimuthMin)
-				azimuth = azimuth + 360;
-
-			return azimuth;
-		}
-
-		//		Transform the orientation in order to express the elevation in the interval [-90,90]
-		//returnval float transformed elevation		
-		float TransformElevation(float elevationOrientationOfInterest, float originalElevation)
-		{
-			if (originalElevation >= elevationSouth) {
-				originalElevation = originalElevation - 360;
-			}
-			return originalElevation;
-		}
-
-		std::list<T_PairDistanceOrientation> GetSortedDistancesList_v2(float newAzimuth, float newElevation, std::list<orientation> listToSort)
-		{
-			T_PairDistanceOrientation temp;
-			float distance;
-			std::list<T_PairDistanceOrientation> sortedList;
-
-			// Algorithm to calculate the three shortest distances between the point (newAzimuth, newelevation) and all the points in the given list
-			for (auto it = listToSort.begin(); it != listToSort.end(); ++it)
-			{
-				distance = CalculateDistance_HaversineFormula(newAzimuth, newElevation, it->azimuth, it->elevation);
-
-				temp.first = distance;
-				temp.second.azimuth = it->azimuth;
-				temp.second.elevation = it->elevation;
-
-				sortedList.push_back(temp);
-			}
-
-			if (sortedList.size() != 0) {
-				sortedList.sort([](const T_PairDistanceOrientation& a, const T_PairDistanceOrientation& b) { return a.first < b.first; });
-				//SET_RESULT(RESULT_OK, "Sorted distances list obtained succesfully");
-			}
-			else {
-				SET_RESULT(RESULT_WARNING, "Orientation list sorted by distances is empty");
-			}
-
-			return sortedList;
-		}
-
+		
 		//	Get HRIR from resample table using a barycentric interpolation of the three nearest orientation.		
 		const oneEarHRIR_struct GetHRIR_InterpolationMethod(Common::T_ear ear, int azimuth, int elevation) const
 		{
@@ -1605,13 +1688,13 @@ namespace BRTServices
 				if (elevation >= elevation_ptoP)
 				{
 					//Second quadrant
-					barycentricCoordinates = GetBarycentricCoordinates(azimuth, elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
+					barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(azimuth, elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
 					newHRIR = CalculateHRIRFromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoB, orientation_ptoD);
 				}
 				else if (elevation < elevation_ptoP)
 				{
 					//Forth quadrant
-					barycentricCoordinates = GetBarycentricCoordinates(azimuth, elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
+					barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(azimuth, elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
 					newHRIR = CalculateHRIRFromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoB, orientation_ptoC, orientation_ptoD);
 				}
 			}
@@ -1620,12 +1703,12 @@ namespace BRTServices
 				if (elevation >= elevation_ptoP)
 				{
 					//First quadrant
-					barycentricCoordinates = GetBarycentricCoordinates(azimuth, elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation);
+					barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(azimuth, elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation);
 					newHRIR = CalculateHRIRFromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoB, orientation_ptoC);
 				}
 				else if (elevation < elevation_ptoP) {
 					//Third quadrant
-					barycentricCoordinates = GetBarycentricCoordinates(azimuth, elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
+					barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(azimuth, elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
 					newHRIR = CalculateHRIRFromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoC, orientation_ptoD);
 				}
 			}
@@ -1633,60 +1716,7 @@ namespace BRTServices
 			//SET_RESULT(RESULT_OK, "CalculateHRIR_InterpolationMethod completed succesfully");
 			return newHRIR;
 		}
-
-		////	Calculate from resample table HRIR subfilters using a barycentric interpolation of the three nearest orientation.
-		//const std::vector<CMonoBuffer<float>> GetHRIR_partitioned_InterpolationMethod(Common::T_ear ear, float _azimuth, float _elevation) const		
-		//{
-		//	std::vector<CMonoBuffer<float>> newHRIR;
-		//	TBarycentricCoordinatesStruct barycentricCoordinates;
-		//	orientation orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoP;
-
-		//	//Calculate the quadrant points A, B, C and D and the middle quadrant point P
-		//	orientation_ptoC.azimuth = trunc(_azimuth / resamplingStep) * resamplingStep;
-		//	orientation_ptoC.elevation = trunc(_elevation / resamplingStep) * resamplingStep;
-		//	orientation_ptoA.azimuth = orientation_ptoC.azimuth;
-		//	orientation_ptoA.elevation = orientation_ptoC.elevation + resamplingStep;
-		//	orientation_ptoB.azimuth = orientation_ptoC.azimuth + resamplingStep;
-		//	orientation_ptoB.elevation = orientation_ptoC.elevation + resamplingStep;
-		//	orientation_ptoD.azimuth = orientation_ptoC.azimuth + resamplingStep;
-		//	orientation_ptoD.elevation = orientation_ptoC.elevation;
-		//	orientation_ptoP.azimuth = orientation_ptoC.azimuth + (resamplingStep * 0.5f);
-		//	float azimuth_ptoP = orientation_ptoC.azimuth + (resamplingStep * 0.5f);
-		//	float elevation_ptoP = orientation_ptoC.elevation + (resamplingStep * 0.5f);
-
-		//	//Depend on the quadrant where the point of interest is situated obtain the Barycentric coordinates and the HRIR of the orientation of interest (azimuth, elevation)
-		//	if (_azimuth >= azimuth_ptoP)
-		//	{
-		//		if (_elevation >= elevation_ptoP)
-		//		{
-		//			//Second quadrant
-		//			barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
-		//			newHRIR = CalculateHRIR_partitioned_FromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoB, orientation_ptoD);
-		//		}
-		//		else if (_elevation < elevation_ptoP)
-		//		{
-		//			//Forth quadrant
-		//			barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
-		//			newHRIR = CalculateHRIR_partitioned_FromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoB, orientation_ptoC, orientation_ptoD);
-		//		}
-		//	}
-		//	else if (_azimuth < azimuth_ptoP)
-		//	{
-		//		if (_elevation >= elevation_ptoP)
-		//		{
-		//			//First quadrant
-		//			barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation);
-		//			newHRIR = CalculateHRIR_partitioned_FromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoB, orientation_ptoC);
-		//		}
-		//		else if (_elevation < elevation_ptoP) {
-		//			//Third quadrant
-		//			barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
-		//			newHRIR = CalculateHRIR_partitioned_FromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoC, orientation_ptoD);
-		//		}
-		//	}
-		//	//SET_RESULT(RESULT_OK, "GetHRIR_partitioned_InterpolationMethod completed succesfully");
-		//	return newHRIR;
-		//}
+		
 
 		//	Calculate from resample table HRIR subfilters using a barycentric interpolation of the three nearest orientation.
 		const std::vector<CMonoBuffer<float>> GetHRIR_partitioned_InterpolationMethod(Common::T_ear ear, float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap) const
@@ -1705,7 +1735,7 @@ namespace BRTServices
 				if (_elevation >= orientation_ptoP.elevation)
 				{
 					//Second quadrant
-					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
+					barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
 					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoB, orientation_ptoD, orientation_ptoC); }
 
 					if (eleCeil == elevationNorth) { orientation_ptoB.azimuth = azimuthMin; } else if (eleFloor == elevationSouth) { orientation_ptoD.azimuth = azimuthMin; }
@@ -1715,7 +1745,7 @@ namespace BRTServices
 				else if (_elevation < orientation_ptoP.elevation)
 				{
 					//Forth quadrant
-					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
+					barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
 					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoA); }
 
 					if (eleCeil == elevationNorth) { orientation_ptoB.azimuth = azimuthMin; } else if (eleFloor == elevationSouth) { orientation_ptoD.azimuth = azimuthMin; }
@@ -1728,7 +1758,7 @@ namespace BRTServices
 				if (_elevation >= orientation_ptoP.elevation)
 				{
 					//First quadrant
-					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation);
+					barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation);
 					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD); }
 
 					if (eleCeil == elevationNorth) { orientation_ptoB.azimuth = azimuthMin; }	else if (eleFloor == elevationSouth) { orientation_ptoD.azimuth = azimuthMin; }
@@ -1737,7 +1767,7 @@ namespace BRTServices
 				}
 				else if (_elevation < orientation_ptoP.elevation) {
 					//Third quadrant
-					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
+					barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
 					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoC, orientation_ptoD, orientation_ptoB); }
 
 					if (eleCeil == elevationNorth) { orientation_ptoB.azimuth = azimuthMin; } else if (eleFloor == elevationSouth) { orientation_ptoD.azimuth = azimuthMin; }
@@ -1758,8 +1788,8 @@ namespace BRTServices
 			float eleCeil = eleStep * idxEle;
 			float eleFloor = eleStep * (idxEle - 1);
 
-			eleCeil = CheckLimitsElevation_and_Transform(eleCeil);										//			   Back	  Front
-			eleFloor = CheckLimitsElevation_and_Transform(eleFloor);									//	Ceil		A		B
+			eleCeil = CHRTFAuxiliarMethods::CheckLimitsElevation_and_Transform(eleCeil);				//			   Back	  Front
+			eleFloor = CHRTFAuxiliarMethods::CheckLimitsElevation_and_Transform(eleFloor);				//	Ceil		A		B
 
 			auto stepItr = stepMap.find(orientation(0, eleCeil));										//	Floor		C		D
 			float aziStepCeil = stepItr->second;
@@ -1798,13 +1828,13 @@ namespace BRTServices
 			return std::pair(eleCeil, eleFloor);
 		}
 
-		float CheckLimitsElevation_and_Transform(float elevation)const
+		/*float CheckLimitsElevation_and_Transform(float elevation)const
 		{
 			if (elevation < 0) { elevation = elevation + 360; }
 			if (elevation >= 360) { elevation = elevation - 360; }
 			return elevation;
 
-		}
+		}*/
 		float CheckLimitsAzimuth_and_Transform(float azimuth)const
 		{
 			if (azimuth < 0) { azimuth = azimuth + 360; }
@@ -1829,13 +1859,13 @@ namespace BRTServices
 			// The triangle with points 1, 2 and 3 is the one just check, so we are going to check the others
 
 			TBarycentricCoordinatesStruct barycentricCoordinates;
-			barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, pnt1.azimuth, pnt1.elevation, pnt2.azimuth, pnt2.elevation, pnt4.azimuth, pnt4.elevation);
+			barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, pnt1.azimuth, pnt1.elevation, pnt2.azimuth, pnt2.elevation, pnt4.azimuth, pnt4.elevation);
 			if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0)
 			{
-				barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, pnt1.azimuth, pnt1.elevation, pnt3.azimuth, pnt3.elevation, pnt4.azimuth, pnt4.elevation);
+				barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, pnt1.azimuth, pnt1.elevation, pnt3.azimuth, pnt3.elevation, pnt4.azimuth, pnt4.elevation);
 				if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0)
 				{
-					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, pnt2.azimuth, pnt2.elevation, pnt3.azimuth, pnt3.elevation, pnt4.azimuth, pnt4.elevation);
+					barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, pnt2.azimuth, pnt2.elevation, pnt3.azimuth, pnt3.elevation, pnt4.azimuth, pnt4.elevation);
 				}
 			}
 			return barycentricCoordinates;
@@ -1859,7 +1889,7 @@ namespace BRTServices
 				if (orientation_pto1.elevation == elevationMax) { orientation_pto1.elevation = elevationMin; }
 				if (orientation_pto2.elevation == elevationMax) { orientation_pto2.elevation = elevationMin; }
 				if (orientation_pto3.elevation == elevationMax) { orientation_pto3.elevation = elevationMin; }
-				// Find the HRIR for the specific orientations
+				// Find the HRIR for the specific t_HRTF_DataBase_ListOfOrientations
 				auto it1 = t_HRTF_Resampled_frequency.find(orientation(orientation_pto1.azimuth, orientation_pto1.elevation));
 				auto it2 = t_HRTF_Resampled_frequency.find(orientation(orientation_pto2.azimuth, orientation_pto2.elevation));
 				auto it3 = t_HRTF_Resampled_frequency.find(orientation(orientation_pto3.azimuth, orientation_pto3.elevation));
@@ -1919,7 +1949,7 @@ namespace BRTServices
 				if (orientation_pto2.elevation == elevationMax) { orientation_pto2.elevation = elevationMin; }
 				if (orientation_pto3.elevation == elevationMax) { orientation_pto3.elevation = elevationMin; }
 
-				// Find the HRIR for the given orientations
+				// Find the HRIR for the given t_HRTF_DataBase_ListOfOrientations
 				auto it1 = t_HRTF_Resampled_partitioned.find(orientation(orientation_pto1.azimuth, orientation_pto1.elevation));
 				auto it2 = t_HRTF_Resampled_partitioned.find(orientation(orientation_pto2.azimuth, orientation_pto2.elevation));
 				auto it3 = t_HRTF_Resampled_partitioned.find(orientation(orientation_pto3.azimuth, orientation_pto3.elevation));
@@ -1991,7 +2021,7 @@ namespace BRTServices
 				if (_elevation >= orientation_ptoP.elevation)
 				{
 					//Second quadrant
-					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
+					barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
 					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoB, orientation_ptoD, orientation_ptoC); }
 
 					if (eleCeil == elevationNorth) { orientation_ptoB.azimuth = azimuthMin; } else if (eleFloor == elevationSouth) { orientation_ptoD.azimuth = azimuthMin; }
@@ -2001,7 +2031,7 @@ namespace BRTServices
 				else if (_elevation < orientation_ptoP.elevation)
 				{
 					//Forth quadrant
-					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
+					barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
 					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoA); }
 
 					if (eleCeil == elevationNorth) { orientation_ptoB.azimuth = azimuthMin; } else if (eleFloor == elevationSouth) { orientation_ptoD.azimuth = azimuthMin; }
@@ -2014,7 +2044,7 @@ namespace BRTServices
 				if (_elevation >= orientation_ptoP.elevation)
 				{
 					//First quadrant
-					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation);
+					barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation);
 					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD); }
 
 					if (eleCeil == elevationNorth) { orientation_ptoB.azimuth = azimuthMin; } else if (eleFloor == elevationSouth) { orientation_ptoD.azimuth = azimuthMin; }
@@ -2023,45 +2053,14 @@ namespace BRTServices
 				}
 				else if (_elevation < orientation_ptoP.elevation) {
 					//Third quadrant
-					barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
+					barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
 					if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) { barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, orientation_ptoA, orientation_ptoC, orientation_ptoD, orientation_ptoB); }
 
 					if (eleCeil == elevationNorth) { orientation_ptoB.azimuth = azimuthMin; } else if (eleFloor == elevationSouth) { orientation_ptoD.azimuth = azimuthMin; }
 
 					newHRIRDelay = CalculateHRIRDelayFromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoC, orientation_ptoD);
 				}
-			}
-
-			//if (_azimuth >= azimuth_ptoP)
-			//{
-			//	if (_elevation >= elevation_ptoP)
-			//	{
-			//		//Second quadrant
-			//		barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
-			//		newHRIRDelay = CalculateHRIRDelayFromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoB, orientation_ptoD);
-			//	}
-			//	else if (_elevation < elevation_ptoP)
-			//	{
-			//		//Forth quadrant
-			//		barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
-			//		newHRIRDelay = CalculateHRIRDelayFromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoB, orientation_ptoC, orientation_ptoD);
-			//	}
-			//}
-			//else if (_azimuth < azimuth_ptoP)
-			//{
-			//	if (_elevation >= elevation_ptoP)
-			//	{
-			//		//First quadrant
-			//		barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoB.azimuth, orientation_ptoB.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation);
-			//		newHRIRDelay = CalculateHRIRDelayFromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoB, orientation_ptoC);
-			//	}
-			//	else if (_elevation < elevation_ptoP) {
-			//		//Third quadrant
-			//		barycentricCoordinates = GetBarycentricCoordinates(_azimuth, _elevation, orientation_ptoA.azimuth, orientation_ptoA.elevation, orientation_ptoC.azimuth, orientation_ptoC.elevation, orientation_ptoD.azimuth, orientation_ptoD.elevation);
-			//		newHRIRDelay = CalculateHRIRDelayFromBarycentricCoordinates(ear, barycentricCoordinates, orientation_ptoA, orientation_ptoC, orientation_ptoD);
-			//	}
-			//}
-			//SET_RESULT(RESULT_OK, "GetHRIR_partitioned_InterpolationMethod completed succesfully");
+			}			
 			return newHRIRDelay;
 		}
 		
@@ -2081,7 +2080,7 @@ namespace BRTServices
 				if (orientation_pto2.elevation == elevationMax) { orientation_pto2.elevation = elevationMin; }
 				if (orientation_pto3.elevation == elevationMax) { orientation_pto3.elevation = elevationMin; }
 
-				// Find the HRIR for the given orientations
+				// Find the HRIR for the given t_HRTF_DataBase_ListOfOrientations
 				auto it1 = t_HRTF_Resampled_partitioned.find(orientation(orientation_pto1.azimuth, orientation_pto1.elevation));
 				auto it2 = t_HRTF_Resampled_partitioned.find(orientation(orientation_pto2.azimuth, orientation_pto2.elevation));
 				auto it3 = t_HRTF_Resampled_partitioned.find(orientation(orientation_pto3.azimuth, orientation_pto3.elevation));
@@ -2180,51 +2179,7 @@ namespace BRTServices
 			HRIRLength = 0;
 			bufferSize = 0;
 			resamplingStep = DEFAULT_RESAMPLING_STEP;
-		}	
-
-		//T_HRTFTable::const_iterator Find_inHRTFDatabase_withAngleRoundToHundredth(float _azimuthDegrees, float _elevationDegrees) {
-
-		//	float azimuth_hundredth = RoundToHundredth(_azimuthDegrees);
-		//	float elevation_hundredth = RoundToHundredth(_elevationDegrees);
-
-		//	T_HRTFTable::const_iterator it = t_HRTF_DataBase.find(orientation(azimuth_hundredth, elevation_hundredth));
-
-		//	return it;
-		//}
-
-		//bool Emplace_inHRTFDatabase_WithAngleRoundToHundredth(float _azimuthDegrees, float _elevationDegrees, THRIRStruct & _HRIR ) {
-
-		//	float azimuth_hundredth = RoundToHundredth(_azimuthDegrees);
-		//	float elevation_hundredth = RoundToHundredth(_elevationDegrees);
-
-		//	auto returnValue = t_HRTF_DataBase.emplace(orientation(azimuth_hundredth, elevation_hundredth), _HRIR);
-
-		//	return returnValue.second;
-		//}
-
-		//bool Emplace_inHRTFDatabase_WithAngleRoundToHundredth(float _azimuthDegrees, float _elevationDegrees, THRIRStruct && _HRIR) {
-
-		//	float azimuth_hundredth = RoundToHundredth(_azimuthDegrees);
-		//	float elevation_hundredth = RoundToHundredth(_elevationDegrees);
-
-		//	auto returnValue = t_HRTF_DataBase.emplace(orientation(azimuth_hundredth, elevation_hundredth), std::forward<THRIRStruct>(_HRIR));
-
-		//	return returnValue.second;
-		//}
-
-		//int RoundToHundredth(float angle) {
-		//	return static_cast<int> (round(angle * 100));
-		//}
-
-		//int DivideByOneHundred(float angle) {
-		//	return static_cast<int> (round(angle / 100));
-
-		//}
-
-		//orientation OrientationDividedByOneHundred(orientation _position) {
-		//	return orientation(DivideByOneHundred(_position.azimuth), DivideByOneHundred(_position.elevation));
-		//}
-
+		}			
 	};
 }
 #endif
