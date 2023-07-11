@@ -225,18 +225,18 @@ namespace BRTServices
 		}
 	};
 
-
 	class CGridManagerInterface {		
 	public:
 		virtual void CreateGrid(T_HRTFPartitionedTable& table, std::unordered_map<orientation, float>& stepVector, int _resamplingStep) = 0;
-		virtual void FindNearestHRIR(const T_HRTFPartitionedTable& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<orientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int resamplingStep) const = 0;
+		virtual void FindNearestHRIR(const T_HRTFPartitionedTable& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<orientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int resamplingStep)const = 0;
+		virtual void FindNearestDelay(const T_HRTFPartitionedTable& table, float& HRIR_delay, const std::unordered_map<orientation, float >& stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int resamplingStep)const = 0;
 	};
 
-	class CAngularBasedDistribution : CGridManagerInterface {
+	class CAngularBasedDistribution :public CGridManagerInterface {
 	public:
 		void CreateGrid(T_HRTFPartitionedTable& table, std::unordered_map<orientation, float>& stepVector, int _resamplingStep) {}
 		
-		void FindNearestHRIR(const T_HRTFPartitionedTable& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<orientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int resamplingStep) const
+		void FindNearestHRIR(const T_HRTFPartitionedTable& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<orientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int resamplingStep)const
 		{
 			int nearestAzimuth = static_cast<int>(round(_azimuth / resamplingStep) * resamplingStep);
 			int nearestElevation = static_cast<int>(round(_elevation / resamplingStep) * resamplingStep);
@@ -262,9 +262,39 @@ namespace BRTServices
 				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");				
 			}
 		}
+		
+		void FindNearestDelay(const T_HRTFPartitionedTable& table, float& HRIR_delay, const std::unordered_map<orientation, float > & stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int resamplingStep )const
+		{
+
+			int nearestAzimuth = static_cast<int>(round(_azimuthCenter / resamplingStep) * resamplingStep);
+			int nearestElevation = static_cast<int>(round(_elevationCenter / resamplingStep) * resamplingStep);
+
+			// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
+			if (nearestAzimuth == DEFAULT_MAX_AZIMUTH) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
+			if (nearestElevation == DEFAULT_MAX_ELEVATION) { nearestElevation = DEFAULT_MIN_ELEVATION; }
+			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
+			if ((nearestElevation == CHRTFAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CHRTFAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
+
+			auto it = table.find(orientation(nearestAzimuth, nearestElevation));
+			if (it != table.end())
+			{
+				if (ear == Common::T_ear::LEFT)
+				{
+					HRIR_delay = it->second.leftDelay;
+				}
+				else
+				{
+					HRIR_delay = it->second.rightDelay;
+				}
+			}
+			else
+			{
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIRDelay: HRIR not found");
+			}
+		}
 	};
 
-	class CQuasiUniformSphereDistribution : CGridManagerInterface {
+	class CQuasiUniformSphereDistribution : public CGridManagerInterface {
 	public:
 		void CreateGrid(T_HRTFPartitionedTable& table, std::unordered_map<orientation, float>& stepVector, int _resamplingStep) {
 			int n_divisions_by_elev;
@@ -296,12 +326,12 @@ namespace BRTServices
 				// Ceil to avoid error with the sum of decimal digits and not emplace 360 azimuth
 				for (float newAzimuth = DEFAULT_MIN_AZIMUTH; std::ceil(newAzimuth) < DEFAULT_MAX_AZIMUTH; newAzimuth = newAzimuth + actual_Azi_Step)
 				{
-					table.emplace(orientation(newAzimuth, elevationInRange), null);					
+					table.emplace(orientation(newAzimuth, elevationInRange), null);
 				}
 			}
 			//SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));			
 		}
-		
+
 		void FindNearestHRIR(const T_HRTFPartitionedTable& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<orientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int resamplingStep = 0) const
 		{
 			float eleStep = stepMap.find(orientation(-1, -1))->second;
@@ -339,6 +369,43 @@ namespace BRTServices
 			}
 
 		}
+		void FindNearestDelay(const T_HRTFPartitionedTable& table, float& HRIR_delay, const std::unordered_map<orientation, float>& stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int resamplingStep = 0) const
+		{
+			float eleStep = stepMap.find(orientation(-1, -1))->second;
+
+			float nearestElevation = (round(_elevationCenter / eleStep) * eleStep);
+
+			nearestElevation = CHRTFAuxiliarMethods::CheckLimitsElevation_and_Transform(nearestElevation);
+
+			float aziStep = stepMap.find(orientation(0, nearestElevation))->second;
+
+			float nearestAzimuth = (round(_azimuthCenter / aziStep) * aziStep);
+
+			// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
+			if (nearestAzimuth == DEFAULT_MAX_AZIMUTH) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
+			if (nearestElevation == DEFAULT_MAX_ELEVATION) { nearestElevation = DEFAULT_MIN_ELEVATION; }
+			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
+			if ((nearestElevation == CHRTFAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CHRTFAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
+
+			auto it = table.find(orientation(nearestAzimuth, nearestElevation));
+			if (it != table.end())
+			{
+				if (ear == Common::T_ear::LEFT)
+				{
+					HRIR_delay = it->second.leftDelay;
+				}
+				else
+				{
+					HRIR_delay = it->second.rightDelay;
+				}
+
+			}
+			else
+			{
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");
+			}
+
+		};
 
 	private:
 		float AdjustElevationRange(float elev) {
@@ -484,10 +551,10 @@ namespace BRTServices
 		*   \eh Nothing is reported to the error handler.
 		*/
 		CHRTF()
-			:enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, gapThreshold{ DEFAULT_GAP_THRESHOLD }, HRIRLength{ 0 }, fileName {""},
-			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, headRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }, leftEarLocalPosition {Common::CVector3()}, rightEarLocalPosition{ Common::CVector3() },
+			:enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, gapThreshold{ DEFAULT_GAP_THRESHOLD }, HRIRLength{ 0 }, fileName{ "" },
+			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, headRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }, leftEarLocalPosition{ Common::CVector3() }, rightEarLocalPosition{ Common::CVector3() },
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER },
-			epsilon_sewing { EPSILON_SEWING}
+			epsilon_sewing{ EPSILON_SEWING }
 		{}
 
 		/** \brief Get size of each HRIR buffer
@@ -508,11 +575,11 @@ namespace BRTServices
 		}
 
 		/** \brief Start a new HRTF configuration
-		*	\param [in] _HRIRLength buffer size of the HRIR to be added		
+		*	\param [in] _HRIRLength buffer size of the HRIR to be added
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
-		void BeginSetup(int32_t _HRIRLength, float _distance)		
+		void BeginSetup(int32_t _HRIRLength, float _distance)
 		{
 			//if ((ownerListener != nullptr) && ownerListener->ownerCore!=nullptr)
 			{
@@ -548,7 +615,7 @@ namespace BRTServices
 		/** \brief Set the full HRIR matrix.
 		*	\param [in] newTable full table with all HRIR data
 		*   \eh Nothing is reported to the error handler.
-		*/		
+		*/
 		void AddHRTFTable(T_HRTFTable&& newTable)
 		{
 			if (setupInProgress) {
@@ -562,7 +629,7 @@ namespace BRTServices
 		*	\param [in] newHRIR HRIR data for both ears
 		*   \eh Warnings may be reported to the error handler.
 		*/
-		void AddHRIR(float _azimuth, float _elevation, THRIRStruct && newHRIR)		
+		void AddHRIR(float _azimuth, float _elevation, THRIRStruct&& newHRIR)
 		{
 			if (setupInProgress) {
 				Common::CVector3 cartessianPos;
@@ -573,25 +640,25 @@ namespace BRTServices
 			}
 		}
 
-		/** \brief Stop the HRTF configuration		
+		/** \brief Stop the HRTF configuration
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
-		*/		
+		*/
 		bool EndSetup()
 		{
 			if (setupInProgress) {
 				if (!t_HRTF_DataBase.empty())
-				{				
+				{
 					//Delete the common delay of every HRIR functions of the DataBase Table
 					RemoveCommonDelay_HRTFDataBaseTable();
 					// Preparation of table read from sofa file
-					CalculateHRIR_InPoles(resamplingStep);	
+					CalculateHRIR_InPoles(resamplingStep);
 					FillOutTableOfAzimuth360(resamplingStep);
 					FillSphericalCap_HRTF(gapThreshold, resamplingStep);
 					CalculateListOfOrientations_T_HRTF_DataBase();
-					
+
 					//Creation and filling of resampling HRTF table
-					quasiUniformSphereDistribution.CreateGrid(t_HRTF_Resampled_partitioned, stepVector, resamplingStep);										
+					quasiUniformSphereDistribution.CreateGrid(t_HRTF_Resampled_partitioned, stepVector, resamplingStep);
 					FillResampledTable();
 
 					//Setup values
@@ -625,14 +692,14 @@ namespace BRTServices
 
 		/** \brief Switch on ITD customization in accordance with the listener head radius
 		*   \eh Nothing is reported to the error handler.
-		*/		
+		*/
 		void EnableHRTFCustomizedITD() {
 			enableCustomizedITD = true;
 		}
 
 		/** \brief Switch off ITD customization in accordance with the listener head radius
 		*   \eh Nothing is reported to the error handler.
-		*/		
+		*/
 		void DisableHRTFCustomizedITD() {
 			enableCustomizedITD = false;
 		}
@@ -640,21 +707,21 @@ namespace BRTServices
 		/** \brief Get the flag for HRTF cutomized ITD process
 		*	\retval HRTFCustomizedITD if true, the HRTF ITD customization process based on the head circumference is enabled
 		*   \eh Nothing is reported to the error handler.
-		*/		
+		*/
 		bool IsHRTFCustomizedITDEnabled()
 		{
 			return enableCustomizedITD;
 		}
 
 		/** \brief Get interpolated HRIR buffer with Delay, for one ear
-		*	\param [in] ear for which ear we want to get the HRIR 
+		*	\param [in] ear for which ear we want to get the HRIR
 		*	\param [in] _azimuth azimuth angle in degrees
 		*	\param [in] _elevation elevation angle in degrees
 		*	\param [in] runTimeInterpolation switch run-time interpolation
 		*	\retval HRIR interpolated buffer with delay for specified ear
 		*   \eh On error, an error code is reported to the error handler.
 		*       Warnings may be reported to the error handler.
-		*/		
+		*/
 		const oneEarHRIR_struct GetHRIR_frequency(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation) const
 		{
 			if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
@@ -762,14 +829,14 @@ namespace BRTServices
 		*       Warnings may be reported to the error handler.
 		*/
 		const std::vector<CMonoBuffer<float>> GetHRIR_partitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation) const
-		//const std::vector<CMonoBuffer<float>> CHRTF::GetHRIR_partitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation) const
+			//const std::vector<CMonoBuffer<float>> CHRTF::GetHRIR_partitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation) const
 		{
 			std::vector<CMonoBuffer<float>> newHRIR;
 			if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
 			{
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get HRIR for a wrong ear (BOTH or NONE)");
 			}
-		
+
 			if (setupInProgress) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRTF Setup in progress return empty");
 				return newHRIR;
@@ -789,17 +856,17 @@ namespace BRTServices
 
 			// Check if we are at a pole
 			int ielevation = static_cast<int>(round(_elevation));
-			if ((ielevation == elevationNorth) || (ielevation == elevationSouth)){
+			if ((ielevation == elevationNorth) || (ielevation == elevationSouth)) {
 				GetPoleHRIR_partitioned(newHRIR, ear, ielevation);
 				return newHRIR;
 			}
-			
+
 			//Run time interpolation ON
-			return GetHRIR_partitioned_InterpolationMethod(ear, _azimuth, _elevation, stepVector);									
+			return GetHRIR_partitioned_InterpolationMethod(ear, _azimuth, _elevation, stepVector);
 		}
 
 
-		void GetPoleHRIR_partitioned(std::vector<CMonoBuffer<float>> & newHRIR, Common::T_ear ear, int ielevation) const {
+		void GetPoleHRIR_partitioned(std::vector<CMonoBuffer<float>>& newHRIR, Common::T_ear ear, int ielevation) const {
 			auto it = t_HRTF_Resampled_partitioned.find(orientation(azimuthMin, ielevation));
 			if (it != t_HRTF_Resampled_partitioned.end())
 			{
@@ -818,75 +885,6 @@ namespace BRTServices
 			}
 		}
 
-
-		//const std::vector<CMonoBuffer<float>> FindNearestHRIR_OldGrid(float _azimuth, float _elevation, Common::T_ear ear, std::vector<CMonoBuffer<float>>& newHRIR) const
-		//{
-		//	int nearestAzimuth = static_cast<int>(round(_azimuth / resamplingStep) * resamplingStep);
-		//	int nearestElevation = static_cast<int>(round(_elevation / resamplingStep) * resamplingStep);
-		//	// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
-		//	if (nearestAzimuth == azimuthMax) { nearestAzimuth = azimuthMin; }
-		//	if (nearestElevation == elevationMax) { nearestElevation = elevationMin; }
-		//	// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
-		//	if ((nearestElevation == elevationNorth) || (nearestElevation == elevationSouth)) { nearestAzimuth = azimuthMin; }
-		//	auto it = t_HRTF_Resampled_partitioned.find(orientation(nearestAzimuth, nearestElevation));
-		//	if (it != t_HRTF_Resampled_partitioned.end())
-		//	{
-		//		if (ear == Common::T_ear::LEFT)
-		//		{
-		//			newHRIR = it->second.leftHRIR_Partitioned;
-		//		}
-		//		else
-		//		{
-		//			newHRIR = it->second.rightHRIR_Partitioned;
-		//		}
-		//		return newHRIR;
-		//	}
-		//	else
-		//	{
-		//		SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");
-		//		return newHRIR;
-		//	}
-		//}
-
-		//void FindNearestHRIR_NewGrid(std::vector<CMonoBuffer<float>>& newHRIR, float _azimuth, float _elevation, Common::T_ear ear,  const std::unordered_map<orientation, float>& stepMap) const
-		//{
-
-		//	float eleStep = stepMap.find(orientation(-1, -1))->second;
-
-		//	float nearestElevation = (round(_elevation / eleStep) * eleStep);
-
-		//	nearestElevation = CheckLimitsElevation_and_Transform(nearestElevation);
-
-		//	float aziStep = stepMap.find(orientation(0, nearestElevation))->second;
-		//	
-		//	float nearestAzimuth = (round(_azimuth / aziStep) * aziStep);
-	
-		//	// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
-		//	if (nearestAzimuth == azimuthMax) { nearestAzimuth = azimuthMin; }
-		//	if (nearestElevation == elevationMax) { nearestElevation = elevationMin; }
-		//	// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
-		//	if ((nearestElevation == elevationNorth) || (nearestElevation == elevationSouth)) { nearestAzimuth = azimuthMin; }
-
-		//	auto it = t_HRTF_Resampled_partitioned.find(orientation(nearestAzimuth, nearestElevation));
-		//	if (it != t_HRTF_Resampled_partitioned.end())
-		//	{
-		//		if (ear == Common::T_ear::LEFT)
-		//		{
-		//			newHRIR = it->second.leftHRIR_Partitioned;
-		//		}
-		//		else
-		//		{
-		//			newHRIR = it->second.rightHRIR_Partitioned;
-		//		}
-		//		
-		//	}
-		//	else
-		//	{
-		//		SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");				
-		//	}
-		//}
-
-
 		/** \brief Get the HRIR delay, in number of samples, for one ear
 		*	\param [in] ear for which ear we want to get the HRIR
 		*	\param [in] _azimuthCenter azimuth angle from the source and the listener head center in degrees
@@ -897,102 +895,99 @@ namespace BRTServices
 		*       Warnings may be reported to the error handler.
 		*/
 		float GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation)
-		//float CHRTF::GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation)
 		{
 			float HRIR_delay = 0.0f;
 
 			if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
 			{
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "GetHRIRDelay: Attempt to get the delay of the HRIR for a wrong ear (BOTH or NONE)");
+				return HRIR_delay;
 			}
 
-			if (!setupInProgress)
+			if (setupInProgress)
 			{
-				//Modify delay if customized delay is activate
-				if (enableCustomizedITD)
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIRDelay: HRTF Setup in progress return empty");
+				return HRIR_delay;
+			}
+
+			//Modify delay if customized delay is activate
+			if (enableCustomizedITD)
+			{
+				HRIR_delay = GetCustomizedDelay(_azimuthCenter, _elevationCenter, ear);
+				return HRIR_delay;
+			}
+	
+			if (!runTimeInterpolation)
+			{
+				//quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, HRIR_delay, stepVector, ear, _azimuthCenter, _elevationCenter);
+				return HRIR_delay;
+				//Run time interpolation OFF
+
+				//int nearestAzimuth = static_cast<int>(round(_azimuthCenter / resamplingStep) * resamplingStep);
+				//int nearestElevation = static_cast<int>(round(_elevationCenter / resamplingStep) * resamplingStep);
+				//// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
+				//if (nearestAzimuth == azimuthMax) { nearestAzimuth = azimuthMin; }
+				//if (nearestElevation == elevationMax) { nearestElevation = elevationMin; }
+				//// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
+				//if ((nearestElevation == elevationNorth) || (nearestElevation == elevationSouth)) { nearestAzimuth = azimuthMin; }
+
+				//auto it = t_HRTF_Resampled_partitioned.find(orientation(nearestAzimuth, nearestElevation));
+				//if (it != t_HRTF_Resampled_partitioned.end())
+				//{
+				//	if (ear == Common::T_ear::LEFT)
+				//	{
+				//		HRIR_delay = it->second.leftDelay;
+				//	}
+				//	else
+				//	{
+				//		HRIR_delay = it->second.rightDelay;
+				//	}
+
+				//	return HRIR_delay;
+				//}
+				//else
+				//{
+				//	SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIRDelay: HRIR not found");
+				//}
+			}
+
+			//  We have to do the run time interpolation -- (runTimeInterpolation = true)
+
+			// Check if we are close to 360 azimuth or elevation and change to 0
+			if (Common::AreSame(_azimuthCenter, sphereBorder, epsilon_sewing)) { _azimuthCenter = 0.0f; }
+			if (Common::AreSame(_elevationCenter, sphereBorder, epsilon_sewing)) { _elevationCenter = 0.0f; }
+
+			// Check if we are at a pole
+			int ielevation = static_cast<int>(round(_elevationCenter));
+			if ((ielevation == elevationNorth) || (ielevation == elevationSouth))
+			{
+				GetPoleDelay_Partitioned(HRIR_delay, ear, ielevation);
+				return HRIR_delay;
+			}
+				//Run time interpolation ON
+				return GetHRIRDelayInterpolationMethod(ear, _azimuthCenter, _elevationCenter, resamplingStep, stepVector);	
+		}
+
+		void GetPoleDelay_Partitioned(float& HRIR_delay, Common::T_ear ear, int ielevation) const
+		{
+			//In the sphere poles the azimuth is always 0 degrees
+			auto it = t_HRTF_Resampled_partitioned.find(orientation(azimuthMin, ielevation));
+			if (it != t_HRTF_Resampled_partitioned.end())
+			{
+				if (ear == Common::T_ear::LEFT)
 				{
-					HRIR_delay = GetCustomizedDelay(_azimuthCenter, _elevationCenter, ear);
+					HRIR_delay = it->second.leftDelay;
 				}
 				else
 				{
-					if (runTimeInterpolation)
-					{
-						if (Common::AreSame(_azimuthCenter, sphereBorder, epsilon_sewing)) { _azimuthCenter = 0.0f; }
-						if (Common::AreSame(_elevationCenter, sphereBorder, epsilon_sewing)) { _elevationCenter = 0.0f; }
-
-						//If we are in the sphere poles, do not perform the interpolation (the HRIR value for this t_HRTF_DataBase_ListOfOrientations have been calculated with a different method in the resampled methods, because our barycentric interpolation method doesn't work in the poles)
-						int iazimuth = static_cast<int>(round(_azimuthCenter));
-						int ielevation = static_cast<int>(round(_elevationCenter));
-						if ((ielevation == elevationNorth) || (ielevation == elevationSouth))
-						{
-							//In the sphere poles the azimuth is always 0 degrees
-							iazimuth = azimuthMin; // float
-							auto it = t_HRTF_Resampled_partitioned.find(orientation(iazimuth, ielevation));
-							if (it != t_HRTF_Resampled_partitioned.end())
-							{
-								if (ear == Common::T_ear::LEFT)
-								{
-									HRIR_delay = it->second.leftDelay;
-								}
-								else
-								{
-									HRIR_delay = it->second.rightDelay;
-								}
-							}
-							else
-							{
-								SET_RESULT(RESULT_WARNING, "Orientations in GetHRIRDelay() not found");
-							}
-						}
-
-						else
-						{
-							//Run time interpolation ON
-							HRIR_delay = GetHRIRDelayInterpolationMethod(ear, _azimuthCenter, _elevationCenter, resamplingStep, stepVector);
-						}
-
-						return HRIR_delay;
-
-					}
-					else
-					{
-						//Run time interpolation OFF
-						int nearestAzimuth = static_cast<int>(round(_azimuthCenter / resamplingStep) * resamplingStep);
-						int nearestElevation = static_cast<int>(round(_elevationCenter / resamplingStep) * resamplingStep);
-						// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
-						if (nearestAzimuth == azimuthMax) { nearestAzimuth = azimuthMin; }
-						if (nearestElevation == elevationMax) { nearestElevation = elevationMin; }
-						// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
-						if ((nearestElevation == elevationNorth) || (nearestElevation == elevationSouth)) { nearestAzimuth = azimuthMin; }
-
-						auto it = t_HRTF_Resampled_partitioned.find(orientation(nearestAzimuth, nearestElevation));
-						if (it != t_HRTF_Resampled_partitioned.end())
-						{
-							if (ear == Common::T_ear::LEFT)
-							{
-								HRIR_delay = it->second.leftDelay;
-							}
-							else
-							{
-								HRIR_delay = it->second.rightDelay;
-							}
-
-							return HRIR_delay;
-						}
-						else
-						{
-							SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIRDelay: HRIR not found");
-						}
-					}
+					HRIR_delay = it->second.rightDelay;
 				}
 			}
 			else
 			{
-				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIRDelay: HRTF Setup in progress return empty");
+				SET_RESULT(RESULT_WARNING, "Orientations in GetHRIRDelay() not found");
 			}
 
-			SET_RESULT(RESULT_WARNING, "GetHRIRDelay return delay=0");
-			return HRIR_delay;
 		}
 
 		/** \brief	Get the number of subfilters (blocks) in which the HRIR has been partitioned
