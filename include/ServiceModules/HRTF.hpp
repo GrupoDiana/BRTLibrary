@@ -230,6 +230,7 @@ namespace BRTServices
 		virtual void CreateGrid(T_HRTFPartitionedTable& table, std::unordered_map<orientation, float>& stepVector, int _resamplingStep) = 0;
 		virtual void FindNearestHRIR(const T_HRTFPartitionedTable& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<orientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int resamplingStep)const = 0;
 		virtual void FindNearestDelay(const T_HRTFPartitionedTable& table, float& HRIR_delay, const std::unordered_map<orientation, float >& stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int resamplingStep)const = 0;
+		friend class CHRTFTester;
 	};
 
 	class CAngularBasedDistribution :public CGridManagerInterface {
@@ -369,6 +370,7 @@ namespace BRTServices
 			}
 
 		}
+		
 		void FindNearestDelay(const T_HRTFPartitionedTable& table, float& HRIR_delay, const std::unordered_map<orientation, float>& stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int resamplingStep = 0) const
 		{
 			float eleStep = stepMap.find(orientation(-1, -1))->second;
@@ -407,6 +409,7 @@ namespace BRTServices
 
 		};
 
+		friend class CHRTFTester;
 	private:
 		float AdjustElevationRange(float elev) {
 			if (elev < 0) { elev = elev + 360; }
@@ -537,6 +540,7 @@ namespace BRTServices
 			}
 			//SET_RESULT(RESULT_OK, "");			
 		}		
+		friend class CHRTFTester;
 	private:
 	};
 
