@@ -33,28 +33,33 @@ namespace BRTServices
 	public:
 		CHRTFTester() {};
 
-		std::vector<orientation> TestGrid(std::shared_ptr<BRTServices::CHRTF> _hrtf) {
-			/// Testing the access to HRTF class
+		/**
+		 * @brief Print to .csv file all orientations of the Grid resampled.
+		 * @param _hrtf 
+		*/
+		void TestGrid(std::shared_ptr<BRTServices::CHRTF> _hrtf) {
 
+			// QuasiUniformSphereDistibution object thanks to friend class
 			BRTServices::CQuasiUniformSphereDistribution  _gridQuasiUniform;
 
-			_hrtf->CalculateHRIR_InPoles(_hrtf->resamplingStep);
-			_hrtf->FillOutTableOfAzimuth360(_hrtf->resamplingStep);
-			_hrtf->FillSphericalCap_HRTF(_hrtf->gapThreshold, _hrtf->resamplingStep);
-
+			// Cause we call the Reader of the SOFA without the process, now we can call only the method that create the grid in which later will be emplace the data
 			_gridQuasiUniform.CreateGrid(_hrtf->t_HRTF_Resampled_partitioned, _hrtf->stepVector, _hrtf->resamplingStep);
 
-			std::cout << _hrtf->GetFilename() << std::endl;
-			std::cout << _hrtf->t_HRTF_DataBase.size() << std::endl;
+			//std::cout << _hrtf->GetFilename() << std::endl;
+			//std::cout << _hrtf->t_HRTF_DataBase.size() << std::endl;
+
+			// Once created the table with the orientations of HRTF Grid, we print to a .csv file
 
 			std::fstream gridFile;
-			gridFile.open("GridTest.csv", std::ios::out);
+			std::string filename = "GridTest.csv";
+			gridFile.open(filename, std::ios::out);
 			gridFile << "Azimuth;Elevation\n";
 			for (auto& orientationToSave : _hrtf->t_HRTF_Resampled_partitioned) 
 			{
 				//std::cout << "Azimuth: " << orientationToSave.azimuth << "Elevation: " << orientationToSave.elevation << std::endl;
 				//gridFile << orientationToSave.first.azimuth << ";" << orientationToSave.first.elevation << "\n";
 
+				// Emplacing the decimal point to decimal comma to improve the reading from other apps like Excel.
 				std::ostringstream azimuthStream;
 				azimuthStream << std::fixed << orientationToSave.first.azimuth;
 				std::string azimuthString = azimuthStream.str();
@@ -68,22 +73,25 @@ namespace BRTServices
 				gridFile << azimuthString << ";" << elevationString << "\n";
 			}
 			gridFile.close();
-			
-			std::vector<orientation> temp;
-			for (auto position : _hrtf->t_HRTF_DataBase) {
-				temp.push_back(position.first);
-			}
-			return temp;
+			std::cout << "File created: " + filename << std::endl;
 		}
 
+		/**
+		 * @brief Prints to console the number of HRIRs interpolated to check if a SOFA already interpolated needs to be interpolate
+		 * @param _hrtf 
+		*/
 		void TestGridInterpolation(std::shared_ptr<BRTServices::CHRTF> _hrtf)
 		{
+			// QuasiUniformSphereDistibution object thanks to friend class
 			BRTServices::CQuasiUniformSphereDistribution  _gridQuasiUniform;
 
-
-
+			// Call to HRTF CalculateListOfOrientations_T_HRTF_DataBase to make the list that needs later FillResampledTable
 			_hrtf->CalculateListOfOrientations_T_HRTF_DataBase();
+
+			// Cause we call the Reader of the SOFA without the process, now we can call only the method that create the grid in which later will be emplace the data
 			_gridQuasiUniform.CreateGrid(_hrtf->t_HRTF_Resampled_partitioned, _hrtf->stepVector, _hrtf->resamplingStep);
+
+			// Call to HRTF FillResampledTable to check if it occurs any interpolation with a Grid already interpolated out the app.
 			_hrtf->FillResampledTable();
 
 		}
