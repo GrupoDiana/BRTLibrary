@@ -37,7 +37,7 @@ namespace BRTServices
 		 * @brief Print to .csv file all orientations of the Grid resampled.
 		 * @param _hrtf 
 		*/
-		void TestGrid(std::shared_ptr<BRTServices::CHRTF> _hrtf) {
+		void TestGridCreation(std::shared_ptr<BRTServices::CHRTF> _hrtf) {
 
 			// QuasiUniformSphereDistibution object thanks to friend class
 			BRTServices::CQuasiUniformSphereDistribution  _gridQuasiUniform;

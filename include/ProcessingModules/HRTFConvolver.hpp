@@ -50,7 +50,7 @@ namespace BRTProcessing {
 		
 		///Enable HRTF interpolation method	
 		void EnableInterpolation() { enableInterpolation = true; }
-		///Disable HRTF interpolation method
+		///Disable HRTF interpolation method 
 		void DisableInterpolation() { enableInterpolation = false; }
 		///Get the flag for HRTF interpolation method
 		bool IsInterpolationEnabled() { return enableInterpolation; }
@@ -154,6 +154,7 @@ namespace BRTProcessing {
 			leftChannelDelayBuffer.clear();
 			rightChannelDelayBuffer.clear();
 		}
+
 	private:
 
 		// Atributes
