@@ -257,7 +257,8 @@ namespace BRTReaders {
 			// Get and save HRIRs
 			double distance = sourcePositionsVector[array2DIndex(0, 2, numberOfMeasurements, numberOfCoordinates)];		//We consider that every HRIR are meased at the same distance, so we get the firts one									
 			dataHRTF->BeginSetup(numberOfSamples, distance);
-
+			
+			dataHRTF->SetSamplingRate(loader.GetSamplingRate());
 			const int left_ear = 0;
 			const int right_ear = 1;
 			// This outtermost loop iterates over HRIRs
@@ -351,6 +352,7 @@ namespace BRTReaders {
 			// Get and save TFs
 									
 			dataSRTF->BeginSetup(numberOfFrequencySamples);
+			dataSRTF->SetSamplingRate(loader.GetSamplingRate());
 
 			// This outtermost loop iterates over TFs
 			for (std::size_t i = 0; i < numberOfReceivers; i++)

@@ -59,7 +59,7 @@ namespace BRTServices
 		*/
 		CSRTF()
 			:resamplingStep{ DEFAULT_SRTF_RESAMPLING_STEP }, SRTFloaded{ false }, setupSRTFInProgress{ false }, aziMin{ DEFAULT_MIN_AZIMUTH }, aziMax{ DEFAULT_MAX_AZIMUTH },
-			eleMin{ DEFAULT_MIN_ELEVATION }, eleMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER }, epsilon_sewing { EPSILON_SEWING	}
+			eleMin{ DEFAULT_MIN_ELEVATION }, eleMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER }, epsilon_sewing{ EPSILON_SEWING }, samplingRate{ -1 }
 		{}
 
 		/** \brief Set the title of the SOFA file
@@ -165,6 +165,20 @@ namespace BRTServices
 		*/
 		int GetResamplingStep() {
 			return resamplingStep;
+		}
+
+		/** \brief Set the sampling rate for the SRTF
+		*	\param [in] sampling rate
+		*/
+		void SetSamplingRate(int _samplingRate) {
+			samplingRate = _samplingRate;
+		}
+
+		/** \brief Ask for the sampling rate 
+		*	\retval sampling step
+		*/
+		int GetSamplingRate() {
+			return samplingRate;
 		}
 
 		/** \brief Get the number of samples of the Directivity TF
@@ -430,6 +444,7 @@ namespace BRTServices
 		std::string title;
 		std::string databaseName;
 		std::string fileName;
+		int samplingRate;
 		int resamplingStep;
 		bool SRTFloaded;
 		bool setupSRTFInProgress;

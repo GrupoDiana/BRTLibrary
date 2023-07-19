@@ -558,7 +558,7 @@ namespace BRTServices
 			:enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, gapThreshold{ DEFAULT_GAP_THRESHOLD }, HRIRLength{ 0 }, fileName{ "" },
 			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, headRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }, leftEarLocalPosition{ Common::CVector3() }, rightEarLocalPosition{ Common::CVector3() },
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER },
-			epsilon_sewing{ EPSILON_SEWING }
+			epsilon_sewing{ EPSILON_SEWING }, samplingRate{ -1 }
 		{}
 
 		/** \brief Get size of each HRIR buffer
@@ -1163,6 +1163,19 @@ namespace BRTServices
 			return earLocalPosition;
 		}
 
+		/** \brief Set the sampling rate for the SRTF
+		*	\param [in] sampling rate
+		*/
+		void SetSamplingRate(int _samplingRate) {
+			samplingRate = _samplingRate;
+		}
+
+		/** \brief Ask for the sampling rate
+		*	\retval sampling step
+		*/
+		int GetSamplingRate() {
+			return samplingRate;
+		}
 
 
 	private:
@@ -1197,6 +1210,7 @@ namespace BRTServices
 		std::string databaseName;
 		std::string listenerShortName;
 		std::string fileName;
+		int samplingRate;
 
 		// HRTF tables			
 		T_HRTFTable				t_HRTF_DataBase;

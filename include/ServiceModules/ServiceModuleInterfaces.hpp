@@ -119,7 +119,8 @@ namespace BRTServices {
 		virtual void SetDatabaseName(std::string _databaseName) =0;
 		virtual void SetListenerShortName(std::string _listenerShortName) {};
 		virtual void SetFilename(std::string _fileName) = 0;
-
+		
+		virtual void SetSamplingRate(int samplingRate) {};
 		virtual void SetNumberOfEars(int _numberOfEars) {}
 		virtual void SetEarPosition(Common::T_ear _ear, Common::CVector3 _earPosition) {};
 
