@@ -64,6 +64,7 @@
 
 #include <Common/Transform.hpp>
 #include <Common/Vector3.hpp>
+#include <Common/CommonDefinitions.hpp>
 
 namespace Common {
 		
