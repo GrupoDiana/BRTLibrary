@@ -423,48 +423,21 @@ namespace BRTServices
 
 	class CInterpolatorInterface {
 	public:
-		virtual std::vector<T_PairDistanceOrientation> GetSortedDistancesList(std::vector<orientation> listToSort, float newAzimuth, float newElevation) = 0;
-		virtual THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, const std::vector<T_PairDistanceOrientation>& sortedList, float newAzimuth, float newElevation, int HRIRLength, int pole) = 0;
+		//virtual std::vector<T_PairDistanceOrientation> GetSortedDistancesList(std::vector<orientation> listToSort, float newAzimuth, float newElevation) = 0;
+		virtual THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, const std::vector<orientation>& listToSort, float newAzimuth, float newElevation, int HRIRLength, int pole) = 0;
 	};
 
 	class CDistanceBasedInterpolator : CInterpolatorInterface {
 	public:
-		
-		std::vector<T_PairDistanceOrientation> GetSortedDistancesList(std::vector<orientation> listToSort, float newAzimuth, float newElevation)
-		{
-
-			T_PairDistanceOrientation temp;
-			float distance;
-			std::vector<T_PairDistanceOrientation> sortedList;
-			sortedList.reserve(listToSort.size());
-
-			// Algorithm to calculate the three shortest distances between the point (newAzimuth, newelevation) and all the points in the given list
-			for (auto it = listToSort.begin(); it != listToSort.end(); ++it)
-			{
-				distance = CHRTFAuxiliarMethods::CalculateDistance_HaversineFormula(newAzimuth, newElevation, it->azimuth, it->elevation);
-
-				temp.first = distance;
-				temp.second.azimuth = it->azimuth;
-				temp.second.elevation = it->elevation;
-
-				sortedList.push_back(temp);
-			}
-
-			if (sortedList.size() != 0) {
-				std::sort(sortedList.begin(), sortedList.end(), [](const T_PairDistanceOrientation& a, const T_PairDistanceOrientation& b) { return a.first < b.first; });				
-			}
-			else {
-				SET_RESULT(RESULT_WARNING, "Orientation list sorted by distances is empty");
-			}
-
-			return sortedList;
-		}
-
-		THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, const std::vector<T_PairDistanceOrientation>& sortedList, float newAzimuth, float newElevation, int HRIRLength, int pole = 0)
+				
+		THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, const std::vector<orientation> &listToSort, float newAzimuth, float newElevation, int HRIRLength, int pole = 0)
 		{
 			THRIRStruct newHRIR;
 			//// Get a list sorted by distances to the orientation of interest
+			
 			//std::list<T_PairDistanceOrientation> sortedList = GetSortedDistancesList(newAzimuth, newElevation);
+			std::vector<T_PairDistanceOrientation> sortedList = GetSortedDistancesList(listToSort, newAzimuth,  newElevation);
+			
 			// PASS THE SORTED LIST TO THE FUNCTION
 			if (sortedList.size() == 0) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "Orientation List sorted by distances in GetHRIR_InterpolationMethod is empty");
@@ -542,6 +515,35 @@ namespace BRTServices
 		}		
 		friend class CHRTFTester;
 	private:
+		std::vector<T_PairDistanceOrientation> GetSortedDistancesList(const std::vector<orientation>& listToSort, float newAzimuth, float newElevation)
+		{
+
+			T_PairDistanceOrientation temp;
+			float distance;
+			std::vector<T_PairDistanceOrientation> sortedList;
+			sortedList.reserve(listToSort.size());
+
+			// Algorithm to calculate the three shortest distances between the point (newAzimuth, newelevation) and all the points in the given list
+			for (auto it = listToSort.begin(); it != listToSort.end(); ++it)
+			{
+				distance = CHRTFAuxiliarMethods::CalculateDistance_HaversineFormula(newAzimuth, newElevation, it->azimuth, it->elevation);
+
+				temp.first = distance;
+				temp.second.azimuth = it->azimuth;
+				temp.second.elevation = it->elevation;
+
+				sortedList.push_back(temp);
+			}
+
+			if (sortedList.size() != 0) {
+				std::sort(sortedList.begin(), sortedList.end(), [](const T_PairDistanceOrientation& a, const T_PairDistanceOrientation& b) { return a.first < b.first; });
+			}
+			else {
+				SET_RESULT(RESULT_WARNING, "Orientation list sorted by distances is empty");
+			}
+
+			return sortedList;
+		}
 	};
 
 
@@ -1570,8 +1572,8 @@ namespace BRTServices
 				{
 					for (int azim = azimuthMin; azim <= azimuthMax; azim = azim + azimuth_Step)
 					{
-						sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
-						HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, sortedList, azim, elevat, HRIRLength, _pole);
+						//sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
+						HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, lastRingOrientationList, azim, elevat, HRIRLength, _pole);
 						t_HRTF_DataBase.emplace(orientation(azim, elevat), HRIR_interpolated);
 					}
 				}
@@ -1582,8 +1584,8 @@ namespace BRTServices
 				{
 					for (int azim = azimuthMin; azim <= azimuthMax; azim = azim + azimuth_Step)
 					{
-						sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
-						HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, sortedList, azim, elevat, HRIRLength, _pole);
+						//sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
+						HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, lastRingOrientationList, azim, elevat, HRIRLength, _pole);
 						t_HRTF_DataBase.emplace(orientation(azim, elevat), HRIR_interpolated);
 					}
 				}
@@ -1619,9 +1621,9 @@ namespace BRTServices
 			else
 			{				
 				// Get a list sorted by distances to the orientation of interest
-				std::vector<T_PairDistanceOrientation> sortedList = distanceBasedInterpolator.GetSortedDistancesList(t_HRTF_DataBase_ListOfOrientations, _azimuth, _elevation);
+				//std::vector<T_PairDistanceOrientation> sortedList = distanceBasedInterpolator.GetSortedDistancesList(t_HRTF_DataBase_ListOfOrientations, _azimuth, _elevation);
 				//Get the interpolated HRIR 
-				interpolatedHRIR = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, sortedList, _azimuth, _elevation, HRIRLength);
+				interpolatedHRIR = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, _azimuth, _elevation, HRIRLength);
 				bHRIRInterpolated = true;
 
 				//Fill out HRTF partitioned table.IR in frequency domain
