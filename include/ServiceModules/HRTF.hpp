@@ -263,10 +263,9 @@ namespace BRTServices
 			}
 
 			//Run time interpolation ON
-			//return GetHRIR_partitioned_InterpolationMethod(ear, _azimuth, _elevation, stepVector);
-			//return midPointOnlineInterpolator.CalculateHRIR_partitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);			
-
-			const THRIRPartitionedStruct data = midPointOnlineInterpolator.CalculateHRIRPartitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);
+			
+			//const THRIRPartitionedStruct data = midPointOnlineInterpolator.CalculateHRIRPartitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);
+			const THRIRPartitionedStruct data = SlopesMethodOnlineInterpolator.CalculateHRIRPartitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);
 			if (ear == Common::T_ear::LEFT) {
 				return data.leftHRIR_Partitioned;
 			}
@@ -626,6 +625,7 @@ namespace BRTServices
 		CQuasiUniformSphereDistribution quasiUniformSphereDistribution;
 		CDistanceBasedInterpolator distanceBasedInterpolator;
 		CMidPointOnlineInterpolator midPointOnlineInterpolator;
+		CSlopesMethodOnlineInterpolator SlopesMethodOnlineInterpolator;
 
 		friend class CHRTFTester;
 		/////////////
