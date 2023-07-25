@@ -122,7 +122,7 @@ namespace BRTProcessing {
 			uint64_t leftDelay; 				///< Delay, in number of samples
 			uint64_t rightDelay;				///< Delay, in number of samples
 
-			THRIRPartitionedStruct delays = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, centerAzimuth, centerElevation, enableInterpolation);
+			BRTServices::THRIRPartitionedStruct delays = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, centerAzimuth, centerElevation, enableInterpolation);
 			leftDelay	= delays.leftDelay;
 			rightDelay	= delays.rightDelay;
 			
