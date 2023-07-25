@@ -34,7 +34,30 @@ namespace BRTServices
 
 	class COnlineInterpolatorInterface {
 	public:
+		/**
+		 * @brief Calculate from resample table HRIR subfilters using a barycentric interpolation of the three nearest orientation.
+		 * @param t_HRTF_Resampled_partitioned 
+		 * @param HRIR_partitioned_NumberOfSubfilters 
+		 * @param HRIR_partitioned_SubfilterLength 
+		 * @param ear 
+		 * @param _azimuth 
+		 * @param _elevation 
+		 * @param stepMap 
+		 * @return 
+		*/
 		virtual	THRIRPartitionedStruct CalculateHRIRPartitioned_onlineMethod(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, Common::T_ear ear, float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap) const = 0;
+		
+		/**
+		 * @brief  Calculate from resample table DELAY using a barycentric interpolation of the three nearest orientation.
+		 * @param t_HRTF_Resampled_partitioned 
+		 * @param HRIR_partitioned_NumberOfSubfilters 
+		 * @param HRIR_partitioned_SubfilterLength 
+		 * @param ear 
+		 * @param _azimuth 
+		 * @param _elevation 
+		 * @param stepMap 
+		 * @return 
+		*/
 		virtual	THRIRPartitionedStruct CalculateDelay_onlineMethod(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, Common::T_ear ear, float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap) const = 0;
 
 	};
@@ -44,19 +67,42 @@ namespace BRTServices
 
 		enum TParameterToBeCalculated { HRIR, Delay };
 
+		/**
+		 * @brief Calculate from resample table HRIR subfilters using a barycentric interpolation of the three nearest orientation.
+		 * @param t_HRTF_Resampled_partitioned 
+		 * @param HRIR_partitioned_NumberOfSubfilters 
+		 * @param HRIR_partitioned_SubfilterLength 
+		 * @param ear 
+		 * @param _azimuth 
+		 * @param _elevation 
+		 * @param stepMap 
+		 * @return 
+		*/
 		THRIRPartitionedStruct CalculateHRIRPartitioned_onlineMethod(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, Common::T_ear ear, float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap)const {
 			return CalculateHRIRPartitionedDelay_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear,
 				_azimuth, _elevation, stepMap, TParameterToBeCalculated::HRIR);
 
 		}
 
+		/**
+		 * @brief  Calculate from resample table DELAY using a barycentric interpolation of the three nearest orientation.
+		 * @param t_HRTF_Resampled_partitioned 
+		 * @param HRIR_partitioned_NumberOfSubfilters 
+		 * @param HRIR_partitioned_SubfilterLength 
+		 * @param ear 
+		 * @param _azimuth 
+		 * @param _elevation 
+		 * @param stepMap 
+		 * @return 
+		*/
 		THRIRPartitionedStruct CalculateDelay_onlineMethod(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, Common::T_ear ear, float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap) const {
 			return CalculateHRIRPartitionedDelay_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear,
 				_azimuth, _elevation, stepMap, TParameterToBeCalculated::Delay);
 		}
 	private:
+
 		/**
-		 * @brief Calculate from resample table HRIR subfilters using a barycentric interpolation of the three nearest orientation.
+		 * @brief  Calculate from resample table DELAY using a barycentric interpolation of the three nearest orientation.
 		 * @param t_HRTF_Resampled_partitioned 
 		 * @param HRIR_partitioned_NumberOfSubfilters 
 		 * @param HRIR_partitioned_SubfilterLength 
@@ -114,7 +160,23 @@ namespace BRTServices
 
 		}
 
-
+		/**
+		 * @brief  Calculate from resample table HRIR using a barycentric interpolation of the three nearest orientation.
+		 * @param t_HRTF_Resampled_partitioned 
+		 * @param HRIR_partitioned_NumberOfSubfilters 
+		 * @param HRIR_partitioned_SubfilterLength 
+		 * @param ear 
+		 * @param _azimuth 
+		 * @param _elevation 
+		 * @param elevationCeil 
+		 * @param elevationFloor 
+		 * @param point1 
+		 * @param point2 
+		 * @param point3 
+		 * @param point4 
+		 * @param parameterToBeCalculated 
+		 * @return 
+		*/
 		THRIRPartitionedStruct CalculateBaricentricHRIRInterpolation(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength,
 			Common::T_ear ear, float _azimuth, float _elevation, float elevationCeil, float elevationFloor, orientation point1, orientation point2, orientation point3, orientation point4, TParameterToBeCalculated parameterToBeCalculated) const
 		{
@@ -139,7 +201,18 @@ namespace BRTServices
 			return data;
 		}
 
-
+		/**
+		 * @brief Find 4 nearest points (trapezoid) in the quasiUniform sphere distribution
+		 * @param _azimuth 
+		 * @param _elevation 
+		 * @param stepMap 
+		 * @param orientation_ptoA 
+		 * @param orientation_ptoB 
+		 * @param orientation_ptoC 
+		 * @param orientation_ptoD 
+		 * @param orientation_ptoP 
+		 * @param nearestElevations 
+		*/
 		void find_4Nearest_Points(float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap, orientation& orientation_ptoA, orientation& orientation_ptoB, orientation& orientation_ptoC, orientation& orientation_ptoD, orientation& orientation_ptoP, std::pair<float, float>& nearestElevations)const
 		{
 			float aziCeilBack, aziCeilFront, aziFloorBack, aziFloorFront;
@@ -189,7 +262,16 @@ namespace BRTServices
 			nearestElevations = std::pair(eleCeil, eleFloor);
 		}
 
-
+		/**
+		 * @brief Check Triangles Left Cause Mid Point Method may fail in some cases and choose the wrong triangle
+		 * @param _azimuth 
+		 * @param _elevation 
+		 * @param pnt1 
+		 * @param pnt2 
+		 * @param pnt3 
+		 * @param pnt4 
+		 * @return 
+		*/
 		TBarycentricCoordinatesStruct Check_Triangles_Left(float _azimuth, float _elevation, orientation pnt1, orientation pnt2, orientation pnt3, orientation pnt4)const
 		{
 			// The triangle with points 1, 2 and 3 is the one just check, so we are going to check the others
@@ -215,16 +297,39 @@ namespace BRTServices
 	public:
 		enum TParameterToBeCalculated { HRIR, Delay };
 
+		/**
+		 * @brief Calculate from resample table HRIR subfilters using a barycentric interpolation of the three nearest orientation.
+		 * @param t_HRTF_Resampled_partitioned 
+		 * @param HRIR_partitioned_NumberOfSubfilters 
+		 * @param HRIR_partitioned_SubfilterLength 
+		 * @param ear 
+		 * @param _azimuth 
+		 * @param _elevation 
+		 * @param stepMap 
+		 * @return 
+		*/
 		THRIRPartitionedStruct CalculateHRIRPartitioned_onlineMethod(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, Common::T_ear ear, float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap)const {
 			return CalculateHRIRPartitionedDelay_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear,
 				_azimuth, _elevation, stepMap, TParameterToBeCalculated::HRIR);
 
 		}
 
+		/**
+		 * @brief  Calculate from resample table DELAY using a barycentric interpolation of the three nearest orientation.
+		 * @param t_HRTF_Resampled_partitioned 
+		 * @param HRIR_partitioned_NumberOfSubfilters 
+		 * @param HRIR_partitioned_SubfilterLength 
+		 * @param ear 
+		 * @param _azimuth 
+		 * @param _elevation 
+		 * @param stepMap 
+		 * @return 
+		*/
 		THRIRPartitionedStruct CalculateDelay_onlineMethod(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, Common::T_ear ear, float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap) const {
 			return CalculateHRIRPartitionedDelay_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear,
 				_azimuth, _elevation, stepMap, TParameterToBeCalculated::Delay);
 		}
+	
 	private:
 		/**
 		 * @brief Calculate from resample table HRIR subfilters using a barycentric interpolation of the three nearest orientation.
@@ -277,17 +382,29 @@ namespace BRTServices
 
 		}
 
-
+		/**
+		 * @brief  Calculate from resample table HRIR using a barycentric interpolation of the three nearest orientation.
+		 * @param t_HRTF_Resampled_partitioned 
+		 * @param HRIR_partitioned_NumberOfSubfilters 
+		 * @param HRIR_partitioned_SubfilterLength 
+		 * @param ear 
+		 * @param _azimuth 
+		 * @param _elevation 
+		 * @param elevationCeil 
+		 * @param elevationFloor 
+		 * @param point1 
+		 * @param point2 
+		 * @param point3 
+		 * @param point4 
+		 * @param parameterToBeCalculated 
+		 * @return 
+		*/
 		THRIRPartitionedStruct CalculateBaricentricHRIRInterpolation(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength,
 			Common::T_ear ear, float _azimuth, float _elevation, float elevationCeil, float elevationFloor, orientation point1, orientation point2, orientation point3, orientation point4, TParameterToBeCalculated parameterToBeCalculated) const
 		{
 			//std::vector<CMonoBuffer<float>> newHRIR;
 			THRIRPartitionedStruct data;
 			TBarycentricCoordinatesStruct barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, point1.azimuth, point1.elevation, point2.azimuth, point2.elevation, point3.azimuth, point3.elevation);
-
-			if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) {
-				barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, point1, point2, point3, point4);
-			}
 
 			if (elevationCeil == ELEVATION_NORTH_POLE) { point2.azimuth = DEFAULT_MIN_AZIMUTH; }
 			else if (elevationFloor == ELEVATION_SOUTH_POLE) { point3.azimuth = DEFAULT_MIN_AZIMUTH; }
@@ -302,7 +419,18 @@ namespace BRTServices
 			return data;
 		}
 
-		// TODO make auxiliar method to use in all online interpolators
+		/**
+		 * @brief Find 4 nearest points (trapezoid) in the quasiUniform sphere distribution
+		 * @param _azimuth 
+		 * @param _elevation 
+		 * @param stepMap 
+		 * @param orientation_ptoA 
+		 * @param orientation_ptoB 
+		 * @param orientation_ptoC 
+		 * @param orientation_ptoD 
+		 * @param orientation_ptoP 
+		 * @param nearestElevations 
+		*/
 		void find_4Nearest_Points(float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap, orientation& orientation_ptoA, orientation& orientation_ptoB, orientation& orientation_ptoC, orientation& orientation_ptoD, orientation& orientation_ptoP, std::pair<float, float>& nearestElevations)const
 		{
 			float aziCeilBack, aziCeilFront, aziFloorBack, aziFloorFront;
@@ -352,24 +480,6 @@ namespace BRTServices
 			nearestElevations = std::pair(eleCeil, eleFloor);
 		}
 
-
-		TBarycentricCoordinatesStruct Check_Triangles_Left(float _azimuth, float _elevation, orientation pnt1, orientation pnt2, orientation pnt3, orientation pnt4)const
-		{
-			// The triangle with points 1, 2 and 3 is the one just check, so we are going to check the others
-
-			TBarycentricCoordinatesStruct barycentricCoordinates;
-			barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, pnt1.azimuth, pnt1.elevation, pnt2.azimuth, pnt2.elevation, pnt4.azimuth, pnt4.elevation);
-			if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0)
-			{
-				barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, pnt1.azimuth, pnt1.elevation, pnt3.azimuth, pnt3.elevation, pnt4.azimuth, pnt4.elevation);
-				if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0)
-				{
-					barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, pnt2.azimuth, pnt2.elevation, pnt3.azimuth, pnt3.elevation, pnt4.azimuth, pnt4.elevation);
-				}
-			}
-			return barycentricCoordinates;
-
-		}
 	};
 }
 #endif
