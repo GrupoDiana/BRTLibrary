@@ -265,7 +265,7 @@ namespace BRTServices
 			//Run time interpolation ON
 			
 			//const THRIRPartitionedStruct data = midPointOnlineInterpolator.CalculateHRIRPartitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);
-			const THRIRPartitionedStruct data = SlopesMethodOnlineInterpolator.CalculateHRIRPartitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);
+			const THRIRPartitionedStruct data = slopesMethodOnlineInterpolator.CalculateHRIRPartitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);
 			if (ear == Common::T_ear::LEFT) {
 				return data.leftHRIR_Partitioned;
 			}
@@ -333,8 +333,8 @@ namespace BRTServices
 			{
 				float leftDelay;
 				float rightDelay;
-				quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, leftDelay, stepVector, ear, _azimuthCenter, _elevationCenter);
-				quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, rightDelay, stepVector, ear, _azimuthCenter, _elevationCenter);
+				quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, leftDelay, stepVector, Common::T_ear::LEFT, _azimuthCenter, _elevationCenter);
+				quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, rightDelay, stepVector, Common::T_ear::RIGHT, _azimuthCenter, _elevationCenter);
 
 				data.leftDelay	= static_cast<uint64_t>(leftDelay);
 				data.rightDelay = static_cast<uint64_t>(rightDelay);
@@ -361,7 +361,7 @@ namespace BRTServices
 			}
 				//Run time interpolation ON
 				//return GetHRIRDelayInterpolationMethod(ear, _azimuthCenter, _elevationCenter, resamplingStep, stepVector);	
-			const THRIRPartitionedStruct temp = midPointOnlineInterpolator.CalculateDelay_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, Common::T_ear::BOTH, _azimuthCenter, _elevationCenter, stepVector);			
+			const THRIRPartitionedStruct temp = slopesMethodOnlineInterpolator.CalculateDelay_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuthCenter, _elevationCenter, stepVector);
 			return temp;
 		}
 
@@ -624,8 +624,8 @@ namespace BRTServices
 
 		CQuasiUniformSphereDistribution quasiUniformSphereDistribution;
 		CDistanceBasedInterpolator distanceBasedInterpolator;
-		CMidPointOnlineInterpolator midPointOnlineInterpolator;
-		CSlopesMethodOnlineInterpolator SlopesMethodOnlineInterpolator;
+		//CMidPointOnlineInterpolator midPointOnlineInterpolator;
+		CSlopesMethodOnlineInterpolator slopesMethodOnlineInterpolator;
 
 		friend class CHRTFTester;
 		/////////////
@@ -873,9 +873,10 @@ namespace BRTServices
 		void FillSphericalCap_HRTF(int _gapThreshold, int _resamplingStep)
 		{
 			// Initialize some variables
-			int max_dist_elev = 0;
+			float max_dist_elev = 0;
 			int elev_Step = _resamplingStep;
-			int pole, elev_south, elev_north, distance;
+			int pole;
+			float elev_south, elev_north, distance;
 			std::vector<orientation> orientations, north_hemisphere, south_hemisphere;
 			orientation bufferOrientation;
 
@@ -923,7 +924,7 @@ namespace BRTServices
 		/// <param name="_hemisphere"></param>
 		/// <param name="_max_dist_elev"></param>
 		/// <param name="elevationLastRing"></param>
-		void CalculateDistanceBetweenPoleandLastRing(std::vector<orientation>& _hemisphere, int& _max_dist_elev, int& elevationLastRing)
+		void CalculateDistanceBetweenPoleandLastRing(std::vector<orientation>& _hemisphere, float& _max_dist_elev, float& elevationLastRing)
 		{
 			for (int jj = 1; jj < _hemisphere.size(); jj++)
 			{
@@ -943,7 +944,7 @@ namespace BRTServices
 		/// <param name="_hemisphere"></param>
 		/// <param name="elevationLastRing"></param>
 		/// <param name="_fillStep"></param>
-		void Calculate_and_EmplaceHRIR(int _pole, std::vector<orientation> _hemisphere, int _elevationLastRing, int _fillStep)
+		void Calculate_and_EmplaceHRIR(int _pole, std::vector<orientation> _hemisphere, float _elevationLastRing, int _fillStep)
 		{
 			std::vector<orientation> lastRingOrientationList;
 			std::vector<T_PairDistanceOrientation> sortedList;
@@ -961,9 +962,9 @@ namespace BRTServices
 			// SOUTH HEMISPHERE
 			if (_pole == ELEVATION_SOUTH_POLE)
 			{
-				for (int elevat = _pole + _fillStep; elevat < _elevationLastRing; elevat = elevat + _fillStep)
+				for (float elevat = _pole + _fillStep; elevat < _elevationLastRing; elevat = elevat + _fillStep)
 				{
-					for (int azim = azimuthMin; azim <= azimuthMax; azim = azim + azimuth_Step)
+					for (float azim = azimuthMin; azim <= azimuthMax; azim = azim + azimuth_Step)
 					{
 						//sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
 						HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, lastRingOrientationList, azim, elevat, HRIRLength, _pole);
@@ -973,9 +974,9 @@ namespace BRTServices
 			}	// NORTH HEMISPHERE
 			else if (_pole == ELEVATION_NORTH_POLE)
 			{
-				for (int elevat = _elevationLastRing + _fillStep; elevat < _pole; elevat = elevat + _fillStep)
+				for (float elevat = _elevationLastRing + _fillStep; elevat < _pole; elevat = elevat + _fillStep)
 				{
-					for (int azim = azimuthMin; azim <= azimuthMax; azim = azim + azimuth_Step)
+					for (float azim = azimuthMin; azim <= azimuthMax; azim = azim + azimuth_Step)
 					{
 						//sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
 						HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, lastRingOrientationList, azim, elevat, HRIRLength, _pole);

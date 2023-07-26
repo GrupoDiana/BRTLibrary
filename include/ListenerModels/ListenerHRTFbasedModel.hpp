@@ -78,7 +78,8 @@ namespace BRTListenerModel {
 				return false;
 			}
 			listenerHRTF = _listenerHRTF;			
-			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);		
+			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);	
+			ResetConvolutionsBuffers();
 			return true;
 		}
 
@@ -105,7 +106,7 @@ namespace BRTListenerModel {
 		*/
 		void SetILD(std::shared_ptr< BRTServices::CILD > _listenerILD) {
 			listenerILD = _listenerILD;
-			GetILDExitPoint()->sendDataPtr(listenerILD);			
+			GetILDExitPoint()->sendDataPtr(listenerILD);				
 		}
 
 		/** \brief Get HRTF of listener
@@ -274,6 +275,12 @@ namespace BRTListenerModel {
 		*/
 		//bool IsNearFieldEffectEnabled();
 
+		void ResetConvolutionsBuffers() {
+			nlohmann::json j;
+			j["command"] = "/listener/resetBuffers";
+			j["listenerID"] = listenerID;			
+			brtManager->ExecuteCommand(j.dump());
+		}
 
 		void Update(std::string entryPointID) {
 			// Nothing to do

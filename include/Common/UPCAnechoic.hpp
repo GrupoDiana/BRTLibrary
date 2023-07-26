@@ -190,7 +190,8 @@ namespace Common {
 			CMonoBuffer<float> temp;
 
 			ASSERT(inBuffer_Time.size() == inputSize, RESULT_ERROR_BADSIZE, "Bad input size, don't match with the size setting up in the setup method", "");
-
+			ASSERT(impulseResponseNumberOfSubfilters == IR.size(), RESULT_ERROR_BADSIZE, "Bad input size, the number of impulse response partitions does not correspond to what is expected.", "Has this class been initialised correctly?");
+			
 			if (impulseResponseMemory && setupDone)
 			{
 				if (inBuffer_Time.size() == inputSize && IR.size() != 0)
