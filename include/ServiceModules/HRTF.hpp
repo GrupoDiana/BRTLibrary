@@ -265,7 +265,7 @@ namespace BRTServices
 			//Run time interpolation ON
 			
 			//const THRIRPartitionedStruct data = midPointOnlineInterpolator.CalculateHRIRPartitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);
-			const THRIRPartitionedStruct data = SlopesMethodOnlineInterpolator.CalculateHRIRPartitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);
+			const THRIRPartitionedStruct data = slopesMethodOnlineInterpolator.CalculateHRIRPartitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);
 			if (ear == Common::T_ear::LEFT) {
 				return data.leftHRIR_Partitioned;
 			}
@@ -361,7 +361,7 @@ namespace BRTServices
 			}
 				//Run time interpolation ON
 				//return GetHRIRDelayInterpolationMethod(ear, _azimuthCenter, _elevationCenter, resamplingStep, stepVector);	
-			const THRIRPartitionedStruct temp = midPointOnlineInterpolator.CalculateDelay_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, Common::T_ear::BOTH, _azimuthCenter, _elevationCenter, stepVector);			
+			const THRIRPartitionedStruct temp = slopesMethodOnlineInterpolator.CalculateDelay_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, Common::T_ear::BOTH, _azimuthCenter, _elevationCenter, stepVector);
 			return temp;
 		}
 
@@ -624,8 +624,8 @@ namespace BRTServices
 
 		CQuasiUniformSphereDistribution quasiUniformSphereDistribution;
 		CDistanceBasedInterpolator distanceBasedInterpolator;
-		CMidPointOnlineInterpolator midPointOnlineInterpolator;
-		CSlopesMethodOnlineInterpolator SlopesMethodOnlineInterpolator;
+		//CMidPointOnlineInterpolator midPointOnlineInterpolator;
+		CSlopesMethodOnlineInterpolator slopesMethodOnlineInterpolator;
 
 		friend class CHRTFTester;
 		/////////////
