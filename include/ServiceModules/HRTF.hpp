@@ -333,8 +333,8 @@ namespace BRTServices
 			{
 				float leftDelay;
 				float rightDelay;
-				quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, leftDelay, stepVector, ear, _azimuthCenter, _elevationCenter);
-				quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, rightDelay, stepVector, ear, _azimuthCenter, _elevationCenter);
+				quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, leftDelay, stepVector, Common::T_ear::LEFT, _azimuthCenter, _elevationCenter);
+				quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, rightDelay, stepVector, Common::T_ear::RIGHT, _azimuthCenter, _elevationCenter);
 
 				data.leftDelay	= static_cast<uint64_t>(leftDelay);
 				data.rightDelay = static_cast<uint64_t>(rightDelay);
@@ -361,7 +361,7 @@ namespace BRTServices
 			}
 				//Run time interpolation ON
 				//return GetHRIRDelayInterpolationMethod(ear, _azimuthCenter, _elevationCenter, resamplingStep, stepVector);	
-			const THRIRPartitionedStruct temp = slopesMethodOnlineInterpolator.CalculateDelay_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, Common::T_ear::BOTH, _azimuthCenter, _elevationCenter, stepVector);
+			const THRIRPartitionedStruct temp = slopesMethodOnlineInterpolator.CalculateDelay_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuthCenter, _elevationCenter, stepVector);
 			return temp;
 		}
 
