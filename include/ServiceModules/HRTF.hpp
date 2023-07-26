@@ -873,9 +873,10 @@ namespace BRTServices
 		void FillSphericalCap_HRTF(int _gapThreshold, int _resamplingStep)
 		{
 			// Initialize some variables
-			int max_dist_elev = 0;
+			float max_dist_elev = 0;
 			int elev_Step = _resamplingStep;
-			int pole, elev_south, elev_north, distance;
+			int pole;
+			float elev_south, elev_north, distance;
 			std::vector<orientation> orientations, north_hemisphere, south_hemisphere;
 			orientation bufferOrientation;
 
@@ -923,7 +924,7 @@ namespace BRTServices
 		/// <param name="_hemisphere"></param>
 		/// <param name="_max_dist_elev"></param>
 		/// <param name="elevationLastRing"></param>
-		void CalculateDistanceBetweenPoleandLastRing(std::vector<orientation>& _hemisphere, int& _max_dist_elev, int& elevationLastRing)
+		void CalculateDistanceBetweenPoleandLastRing(std::vector<orientation>& _hemisphere, float& _max_dist_elev, float& elevationLastRing)
 		{
 			for (int jj = 1; jj < _hemisphere.size(); jj++)
 			{
@@ -943,7 +944,7 @@ namespace BRTServices
 		/// <param name="_hemisphere"></param>
 		/// <param name="elevationLastRing"></param>
 		/// <param name="_fillStep"></param>
-		void Calculate_and_EmplaceHRIR(int _pole, std::vector<orientation> _hemisphere, int _elevationLastRing, int _fillStep)
+		void Calculate_and_EmplaceHRIR(int _pole, std::vector<orientation> _hemisphere, float _elevationLastRing, int _fillStep)
 		{
 			std::vector<orientation> lastRingOrientationList;
 			std::vector<T_PairDistanceOrientation> sortedList;
@@ -961,9 +962,9 @@ namespace BRTServices
 			// SOUTH HEMISPHERE
 			if (_pole == ELEVATION_SOUTH_POLE)
 			{
-				for (int elevat = _pole + _fillStep; elevat < _elevationLastRing; elevat = elevat + _fillStep)
+				for (float elevat = _pole + _fillStep; elevat < _elevationLastRing; elevat = elevat + _fillStep)
 				{
-					for (int azim = azimuthMin; azim <= azimuthMax; azim = azim + azimuth_Step)
+					for (float azim = azimuthMin; azim <= azimuthMax; azim = azim + azimuth_Step)
 					{
 						//sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
 						HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, lastRingOrientationList, azim, elevat, HRIRLength, _pole);
@@ -973,9 +974,9 @@ namespace BRTServices
 			}	// NORTH HEMISPHERE
 			else if (_pole == ELEVATION_NORTH_POLE)
 			{
-				for (int elevat = _elevationLastRing + _fillStep; elevat < _pole; elevat = elevat + _fillStep)
+				for (float elevat = _elevationLastRing + _fillStep; elevat < _pole; elevat = elevat + _fillStep)
 				{
-					for (int azim = azimuthMin; azim <= azimuthMax; azim = azim + azimuth_Step)
+					for (float azim = azimuthMin; azim <= azimuthMax; azim = azim + azimuth_Step)
 					{
 						//sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
 						HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, lastRingOrientationList, azim, elevat, HRIRLength, _pole);
