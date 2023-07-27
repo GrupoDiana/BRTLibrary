@@ -91,6 +91,8 @@ namespace BRTServices {
 		uint64_t rightDelay;			///< Right delay, in number of samples
 		CMonoBuffer<float> leftHRIR;	///< Left impulse response data
 		CMonoBuffer<float> rightHRIR;	///< Right impulse response data
+
+		THRIRStruct() : leftDelay{0}, rightDelay{0} {}
 	};
 
 	struct TILDStruct {
