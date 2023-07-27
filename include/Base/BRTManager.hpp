@@ -128,6 +128,28 @@ namespace BRTBase {
 		}
 
 		/**
+		 * @brief Creates a new environment and returns a pointer to it. The brtmanager does NOT save the pointer.
+		 * @tparam T It must be a environment module, i.e. a class that inherits from the CEnvironmentBase class.
+		 * @return Returns the pointer to the environment if it could be created, otherwise returns a null pointer.
+		*/
+		template <typename T>
+		std::shared_ptr<T> CreateEnvironment() {
+			if (!setupModeActivated) { return nullptr; }
+			try
+			{
+				std::shared_ptr<T> newEnvironment = std::make_shared<T>();
+				ConnectModulesCommand(newEnvironment);
+				SET_RESULT(RESULT_OK, "Processor created succesfully");
+				return newEnvironment;
+			}
+			catch (std::bad_alloc& ba)
+			{
+				ASSERT(false, RESULT_ERROR_BADALLOC, ba.what(), "");
+				return nullptr;
+			}
+		}
+
+		/**
 		 * @brief Creates a new processor and returns a pointer to it. The brtmanager does NOT save the pointer.
 		 * @tparam T It must be a procesor module, i.e. a class that inherits from the CProcessorBase class.
 		 * @return Returns the pointer to the procesor if it could be created, otherwise returns a null pointer.
@@ -219,6 +241,12 @@ namespace BRTBase {
 		}
 		template <typename T, typename U>
 		bool ConnectModuleTransform(T* module1, std::shared_ptr<U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectPositionEntryTo(module1->GetTransformExitPoint(), entryPointID);
+			return true;
+		}
+		template <typename T, typename U>
+		bool ConnectModuleTransform(std::shared_ptr<T> module1, U* module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->connectPositionEntryTo(module1->GetTransformExitPoint(), entryPointID);
 			return true;
@@ -354,6 +382,12 @@ namespace BRTBase {
 			module2->connectIDEntryTo(module1->GetIDExitPoint(), entryPointID);
 			return true;
 		}
+		template <typename T, typename U>
+		bool ConnectModuleID(std::shared_ptr<T> module1, U* module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectIDEntryTo(module1->GetIDExitPoint(), entryPointID);
+			return true;
+		}
 		/**
 		 * @brief Disconnects the ID ExitPoint of one module with the ID EntryPoint of another.
 		 * @tparam T
@@ -396,7 +430,7 @@ namespace BRTBase {
 			if (!setupModeActivated) return false;
 			module2->connectSamplesEntryTo(module1->GetSamplesExitPoint(exitPointID), entryPointID);
 			return true;
-		}
+		}		
 		/**
 		 * @brief Disconnects the Samples ExitPoint of one module with the Samples EntryPoint of another.
 		 * @tparam T Type of module 1

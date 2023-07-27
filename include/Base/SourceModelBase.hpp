@@ -38,7 +38,9 @@ namespace BRTBase {
 		virtual void Update(std::string entryPointID) = 0;
 		virtual void UpdateCommand() = 0;
 
-		CSourceModelBase(std::string _sourceID) : dataReady{ false }, sourceID{ _sourceID} {
+		enum TSourceType {Real, Virtual};
+
+		CSourceModelBase(std::string _sourceID) : dataReady{ false }, sourceID{ _sourceID }, sourceType{ TSourceType::Real } {
 			
 			CreateSamplesExitPoint("samples");
 			CreateTransformExitPoint();
@@ -82,6 +84,14 @@ namespace BRTBase {
 			GetTransformExitPoint()->sendData(sourceTransform);
 		}
 		
+		void SetSourceType(TSourceType _sourceType) {
+			sourceType = _sourceType;
+		}
+
+		TSourceType GetSourceType() {
+			return sourceType;
+		}
+
 		const Common::CTransform& GetCurrentSourceTransform() const { return sourceTransform; };		
 		
 		std::string GetID() { return sourceID; }
@@ -103,6 +113,8 @@ namespace BRTBase {
 
 	private:
 		std::string sourceID;
+		TSourceType sourceType;
+
 		bool dataReady;
 		Common::CTransform sourceTransform;
 		CMonoBuffer<float> samplesBuffer;								
