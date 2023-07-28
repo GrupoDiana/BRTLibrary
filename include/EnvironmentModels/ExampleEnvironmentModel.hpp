@@ -59,6 +59,7 @@ namespace BRTEnvironmentModel {
 				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
 				std::vector<CMonoBuffer<float>> virtualSourceBuffers;
 				std::vector<Common::CTransform> virtualSourcePositions;
+				
 
 				if (inBuffer.size() != 0) {
 
@@ -85,10 +86,13 @@ namespace BRTEnvironmentModel {
 					SetVirtualSourcePosition("virtual6", virtualSourcePositions[5]);*/
 				}
 				//this->resetUpdatingStack();
-			}
+			}			
 		}
 
+		void SetFilter(int a) {
+			std::lock_guard<std::mutex> l(mutex);
 
+		};
 		
 		void UpdateCommand() {
 
