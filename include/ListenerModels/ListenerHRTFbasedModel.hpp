@@ -192,6 +192,12 @@ namespace BRTListenerModel {
 			return false;
 		}
 
+		
+		template <typename T>
+		bool ConnectEnvironment(std::shared_ptr<T> _environment) {
+			return _environment->ConnectToListener(this);
+		}
+
 		/** \brief Enable binaural spatialization based in HRTF convolution
 		*   \eh Nothing is reported to the error handler.
 		*/

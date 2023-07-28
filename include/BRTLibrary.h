@@ -27,9 +27,11 @@
 #include "Common/ErrorHandler.hpp"
 #include "Base/BRTManager.hpp"
 #include "Base/ListenerModelBase.hpp"
+#include "Base/EnvironmentModelBase.hpp"
 #include "ListenerModels/ListenerHRTFbasedModel.hpp"
 #include "SourceModels/SourceSimpleModel.hpp"
 #include "SourceModels/SourceDirectivityModel.hpp"
+#include "EnvironmentModels/ExampleEnvironmentModel.hpp"
 #include "ProcessingModules/SingleProcessor.hpp"
 #include "ProcessingModules/SingleBinauralProcessor.hpp"
 #include "ProcessingModules/DistanceAttenuationProcessor.hpp"
@@ -40,6 +42,7 @@
 #include "ServiceModules/SRTF.hpp"
 #include "Readers/SofaReader.hpp"
 #include "third_party_libraries/nlohmann/json.hpp"
+
 
 
 #endif

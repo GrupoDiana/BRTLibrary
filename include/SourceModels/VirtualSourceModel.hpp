@@ -2,7 +2,7 @@
 * \class CVirtualSourceModel
 *
 * \brief Declaration of CVirtualSourceModel class
-* \date	June 2023
+* \date	July 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
 * Coordinated by , A. Reyes-Lecuona (University of Malaga)||

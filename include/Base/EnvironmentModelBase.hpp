@@ -1,8 +1,8 @@
 /**
-* \class CListenerModelBase
+* \class CEnviromentVirtualSourceBaseModel
 *
-* \brief Declaration of CListenerModelBase class
-* \date	June 2023
+* \brief Declaration of CEnviromentVirtualSourceBaseModel class
+* \date	July 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
 * Coordinated by , A. Reyes-Lecuona (University of Malaga)||
@@ -27,6 +27,7 @@
 #include <Base/EntryPointManager.hpp>
 #include <Base/CommandEntryPointManager.hpp>
 #include <Base/ExitPointManager.hpp>
+#include <Base/SourceModelBase.hpp>
 #include <SourceModels/VirtualSourceModel.hpp>
 
 namespace BRTBase {
@@ -50,10 +51,10 @@ namespace BRTBase {
 		}
 
 		void CreateVirtualSource(std::string _virtualSourceID) {
-			std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource;
-			virtualSource = brtManager->CreateSoundSource<BRTSourceModel::CVirtualSourceModel>(_virtualSourceID);
+			std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _virtualSource;
+			_virtualSource = brtManager->CreateSoundSource<BRTSourceModel::CVirtualSourceModel>(_virtualSourceID);
 			
-			virtualSourcesList.push_back(virtualSource);
+			virtualSources.push_back(_virtualSource);
 		}
 
 
@@ -71,26 +72,9 @@ namespace BRTBase {
 			bool control = brtManager->ConnectModuleTransform(_source, this, "sourcePosition");
 			control = control && brtManager->ConnectModuleID(_source, this, "sourceID");
 			control = control && brtManager->ConnectModulesSamples(_source, "samples", this, "inputSamples");
-
-			///
-			/*bool control = brtManager->ConnectModuleTransform(_source, _newSourceProcessors.binauralConvolverProcessor, "sourcePosition");
-			control = control && brtManager->ConnectModuleTransform(_source, _newSourceProcessors.nearFieldEffectProcessor, "sourcePosition");
-			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.binauralConvolverProcessor, "sourceID");
-
-			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.binauralConvolverProcessor, "listenerPosition");
-			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerPosition");
-			control = control && brtManager->ConnectModuleHRTF(this, _newSourceProcessors.binauralConvolverProcessor, "listenerHRTF");
-			control = control && brtManager->ConnectModuleILD(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerILD");
-			control = control && brtManager->ConnectModuleID(this, _newSourceProcessors.binauralConvolverProcessor, "listenerID");
-
-			control = control && brtManager->ConnectModulesSamples(_source, "samples", _newSourceProcessors.binauralConvolverProcessor, "inputSamples");
-			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.binauralConvolverProcessor, "leftEar", _newSourceProcessors.nearFieldEffectProcessor, "leftEar");
-			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.binauralConvolverProcessor, "rightEar", _newSourceProcessors.nearFieldEffectProcessor, "rightEar");
-			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.nearFieldEffectProcessor, "leftEar", this, "leftEar");
-			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.nearFieldEffectProcessor, "rightEar", this, "rightEar");*/
-
-			if (control) {
-				//sourcesConnectedProcessors.push_back(std::move(_newSourceProcessors));
+			
+			if (control) {				
+				SetOriginSourceID(_source->GetID());
 				return true;
 			}
 			return false;
@@ -105,19 +89,77 @@ namespace BRTBase {
 		template <typename T>
 		bool ConnectToListener(std::shared_ptr<T> _listener) {
 			
-			bool control = control && brtManager->ConnectModuleTransform(listener, this, "listenerPosition");
+			bool control = brtManager->ConnectModuleTransform(listener, this, "listenerPosition");
 			control = control && brtManager->ConnectModuleID(listener, this, "listenerID");
 			
-			for (auto _source : exitSources) {
-				_listener()->ConnectSoundSource(_source);
-			}						
+			for (auto _virtualSource : virtualSources) {
+				control = control && _listener->ConnectSoundSource(_virtualSource);
+			}
+			return control;
+		}
+		template <typename T>
+		bool ConnectToListener(T* _listener) {
+
+			bool control = brtManager->ConnectModuleTransform(listener, this, "listenerPosition");
+			control = control && brtManager->ConnectModuleID(listener, this, "listenerID");
+
+			for (auto _virtualSource : virtualSources) {
+				control = control && _listener->ConnectSoundSource(_virtualSource);
+			}
+			return control;
 		}
 
 
+
+
+		void SetVirtualSourceBuffer(std::string _virtualSourceID, CMonoBuffer<float>& _buffer) {
+			
+			auto it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
+			if (it != virtualSources.end()) {					
+				it[0]->SetBuffer(_buffer);								
+			}
+			else {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There is no virtual source with that name.");
+			}			
+		}
+
+
+		void SetVirtualSourcePosition(std::string _virtualSourceID, Common::CTransform _sourcePosition) {
+			auto it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
+			if (it != virtualSources.end()) {
+				it[0]->SetSourceTransform(_sourcePosition);
+			}
+			else {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There is no virtual source with that name.");
+			}
+		}
+
+		/////////////////////		
+		// Update Callbacks
+		/////////////////////
+		void updateFromEntryPoint(std::string entryPointID) {
+			Update(entryPointID);
+		}
+		void updateFromCommandEntryPoint(std::string entryPointID) {
+			BRTBase::CCommand _command = GetCommandEntryPoint()->GetData();
+			if (!_command.isNull()) {
+				UpdateCommand();
+			}
+		}
+
 	private:
 		std::string environmentID;																// Store unique enviroment ID	
-		std::vector<std::shared_ptr<BRTSourceModel::CVirtualSourceModel>> virtualSourcesList;	// Store a list of virtual sources
+		std::vector<std::shared_ptr<BRTSourceModel::CVirtualSourceModel>> virtualSources;		// Store a list of virtual sources
 		BRTBase::CBRTManager* brtManager;
+
+
+
+
+		void SetOriginSourceID(std::string _originSourceID) {
+			for (auto it : virtualSources) {
+				it->SetOriginSourceID(_originSourceID);
+			}
+		}
 	};
 }
 #endif
