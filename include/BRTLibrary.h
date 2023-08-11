@@ -32,6 +32,7 @@
 #include "SourceModels/SourceSimpleModel.hpp"
 #include "SourceModels/SourceDirectivityModel.hpp"
 #include "EnvironmentModels/ExampleEnvironmentModel.hpp"
+#include "EnvironmentModels/SDNenv/SDNEnvironmentModel.hpp"
 #include "ProcessingModules/SingleProcessor.hpp"
 #include "ProcessingModules/SingleBinauralProcessor.hpp"
 #include "ProcessingModules/DistanceAttenuationProcessor.hpp"

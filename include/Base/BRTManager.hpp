@@ -254,6 +254,12 @@ namespace BRTBase {
 			module2->connectPositionEntryTo(module1->GetTransformExitPoint(), entryPointID);
 			return true;
 		}
+		template <typename T, typename U>
+		bool ConnectModuleTransform(T* module1, U* module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectPositionEntryTo(module1->GetTransformExitPoint(), entryPointID);
+			return true;
+		}
 
 		/**
 		 * @brief Disconnects the Transform ExitPoint of one module with the Transform EntryPoint of another.
@@ -387,6 +393,12 @@ namespace BRTBase {
 		}
 		template <typename T, typename U>
 		bool ConnectModuleID(std::shared_ptr<T> module1, U* module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectIDEntryTo(module1->GetIDExitPoint(), entryPointID);
+			return true;
+		}
+		template <typename T, typename U>
+		bool ConnectModuleID(T* module1, U* module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->connectIDEntryTo(module1->GetIDExitPoint(), entryPointID);
 			return true;

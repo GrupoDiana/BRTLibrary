@@ -89,8 +89,8 @@ namespace BRTBase {
 		template <typename T>
 		bool ConnectToListener(std::shared_ptr<T> _listener) {
 			
-			bool control = brtManager->ConnectModuleTransform(listener, this, "listenerPosition");
-			control = control && brtManager->ConnectModuleID(listener, this, "listenerID");
+			bool control = brtManager->ConnectModuleTransform(_listener, this, "listenerPosition");
+			control = control && brtManager->ConnectModuleID(_listener, this, "listenerID");
 			
 			for (auto _virtualSource : virtualSources) {
 				control = control && _listener->ConnectSoundSource(_virtualSource);
@@ -100,8 +100,8 @@ namespace BRTBase {
 		template <typename T>
 		bool ConnectToListener(T* _listener) {
 
-			bool control = brtManager->ConnectModuleTransform(listener, this, "listenerPosition");
-			control = control && brtManager->ConnectModuleID(listener, this, "listenerID");
+			bool control = brtManager->ConnectModuleTransform(_listener, this, "listenerPosition");
+			control = control && brtManager->ConnectModuleID(_listener, this, "listenerID");
 
 			for (auto _virtualSource : virtualSources) {
 				control = control && _listener->ConnectSoundSource(_virtualSource);
