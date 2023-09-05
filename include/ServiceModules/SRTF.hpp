@@ -456,7 +456,7 @@ namespace BRTServices
 
 		Common::CGlobalParameters globalParameters;
 
-		int aziMin, aziMax, eleMin, eleMax, eleNorth, eleSouth;	// Variables that define limits of work area
+		float aziMin, aziMax, eleMin, eleMax, eleNorth, eleSouth;	// Variables that define limits of work area
 		float sphereBorder;
 		float epsilon_sewing;
 		enum class TPole { north, south };

@@ -204,8 +204,6 @@ namespace BRTServices
 			float slopeDiagonalTrapezoid = std::abs(frontFloorElevationTransformed - backCeilElevationTransformed) / (frontFloorAzimuthTransformed - backCeilAzimuthTransformed);
 			float slopeOrientationOfInterest = std::abs(newElevationTransformed - backCeilElevationTransformed) / (newAzimuthTransformed - backCeilAzimuthTransformed);
 
-			if (slopeOrientationOfInterest == 1.20001221f)
-			{ slopeOrientationOfInterest = 0; }
 			if (slopeOrientationOfInterest >= slopeDiagonalTrapezoid)
 			{
 				// Uses A,C,D
@@ -214,8 +212,8 @@ namespace BRTServices
 
 				if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f)
 				{
-					return DataInterpolation(table, barycentricCoordinates, HRIRLength, backCeilAzimuthTransformed, backCeilElevationTransformed, backFloorAzimuthTransformed,
-						backFloorElevationTransformed, frontFloorAzimuthTransformed, frontFloorElevationTransformed);
+					return DataInterpolation(table, barycentricCoordinates, HRIRLength, backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation, 
+						backFloorListSortedByDistance[0].second.azimuth, backFloorListSortedByDistance[0].second.elevation, frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation);
 				}
 				else
 				{
@@ -230,8 +228,8 @@ namespace BRTServices
 
 				if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f)
 				{
-					return DataInterpolation(table, barycentricCoordinates, HRIRLength, backCeilAzimuthTransformed, backCeilElevationTransformed, frontCeilAzimuthTransformed,
-						frontCeilElevationTransformed, frontFloorAzimuthTransformed, frontFloorElevationTransformed);
+					return DataInterpolation(table, barycentricCoordinates, HRIRLength, backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation,
+						frontCeilListSortedByDistance[0].second.azimuth, frontCeilListSortedByDistance[0].second.elevation, frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation);
 				}
 				else
 				{
@@ -249,7 +247,7 @@ namespace BRTServices
 				std::sort(listToSort.begin(), listToSort.end(), [](const orientation& a, const orientation& b) { return a.azimuth < b.azimuth; });
 			}
 			else {
-				SET_RESULT(RESULT_WARNING, "Orientation list sorted by distances is empty");
+				SET_RESULT(RESULT_WARNING, "Orientation list sorted is empty");
 			}
 
 			// NEW SPLIT
@@ -259,11 +257,11 @@ namespace BRTServices
 			for (auto& it : listToSort)
 			{
 				resta = it.azimuth - _newAzimuth;
-				if (resta > 0 && resta <= 180)
+				if (resta > 0 && resta <= 180) 
 				{
 					_azimuthFrontList.push_back(it);
 				}
-				else if(resta < 0 && resta > -180)
+				else if(resta < 0 && resta > -180) 
 				{
 					_azimuthBackList.push_back(it);
 				}

@@ -158,12 +158,15 @@ namespace BRTServices
 					RemoveCommonDelay_HRTFDataBaseTable();
 					// Preparation of table read from sofa file
 					CalculateHRIR_InPoles(resamplingStep);
-					FillOutTableOfAzimuth360(resamplingStep);
+					//FillOutTableOfAzimuth360(resamplingStep); NOT FILLING AZIMUTH 360!!
 					FillSphericalCap_HRTF(gapThreshold, resamplingStep);
 					CalculateListOfOrientations_T_HRTF_DataBase();
 
+
 					//Creation and filling of resampling HRTF table
 					quasiUniformSphereDistribution.CreateGrid(t_HRTF_Resampled_partitioned, stepVector, resamplingStep);
+
+					std::cout << "Starting Filling of Resampled Table\n";
 					FillResampledTable();
 
 					//Setup values
@@ -588,7 +591,7 @@ namespace BRTServices
 		float sphereBorder;								// Define spheere "sewing"
 		float epsilon_sewing;
 
-		int azimuthMin, azimuthMax, elevationMin, elevationMax, elevationNorth, elevationSouth;	// Variables that define limits of work area
+		float azimuthMin, azimuthMax, elevationMin, elevationMax, elevationNorth, elevationSouth;	// Variables that define limits of work area
 
 		bool setupInProgress;						// Variable that indicates the HRTF add and resample algorithm are in process
 		bool HRTFLoaded;							// Variable that indicates if the HRTF has been loaded correctly
@@ -965,7 +968,7 @@ namespace BRTServices
 			{
 				for (float elevat = _pole + _fillStep; elevat < _elevationLastRing; elevat = elevat + _fillStep)
 				{
-					for (float azim = azimuthMin; azim <= azimuthMax; azim = azim + azimuth_Step)
+					for (float azim = azimuthMin; azim < azimuthMax; azim = azim + azimuth_Step)
 					{
 						//sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
 						HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, lastRingOrientationList, azim, elevat, HRIRLength, _pole);
@@ -977,7 +980,7 @@ namespace BRTServices
 			{
 				for (float elevat = _elevationLastRing + _fillStep; elevat < _pole; elevat = elevat + _fillStep)
 				{
-					for (float azim = azimuthMin; azim <= azimuthMax; azim = azim + azimuth_Step)
+					for (float azim = azimuthMin; azim < azimuthMax; azim = azim + azimuth_Step)
 					{
 						//sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
 						HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, lastRingOrientationList, azim, elevat, HRIRLength, _pole);
@@ -1005,6 +1008,7 @@ namespace BRTServices
 		bool CalculateAndEmplaceNewPartitionedHRIR(float _azimuth, float _elevation) {
 			THRIRStruct interpolatedHRIR;
 			bool bHRIRInterpolated = false;
+
 			auto it = t_HRTF_DataBase.find(orientation(_azimuth, _elevation));
 			if (it != t_HRTF_DataBase.end())
 			{
