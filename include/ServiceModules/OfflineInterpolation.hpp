@@ -256,23 +256,31 @@ namespace BRTServices
 
 			for (auto& it : listToSort)
 			{
-				resta = it.azimuth - _newAzimuth;
-				if (resta > 0 && resta <= 180) 
+				if (it.azimuth == 360)
 				{
-					_azimuthFrontList.push_back(it);
-				}
-				else if(resta < 0 && resta > -180) 
-				{
-					_azimuthBackList.push_back(it);
-				}
-				else if (resta > 0 && resta > 180)
-				{
-					_azimuthBackList.push_back(it);
+					// DO NOTHING
 				}
 				else
 				{
-					_azimuthFrontList.push_back(it);
+					resta = it.azimuth - _newAzimuth;
+					if (resta > 0 && resta <= 180)
+					{
+						_azimuthFrontList.push_back(it);
+					}
+					else if (resta < 0 && resta > -180)
+					{
+						_azimuthBackList.push_back(it);
+					}
+					else if (resta > 0 && resta > 180)
+					{
+						_azimuthBackList.push_back(it);
+					}
+					else
+					{
+						_azimuthFrontList.push_back(it);
+					}
 				}
+
 			}
 
 

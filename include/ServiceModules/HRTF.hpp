@@ -158,7 +158,7 @@ namespace BRTServices
 					RemoveCommonDelay_HRTFDataBaseTable();
 					// Preparation of table read from sofa file
 					CalculateHRIR_InPoles(resamplingStep);
-					//FillOutTableOfAzimuth360(resamplingStep); NOT FILLING AZIMUTH 360!!
+					FillOutTableOfAzimuth360(resamplingStep); 
 					FillSphericalCap_HRTF(gapThreshold, resamplingStep);
 					CalculateListOfOrientations_T_HRTF_DataBase();
 
