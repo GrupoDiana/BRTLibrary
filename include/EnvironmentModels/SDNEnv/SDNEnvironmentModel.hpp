@@ -33,8 +33,7 @@ namespace BRTEnvironmentModel {
 
 			if (_entryPointID == "inputSamples") {
 				// Get data from entry points
-				// is inputSamples always a CMonoBuffer<float> ? // convert = to std::copy
-				inBuffer = GetSamplesEntryPoint("inputSamples")->GetData();  //to be fixed (better to receive a reference to data) ?
+				inBuffer = GetSamplesEntryPoint("inputSamples")->GetData();
 				sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
 				listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
 
@@ -43,10 +42,11 @@ namespace BRTEnvironmentModel {
 
 					ASSERT(inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");
 					
-					if (isInBounds(sourcePosition.GetPosition()) && isInBounds(listenerPosition.GetPosition()))
+					// If the source or listener position exceed the size of the room silence the output
+					if (IsInBounds(sourcePosition.GetPosition()) && IsInBounds(listenerPosition.GetPosition()))
 					{
 						Process(inBuffer, sourcePosition, listenerPosition, virtualSourceBuffers, virtualSourcePositions);
-						syncVirtualSourcesToModel();
+						SyncVirtualSourcesToModel();
 					}
 					else
 					{
@@ -54,15 +54,20 @@ namespace BRTEnvironmentModel {
 						{
 							std::fill(buffer.begin(), buffer.end(), 0);
 						}
-						syncVirtualSourcesToModel();
+						SyncVirtualSourcesToModel();
 					}
 
 				}
-				//this->resetUpdatingStack();
 			}
 		}
-
-		void init()
+		
+		/**
+		* @brief Initialize the environment variables, required before processing. Room is always positioned
+		*		 with one corner in {0, 0, 0} and the room dimensions taken as coordinates define the opposite corner,
+		*		 required before calling process
+		* @param roomDimensions Room dimensions in meters expressed as a CVector3 with form {x, y, z}
+		*/
+		void Init(Common::CVector3 roomDimensions)
 		{
 			inBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
 			virtualSourceBuffers = std::vector<CMonoBuffer<float>>(N_VIRTUAL_SOURCES, inBuffer);
@@ -71,16 +76,18 @@ namespace BRTEnvironmentModel {
 			sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
 			listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
 
-			prepare(globalParameters.GetSampleRate(), { 5, 5, 5 }, sourcePosition, listenerPosition, virtualSourcePositions);
+			Prepare(globalParameters.GetSampleRate(), roomDimensions, sourcePosition, 
+				listenerPosition, virtualSourcePositions);
 		}
 
-		void UpdateCommand() {
-			
-		}
+		Common::CVector3 GetRoomDimensions() { return dimensions; }
 
-		Common::CVector3 getRoomDimensions() { return dimensions; }
-
-		void setRoomDimensions(float newValue, TAxis _axis)
+		/**
+		* @brief Change the room dimensions along one axis
+		* @param newValue New dimension in meters
+		* @param _axis Axis whose dimension needs to be updated
+		*/
+		void SetRoomDimensions(float newValue, TAxis _axis)
 		{
 			switch (_axis)
 			{
@@ -96,14 +103,21 @@ namespace BRTEnvironmentModel {
 			hasChanged = true;
 		}
 
-		void muteLOS(bool mute)
+
+		/**
+		* @brief Mute or unmute line of sight component
+		* @param mute True to mute the line of sight component, False to unmute
+		*/
+		void MuteLOS(bool mute)
 		{
 			muteLoS = mute;
 		}
 
+		void UpdateCommand() {};
+
 	private:
 
-		void syncVirtualSourcesToModel()
+		void SyncVirtualSourcesToModel()
 		{
 			SetVirtualSourceBuffer("WallX0", virtualSourceBuffers[0]);
 			SetVirtualSourcePosition("WallX0", virtualSourcePositions[0]);

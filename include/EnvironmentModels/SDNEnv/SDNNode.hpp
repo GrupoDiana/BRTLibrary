@@ -10,11 +10,11 @@ public:
 
 	SDNNode() {};
 
-	void setPosition(Common::CVector3 newPos) { position = newPos; };
-	void setX(float newPos) { position.x = newPos; };
-	void setY(float newPos) { position.y = newPos; };
-	void setZ(float newPos) { position.z = newPos; };
-	Common::CVector3& getPosition() { return position; };
+	void SetPosition(Common::CVector3 newPos) { position = newPos; };
+	void SetX(float newPos) { position.x = newPos; };
+	void SetY(float newPos) { position.y = newPos; };
+	void SetZ(float newPos) { position.z = newPos; };
+	Common::CVector3& GetPosition() { return position; };
 
 	~SDNNode() {};
 

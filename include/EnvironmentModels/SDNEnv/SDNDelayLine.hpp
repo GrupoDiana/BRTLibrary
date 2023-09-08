@@ -2,14 +2,20 @@
 #define _SDN_DELAY_LINE_HPP_
 
 
-//delay line implementation for waveguides, uses an all-pass filter to extract samples
+// Delay line implementation for waveguides, uses an all-pass filter to extract samples
 class SDNDelayLine
 {
 public:
 	SDNDelayLine() {};
 	~SDNDelayLine() {};
 
-	void prepare(double samplerate, int maxLength, float delaySamp)
+	/**
+	* @brief Initialize the delay line variables
+	* @param samplerate Samplerate of the delay line
+	* @param maxLength Size of the delay line buffer
+	* @param delaySamp Initial delay value in samples, can be a fractional value
+	*/
+	void Prepare(double samplerate, int maxLength, float delaySamp)
 	{
 		maxBufferLength = maxLength;
 		circularBuffer.resize(maxBufferLength, 0);
@@ -17,12 +23,20 @@ public:
 		delaySamples = delaySamp;
 	}
 
-	void storeInDelay(float sample)
+	/**
+	* @brief Save a sample at the current write index
+	* @param sample Sample to save into the buffer
+	*/
+	void StoreInDelay(float sample)
 	{
 		circularBuffer[writeIndex] = sample;
 	}
 
-	float& readNextSample()
+	/**
+	* @brief Reads the sample at the output of the delay line for the current time step
+	* @return Returns the reference to the sample at the output of the delay line for the current time step
+	*/
+	float& ReadNextSample()
 	{
 
 		float fReadIndex = maxBufferLength + writeIndex - delaySamples;
@@ -41,16 +55,20 @@ public:
 		return outSample;
 	}
 
-
-	void advanceWriteIndex()
+	/**
+	* @brief Advance the write index by one sample
+	*/
+	void AdvanceWriteIndex()
 	{
 		writeIndex++;
 		writeIndex %= maxBufferLength;
 	}
 
-	void setDelay(float newDelay) { delaySamples = newDelay; };
-
-	double getSampleRate() { return sampleRate; };
+	/**
+	* @brief Set a new delay
+	* @param newDelay New delay in number of samples, can be a fractional value
+	*/
+	void SetDelay(float newDelay) { delaySamples = newDelay; };
 
 private:
 
