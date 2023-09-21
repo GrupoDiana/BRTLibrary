@@ -118,7 +118,8 @@ namespace BRTServices
 			// Saving in -1,-1 the Elevation Step, same for all grid
 			stepVector.emplace(orientation(-1, -1), actual_Ele_Step);
 
-			for (float newElevation = -90.0f; newElevation <= 90.0f; newElevation = newElevation + actual_Ele_Step)
+			// Round newElevation to avoid not saving elevation 90 due to float adding problems
+			for (float newElevation = -90.0f; round(newElevation) <= 90.0f; newElevation = newElevation + actual_Ele_Step)
 			{
 
 				n_divisions_by_elev = std::ceil(n_divisions * std::cos(d2r(newElevation)));
