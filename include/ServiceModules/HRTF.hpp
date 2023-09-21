@@ -261,9 +261,23 @@ namespace BRTServices
 				GetPoleHRIR_partitioned(newHRIR, ear, ielevation);
 				return newHRIR;
 			}
-
-			//Run time interpolation ON
 			
+			// We search if the point already exists
+			auto it = t_HRTF_Resampled_partitioned.find(orientation(_azimuth, _elevation));
+			if (it != t_HRTF_Resampled_partitioned.end())
+			{
+				if (ear == Common::T_ear::LEFT)
+				{
+					newHRIR = it->second.leftHRIR_Partitioned;
+				}
+				else
+				{
+					newHRIR = it->second.rightHRIR_Partitioned;
+				}
+				return newHRIR;
+			} 
+
+			// ONLINE Interpolation 
 			//const THRIRPartitionedStruct data = midPointOnlineInterpolator.CalculateHRIRPartitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);
 			const THRIRPartitionedStruct data = slopesMethodOnlineInterpolator.CalculateHRIRPartitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);
 			if (ear == Common::T_ear::LEFT) {
@@ -340,9 +354,7 @@ namespace BRTServices
 				data.rightDelay = static_cast<uint64_t>(rightDelay);
 				return data;				
 			}
-
-			//  We have to do the run time interpolation -- (runTimeInterpolation = true)
-
+		
 			// Check if we are close to 360 azimuth or elevation and change to 0
 			if (Common::AreSame(_azimuthCenter, sphereBorder, epsilon_sewing)) { _azimuthCenter = 0.0f; }
 			if (Common::AreSame(_elevationCenter, sphereBorder, epsilon_sewing)) { _elevationCenter = 0.0f; }
@@ -359,8 +371,19 @@ namespace BRTServices
 				data.rightDelay = static_cast<uint64_t>(rightDelay);
 				return data;
 			}
-				//Run time interpolation ON
-				//return GetHRIRDelayInterpolationMethod(ear, _azimuthCenter, _elevationCenter, resamplingStep, stepVector);	
+
+			// We search if the point already exists
+			auto it = t_HRTF_Resampled_partitioned.find(orientation(_azimuthCenter, _elevationCenter));
+			if (it != t_HRTF_Resampled_partitioned.end())
+			{
+				THRIRPartitionedStruct temp;				
+				temp.leftDelay = it->second.leftDelay;;						
+				temp.rightDelay = it->second.rightDelay;			
+				return temp;
+			}
+
+			// ONLINE Interpolation 
+			//return GetHRIRDelayInterpolationMethod(ear, _azimuthCenter, _elevationCenter, resamplingStep, stepVector);	
 			const THRIRPartitionedStruct temp = slopesMethodOnlineInterpolator.CalculateDelay_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuthCenter, _elevationCenter, stepVector);
 			return temp;
 		}
