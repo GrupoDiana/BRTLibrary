@@ -330,21 +330,21 @@ namespace BRTEnvironmentModel {
 			case 'x':
 				a.x = (2 * wallPosition) - a.x;
 				direction = DirVector(a, b);
-				positionParam = (wallPosition - a.x) / direction.x;
+				positionParam = direction.x == 0 ? 0 : (wallPosition - a.x) / direction.x;
 				return Common::CVector3( wallPosition, a.y + direction.y * positionParam, a.z + direction.z * positionParam );
 				break;
 
 			case 'y':
 				a.y = (2 * wallPosition) - a.y;
 				direction = DirVector(a, b);
-				positionParam = (wallPosition - a.y) / direction.y;
+				positionParam = direction.y == 0 ? 0 : (wallPosition - a.y) / direction.y;
 				return Common::CVector3( a.x + direction.x * positionParam, wallPosition, a.z + direction.z * positionParam );
 				break;
 
 			case 'z':
 				a.z = (2 * wallPosition) - a.z;
 				direction = DirVector(a, b);
-				positionParam = (wallPosition - a.z) / direction.z;
+				positionParam = direction.z == 0 ? 0 : (wallPosition - a.z) / direction.z;
 				return Common::CVector3( a.x + direction.x * positionParam, a.y + direction.y * positionParam, wallPosition );
 				break;
 			}
