@@ -10,6 +10,7 @@ namespace SDNParameters
 	constexpr int NUM_WAVEGUIDES_TO_OUTPUT = 7;
 	constexpr float ROOM_MAX_DIMENSION = 100.0f;
 	constexpr float SMOOTHING_TIME_SECONDS = 0.015f;
+	constexpr double MINUS_INFINITY_DB = -100.0;
 }
 
 #endif

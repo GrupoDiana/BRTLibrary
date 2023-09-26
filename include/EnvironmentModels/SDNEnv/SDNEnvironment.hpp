@@ -121,11 +121,13 @@ namespace BRTEnvironmentModel {
 
 			InitWalls(samplerate, _virtualSourcePositions);
 			InitWaveguides(samplerate);
+
+			this->samplerate = samplerate;
 		}
 
 		Common::CVector3 dimensions = { 0.0f, 0.0f, 0.0f };
 		bool hasChanged = false;
-
+		std::vector<ScatteringNode> wallNodes;
 
 	private:
 
@@ -260,8 +262,8 @@ namespace BRTEnvironmentModel {
 		{
 			for (ScatteringNode& node : wallNodes)
 			{
-				//if (node.hasNewAbsorption())
-				//	node.updateFilterCoeffs(source.getSamplerate());
+				if (node.HasNewAbsorption())
+					node.updateFilterCoeffs(samplerate);
 
 				node.Process();
 			}
@@ -371,7 +373,7 @@ namespace BRTEnvironmentModel {
 
 		SDNNode source, receiver;
 
-		std::vector<ScatteringNode> wallNodes;
+		double samplerate = 0;
 
 		float dimensionsHelper[6] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
 

@@ -113,6 +113,17 @@ namespace BRTEnvironmentModel {
 			muteLoS = mute;
 		}
 
+		/**
+		* @brief Set a new absortion value for a frequency of a wall in the room
+		* @param newValue New absorption value
+		* @param wallIndex Index of the desired wall, the array of walls is constructed as [X0, XSize, Y0, YSize, Z0, ZSize]
+		* @param freqIndex Index of the frequency to change, the array of frequencies is [125, 250, 500, 1000, 2000, 4000, 8000, 16000]Hz
+		*/
+		void setWallFreqAbsorption(float newValue, int wallIndex, int freqIndex)
+		{
+			wallNodes[wallIndex].SetFreqAbsorption(newValue, freqIndex);
+		}
+
 		void UpdateCommand() {};
 
 	private:

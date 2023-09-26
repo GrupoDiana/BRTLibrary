@@ -3,6 +3,7 @@
 
 #include <EnvironmentModels/SDNenv/SDNNode.hpp>
 #include <EnvironmentModels/SDNenv/WaveGuide.hpp>
+#include <EnvironmentModels/SDNEnv/SDNUtils.hpp>
 
 // Scattering node in SDN architecture, uses IIR filters to simulate material absorption
 class ScatteringNode : public SDNNode
@@ -34,19 +35,18 @@ public:
 		toListenerSample = 0;
 		totalLoudness = 0.0f;
 		
-		//wallFilters = std::vector<IIRBase>(nOfConnections);
+		wallFilters = std::vector<IIRFilter>(nOfConnections);
 
-		//std::vector<std::vector<double>> coeffs = dspUtils::getWallFilterCoeffs(samplerate, absorption[0],
-		//	absorption[1], absorption[2], absorption[3], absorption[4], absorption[5], absorption[6], absorption[7]);
+		std::vector<std::vector<double>> coeffs = SDNUtils::getWallFilterCoeffs(samplerate, absorption[0],
+			absorption[1], absorption[2], absorption[3], absorption[4], absorption[5], absorption[6], absorption[7]);
 
-		//a = coeffs[1];
-		//b = coeffs[0];
+		a = coeffs[1];
+		b = coeffs[0];
 
-		//;
-		//for (IIRBase& filter : wallFilters)
-		//{
-		//	filter.init(samplerate, &a, &b);
-		//}
+		for (IIRFilter& filter : wallFilters)
+		{
+			filter.init(samplerate, &a, &b);
+		}
 
 	}
 
@@ -80,22 +80,27 @@ public:
 		absorption[index] = newValue;
 		newAbsorption = true;
 	}
-	//calculate filter coefficients from local absorption values array
-	//void updateFilterCoeffs(double samplerate)
-	//{
-	//	std::vector<std::vector<double>> coeffs = dspUtils::getWallFilterCoeffs(samplerate, absorption[0],
-	//		absorption[1], absorption[2], absorption[3], absorption[4], absorption[5], absorption[6], absorption[7]);
 
-	//	a = coeffs[1];
-	//	b = coeffs[0];
 
-	//	for (IIRBase& filter : wallFilters)
-	//	{
-	//		filter.clearMemory();
-	//	}
+	/**
+	* @brief Calculate filter coefficients from local absorption values array
+	* @param samplerate Sample rate of the filter
+	*/
+	void updateFilterCoeffs(double samplerate)
+	{
+		std::vector<std::vector<double>> coeffs = SDNUtils::getWallFilterCoeffs(samplerate, absorption[0],
+			absorption[1], absorption[2], absorption[3], absorption[4], absorption[5], absorption[6], absorption[7]);
 
-	//	newAbsorption = false;
-	//}
+		a = coeffs[1];
+		b = coeffs[0];
+
+		for (IIRFilter& filter : wallFilters)
+		{
+			filter.clearMemory();
+		}
+
+		newAbsorption = false;
+	}
 
 	/**
 	* @brief Check if an absorption value for any octave band has changed and has not been processed yet
@@ -139,8 +144,7 @@ private:
 			float chSample = totalLoudness - chInSample;
 			chSample = (chSample * scatteringCoefficient) + (chInSample * (scatteringCoefficient - 1));
 
-			//wallFilters[i].process(chSample);
-			chSample *= 0.8; //temp absorb until filters are implemented
+			wallFilters[i].process(chSample);
 
 			outWaveguides[i]->PushNextSample(chSample);
 			toListenerSample += chSample;
@@ -155,7 +159,7 @@ private:
 	float toListenerSample = 0;
 	float totalLoudness = 0;
 
-	//std::vector<IIRBase> wallFilters;
+	std::vector<IIRFilter> wallFilters;
 	WaveGuide* sourceGuide = 0;
 	WaveGuide* listenerGuide = 0;
 
