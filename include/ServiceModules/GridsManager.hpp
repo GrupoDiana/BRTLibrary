@@ -106,7 +106,8 @@ namespace BRTServices
 		void CreateGrid(T_HRTFPartitionedTable& table, std::unordered_map<orientation, float>& stepVector, int _resamplingStep) {
 			int n_divisions_by_elev;
 
-			float elevationInRange, actual_Azi_Step;
+			double elevationInRange;
+			double actual_Azi_Step;
 
 			//std::unordered_map<orientation, float> stepVector;
 			THRIRPartitionedStruct null;
@@ -114,17 +115,17 @@ namespace BRTServices
 			int n_divisions = std::ceil(360 / _resamplingStep);
 			int n_rings_hemisphere = std::ceil(90 / _resamplingStep);
 			float actual_Ele_Step = 90.0f / n_rings_hemisphere;
-
+			
 			// Saving in -1,-1 the Elevation Step, same for all grid
 			stepVector.emplace(orientation(-1, -1), actual_Ele_Step);
 
 			// Round newElevation to avoid not saving elevation 90 due to float adding problems
-			for (float newElevation = -90.0f; round(newElevation) <= 90.0f; newElevation = newElevation + actual_Ele_Step)
+			for (double newElevation = -90.0f; round(newElevation) <= 90.0f; newElevation = newElevation + actual_Ele_Step)
 			{
 
 				n_divisions_by_elev = std::ceil(n_divisions * std::cos(d2r(newElevation)));
 				actual_Azi_Step = 360.0f / n_divisions_by_elev;
-
+			
 				// Calculate new Elevation to be in range [270,360] and use it to create the vector and to emplace data
 				elevationInRange = AdjustElevationRange(newElevation);
 
@@ -132,9 +133,9 @@ namespace BRTServices
 				stepVector.emplace(orientation(0, elevationInRange), actual_Azi_Step);
 
 				// Ceil to avoid error with the sum of decimal digits and not emplace 360 azimuth
-				for (float newAzimuth = DEFAULT_MIN_AZIMUTH; std::ceil(newAzimuth) < DEFAULT_MAX_AZIMUTH; newAzimuth = newAzimuth + actual_Azi_Step)
+				for (double newAzimuth = DEFAULT_MIN_AZIMUTH; std::ceil(newAzimuth) < DEFAULT_MAX_AZIMUTH; newAzimuth = newAzimuth + actual_Azi_Step)
 				{
-					table.emplace(orientation(newAzimuth, elevationInRange), null);
+					table.emplace(orientation(newAzimuth, elevationInRange), null);					
 				}
 			}
 			//SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));			
@@ -218,7 +219,7 @@ namespace BRTServices
 
 		friend class CHRTFTester;
 	private:
-		float AdjustElevationRange(float elev) {
+		double AdjustElevationRange(double elev) {
 			if (elev < 0) { elev = elev + 360; }
 			return elev;
 		}

@@ -61,6 +61,15 @@ namespace Common {
 		T right;	///< right channel
 	};
 
+	static bool AreSameDouble(double a, double b, double epsilon)
+	{
+		//float absA = fabs(a);
+		//float absB = fabs(b);
+		float diff = std::fabs(a - b);
+
+		return diff < epsilon;
+	}
+
 	static bool AreSame(float a, float b, float epsilon)
 	{
 		//float absA = fabs(a);

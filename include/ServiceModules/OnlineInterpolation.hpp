@@ -351,7 +351,7 @@ namespace BRTServices
 			orientation orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoP;
 			std::pair<float, float>nearestElevations;
 
-			find_4Nearest_Points(_azimuth, _elevation, stepMap, orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoP, nearestElevations);
+			Find_4Nearest_Points(_azimuth, _elevation, stepMap, orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoP, nearestElevations);
 			float eleCeil = nearestElevations.first;
 			float eleFloor = nearestElevations.second;
 
@@ -431,53 +431,53 @@ namespace BRTServices
 		 * @param orientation_ptoP 
 		 * @param nearestElevations 
 		*/
-		void find_4Nearest_Points(float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap, orientation& orientation_ptoA, orientation& orientation_ptoB, orientation& orientation_ptoC, orientation& orientation_ptoD, orientation& orientation_ptoP, std::pair<float, float>& nearestElevations)const
+		void Find_4Nearest_Points(float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap, orientation& orientation_ptoA, orientation& orientation_ptoB, orientation& orientation_ptoC, orientation& orientation_ptoD, orientation& orientation_ptoP, std::pair<float, float>& nearestElevations)const
 		{
-			float aziCeilBack, aziCeilFront, aziFloorBack, aziFloorFront;
+			float azimuthCeilBack, azimuthCeilFront, azimuthFloorBack, azimuthFloorFront;
 
-			float eleStep = stepMap.find(orientation(-1, -1))->second; // Elevation Step -- Same always
-			int idxEle = ceil(_elevation / eleStep);
-			float eleCeil = eleStep * idxEle;
-			float eleFloor = eleStep * (idxEle - 1);
+			float elevationStep = stepMap.find(orientation(-1, -1))->second; // Elevation Step -- Same always
+			int indexElevation = ceil(_elevation / elevationStep);
+			float elevationCeil = elevationStep * indexElevation;
+			float elevationFloor = elevationStep * (indexElevation - 1);
 
-			eleCeil = CHRTFAuxiliarMethods::CheckLimitsElevation_and_Transform(eleCeil);				//			   Back	  Front
-			eleFloor = CHRTFAuxiliarMethods::CheckLimitsElevation_and_Transform(eleFloor);				//	Ceil		A		B
+			elevationCeil = CHRTFAuxiliarMethods::CheckLimitsElevation_and_Transform(elevationCeil);				//			   Back	  Front
+			elevationFloor = CHRTFAuxiliarMethods::CheckLimitsElevation_and_Transform(elevationFloor);				//	Ceil		A		B
 
-			auto stepItr = stepMap.find(orientation(0, eleCeil));										//	Floor		C		D
-			float aziStepCeil = stepItr->second;
+			auto stepItr = stepMap.find(orientation(0, elevationCeil));										//	Floor		C		D
+			float azimuthStepCeil = stepItr->second;
 
-			CHRTFAuxiliarMethods::CalculateAzimuth_BackandFront(aziCeilBack, aziCeilFront, aziStepCeil, _azimuth);
+			CHRTFAuxiliarMethods::CalculateAzimuth_BackandFront(azimuthCeilBack, azimuthCeilFront, azimuthStepCeil, _azimuth);
 			// azimuth values passed by reference
 
-			auto stepIt = stepMap.find(orientation(0, eleFloor));
-			float aziStepFloor = stepIt->second;
+			auto stepIt = stepMap.find(orientation(0, elevationFloor));
+			float azimuthStepFloor = stepIt->second;
 
-			CHRTFAuxiliarMethods::CalculateAzimuth_BackandFront(aziFloorBack, aziFloorFront, aziStepFloor, _azimuth);
+			CHRTFAuxiliarMethods::CalculateAzimuth_BackandFront(azimuthFloorBack, azimuthFloorFront, azimuthStepFloor, _azimuth);
 
-			eleCeil = eleStep * idxEle;
+			elevationCeil = elevationStep * indexElevation;
 
 			// Mid Point of a trapezoid can be compute by averaging all azimuths
-			float azimuth_ptoP = (aziCeilBack + aziCeilFront + aziFloorBack + aziFloorFront) * 0.25;
+			float azimuth_ptoP = (azimuthCeilBack + azimuthCeilFront + azimuthFloorBack + azimuthFloorFront) * 0.25;
 			// to avoid take points above under 0 like 345,350,355 and compare with them
-			float elevation_ptoP = (eleCeil - eleStep * 0.5f);
+			float elevation_ptoP = (elevationCeil - elevationStep * 0.5f);
 
 			orientation_ptoP = orientation(azimuth_ptoP, elevation_ptoP);
 
 			// Particular case of points near poles
-			if (eleCeil == ELEVATION_NORTH_POLE) { aziCeilFront = aziFloorFront; }
-			else if (eleFloor == ELEVATION_SOUTH_POLE) { aziFloorFront = aziCeilFront; }
+			if (elevationCeil == ELEVATION_NORTH_POLE) { azimuthCeilFront = azimuthFloorFront; }
+			else if (elevationFloor == ELEVATION_SOUTH_POLE) { azimuthFloorFront = azimuthCeilFront; }
 
 			//Calculate the quadrant points A, B, C and D and the middle quadrant point P
-			orientation_ptoC.azimuth = aziFloorBack;
-			orientation_ptoC.elevation = eleFloor;
-			orientation_ptoA.azimuth = aziCeilBack;
-			orientation_ptoA.elevation = eleCeil;
-			orientation_ptoB.azimuth = aziCeilFront;
-			orientation_ptoB.elevation = eleCeil;
-			orientation_ptoD.azimuth = aziFloorFront;
-			orientation_ptoD.elevation = eleFloor;
+			orientation_ptoC.azimuth = azimuthFloorBack;
+			orientation_ptoC.elevation = elevationFloor;
+			orientation_ptoA.azimuth = azimuthCeilBack;
+			orientation_ptoA.elevation = elevationCeil;
+			orientation_ptoB.azimuth = azimuthCeilFront;
+			orientation_ptoB.elevation = elevationCeil;
+			orientation_ptoD.azimuth = azimuthFloorFront;
+			orientation_ptoD.elevation = elevationFloor;
 
-			nearestElevations = std::pair(eleCeil, eleFloor);
+			nearestElevations = std::pair(elevationCeil, elevationFloor);
 		}
 
 	};
