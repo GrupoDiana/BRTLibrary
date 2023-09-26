@@ -42,7 +42,8 @@
 #define DEFAULT_MIN_ELEVATION 0
 #define DEFAULT_MAX_ELEVATION 360
 
-#define ORIENTATION_RESOLUTION 0.01
+#define ORIENTATION_RESOLUTION			0.01
+#define ORIENTATION_RESOLUTION_INVERSE	1/ORIENTATION_RESOLUTION		// For faster operation, in case the compiler does not optimise the division
 
 #define EPSILON_SEWING 0.001
 
@@ -52,17 +53,34 @@
 */
 struct orientation
 {
-	float azimuth;					///< Azimuth angle in degrees
-	float elevation;				///< Elevation angle in degrees	
+	double azimuth;					///< Azimuth angle in degrees
+	double elevation;				///< Elevation angle in degrees	
 	Common::CVector3 cartessianPos; ///< Position in X, Y and Z
-	orientation(float _azimuth, float _elevation) :azimuth{ _azimuth }, elevation{ _elevation } {}
-	orientation(float _azimuth, float _elevation, Common::CVector3 _cartessianPos) :azimuth{ _azimuth }, elevation{ _elevation }, cartessianPos{ _cartessianPos } {}
-	orientation() :orientation{ 0,0 } {}
+	orientation(double _azimuth, double _elevation) :azimuth{ _azimuth }, elevation{ _elevation } {}
+	orientation(double _azimuth, double _elevation, Common::CVector3 _cartessianPos) :azimuth{ _azimuth }, elevation{ _elevation }, cartessianPos{ _cartessianPos } {}
+	//orientation(float _azimuth, float _elevation) :azimuth{ static_cast<double>(_azimuth) }, elevation{ static_cast<double>(_elevation) } {}
+	//orientation(float _azimuth, float _elevation, Common::CVector3 _cartessianPos) :azimuth{ static_cast<double>(_azimuth) }, elevation{ static_cast<double>(_elevation) }, cartessianPos{ _cartessianPos } {}
+	orientation() :orientation{ 0.0, 0.0 } {}
 	bool operator==(const orientation& other) const
 	{
 		return ((Common::AreSame(this->azimuth, other.azimuth, ORIENTATION_RESOLUTION)) && (Common::AreSame(this->elevation, other.elevation, ORIENTATION_RESOLUTION)));
+		return ((Common::AreSameDouble(this->azimuth, other.azimuth, ORIENTATION_RESOLUTION)) && (Common::AreSameDouble(this->elevation, other.elevation, ORIENTATION_RESOLUTION)));
 	}
 };
+
+//struct orientation
+//{
+//	float azimuth;					///< Azimuth angle in degrees
+//	float elevation;				///< Elevation angle in degrees	
+//	Common::CVector3 cartessianPos; ///< Position in X, Y and Z
+//	orientation(float _azimuth, float _elevation) :azimuth{ _azimuth }, elevation{ _elevation } {}
+//	orientation(float _azimuth, float _elevation, Common::CVector3 _cartessianPos) :azimuth{ _azimuth }, elevation{ _elevation }, cartessianPos{ _cartessianPos } {}
+//	orientation() :orientation{ 0,0 } {}
+//	bool operator==(const orientation& other) const
+//	{
+//		return ((Common::AreSame(this->azimuth, other.azimuth, ORIENTATION_RESOLUTION)) && (Common::AreSame(this->elevation, other.elevation, ORIENTATION_RESOLUTION)));
+//	}
+//};
 
 namespace std
 {
@@ -71,9 +89,13 @@ namespace std
 	{
 		// adapted from http://en.cppreference.com/w/cpp/utility/hash
 		size_t operator()(const orientation& key) const
-		{
-			int keyAzimuth_hundredth = static_cast<int> (round(key.azimuth / ORIENTATION_RESOLUTION));
-			int keyElevation_hundredth = static_cast<int> (round(key.elevation / ORIENTATION_RESOLUTION));
+		{			
+			//int keyAzimuth_hundredth	= static_cast<int> (round(key.azimuth / ORIENTATION_RESOLUTION));
+			//int keyElevation_hundredth	= static_cast<int> (round(key.elevation / ORIENTATION_RESOLUTION));
+			
+			int keyAzimuth_hundredth	= static_cast<int> (std::round(key.azimuth * ORIENTATION_RESOLUTION_INVERSE));
+			int keyElevation_hundredth	= static_cast<int> (std::round(key.elevation * ORIENTATION_RESOLUTION_INVERSE));
+			
 
 			size_t h1 = std::hash<int32_t>()(keyAzimuth_hundredth);
 			size_t h2 = std::hash<int32_t>()(keyElevation_hundredth);
