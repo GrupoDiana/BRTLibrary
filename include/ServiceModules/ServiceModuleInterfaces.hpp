@@ -62,8 +62,7 @@ struct orientation
 	//orientation(float _azimuth, float _elevation, Common::CVector3 _cartessianPos) :azimuth{ static_cast<double>(_azimuth) }, elevation{ static_cast<double>(_elevation) }, cartessianPos{ _cartessianPos } {}
 	orientation() :orientation{ 0.0, 0.0 } {}
 	bool operator==(const orientation& other) const
-	{
-		return ((Common::AreSame(this->azimuth, other.azimuth, ORIENTATION_RESOLUTION)) && (Common::AreSame(this->elevation, other.elevation, ORIENTATION_RESOLUTION)));
+	{		
 		return ((Common::AreSameDouble(this->azimuth, other.azimuth, ORIENTATION_RESOLUTION)) && (Common::AreSameDouble(this->elevation, other.elevation, ORIENTATION_RESOLUTION)));
 	}
 };
