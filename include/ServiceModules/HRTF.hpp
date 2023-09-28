@@ -1045,7 +1045,8 @@ namespace BRTServices
 				// Get a list sorted by distances to the orientation of interest
 				//std::vector<T_PairDistanceOrientation> sortedList = distanceBasedInterpolator.GetSortedDistancesList(t_HRTF_DataBase_ListOfOrientations, _azimuth, _elevation);
 				//Get the interpolated HRIR 
-				interpolatedHRIR = quadrantBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, _azimuth, _elevation, HRIRLength);
+				//interpolatedHRIR = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, _azimuth, _elevation, HRIRLength);
+				interpolatedHRIR = quadrantBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, _azimuth, _elevation, HRIRLength);				
 				bHRIRInterpolated = true;
 
 				//Fill out HRTF partitioned table.IR in frequency domain
