@@ -32,8 +32,7 @@
 namespace BRTServices
 {
 	class COfflineInterpolatorInterface {
-	public:
-		//virtual std::vector<T_PairDistanceOrientation> GetSortedDistancesList(std::vector<orientation> listToSort, float newAzimuth, float newElevation) = 0;
+	public:		
 		virtual THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, std::vector<orientation>& listToSort, float newAzimuth, float newElevation, int HRIRLength, int pole) = 0;
 	};
 
