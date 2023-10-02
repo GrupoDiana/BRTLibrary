@@ -735,14 +735,8 @@ namespace BRTServices
 		{
 			THRIRStruct calculatedHRIR;
 			std::vector < std::vector <orientation>> hemisphereParts;
-<<<<<<<< HEAD:include/ServiceModules/HRTF.h
-			hemisphereParts.resize(NUMBER_OF_PARTS);
-			int border = std::ceil(360.0f / NUMBER_OF_PARTS);
-
-========
 			hemisphereParts.resize(NUMBER_OF_PARTS); 
 			int border = std::ceil(sphereBorder / NUMBER_OF_PARTS);
->>>>>>>> main:include/ServiceModules/HRTF.hpp
 			auto currentElevation = keys_hemisphere.begin()->elevation;
 			for (auto& it : keys_hemisphere)
 			{
