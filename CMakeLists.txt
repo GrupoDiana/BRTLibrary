@@ -4,15 +4,26 @@ project(libbrt)
 
 # FIXME: take to separate dependecies.cmake file 
 # with include(dependencies.cmake)
+# we no longer use libsofa, we use libmysofa instead. 
+# include(FetchContent)
+# option(BUILD_SHARED_LIBS "By default link libsofa statically" OFF)
+# FetchContent_Declare(
+#     libsofa
+#     GIT_REPOSITORY "https://github.com/lmtanco/API_Cpp.git"
+#     GIT_TAG origin/cmake
+#     GIT_PROGRESS true
+# )
+# FetchContent_MakeAvailable(libsofa)
+
 include(FetchContent)
-option(BUILD_SHARED_LIBS "By default link libsofa statically" OFF)
+option(BUILD_SHARED_LIBS "By default link libmysofa statically" OFF)
 FetchContent_Declare(
-    libsofa
-    GIT_REPOSITORY "https://github.com/lmtanco/API_Cpp.git"
-    GIT_TAG origin/cmake
+    libmysofa
+    GIT_REPOSITORY "https://github.com/GrupoDiana/libmysofa.git"
+    GIT_TAG origin/FreeFieldDirectivityTF_workaround
     GIT_PROGRESS true
 )
-FetchContent_MakeAvailable(libsofa)
+FetchContent_MakeAvailable(libmysofa)
 
 # Brt library is the main target
 add_library(brt INTERFACE)
