@@ -266,7 +266,8 @@ namespace BRTReaders {
 			{
 				BRTServices::THRIRStruct hrir_value;
 				double azimuth = sourcePositionsVector[array2DIndex(i, 0, numberOfMeasurements, numberOfCoordinates)];
-				double elevation = GetPositiveElevation(sourcePositionsVector[array2DIndex(i, 1, numberOfMeasurements, numberOfCoordinates)]);
+				//double elevation = GetPositiveElevation(sourcePositionsVector[array2DIndex(i, 1, numberOfMeasurements, numberOfCoordinates)]);
+				double elevation = sourcePositionsVector[array2DIndex(i, 1, numberOfMeasurements, numberOfCoordinates)];
 				//double distance = sourcePositionsVector[array2DIndex(i, 2, numberOfMeasurements, numberOfCoordinates)];
 
 				hrir_value.leftDelay = dataDelays[specifiedDelays ? array2DIndex(i, left_ear, numberOfMeasurements, 2) : 0];
@@ -361,7 +362,7 @@ namespace BRTReaders {
 				CMonoBuffer<float> dataRealPartPI;
 				CMonoBuffer <float> dataImagPartPI;
 				double azimuth = receiverPositionsVector[array2DIndex(i, 0, 0, numberOfCoordinates)];
-				double elevation = GetPositiveElevation(receiverPositionsVector[array2DIndex(i, 1, 0, numberOfCoordinates)]);
+				double elevation = GetPositiveElevation(receiverPositionsVector[array2DIndex(i, 1, 0, numberOfCoordinates)]);				
 				
 				GetDirectivityData(dataMeasurementsRealPart, dataRealPartPI, numberOfFrequencySamples, i);
 				GetDirectivityData(dataMeasurementsImagPart, dataImagPartPI, numberOfFrequencySamples, i);
