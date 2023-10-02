@@ -15,8 +15,10 @@ project(libbrt)
 # )
 # FetchContent_MakeAvailable(libsofa)
 
+# The library depends on libmysofa
 include(FetchContent)
 option(BUILD_SHARED_LIBS "By default link libmysofa statically" OFF)
+option(BUILD_TESTS "By default don't build libmysofa test files" OFF)
 FetchContent_Declare(
     libmysofa
     GIT_REPOSITORY "https://github.com/GrupoDiana/libmysofa.git"
@@ -24,6 +26,13 @@ FetchContent_Declare(
     GIT_PROGRESS true
 )
 FetchContent_MakeAvailable(libmysofa)
+
+#The library also depends on nlohmann_json
+# See https://json.nlohmann.me/integration/cmake/
+FetchContent_Declare(
+    json URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz
+)
+FetchContent_MakeAvailable(json)
 
 # Brt library is the main target
 add_library(brt INTERFACE)
@@ -35,7 +44,8 @@ target_include_directories(brt
     INTERFACE  libsofa/src
     )
 target_link_libraries(brt 
-    INTERFACE libsofa 
+    INTERFACE libmysofa 
+    INTERFACE nlohmann_json::nlohmann_json
     )
 
 # If we are in the root, define additional targets 
