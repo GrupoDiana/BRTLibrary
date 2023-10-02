@@ -17,7 +17,7 @@
 *
 * \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 *
-* \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
+* \b Acknowledgement: This project has received funding from the European Unionï¿½s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 
 
@@ -552,11 +552,7 @@ namespace BRTServices
 			else {
 				if (_ear == Common::T_ear::LEFT)		{ return leftEarLocalPosition; }
 				else if (_ear == Common::T_ear::RIGHT)	{ return rightEarLocalPosition; }
-<<<<<<<< HEAD:include/ServiceModules/HRTF.h
-				else // if (_ear == Common::T_ear::BOTH || _ear == Common::T_ear::NONE)
-========
 				else // either _ear == Common::T_ear::BOTH || _ear == Common::T_ear::NONE
->>>>>>>> main:include/ServiceModules/HRTF.hpp
 				{
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to set listener ear transform for BOTH or NONE ears");
 					return Common::CVector3();
