@@ -1,3 +1,24 @@
+/**
+* \class CServicesBase
+*
+* \brief Declaration of CServicesBase class
+* \date	June 2023
+*
+* \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
+* Coordinated by , A. Reyes-Lecuona (University of Malaga)||
+* \b Contact: areyes@uma.es
+*
+* \b Contributions: (additional authors/contributors can be added here)
+*
+* \b Project: SONICOM ||
+* \b Website: https://www.sonicom.eu/
+*
+* \b Copyright: University of Malaga
+*
+* \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+*
+* \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
+*/
 
 #ifndef _SERVICE_INTERFACES_H_
 #define _SERVICE_INTERFACES_H_
@@ -16,12 +37,15 @@
 
 #define SPHERE_BORDER 360.0f
 
-#define DEFAULT_MIN_AZIMUTH 0
-#define DEFAULT_MAX_AZIMUTH 360
-#define DEFAULT_MIN_ELEVATION 0
-#define DEFAULT_MAX_ELEVATION 360
+#define DEFAULT_MIN_AZIMUTH 0.0f
+#define DEFAULT_MAX_AZIMUTH 360.0f
+#define DEFAULT_MIN_ELEVATION 0.0f
+#define DEFAULT_MAX_ELEVATION 360.0f
 
-#define ORIENTATION_RESOLUTION 0.01
+#define ORIENTATION_RESOLUTION			0.01
+#define ORIENTATION_RESOLUTION_INVERSE	1/ORIENTATION_RESOLUTION		// For faster operation, in case the compiler does not optimise the division
+
+#define EPSILON_SEWING 0.001
 
 // Structs and types definitions 
 
@@ -29,15 +53,33 @@
 */
 struct orientation
 {
-	float azimuth;		///< Azimuth angle in degrees
-	float elevation;	///< Elevation angle in degrees	
-	orientation(float _azimuth, float _elevation) :azimuth{ _azimuth }, elevation{ _elevation } {}
-	orientation() :orientation{ 0,0 } {}
+	double azimuth;					///< Azimuth angle in degrees
+	double elevation;				///< Elevation angle in degrees	
+	Common::CVector3 cartessianPos; ///< Position in X, Y and Z
+	orientation(double _azimuth, double _elevation) :azimuth{ _azimuth }, elevation{ _elevation } {}
+	orientation(double _azimuth, double _elevation, Common::CVector3 _cartessianPos) :azimuth{ _azimuth }, elevation{ _elevation }, cartessianPos{ _cartessianPos } {}
+	//orientation(float _azimuth, float _elevation) :azimuth{ static_cast<double>(_azimuth) }, elevation{ static_cast<double>(_elevation) } {}
+	//orientation(float _azimuth, float _elevation, Common::CVector3 _cartessianPos) :azimuth{ static_cast<double>(_azimuth) }, elevation{ static_cast<double>(_elevation) }, cartessianPos{ _cartessianPos } {}
+	orientation() :orientation{ 0.0, 0.0 } {}
 	bool operator==(const orientation& other) const
-	{
-		return ((Common::AreSame(this->azimuth, other.azimuth, ORIENTATION_RESOLUTION)) && (Common::AreSame(this->elevation, other.elevation, ORIENTATION_RESOLUTION)));
+	{		
+		return ((Common::AreSameDouble(this->azimuth, other.azimuth, ORIENTATION_RESOLUTION)) && (Common::AreSameDouble(this->elevation, other.elevation, ORIENTATION_RESOLUTION)));
 	}
 };
+
+//struct orientation
+//{
+//	float azimuth;					///< Azimuth angle in degrees
+//	float elevation;				///< Elevation angle in degrees	
+//	Common::CVector3 cartessianPos; ///< Position in X, Y and Z
+//	orientation(float _azimuth, float _elevation) :azimuth{ _azimuth }, elevation{ _elevation } {}
+//	orientation(float _azimuth, float _elevation, Common::CVector3 _cartessianPos) :azimuth{ _azimuth }, elevation{ _elevation }, cartessianPos{ _cartessianPos } {}
+//	orientation() :orientation{ 0,0 } {}
+//	bool operator==(const orientation& other) const
+//	{
+//		return ((Common::AreSame(this->azimuth, other.azimuth, ORIENTATION_RESOLUTION)) && (Common::AreSame(this->elevation, other.elevation, ORIENTATION_RESOLUTION)));
+//	}
+//};
 
 namespace std
 {
@@ -46,9 +88,13 @@ namespace std
 	{
 		// adapted from http://en.cppreference.com/w/cpp/utility/hash
 		size_t operator()(const orientation& key) const
-		{
-			int keyAzimuth_hundredth = static_cast<int> (round(key.azimuth / ORIENTATION_RESOLUTION));
-			int keyElevation_hundredth = static_cast<int> (round(key.elevation / ORIENTATION_RESOLUTION));
+		{			
+			//int keyAzimuth_hundredth	= static_cast<int> (round(key.azimuth / ORIENTATION_RESOLUTION));
+			//int keyElevation_hundredth	= static_cast<int> (round(key.elevation / ORIENTATION_RESOLUTION));
+			
+			int keyAzimuth_hundredth	= static_cast<int> (std::round(key.azimuth * ORIENTATION_RESOLUTION_INVERSE));
+			int keyElevation_hundredth	= static_cast<int> (std::round(key.elevation * ORIENTATION_RESOLUTION_INVERSE));
+			
 
 			size_t h1 = std::hash<int32_t>()(keyAzimuth_hundredth);
 			size_t h2 = std::hash<int32_t>()(keyElevation_hundredth);
@@ -66,6 +112,8 @@ namespace BRTServices {
 		uint64_t rightDelay;			///< Right delay, in number of samples
 		CMonoBuffer<float> leftHRIR;	///< Left impulse response data
 		CMonoBuffer<float> rightHRIR;	///< Right impulse response data
+
+		THRIRStruct() : leftDelay{0}, rightDelay{0} {}
 	};
 
 	struct TILDStruct {
@@ -74,8 +122,8 @@ namespace BRTServices {
 	};
 
 	struct TDirectivityTFStruct {
-		CMonoBuffer<float> dataReal;	
-		CMonoBuffer<float> dataImag;	
+		CMonoBuffer<float> realPart;
+		CMonoBuffer<float> imagPart;
 	};
 
 	class CServicesBase {
@@ -94,13 +142,14 @@ namespace BRTServices {
 		virtual void SetDatabaseName(std::string _databaseName) =0;
 		virtual void SetListenerShortName(std::string _listenerShortName) {};
 		virtual void SetFilename(std::string _fileName) = 0;
-
+		
+		virtual void SetSamplingRate(int samplingRate) {};
 		virtual void SetNumberOfEars(int _numberOfEars) {}
 		virtual void SetEarPosition(Common::T_ear _ear, Common::CVector3 _earPosition) {};
 
 		virtual void AddHRIR(float _azimuth, float _elevation, THRIRStruct&& newHRIR) {}
 		virtual void AddCoefficients(float azimuth, float distance, TILDStruct&& newCoefs) {}
-		virtual void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF){}
+		virtual void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF) {}
 		
 	};}
 

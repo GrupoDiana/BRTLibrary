@@ -1,5 +1,26 @@
-#ifndef _CGLOBAL_PARAMETERS_H_
-#define _CGLOBAL_PARAMETERS_H_
+/**
+* \class CGlobalParamenter
+*
+* \brief Declaration Global parameters
+* \date	June 2023
+*
+* \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
+* Coordinated by , A. Reyes-Lecuona (University of Malaga)||
+* \b Contact: areyes@uma.es
+*
+* \b Contributions: (additional authors/contributors can be added here)
+*
+* \b Project: SONICOM ||
+* \b Website: https://www.sonicom.eu/
+*
+* \b Copyright: University of Malaga 2023. Code based in the 3DTI Toolkit library (https://github.com/3DTune-In/3dti_AudioToolkit) with Copyright University of Malaga and Imperial College London - 2018
+*
+* \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+*
+* \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
+*/
+#ifndef _CGLOBAL_PARAMETERS_HPP_
+#define _CGLOBAL_PARAMETERS_HPP_
 
 //#include <iostream>
 
@@ -41,8 +62,9 @@
 #endif 
 
 
-#include <Common/Transform.h>
-#include <Common/Vector3.h>
+#include <Common/Transform.hpp>
+#include <Common/Vector3.hpp>
+#include <Common/CommonDefinitions.hpp>
 
 namespace Common {
 		
@@ -66,7 +88,13 @@ namespace Common {
 		////////////////////////
 		// Set the buffer size
 		void SetBufferSize(int _bufferSize) { 
-			bufferSize = _bufferSize;	
+			bufferSize = _bufferSize;
+			if (!CalculateIsPowerOfTwo(_bufferSize)) {
+				SET_RESULT(RESULT_WARNING, "This buffer size is not a power of two, so processing will not be as efficient as it could be. Convolution and FFT operations will be done on the next largest number that is a power of two.");
+			} else {
+				SET_RESULT(RESULT_OK, "This buffer size has been set correctly.");
+			}
+
 		}
 		// Get buffer size
 		int GetBufferSize()	{ return bufferSize; }				

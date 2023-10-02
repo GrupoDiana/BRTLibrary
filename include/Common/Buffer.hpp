@@ -1,23 +1,23 @@
 /**
 * \class CBuffer
 *
-* \brief Declaration of CBuffer interface.
-* \date	July 2016
+* \brief Declaration of CBuffer class
+* \date	June 2023
 *
-* \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, C. Garre,  D. Gonzalez-Toledo, E.J. de la Rubia-Cuestas, L. Molina-Tanco ||
-* Coordinated by , A. Reyes-Lecuona (University of Malaga) and L.Picinali (Imperial College London) ||
-* \b Contact: areyes@uma.es and l.picinali@imperial.ac.uk
+* \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
+* Coordinated by , A. Reyes-Lecuona (University of Malaga)||
+* \b Contact: areyes@uma.es
 *
 * \b Contributions: (additional authors/contributors can be added here)
 *
-* \b Project: 3DTI (3D-games for TUNing and lEarnINg about hearing aids) ||
-* \b Website: http://3d-tune-in.eu/
+* \b Project: SONICOM ||
+* \b Website: https://www.sonicom.eu/
 *
-* \b Copyright: University of Malaga and Imperial College London - 2018
+* \b Copyright: University of Malaga 2023. Code based in the 3DTI Toolkit library (https://github.com/3DTune-In/3dti_AudioToolkit) with Copyright University of Malaga and Imperial College London - 2018
 *
-* \b Licence: This copy of 3dti_AudioToolkit is licensed to you under the terms described in the 3DTI_AUDIOTOOLKIT_LICENSE file included in this distribution.
+* \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 *
-* \b Acknowledgement: This project has received funding from the European Union's Horizon 2020 research and innovation programme under grant agreement No 644051
+* \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 
 #ifndef _CBUFFER_H_
@@ -441,17 +441,17 @@ namespace Common {
 			}
 		}
 
-		/** \brief Interlace two mono buffers into one stereo buffer
+		/** \brief Interlace two mono buffers into one buffer
 		*	\param [in] left mono buffer for left channel
 		*	\param [in] right mono buffer for right channel
-		*	\pre this must be a stereo buffer
+		*	\pre this must be a stereo buffer (not anymore)
 		*	\pre left and right must have the same size
 		*   \eh On error, an error code is reported to the error handler.
 		*/
 		void Interlace(CBuffer<1, stored> & left, CBuffer<1, stored> & right)
 		{
 			// Preconditions check
-			ASSERT(GetNChannels() == 2, RESULT_ERROR_BADSIZE, "Attempt to interlace into a non-stereo buffer", "");
+			//ASSERT(GetNChannels() == 2, RESULT_ERROR_BADSIZE, "Attempt to interlace into a non-stereo buffer", "");
 			ASSERT(left.size() == right.size(), RESULT_ERROR_BADSIZE, "Attempt to interlace two mono buffers of different length", "");
 			//SET_RESULT(RESULT_OK, "Stereo buffer interlaced from two mono buffers succesfully");
 

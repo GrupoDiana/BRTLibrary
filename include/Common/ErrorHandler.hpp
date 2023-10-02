@@ -2,27 +2,27 @@
 * \class CErrorHandler
 *
 * \brief Declaration of CErrorHandler class interface.
-* \date	July 2016
+* \date	June 2023
 *
-* \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, C. Garre,  D. Gonzalez-Toledo, E.J. de la Rubia-Cuestas, L. Molina-Tanco ||
-* Coordinated by , A. Reyes-Lecuona (University of Malaga) and L.Picinali (Imperial College London) ||
-* \b Contact: areyes@uma.es and l.picinali@imperial.ac.uk
+* \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
+* Coordinated by , A. Reyes-Lecuona (University of Malaga)||
+* \b Contact: areyes@uma.es
 *
 * \b Contributions: (additional authors/contributors can be added here)
 *
-* \b Project: 3DTI (3D-games for TUNing and lEarnINg about hearing aids) ||
-* \b Website: http://3d-tune-in.eu/
+* \b Project: SONICOM ||
+* \b Website: https://www.sonicom.eu/
 *
-* \b Copyright: University of Malaga and Imperial College London - 2018
+* \b Copyright: University of Malaga 2023. Code based in the 3DTI Toolkit library (https://github.com/3DTune-In/3dti_AudioToolkit) with Copyright University of Malaga and Imperial College London - 2018
 *
-* \b Licence: This copy of 3dti_AudioToolkit is licensed to you under the terms described in the 3DTI_AUDIOTOOLKIT_LICENSE file included in this distribution.
+* \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 *
-* \b Acknowledgement: This project has received funding from the European Union's Horizon 2020 research and innovation programme under grant agreement No 644051
+* \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 
 
-#ifndef _ERROR_HANDLER_H_
-#define _ERROR_HANDLER_H_
+#ifndef _ERROR_HANDLER_HPP_
+#define _ERROR_HANDLER_HPP_
 
 #include <string>
 #include <mutex>
@@ -32,18 +32,18 @@
 
 //using namespace std;
 
-/** \brief If SWITCH_ON_3DTI_ERRORHANDLER is undefined, the error handler is completely disabled, causing 0 overhead
+/** \brief If SWITCH_ON_BRT_ERRORHANDLER is undefined, the error handler is completely disabled, causing 0 overhead
 */
 
-#define SWITCH_ON_3DTI_ERRORHANDLER
+#define SWITCH_ON_BRT_ERRORHANDLER
 
-#ifdef _3DTI_ANDROID_ERRORHANDLER
+#ifdef _BRT_ANDROID_ERRORHANDLER
 
 #define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, "3DTI_CORE", __VA_ARGS__))
 #define LOGV(...) ((void)__android_log_print(ANDROID_LOG_VERBOSE, "3DTI_CORE", __VA_ARGS__))
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "3DTI_CORE", __VA_ARGS__))
 
-#define ERRORHANDLER3DTI Common::CErrorHandler::Instance()
+#define BRT_ERRORHANDLER Common::CErrorHandler::Instance()
 
 #define SET_RESULT(errorID, suggestion) Common::CErrorHandler::Instance().AndroidSetResult(errorID, suggestion, __FILE__, __LINE__)
 
@@ -61,12 +61,12 @@
 
 #endif
 
-#if !defined (SWITCH_ON_3DTI_ERRORHANDLER) && !defined(_3DTI_ANDROID_ERRORHANDLER)
+#if !defined (SWITCH_ON_BRT_ERRORHANDLER) && !defined(_BRT_ANDROID_ERRORHANDLER)
 
 ///////////////////////////////////////////////////
 /// Dummy Macro definitions 
 
-#define ERRORHANDLER3DTI ((void)0)
+#define BRT_ERRORHANDLER ((void)0)
 
 #define SET_RESULT(errorID, suggestion) ((void)0)
 
@@ -84,14 +84,14 @@
 
 #endif
 
-#if defined(SWITCH_ON_3DTI_ERRORHANDLER)
+#if defined(SWITCH_ON_BRT_ERRORHANDLER)
 
 ///////////////////////////////////////////////////
 /// Macro definitions for asserts, setting results and watching variables
 
 /** \brief Macro used for easy access to error handler singleton
 */
-#define ERRORHANDLER3DTI Common::CErrorHandler::Instance()
+#define BRT_ERRORHANDLER Common::CErrorHandler::Instance()
 
 /** \brief Macro used by internal classes for reporting results to error handler
 */
@@ -130,7 +130,7 @@
 
 #endif
 
-#if defined(SWITCH_ON_3DTI_ERRORHANDLER) || defined(_3DTI_ANDROID_ERRORHANDLER)
+#if defined(SWITCH_ON_BRT_ERRORHANDLER) || defined(_BRT_ANDROID_ERRORHANDLER)
 
 //
 // Result/Error data structures
@@ -222,7 +222,7 @@ struct TVerbosityMode
 
 /** \brief Type definition of assert modes
 */
-enum TAssertMode	{ASSERT_MODE_EMPTY,		///< Do nothing. Ignore even result reporting. The error handler becomes useless with this setting. For maximum performance, undefine \link SWITCH_ON_3DTI_ERRORHANDLER \endlink
+enum TAssertMode	{ASSERT_MODE_EMPTY,		///< Do nothing. Ignore even result reporting. The error handler becomes useless with this setting. For maximum performance, undefine \link SWITCH_ON_BRT_ERRORHANDLER \endlink
 					ASSERT_MODE_CONTINUE,	///< Allow reporting of results, but do nothing with them. Will never terminate program execution
 					ASSERT_MODE_ABORT,		///< Abort execution when an ASSERT is evaluated as false. The error will be reported/logged before terminating
 					ASSERT_MODE_PARANOID	///< Abort execution if any error is reported to the error handler, even if it was reported using SET_RESULT rather than ASSERT. The error will be reported/logged before terminating
@@ -355,7 +355,7 @@ namespace Common {
 			}
 		}
 
-#if defined (_3DTI_ANDROID_ERRORHANDLER)
+#if defined (_BRT_ANDROID_ERRORHANDLER)
 		void AndroidSetResult(TResultID resultID, string suggestion, string filename, int linenumber)
 		{
 			string newdescription;
@@ -566,7 +566,7 @@ namespace Common {
 			}
 		}
 
-#if defined (_3DTI_ANDROID_ERRORHANDLER)
+#if defined (_BRT_ANDROID_ERRORHANDLER)
 		void AndroidAssertTest(bool condition, TResultID errorID, string suggestionError, string suggestionOK, string filename, int linenumber)
 		{
 			if (condition)

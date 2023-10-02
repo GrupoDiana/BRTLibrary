@@ -2,22 +2,22 @@
 * \class UPCAnechoic
 *
 * \brief Declaration of CUPCAnechoic class interface.
-* \date	November 2016
+* \date	June 2023
 *
-* \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, C. Garre,  D. Gonzalez-Toledo, E.J. de la Rubia-Cuestas, L. Molina-Tanco ||
-* Coordinated by , A. Reyes-Lecuona (University of Malaga) and L.Picinali (Imperial College London) ||
-* \b Contact: areyes@uma.es and l.picinali@imperial.ac.uk
+* \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
+* Coordinated by , A. Reyes-Lecuona (University of Malaga)||
+* \b Contact: areyes@uma.es
 *
 * \b Contributions: (additional authors/contributors can be added here)
 *
-* \b Project: 3DTI (3D-games for TUNing and lEarnINg about hearing aids) ||
-* \b Website: http://3d-tune-in.eu/
+* \b Project: SONICOM ||
+* \b Website: https://www.sonicom.eu/
 *
-* \b Copyright: University of Malaga and Imperial College London - 2018
+* \b Copyright: University of Malaga 2023. Code based in the 3DTI Toolkit library (https://github.com/3DTune-In/3dti_AudioToolkit) with Copyright University of Malaga and Imperial College London - 2018
 *
-* \b Licence: This copy of 3dti_AudioToolkit is licensed to you under the terms described in the 3DTI_AUDIOTOOLKIT_LICENSE file included in this distribution.
+* \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 *
-* \b Acknowledgement: This project has received funding from the European Union's Horizon 2020 research and innovation programme under grant agreement No 644051
+* \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 
 #ifndef _CUPCANECHOIC_H_
@@ -25,9 +25,9 @@
 
 #include <iostream>
 #include <vector>
-#include <Common/Fprocessor.h>
-#include <Common/Buffer.h>
-//#include <BinauralSpatializer/HRTF.h>
+#include <Common/Fprocessor.hpp>
+#include <Common/Buffer.hpp>
+#include <Common/CommonDefinitions.hpp>
 
 /** \brief Type definition for partitioned HRIR table
 */
@@ -71,8 +71,14 @@ namespace Common {
 			impulseResponseNumberOfSubfilters = _IR_Block_Number;
 			impulseResponseMemory = _IRMemory;
 
+			if (CalculateIsPowerOfTwo(inputSize)) {	
+				storageInput_bufferSize = inputSize;	
+			}	else {
+				storageInput_bufferSize = 2 * CalculateNextPowerOfTwo(inputSize)  - inputSize;
+			}
+
 			//Prepare the buffer with the space that we are going to need	
-			storageInput_buffer.resize(inputSize, 0.0f);
+			storageInput_buffer.resize(storageInput_bufferSize, 0.0f);
 
 			//Preparing the vector of buffers that is going to store the history of FFTs	
 			storageInputFFT_buffer.resize(impulseResponseNumberOfSubfilters);
@@ -116,7 +122,7 @@ namespace Common {
 			CMonoBuffer<float> temp;
 
 			if (!setupDone) { 
-				SET_RESULT(RESULT_ERROR_NOTSET, "HRTF storage buffer to perform UP convolution has not been initialized");
+				SET_RESULT(RESULT_ERROR_NOTSET, "Storage buffer to perform UP convolution has not been initialized");
 				return; 
 			}
 
@@ -184,18 +190,25 @@ namespace Common {
 			CMonoBuffer<float> temp;
 
 			ASSERT(inBuffer_Time.size() == inputSize, RESULT_ERROR_BADSIZE, "Bad input size, don't match with the size setting up in the setup method", "");
-
+			ASSERT(impulseResponseNumberOfSubfilters == IR.size(), RESULT_ERROR_BADSIZE, "Bad input size, the number of impulse response partitions does not correspond to what is expected.", "Has this class been initialised correctly?");
+			
 			if (impulseResponseMemory && setupDone)
 			{
 				if (inBuffer_Time.size() == inputSize && IR.size() != 0)
 				{
 					//Step 1- extend the input time signal buffer in order to have double length
 					std::vector<float> inBuffer_Time_dobleSize;
-					inBuffer_Time_dobleSize.reserve(inputSize * 2);
+					inBuffer_Time_dobleSize.reserve(inputSize + storageInput_bufferSize );
 					inBuffer_Time_dobleSize.insert(inBuffer_Time_dobleSize.begin(), storageInput_buffer.begin(), storageInput_buffer.end());
 					inBuffer_Time_dobleSize.insert(inBuffer_Time_dobleSize.end(), inBuffer_Time.begin(), inBuffer_Time.end());
+					
 					//Store current input signal
-					storageInput_buffer = inBuffer_Time;
+					//storageInput_buffer = inBuffer_Time;					
+					std::vector<float> tempStorageInput;
+					tempStorageInput.reserve(storageInput_bufferSize);
+					tempStorageInput.insert(tempStorageInput.begin(), storageInput_buffer.end() -(storageInput_bufferSize - inputSize), storageInput_buffer.end());
+					tempStorageInput.insert(tempStorageInput.end(), inBuffer_Time.begin(), inBuffer_Time.end());
+					storageInput_buffer = tempStorageInput;
 
 					//Step 2,3 - FFT of the input signal
 					CMonoBuffer<float> inBuffer_Frequency;
@@ -247,8 +260,8 @@ namespace Common {
 					CMonoBuffer<float> ouputBuffer_temp;
 					Common::CFprocessor::CalculateIFFT(sum, ouputBuffer_temp);
 					//We are left only with the final half of the result
-					int halfsize = (int)(ouputBuffer_temp.size() * 0.5f);
-					CMonoBuffer<float> temp_OutputBlock(ouputBuffer_temp.begin() + halfsize, ouputBuffer_temp.end());
+					//int halfsize = (int)(ouputBuffer_temp.size() * 0.5f);
+					CMonoBuffer<float> temp_OutputBlock(ouputBuffer_temp.end() - inputSize, ouputBuffer_temp.end());
 					outBuffer = std::move(temp_OutputBlock);			//To use in C++11
 
 				}
@@ -287,6 +300,7 @@ namespace Common {
 		int inputSize;								//Size of the inputs buffer				
 		int impulseResponse_Frequency_Block_Size;	//Size of the HRIR buffer
 		int impulseResponseNumberOfSubfilters;		//Number of blocks in which is divided the HRIR
+		int storageInput_bufferSize;					//Number of samples to be saved in each audio loop
 		bool impulseResponseMemory;					//Indicate if HRTF storage buffer has to be prepared to do UPC with memory
 		bool setupDone;								//It's true when setup has been called at least once
 				
