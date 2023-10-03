@@ -28,19 +28,23 @@ target_compile_features(brt INTERFACE cxx_std_17)
 # See https://www.foonathan.net/2022/06/cmake-fetchcontent/ 
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     option(BRT_BUILD_TESTS  "whether or not build tests, sofaexamples, etc should be built" ON)
-#    option(BUILD_TESTING "" ON)
 endif()
 
+# This shows how we could add more tests.
+# This creates a test target, so "the user can run the tests by invoking 
+# the “test” target of Makefile, or the RUN_TESTS target of Visual Studio or Xcode." 
+# See https://cmake.org/cmake/help/book/mastering-cmake/chapter/Testing%20With%20CMake%20and%20CTest.html  
 if (BRT_BUILD_TESTS)
-    # This is just a test to test linking of dependencies. FIXME: actually invoke test when building.  
-    # include(CTest)
+    include(CTest)
+    enable_testing()
+    
     add_executable(testBRT test/test.cpp)
     target_link_libraries(testBRT 
                             PUBLIC brt 
                             PRIVATE mysofa::mysofa-static 
                             PRIVATE nlohmann_json::nlohmann_json)
-    # enable_testing()
-    # add_test(NAME TestBRT COMMAND testBRT WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/test )
+
+    add_test(NAME TestBRT COMMAND testBRT WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/test )
 endif()
 
 
