@@ -142,9 +142,12 @@ namespace BRTServices {
 		*   \param [in] elevation to be checked and transformed, just in case.
 		*/
 		static double CheckElevationRangeAndTransform(double _elevation) {										
-			if (_elevation >= -90 && _elevation < 0) { 
-				_elevation += 360;			
-			}		
+			if (_elevation >= -90 && _elevation < 0) {
+				_elevation += 360;
+			}
+			else if (_elevation == 360) {
+				_elevation = 0;
+			}
 			return _elevation;
 		}
 		static float CheckElevationRangeAndTransform(float _elevation)
@@ -154,6 +157,9 @@ namespace BRTServices {
 			return elevation;*/
 			if (_elevation >= -90 && _elevation < 0) {
 				_elevation += 360;
+			}
+			else if (_elevation == 360) { 
+				_elevation = 0; 
 			}
 			return _elevation;
 		}
