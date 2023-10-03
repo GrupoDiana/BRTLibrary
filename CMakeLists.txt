@@ -7,25 +7,28 @@ project(libbrt)
 # branch origin/FreeFieldDirectivityTF_workaround 
 find_package(mysofa CONFIG 1.3 REQUIRED)
 
-#The library also depends on nlohmann_json
+#The library also depends on nlohmann_json, see
+# https://github.com/nlohmann/json#integration 
 find_package(nlohmann_json 3.11.2 REQUIRED)
 
 # Brt library is the main target
 add_library(brt INTERFACE)
+# the library requires a minimum version of C++-17 
 target_compile_features(brt INTERFACE cxx_std_17)
 
  target_include_directories(brt 
      INTERFACE  include
-#     INTERFACE  "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/xxxx>"
-#     INTERFACE nlohmann_json::nlohmann_json
+     INTERFACE  mysofa::mysofa-static
+     INTERFACE nlohmann_json::nlohmann_json
      )
-# target_link_libraries(brt 
-#     INTERFACE mysofa-static  
-#     INTERFACE nlohmann_json::nlohmann_json
-#     )
+ target_link_libraries(brt 
+     INTERFACE mysofa::mysofa-static  
+     INTERFACE nlohmann_json::nlohmann_json
+     )
 
-# If we are in the root, define additional targets 
-# See https://www.foonathan.net/2022/06/cmake-fetchcontent/ 
+# If we are just building this library (not using it in another cmake project),
+# then by default build also tests.  
+# See https://www.foonathan.net/2022/06/cmake-fetchcontent/ to understand the "if" 
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     option(BRT_BUILD_TESTS  "whether or not build tests, sofaexamples, etc should be built" ON)
 endif()
@@ -39,11 +42,7 @@ if (BRT_BUILD_TESTS)
     enable_testing()
     
     add_executable(testBRT test/test.cpp)
-    target_link_libraries(testBRT 
-                            PUBLIC brt 
-                            PRIVATE mysofa::mysofa-static 
-                            PRIVATE nlohmann_json::nlohmann_json)
-
+    target_link_libraries(testBRT PUBLIC brt) 
     add_test(NAME TestBRT COMMAND testBRT WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/test )
 endif()
 
