@@ -736,8 +736,7 @@ namespace BRTServices
 			THRIRStruct calculatedHRIR;
 			std::vector < std::vector <orientation>> hemisphereParts;
 			hemisphereParts.resize(NUMBER_OF_PARTS); 
-			int border = std::ceil(sphereBorder / NUMBER_OF_PARTS);
-			auto currentElevation = keys_hemisphere.begin()->elevation;
+			int border = std::ceil(sphereBorder / NUMBER_OF_PARTS);			auto currentElevation = keys_hemisphere.begin()->elevation;
 			for (auto& it : keys_hemisphere)
 			{
 				if (it.elevation == currentElevation)

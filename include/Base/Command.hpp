@@ -17,14 +17,14 @@
 *
 * \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 *
-* \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
+* \b Acknowledgement: This project has received funding from the European Unionï¿½s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 
 #ifndef COMMAND_HPP
 #define COMMAND_HPP
 
 #include <iostream>
-#include <third_party_libraries/nlohmann/json.hpp>
+#include <nlohmann/json.hpp>
 
 namespace BRTBase {
 	class CCommand { //TODO repensar esto, se puede almacenar el json ya parseado y se ahorra tiempo de proceso
