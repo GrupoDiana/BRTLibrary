@@ -93,12 +93,9 @@ namespace BRTSourceModel {
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
 		bool SetSRTF(std::shared_ptr< BRTServices::CSRTF > _sourceSRTF) {			
-			if (_sourceSRTF->GetSamplingRate() != globalParameters.GetSampleRate()) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "This SRTF has not been assigned to the source. The sample rate of the SRTF does not match the one set in the library Global Parameters.");
-				return false;
-			}			
 			sourceSRTF = _sourceSRTF;						
 			ResetSourceConvolutionBuffers();
+			return true;
 		}
 
 		std::shared_ptr< BRTServices::CSRTF > GetSRFT() {

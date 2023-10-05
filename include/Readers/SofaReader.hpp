@@ -349,10 +349,8 @@ namespace BRTReaders {
 			const unsigned int numberOfFrequencySamples = loader.getHRTF()->N;
 			int numberOfReceivers = loader.getHRTF()->R;
 
-			// Get and save TFs
-									
+			// Get and save TFs			
 			dataSRTF->BeginSetup(numberOfFrequencySamples);
-			dataSRTF->SetSamplingRate(loader.GetSamplingRate());
 
 			// This outtermost loop iterates over TFs
 			for (std::size_t i = 0; i < numberOfReceivers; i++)
