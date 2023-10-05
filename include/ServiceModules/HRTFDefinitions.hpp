@@ -164,34 +164,6 @@ namespace BRTServices {
 			return _elevation;
 		}
 		
-		//		Transform the orientation in order to move the orientation of interest to 180 degrees
-		//returnval	float	transformed azimuth		
-		static float TransformAzimuthToAvoidSewing(float azimuthOrientationOfInterest, float originalAzimuth)
-		{
-			float azimuth;
-			azimuth = originalAzimuth + 180 - azimuthOrientationOfInterest;
-
-			// Check limits (always return 0 instead of 360)
-			if (azimuth >= DEFAULT_MAX_AZIMUTH)
-				azimuth = std::fmod(azimuth, (float)360);
-
-			if (azimuth < DEFAULT_MIN_AZIMUTH)
-				azimuth = azimuth + 360;
-
-			return azimuth;
-		}
-
-		//		Transform the orientation in order to express the elevation in the interval [-90,90]
-		//returnval float transformed elevation		
-		static float TransformElevationToAvoidSewing(float elevationOrientationOfInterest, float originalElevation)
-		{
-			if (originalElevation >= ELEVATION_SOUTH_POLE) {
-				originalElevation = originalElevation - 360;
-			}
-			return originalElevation;
-		}
-
-
 		/**
 		 * @brief Calculate the distance between two points [(azimuth1, elevation1) and (azimuth2, elevation2)] using the Haversine formula
 		 * @param azimuth1
