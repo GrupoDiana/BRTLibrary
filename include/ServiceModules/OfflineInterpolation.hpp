@@ -77,14 +77,14 @@ namespace BRTServices
 							}
 
 							//Azimuth and elevation transformation in order to get the barientric coordinates (due to we are working with a spehere not a plane)
-							float newAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuth(newAzimuth, newAzimuth);
-							float iAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuth(newAzimuth, mygroup[i].azimuth);
-							float jAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuth(newAzimuth, mygroup[j].azimuth);
-							float kAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuth(newAzimuth, mygroup[k].azimuth);
-							float newElevationTransformed = CHRTFAuxiliarMethods::TransformElevation(newElevation, newElevation);
-							float iElevationTransformed = CHRTFAuxiliarMethods::TransformElevation(newElevation, mygroup[i].elevation);
-							float jElevationTransformed = CHRTFAuxiliarMethods::TransformElevation(newElevation, mygroup[j].elevation);
-							float kElevationTransformed = CHRTFAuxiliarMethods::TransformElevation(newElevation, mygroup[k].elevation);
+							float newAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth, newAzimuth);
+							float iAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth, mygroup[i].azimuth);
+							float jAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth, mygroup[j].azimuth);
+							float kAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth, mygroup[k].azimuth);
+							float newElevationTransformed = CHRTFAuxiliarMethods::TransformElevationToAvoidSewing(newElevation, newElevation);
+							float iElevationTransformed = CHRTFAuxiliarMethods::TransformElevationToAvoidSewing(newElevation, mygroup[i].elevation);
+							float jElevationTransformed = CHRTFAuxiliarMethods::TransformElevationToAvoidSewing(newElevation, mygroup[j].elevation);
+							float kElevationTransformed = CHRTFAuxiliarMethods::TransformElevationToAvoidSewing(newElevation, mygroup[k].elevation);
 
 							barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(newAzimuthTransformed, newElevationTransformed, iAzimuthTransformed, iElevationTransformed, jAzimuthTransformed, jElevationTransformed, kAzimuthTransformed, kElevationTransformed);
 
@@ -182,24 +182,20 @@ namespace BRTServices
 			std::vector<T_PairDistanceOrientation> frontFloorlListSortedByDistance = GetSortedDistancesList(frontFloorList, newAzimuth, newElevation);
 
 			// Transform Azimuth and Elevation to avoid the sewing ////// First column is Distance, so Azimuth is 2nd and Elevation 3rd
-
 			// Azimuth
-
-			float newAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuth(newAzimuth, newAzimuth);
-			float backCeilAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuth(newAzimuth,	backCeilListSortedByDistance[0].second.azimuth);
-			float backFloorAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuth(newAzimuth,	backFloorListSortedByDistance[0].second.azimuth);
-			float frontCeilAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuth(newAzimuth,	frontCeilListSortedByDistance[0].second.azimuth);
-			float frontFloorAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuth(newAzimuth, frontFloorlListSortedByDistance[0].second.azimuth);
-
+			float newAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth, newAzimuth);
+			float backCeilAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth,	backCeilListSortedByDistance[0].second.azimuth);
+			float backFloorAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth,	backFloorListSortedByDistance[0].second.azimuth);
+			float frontCeilAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth,	frontCeilListSortedByDistance[0].second.azimuth);
+			float frontFloorAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth, frontFloorlListSortedByDistance[0].second.azimuth);
 			// Elevation
+			float newElevationTransformed = CHRTFAuxiliarMethods::TransformElevationToAvoidSewing(newElevation, newElevation);
+			float backCeilElevationTransformed = CHRTFAuxiliarMethods::TransformElevationToAvoidSewing(newElevation,		backCeilListSortedByDistance[0].second.elevation);
+			float backFloorElevationTransformed = CHRTFAuxiliarMethods::TransformElevationToAvoidSewing(newElevation,	backFloorListSortedByDistance[0].second.elevation);
+			float frontCeilElevationTransformed = CHRTFAuxiliarMethods::TransformElevationToAvoidSewing(newElevation,	frontCeilListSortedByDistance[0].second.elevation);
+			float frontFloorElevationTransformed = CHRTFAuxiliarMethods::TransformElevationToAvoidSewing(newElevation,	frontFloorlListSortedByDistance[0].second.elevation);
 
-			float newElevationTransformed = CHRTFAuxiliarMethods::TransformElevation(newElevation, newElevation);
-			float backCeilElevationTransformed = CHRTFAuxiliarMethods::TransformElevation(newElevation,		backCeilListSortedByDistance[0].second.elevation);
-			float backFloorElevationTransformed = CHRTFAuxiliarMethods::TransformElevation(newElevation,	backFloorListSortedByDistance[0].second.elevation);
-			float frontCeilElevationTransformed = CHRTFAuxiliarMethods::TransformElevation(newElevation,	frontCeilListSortedByDistance[0].second.elevation);
-			float frontFloorElevationTransformed = CHRTFAuxiliarMethods::TransformElevation(newElevation,	frontFloorlListSortedByDistance[0].second.elevation);
-
-
+			// Calculate slopes to make the triangulation
 			float slopeDiagonalTrapezoid = std::abs(frontFloorElevationTransformed - backCeilElevationTransformed) / (frontFloorAzimuthTransformed - backCeilAzimuthTransformed);
 			float slopeOrientationOfInterest = std::abs(newElevationTransformed - backCeilElevationTransformed) / (newAzimuthTransformed - backCeilAzimuthTransformed);
 
@@ -302,10 +298,12 @@ namespace BRTServices
 			float elevationFromListTransformed;
 			for (auto& it : listToSort)
 			{
+				// Transform elevation to then range [-90, 90] in order to make the comparison
 				elevationFromListTransformed = it.elevation;
 				if (elevationFromListTransformed >= 270) { elevationFromListTransformed = it.elevation - 360; }
 				if (_newElevation >= 270) { _newElevation = _newElevation - 360; }
 				
+
 				if (elevationFromListTransformed < _newElevation)
 				{
 					floorList.push_back(it);

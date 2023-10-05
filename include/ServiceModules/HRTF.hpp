@@ -59,7 +59,7 @@ namespace BRTServices
 			:enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, gapThreshold{ DEFAULT_GAP_THRESHOLD }, HRIRLength{ 0 }, fileName{ "" },
 			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, headRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }, leftEarLocalPosition{ Common::CVector3() }, rightEarLocalPosition{ Common::CVector3() },
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER },
-			epsilon_sewing{ EPSILON_SEWING }, samplingRate{ -1 }
+			epsilon_sewing{ EPSILON_SEWING }, samplingRate{ -1 }, elevationNorth{ 0 }, elevationSouth { 0 }, bufferSize { 0 }
 		{}
 
 		/** \brief Get size of each HRIR buffer
@@ -134,9 +134,22 @@ namespace BRTServices
 		*	\param [in] newHRIR HRIR data for both ears
 		*   \eh Warnings may be reported to the error handler.
 		*/
-		void AddHRIR(float _azimuth, float _elevation, THRIRStruct&& newHRIR)
+		//void AddHRIR(float _azimuth, float _elevation, THRIRStruct&& newHRIR)
+		//{
+		//	if (setupInProgress) {
+		//		Common::CVector3 cartessianPos;
+		//		cartessianPos.SetFromAED(_azimuth, _elevation, GetHRTFDistanceOfMeasurement());
+		//		auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), std::forward<THRIRStruct>(newHRIR));
+		//		//Error handler
+		//		if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
+		//	}
+		//}
+
+		void AddHRIR(double _azimuth, double _elevation, THRIRStruct&& newHRIR)
 		{
-			if (setupInProgress) {
+			if (setupInProgress) {				
+				_azimuth = CHRTFAuxiliarMethods::CheckAzimuthRangeAndTransform(_azimuth);
+				_elevation = CHRTFAuxiliarMethods::CheckElevationRangeAndTransform(_elevation);				
 				Common::CVector3 cartessianPos;
 				cartessianPos.SetFromAED(_azimuth, _elevation, GetHRTFDistanceOfMeasurement());
 				auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), std::forward<THRIRStruct>(newHRIR));
@@ -144,6 +157,7 @@ namespace BRTServices
 				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
 			}
 		}
+
 
 		/** \brief Stop the HRTF configuration
 		*   \eh On success, RESULT_OK is reported to the error handler.
@@ -164,9 +178,7 @@ namespace BRTServices
 
 
 					//Creation and filling of resampling HRTF table
-					quasiUniformSphereDistribution.CreateGrid(t_HRTF_Resampled_partitioned, stepVector, resamplingStep);
-
-					std::cout << "Starting Filling of Resampled Table\n";
+					quasiUniformSphereDistribution.CreateGrid(t_HRTF_Resampled_partitioned, stepVector, resamplingStep);					
 					FillResampledTable();
 
 					//Setup values
@@ -686,8 +698,7 @@ namespace BRTServices
 					if (it.first.elevation < iElevationNorthPole) { keys_northenHemisphere.push_back(it.first); }
 				}
 				// sort using a custom function object
-				struct { bool operator()(orientation a, orientation b) const { return a.elevation > b.elevation;}
-				} customLess;
+				struct { bool operator()(orientation a, orientation b) const { return a.elevation > b.elevation;}	} customLess;
 				std::sort(keys_northenHemisphere.begin(), keys_northenHemisphere.end(), customLess);
 
 				precalculatedHRIR_90 = CalculateHRIR_InOneHemispherePole(keys_northenHemisphere);
@@ -1101,7 +1112,7 @@ namespace BRTServices
 		}
 					
 
-		//		Calculate and remove the common delay of every HRIR functions of the DataBase Table. Off line Method, called from EndSetUp()		
+		// Calculate and remove the common delay of every HRIR functions of the DataBase Table. Off line Method, called from EndSetUp()		
 		void RemoveCommonDelay_HRTFDataBaseTable()
 		{
 			//1. Init the minumun value with the fist value of the table

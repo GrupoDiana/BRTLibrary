@@ -222,8 +222,8 @@ namespace BRTServices
 			float eleCeil = eleStep * idxEle;
 			float eleFloor = eleStep * (idxEle - 1);
 
-			eleCeil = CHRTFAuxiliarMethods::CheckLimitsElevation_and_Transform(eleCeil);				//			   Back	  Front
-			eleFloor = CHRTFAuxiliarMethods::CheckLimitsElevation_and_Transform(eleFloor);				//	Ceil		A		B
+			eleCeil = CHRTFAuxiliarMethods::CheckElevationRangeAndTransform(eleCeil);				//			   Back	  Front
+			eleFloor = CHRTFAuxiliarMethods::CheckElevationRangeAndTransform(eleFloor);				//	Ceil		A		B
 
 			auto stepItr = stepMap.find(orientation(0, eleCeil));										//	Floor		C		D
 			float aziStepCeil = stepItr->second;
@@ -343,11 +343,13 @@ namespace BRTServices
 		 * @param _parameterToBeCalculated
 		 * @return
 		*/
-		THRIRPartitionedStruct CalculateHRIRPartitionedDelay_onlineMethod(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, Common::T_ear ear, float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap, TParameterToBeCalculated _parameterToBeCalculated) const {
-			//std::vector<CMonoBuffer<float>> newHRIR;
+		THRIRPartitionedStruct CalculateHRIRPartitionedDelay_onlineMethod(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, Common::T_ear ear, float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap, TParameterToBeCalculated _parameterToBeCalculated) const 
+		{
+			
 			THRIRPartitionedStruct data;
-
 			TBarycentricCoordinatesStruct barycentricCoordinates;
+			
+			// Find four nearest points					
 			orientation orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoP;
 			std::pair<float, float>nearestElevations;
 
@@ -358,8 +360,6 @@ namespace BRTServices
 
 			// SLOPE METHOD
 			// First make the slope of 2 points, always the same 2 points, A->D			
-
-
 			float slopeDiagonalTrapezoid		= std::abs(orientation_ptoD.elevation - orientation_ptoA.elevation) / (orientation_ptoD.azimuth - orientation_ptoA.azimuth);
 			float slopeOrientationOfInterest	= std::abs(_elevation - orientation_ptoA.elevation) / (_azimuth - orientation_ptoA.azimuth);
 
@@ -440,8 +440,8 @@ namespace BRTServices
 			float elevationCeil = elevationStep * indexElevation;
 			float elevationFloor = elevationStep * (indexElevation - 1);
 
-			elevationCeil = CHRTFAuxiliarMethods::CheckLimitsElevation_and_Transform(elevationCeil);				//			   Back	  Front
-			elevationFloor = CHRTFAuxiliarMethods::CheckLimitsElevation_and_Transform(elevationFloor);				//	Ceil		A		B
+			elevationCeil = CHRTFAuxiliarMethods::CheckElevationRangeAndTransform(elevationCeil);				//			   Back	  Front
+			elevationFloor = CHRTFAuxiliarMethods::CheckElevationRangeAndTransform(elevationFloor);				//	Ceil		A		B
 
 			auto stepItr = stepMap.find(orientation(0, elevationCeil));										//	Floor		C		D
 			float azimuthStepCeil = stepItr->second;

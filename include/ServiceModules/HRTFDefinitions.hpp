@@ -102,7 +102,8 @@ namespace BRTServices {
 	enum class TPole { north, south };
 
 
-
+	/** \brief Auxiliary methods used in different classes working with HRTFs
+	*/
 	class CHRTFAuxiliarMethods {
 	public:
 
@@ -121,13 +122,75 @@ namespace BRTServices {
 		}
 
 
-		static float CheckLimitsElevation_and_Transform(float elevation)
-		{
-			if (elevation < 0) { elevation = elevation + 360; }
-			if (elevation >= 360) { elevation = elevation - 360; }
-			return elevation;
-
+		/** \brief Transform azimuth range to [0, 360]
+		*   \param [in] azimuth to be checked and transformed, just in case.
+		*/
+		static double CheckAzimuthRangeAndTransform(double _azimuth) {						
+			if (_azimuth < 0) {
+				_azimuth = std::fmod(_azimuth, (float)360) + 360;
+			} else if ( _azimuth > 360) {
+				_azimuth = std::fmod(_azimuth, (float)360);
+			}
+			else {
+				//DO nothing
+			}
+			
+			return _azimuth;
 		}
+
+		/** \brief Transform [-90, 90] to the ([0,90] U [270, 360]) range
+		*   \param [in] elevation to be checked and transformed, just in case.
+		*/
+		static double CheckElevationRangeAndTransform(double _elevation) {										
+			if (_elevation >= -90 && _elevation < 0) {
+				_elevation += 360;
+			}
+			else if (_elevation == 360) {
+				_elevation = 0;
+			}
+			return _elevation;
+		}
+		static float CheckElevationRangeAndTransform(float _elevation)
+		{
+			/*if (elevation < 0) { elevation = elevation + 360; }
+			if (elevation >= 360) { elevation = elevation - 360; }
+			return elevation;*/
+			if (_elevation >= -90 && _elevation < 0) {
+				_elevation += 360;
+			}
+			else if (_elevation == 360) { 
+				_elevation = 0; 
+			}
+			return _elevation;
+		}
+		
+		//		Transform the orientation in order to move the orientation of interest to 180 degrees
+		//returnval	float	transformed azimuth		
+		static float TransformAzimuthToAvoidSewing(float azimuthOrientationOfInterest, float originalAzimuth)
+		{
+			float azimuth;
+			azimuth = originalAzimuth + 180 - azimuthOrientationOfInterest;
+
+			// Check limits (always return 0 instead of 360)
+			if (azimuth >= DEFAULT_MAX_AZIMUTH)
+				azimuth = std::fmod(azimuth, (float)360);
+
+			if (azimuth < DEFAULT_MIN_AZIMUTH)
+				azimuth = azimuth + 360;
+
+			return azimuth;
+		}
+
+		//		Transform the orientation in order to express the elevation in the interval [-90,90]
+		//returnval float transformed elevation		
+		static float TransformElevationToAvoidSewing(float elevationOrientationOfInterest, float originalElevation)
+		{
+			if (originalElevation >= ELEVATION_SOUTH_POLE) {
+				originalElevation = originalElevation - 360;
+			}
+			return originalElevation;
+		}
+
 
 		/**
 		 * @brief Calculate the distance between two points [(azimuth1, elevation1) and (azimuth2, elevation2)] using the Haversine formula
@@ -159,33 +222,6 @@ namespace BRTServices {
 			float distance = std::asin(std::sqrt(raiz));
 
 			return distance;
-		}
-
-		//		Transform the orientation in order to move the orientation of interest to 180 degrees
-		//returnval	float	transformed azimuth		
-		static float TransformAzimuth(float azimuthOrientationOfInterest, float originalAzimuth)
-		{
-			float azimuth;
-			azimuth = originalAzimuth + 180 - azimuthOrientationOfInterest;
-
-			// Check limits (always return 0 instead of 360)
-			if (azimuth >= DEFAULT_MAX_AZIMUTH)
-				azimuth = std::fmod(azimuth, (float)360);
-
-			if (azimuth < DEFAULT_MIN_AZIMUTH)
-				azimuth = azimuth + 360;
-
-			return azimuth;
-		}
-
-		//		Transform the orientation in order to express the elevation in the interval [-90,90]
-		//returnval float transformed elevation		
-		static float TransformElevation(float elevationOrientationOfInterest, float originalElevation)
-		{
-			if (originalElevation >= ELEVATION_SOUTH_POLE) {
-				originalElevation = originalElevation - 360;
-			}
-			return originalElevation;
 		}
 
 

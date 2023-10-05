@@ -148,6 +148,7 @@ namespace BRTServices {
 		virtual void SetEarPosition(Common::T_ear _ear, Common::CVector3 _earPosition) {};
 
 		virtual void AddHRIR(float _azimuth, float _elevation, THRIRStruct&& newHRIR) {}
+		virtual void AddHRIR(double _azimuth, double _elevation, THRIRStruct&& newHRIR) {}
 		virtual void AddCoefficients(float azimuth, float distance, TILDStruct&& newCoefs) {}
 		virtual void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF) {}
 		
