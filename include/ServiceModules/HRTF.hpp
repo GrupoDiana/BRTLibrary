@@ -39,6 +39,7 @@
 #include <ServiceModules/OfflineInterpolation.hpp>
 #include <ServiceModules/OnlineInterpolation.hpp>
 #include <ServiceModules/GridsManager.hpp>
+#include <ServiceModules/Extrapolation.hpp>
 
 
 namespace BRTBase { class CListener; }
@@ -170,6 +171,8 @@ namespace BRTServices
 				{
 					//Delete the common delay of every HRIR functions of the DataBase Table
 					RemoveCommonDelay_HRTFDataBaseTable();
+					
+					CalculateExtrapolation();			// Make the extrapolation if it's needed
 					// Preparation of table read from sofa file
 					CalculateHRIR_InPoles(resamplingStep);
 					FillOutTableOfAzimuth360(resamplingStep); 
@@ -659,14 +662,18 @@ namespace BRTServices
 
 		Common::CGlobalParameters globalParameters;
 
-
+		// Processors
 		CQuasiUniformSphereDistribution quasiUniformSphereDistribution;
 		CDistanceBasedInterpolator distanceBasedInterpolator;
 		CQuadrantBasedInterpolator quadrantBasedInterpolator;
 		//CMidPointOnlineInterpolator midPointOnlineInterpolator;
 		CSlopesMethodOnlineInterpolator slopesMethodOnlineInterpolator;
+		CZeroInsertionBasedExtrapolation zeroInsertionBasedExtrapolation;
 
 		friend class CHRTFTester;
+		
+		
+		
 		/////////////
 		// METHODS
 		/////////////
@@ -1158,7 +1165,17 @@ namespace BRTServices
 			return 0;// ITD;
 		}
 				
+		/// TESTING
+		void CalculateExtrapolation() {
+			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.
+			zeroInsertionBasedExtrapolation.Process(t_HRTF_DataBase, DEFAULT_EXTRAPOLATION_STEP);
+			
+		}
+
 		
+		
+
+		//// END
 
 		// Reset HRTF		
 		void Reset() {

@@ -49,6 +49,9 @@ namespace BRTServices {
 #define DEFAULT_HRTF_MEASURED_DISTANCE 1.95f
 #endif
 
+#ifndef DEFAULT_EXTRAPOLATION_STEP
+#define DEFAULT_EXTRAPOLATION_STEP 20
+#endif
 
 	/** \brief Type definition for a left-right pair of impulse response subfilter set with the ITD removed and stored in a specific struct field
 	*/
