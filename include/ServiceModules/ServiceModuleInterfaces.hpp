@@ -133,7 +133,7 @@ namespace BRTServices {
 		virtual ~CServicesBase() {}		
 		
 		virtual void BeginSetup() {}
-		virtual void BeginSetup(int32_t _SRTFLength) {}
+		virtual void BeginSetup(int32_t _DirectivityTFLength) {}
 		virtual void BeginSetup(int32_t _HRIRLength, float _distance) {}
 		virtual bool EndSetup() = 0;
 

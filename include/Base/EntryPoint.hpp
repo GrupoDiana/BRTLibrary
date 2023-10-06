@@ -74,6 +74,6 @@ namespace BRTBase {
 
     using CEntryPointHRTFPtr = CEntryPointBase< std::weak_ptr<BRTServices::CHRTF> >;
     using CEntryPointILDPtr = CEntryPointBase< std::weak_ptr<BRTServices::CILD> >;
-    using CEntryPointSRTFPtr = CEntryPointBase< std::weak_ptr<BRTServices::CSRTF> >;
+    using CEntryPointDirectivityTFPtr = CEntryPointBase< std::weak_ptr<BRTServices::CDirectivityTF> >;
 }
 #endif

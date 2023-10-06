@@ -68,20 +68,6 @@ namespace BRTBase {
             addToUpdateStack(entryPointID, _multiplicity);
         }
 
-        /*void CreateSRTFPtrEntryPoint(std::string entryPointID, int _multiplicity = 0) {
-            std::shared_ptr<BRTBase::CEntryPointSRTFPtr> _newEntryPoint = std::make_shared<BRTBase::CEntryPointSRTFPtr>(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
-            srtfPtrEntryPoints.push_back(_newEntryPoint);
-            addToUpdateStack(entryPointID, _multiplicity);
-        }*/
-
-        //void CreateCommandEntryPoint(/*std::string entryPointID = "command", int _multiplicity = 1*/) {
-        //    std::string entryPointID = static_cast<std::string>(Common::COMMAND_ENTRY_POINT_ID);
-        //    int _multiplicity = 1;
-        //    commandsEntryPoint = std::make_shared<BRTBase::CEntryPointCommand>(std::bind(&CEntryPointManager::updateFromCommandEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
-        //    //addToUpdateStack(entryPointID, _multiplicity);            
-        //}
-
-
         ////
         void connectSamplesEntryTo(std::shared_ptr<BRTBase::CExitPointSamplesVector> _exitPoint, std::string entryPointID) {
             std::shared_ptr<BRTBase::CEntryPointSamplesVector> _entryPoint2 = GetSamplesEntryPoint(entryPointID);
@@ -230,13 +216,6 @@ namespace BRTBase {
             return nullptr;
         }
 
-      /*  std::shared_ptr<BRTBase::CEntryPointSRTFPtr >  GetSRTFPtrEntryPoint(std::string _id) {
-            for (auto& it : srtfPtrEntryPoints) {
-                if (it->GetID() == _id) { return it; }
-            }
-            return nullptr;
-        }*/
-
         std::shared_ptr<BRTBase::CEntryPointTransform >  GetPositionEntryPoint(std::string _id) {
             for (auto& it : positionEntryPoints) {
                 if (it->GetID() == _id) { return it; }
@@ -270,7 +249,6 @@ namespace BRTBase {
         //std::shared_ptr<BRTBase::CEntryPointCommand> commandsEntryPoint;
         std::vector<std::shared_ptr <BRTBase::CEntryPointHRTFPtr>> hrtfPtrEntryPoints;
         std::vector<std::shared_ptr <BRTBase::CEntryPointILDPtr>> ildPtrEntryPoints;
-        //std::vector<std::shared_ptr <BRTBase::CEntryPointSRTFPtr>> srtfPtrEntryPoints;
         std::vector<std::shared_ptr<BRTBase::CEntryPointID> > idEntryPoints;
 
 

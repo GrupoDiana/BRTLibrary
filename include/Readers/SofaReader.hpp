@@ -79,14 +79,14 @@ namespace BRTReaders {
 			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS, -1);			
 		}
 
-		/** \brief Loads an SRTF from a sofa file
+		/** \brief Loads an DirectivityTF from a sofa file
 		*	\param [in] path of the sofa file
-		*	\param [out] source affected by the srtf
+		*	\param [out] source affected by the directivityTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		bool ReadSRTFFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CSRTF> sourceSRTF, int _resamplingStep) {
+		bool ReadDirectivityTFFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CDirectivityTF> sourceDirectivityTF, int _resamplingStep) {
 
-			std::shared_ptr<BRTServices::CServicesBase> data = sourceSRTF;
+			std::shared_ptr<BRTServices::CServicesBase> data = sourceDirectivityTF;
 			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::FreeFieldDirectivityTF, _resamplingStep);
 		}
 				
@@ -332,7 +332,7 @@ namespace BRTReaders {
 
 		}
 
-		bool GetDirectivityTF(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& dataSRTF) {
+		bool GetDirectivityTF(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& dataDirectivityTF) {
 			//Get source positions									
 			std::vector< double > receiverPositionsVector(loader.getHRTF()->ReceiverPosition.values, loader.getHRTF()->ReceiverPosition.values + loader.getHRTF()->ReceiverPosition.elements);
 
@@ -351,12 +351,12 @@ namespace BRTReaders {
 			int numberOfReceivers = loader.getHRTF()->R;
 
 			// Get and save TFs			
-			dataSRTF->BeginSetup(numberOfFrequencySamples);
+			dataDirectivityTF->BeginSetup(numberOfFrequencySamples);
 
 			// This outtermost loop iterates over TFs
 			for (std::size_t i = 0; i < numberOfReceivers; i++)
 			{
-				BRTServices::TDirectivityTFStruct srtf_data;
+				BRTServices::TDirectivityTFStruct directivityTF_data;
 				CMonoBuffer<float> dataRealPartPI;
 				CMonoBuffer <float> dataImagPartPI;
 				double azimuth = receiverPositionsVector[array2DIndex(i, 0, 0, numberOfCoordinates)];
@@ -365,10 +365,10 @@ namespace BRTReaders {
 				GetDirectivityData(dataMeasurementsRealPart, dataRealPartPI, numberOfFrequencySamples, i);
 				GetDirectivityData(dataMeasurementsImagPart, dataImagPartPI, numberOfFrequencySamples, i);
 					
-				srtf_data.realPart = dataRealPartPI;
-				srtf_data.imagPart = dataImagPartPI;				
+				directivityTF_data.realPart = dataRealPartPI;
+				directivityTF_data.imagPart = dataImagPartPI;				
 
-				dataSRTF->AddDirectivityTF(azimuth, elevation, std::move(srtf_data));
+				dataDirectivityTF->AddDirectivityTF(azimuth, elevation, std::move(directivityTF_data));
 			}
 			return true;		
 		}

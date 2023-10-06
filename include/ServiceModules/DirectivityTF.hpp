@@ -1,7 +1,7 @@
 /**
-* \class CSRTF
+* \class CDirectivityTF
 *
-* \brief Declaration of CSRTF class interface to store directivity data
+* \brief Declaration of CDirectivityTF class interface to store directivity data
 * \version 
 * \date	May 2023
 *
@@ -22,8 +22,8 @@
 */
 
 
-#ifndef _CSRTF_H_
-#define _CSRTF_H_
+#ifndef _CDIRECTIVITYTF_H_
+#define _CDIRECTIVITYTF_H_
 
 #include <unordered_map>
 #include <Common/ErrorHandler.hpp>
@@ -31,8 +31,8 @@
 #include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
 
-#ifndef DEFAULT_SRTF_RESAMPLING_STEP
-#define DEFAULT_SRTF_RESAMPLING_STEP 5
+#ifndef DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP
+#define DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP 5
 #endif
 
 
@@ -43,22 +43,22 @@ namespace BRTServices
 		CMonoBuffer<float> data;
 	};
 
-	/** \brief Type definition for the SRTF table */
-	typedef std::unordered_map<orientation, BRTServices::TDirectivityTFStruct> T_SRTFTable;
-	typedef std::unordered_map<orientation, BRTServices::TDirectivityInterlacedTFStruct> T_SRTFInterlacedDataTable;
+	/** \brief Type definition for the DirectivityTF table */
+	typedef std::unordered_map<orientation, BRTServices::TDirectivityTFStruct> T_DirectivityTFTable;
+	typedef std::unordered_map<orientation, BRTServices::TDirectivityInterlacedTFStruct> T_DirectivityTFInterlacedDataTable;
 
 
 	/** \details This class gets impulse response data to compose HRTFs and implements different algorithms to interpolate the HRIR functions.
 	*/
-	class CSRTF : public CServicesBase
+	class CDirectivityTF : public CServicesBase
 	{
 	public:
 		/** \brief Default Constructor
 		*	\details By default, customized ITD is switched off, resampling step is set to 5 degrees and listener is a null pointer
 		*   \eh Nothing is reported to the error handler.
 		*/
-		CSRTF()
-			:resamplingStep{ DEFAULT_SRTF_RESAMPLING_STEP }, SRTFloaded{ false }, setupSRTFInProgress{ false }, aziMin{ DEFAULT_MIN_AZIMUTH }, aziMax{ DEFAULT_MAX_AZIMUTH },
+		CDirectivityTF()
+			:resamplingStep{ DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP }, DirectivityTFloaded{ false }, setupDirectivityTFInProgress{ false }, aziMin{ DEFAULT_MIN_AZIMUTH }, aziMax{ DEFAULT_MAX_AZIMUTH },
 			eleMin{ DEFAULT_MIN_ELEVATION }, eleMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER }, epsilon_sewing{ EPSILON_SEWING }, samplingRate{ -1 }
 		{}
 
@@ -90,7 +90,7 @@ namespace BRTServices
 			return fileName;
 		}
 		
-		/** \Start a new SRTF configuration
+		/** \Start a new DirectivityTF configuration
 		*	\param [in] directivityTFPartLength number of samples in the frequency domain (size of the real part or the imaginary part)
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
@@ -109,51 +109,51 @@ namespace BRTServices
 			directivityTF_numberOfSubfilters = 1;
 
 			//Clear every table			
-			t_SRTF_DataBase.clear();
-			t_SRTF_Resampled.clear();
+			t_DirectivityTF_DataBase.clear();
+			t_DirectivityTF_Resampled.clear();
 			 
 			//Change class state
-			setupSRTFInProgress = true;
-			SRTFloaded = false;
+			setupDirectivityTFInProgress = true;
+			DirectivityTFloaded = false;
 
 			SET_RESULT(RESULT_OK, "HRTF Setup started");
 		}
 
-		/** \brief Stop the SRTF configuration
+		/** \brief Stop the DirectivityTF configuration
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
 		bool EndSetup()
 		{
-			if (setupSRTFInProgress) {
-				if (!t_SRTF_DataBase.empty())
+			if (setupDirectivityTFInProgress) {
+				if (!t_DirectivityTF_DataBase.empty())
 				{
-					//SRTF Resampling methdos
+					//DirectivityTF Resampling methdos
 					//CalculateHRIR_InPoles(resamplingStep);
 					//FillOutTableOfAzimuth360(resamplingStep);
 					//FillSphericalCap_HRTF(gapThreshold, resamplingStep);
-					CalculateResampled_SRTFTable(resamplingStep);
+					CalculateResampled_DirectivityTFTable(resamplingStep);
 					auto stepVector = CalculateStep();
 					//CalculateExtendUpTo2PI();
 
 					//Setup values
-					setupSRTFInProgress = false;
-					SRTFloaded = true;
+					setupDirectivityTFInProgress = false;
+					DirectivityTFloaded = true;
 
-					SET_RESULT(RESULT_OK, "SRTF Table completed succesfully");
+					SET_RESULT(RESULT_OK, "DirectivityTF Table completed succesfully");
 					return true;
 				}
 				else
 				{
 					// TO DO: Should be ASSERT?
-					SET_RESULT(RESULT_ERROR_NOTSET, "The t_SRTF_DataBase map has not been set");
+					SET_RESULT(RESULT_ERROR_NOTSET, "The t_DirectivityTF_DataBase map has not been set");
 				}
 			}
 			return false;
 		}
 
 
-		/** \brief Set the step for the SRTF resampled table
+		/** \brief Set the step for the DirectivityTF resampled table
 		*	\param [in] Step to create the resampled table
 		*/
 		void SetResamplingStep(int _resamplingStep) {
@@ -167,7 +167,7 @@ namespace BRTServices
 			return resamplingStep;
 		}
 
-		/** \brief Set the sampling rate for the SRTF
+		/** \brief Set the sampling rate for the DirectivityTF
 		*	\param [in] sampling rate
 		*/
 		void SetSamplingRate(int _samplingRate) {
@@ -191,7 +191,7 @@ namespace BRTServices
 		*/
 		int GetDirectivityTFNumOfSubfilters() { return directivityTF_numberOfSubfilters; }
 
-		/** \brief Add a new TF to the SRTF table
+		/** \brief Add a new TF to the DirectivityTF table
 		*	\param [in] azimuth azimuth angle in degrees
 		*	\param [in] elevation elevation angle in degrees
 		*	\param [in] newDirectivityTF DirectivityTF data for both ears
@@ -199,10 +199,10 @@ namespace BRTServices
 		*/
 		void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF)
 		{
-			if (setupSRTFInProgress) {
-				auto returnValue = t_SRTF_DataBase.emplace(orientation(_azimuth, _elevation), std::forward<TDirectivityTFStruct>(DirectivityTF));
+			if (setupDirectivityTFInProgress) {
+				auto returnValue = t_DirectivityTF_DataBase.emplace(orientation(_azimuth, _elevation), std::forward<TDirectivityTFStruct>(DirectivityTF));
 				//Error handler
-				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
+				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing DirectivityTF in t_DirectivityTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
 			}
 		}
 
@@ -210,10 +210,10 @@ namespace BRTServices
 		*	\param [in] _resamplingStep step for both azimuth and elevation
 		*   \eh Warnings may be reported to the error handler.
 		*/
-		void CalculateResampled_SRTFTable(int _resamplingStep)
+		void CalculateResampled_DirectivityTFTable(int _resamplingStep)
 		{
 			// COPY the loaded table:
-			for (auto& it : t_SRTF_DataBase){
+			for (auto& it : t_DirectivityTF_DataBase){
 				TDirectivityInterlacedTFStruct interlacedData;
 				// Extend to 2PI real part
 				CMonoBuffer<float> dataRealPart2PI;				
@@ -226,7 +226,7 @@ namespace BRTServices
 				// Interlaced real and imag part
 				interlacedData.data.Interlace(dataRealPart2PI, dataImagPart2PI);
 				//Add data to the Resampled Table
-				t_SRTF_Resampled.emplace(it.first, interlacedData);
+				t_DirectivityTF_Resampled.emplace(it.first, interlacedData);
 			}
 			//
 			//int numOfInterpolatedHRIRs = 0;
@@ -260,17 +260,17 @@ namespace BRTServices
 		bool CalculateAndEmplaceNewDirectivityTF(float _azimuth, float _elevation) {
 			TDirectivityInterlacedTFStruct interpolatedHRIR;
 			bool bDirectivityTFInterpolated = false;
-			auto it = t_SRTF_DataBase.find(orientation(_azimuth, _elevation));
-			if (it != t_SRTF_DataBase.end()){				
+			auto it = t_DirectivityTF_DataBase.find(orientation(_azimuth, _elevation));
+			if (it != t_DirectivityTF_DataBase.end()){				
 				interpolatedHRIR.data.Interlace(it->second.realPart, it->second.imagPart);	// Interlaced
 				//Fill out Directivity TF from the original Database	
-				auto returnValue =  t_SRTF_Resampled.emplace(orientation(_azimuth, _elevation), std::forward<TDirectivityInterlacedTFStruct>(interpolatedHRIR));
+				auto returnValue =  t_DirectivityTF_Resampled.emplace(orientation(_azimuth, _elevation), std::forward<TDirectivityInterlacedTFStruct>(interpolatedHRIR));
 				//Error handler
-				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing DirectivityTF into t_SRTF_Resampled map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
+				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing DirectivityTF into t_DirectivityTF_Resampled map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
 			}
 			else
 			{
-				SET_RESULT(RESULT_WARNING, "Resampling SRTF: cannot find Directivity TF in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "], in the database table");
+				SET_RESULT(RESULT_WARNING, "Resampling DirectivityTF Table: cannot find Directivity TF in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "], in the database table");
 			}
 			return bDirectivityTFInterpolated;
 		}
@@ -288,8 +288,8 @@ namespace BRTServices
 			std::vector<orientation> orientations;
 
 			// Create a vector with all the orientations of the Database
-			orientations.reserve(t_SRTF_DataBase.size());
-			for (auto& itr : t_SRTF_DataBase)
+			orientations.reserve(t_DirectivityTF_DataBase.size());
+			for (auto& itr : t_DirectivityTF_DataBase)
 			{
 				orientations.push_back(itr.first);
 			}
@@ -336,8 +336,8 @@ namespace BRTServices
 		const TDirectivityInterlacedTFStruct GetDirectivityTF(float _azimuth, float _elevation, std::unordered_map<orientation, float> _stepsMap) const {
 
 			TDirectivityInterlacedTFStruct newSRIR;
-			auto it0 = t_SRTF_Resampled.find(orientation(_azimuth, _elevation));
-			if (it0 != t_SRTF_Resampled.end()) {
+			auto it0 = t_DirectivityTF_Resampled.find(orientation(_azimuth, _elevation));
+			if (it0 != t_DirectivityTF_Resampled.end()) {
 				newSRIR.data = it0->second.data;
 			}
 			else {
@@ -376,14 +376,14 @@ namespace BRTServices
 					if (_elevation >= pntMid_elevation)
 					{
 						//Second quadrant
-						auto it = t_SRTF_Resampled.find(orientation(aziCeilFront, eleCeil));
+						auto it = t_DirectivityTF_Resampled.find(orientation(aziCeilFront, eleCeil));
 						newSRIR.data = it->second.data;
 
 					}
 					else if (_elevation < pntMid_elevation)
 					{
 						//Forth quadrant
-						auto it = t_SRTF_Resampled.find(orientation(aziFloorFront, eleFloor));
+						auto it = t_DirectivityTF_Resampled.find(orientation(aziFloorFront, eleFloor));
 						newSRIR.data = it->second.data;
 					}
 				}
@@ -392,12 +392,12 @@ namespace BRTServices
 					if (_elevation >= pntMid_elevation)
 					{
 						//First quadrant
-						auto it = t_SRTF_Resampled.find(orientation(aziCeilBack, eleCeil));
+						auto it = t_DirectivityTF_Resampled.find(orientation(aziCeilBack, eleCeil));
 						newSRIR.data = it->second.data;
 					}
 					else if (_elevation < pntMid_elevation) {
 						//Third quadrant
-						auto it = t_SRTF_Resampled.find(orientation(aziFloorFront, eleFloor));
+						auto it = t_DirectivityTF_Resampled.find(orientation(aziFloorFront, eleFloor));
 						newSRIR.data = it->second.data;
 					}
 				}
@@ -446,13 +446,13 @@ namespace BRTServices
 		std::string fileName;
 		int samplingRate;
 		int resamplingStep;
-		bool SRTFloaded;
-		bool setupSRTFInProgress;
+		bool DirectivityTFloaded;
+		bool setupDirectivityTFInProgress;
 		int32_t directivityTF_length;	
 		int32_t directivityTF_numberOfSubfilters;	
 		
-		T_SRTFTable					t_SRTF_DataBase;
-		T_SRTFInterlacedDataTable	t_SRTF_Resampled;
+		T_DirectivityTFTable					t_DirectivityTF_DataBase;
+		T_DirectivityTFInterlacedDataTable	t_DirectivityTF_Resampled;
 
 		Common::CGlobalParameters globalParameters;
 

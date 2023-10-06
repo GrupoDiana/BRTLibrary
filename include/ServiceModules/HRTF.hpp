@@ -594,7 +594,7 @@ namespace BRTServices
 			return earLocalPosition;
 		}
 
-		/** \brief Set the sampling rate for the SRTF
+		/** \brief Set the sampling rate for the HRTF
 		*	\param [in] sampling rate
 		*/
 		void SetSamplingRate(int _samplingRate) {

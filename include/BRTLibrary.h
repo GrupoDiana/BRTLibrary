@@ -34,10 +34,10 @@
 #include "ProcessingModules/SingleBinauralProcessor.hpp"
 #include "ProcessingModules/DistanceAttenuationProcessor.hpp"
 #include "ProcessingModules//HRTFConvolverProcessor.hpp"
-#include "ProcessingModules/SRTFConvolver.hpp"
+#include "ProcessingModules/DirectivityTFConvolver.hpp"
 #include "ServiceModules/HRTF.hpp"
 #include "ServiceModules/ILD.hpp"
-#include "ServiceModules/SRTF.hpp"
+#include "ServiceModules/DirectivityTF.hpp"
 #include "Readers/SofaReader.hpp"
 #include "third_party_libraries/nlohmann/json.hpp"
 
