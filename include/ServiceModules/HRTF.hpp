@@ -148,8 +148,8 @@ namespace BRTServices
 		void AddHRIR(double _azimuth, double _elevation, THRIRStruct&& newHRIR)
 		{
 			if (setupInProgress) {				
-				_azimuth = CHRTFAuxiliarMethods::CheckAzimuthRangeAndTransform(_azimuth);
-				_elevation = CHRTFAuxiliarMethods::CheckElevationRangeAndTransform(_elevation);				
+				_azimuth = CHRTFAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
+				_elevation = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);				
 				Common::CVector3 cartessianPos;
 				cartessianPos.SetFromAED(_azimuth, _elevation, GetHRTFDistanceOfMeasurement());
 				auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), std::forward<THRIRStruct>(newHRIR));
@@ -1039,7 +1039,7 @@ namespace BRTServices
 		/// <param name="newAzimuth"></param>
 		/// <param name="newElevation"></param>
 		/// <returns>interpolatedHRIRs: true if the HRIR has been calculated using the interpolation</returns>
-		bool CalculateAndEmplaceNewPartitionedHRIR(float _azimuth, float _elevation) {
+		bool CalculateAndEmplaceNewPartitionedHRIR(double _azimuth, double _elevation) {
 			THRIRStruct interpolatedHRIR;
 			bool bHRIRInterpolated = false;
 

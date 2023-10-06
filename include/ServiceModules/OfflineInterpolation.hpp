@@ -31,18 +31,22 @@
 
 namespace BRTServices
 {
+	/**
+	 * @brief Base class for offline interpolators
+	*/
 	class COfflineInterpolatorInterface {
 	public:		
-		virtual THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, std::vector<orientation>& listToSort, float newAzimuth, float newElevation, int HRIRLength, int pole) = 0;
+		
+		virtual THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, std::vector<orientation>& listToSort, double newAzimuth, double newElevation, int HRIRLength, int pole) = 0;
 
-
+	protected:
 		/**
 		 * @brief Transform the orientation in order to move the orientation of interest to 180 degrees
 		 * @param azimuthOrientationOfInterest 
 		 * @param originalAzimuth 
 		 * @return transformed azimuth	
 		*/
-		float TransformAzimuthToAvoidSewing(float azimuthOrientationOfInterest, float originalAzimuth)
+		float TransformAzimuthToAvoidSewing(double azimuthOrientationOfInterest, double originalAzimuth)
 		{
 			float azimuth;
 			azimuth = originalAzimuth + 180 - azimuthOrientationOfInterest;
@@ -63,7 +67,7 @@ namespace BRTServices
 		 * @param originalElevation 
 		 * @return transformed elevation	
 		*/
-		float TransformElevationToAvoidSewing(float elevationOrientationOfInterest, float originalElevation)
+		float TransformElevationToAvoidSewing(double elevationOrientationOfInterest, double originalElevation)
 		{
 			if (originalElevation >= ELEVATION_SOUTH_POLE) {
 				originalElevation = originalElevation - 360;
@@ -72,10 +76,14 @@ namespace BRTServices
 		}
 	};
 
+
+	/**
+	 * @brief Offline interpolation based on the search for the 3 closest points for each point to be interpolated.
+	*/
 	class CDistanceBasedInterpolator : COfflineInterpolatorInterface {
 	public:
 
-		THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, std::vector<orientation>& listToSort, float newAzimuth, float newElevation, int HRIRLength, int pole = 0)
+		THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, std::vector<orientation>& listToSort, double newAzimuth, double newElevation, int HRIRLength, int pole = 0)
 		{
 			THRIRStruct newHRIR;
 			//// Get a list sorted by distances to the orientation of interest
@@ -191,10 +199,13 @@ namespace BRTServices
 		}
 	};
 
+	/**
+	 * @brief Offline interpolation based on quadrant method
+	*/
 	class CQuadrantBasedInterpolator : COfflineInterpolatorInterface {
 	public:
 
-		THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, std::vector<orientation>& listToSort, float newAzimuth, float newElevation, int HRIRLength, int pole = 0)
+		THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, std::vector<orientation>& listToSort, double newAzimuth, double newElevation, int HRIRLength, int pole = 0)
 		{
 			std::vector<orientation> azimuthBackList, azimuthFrontList, backCeilList, backFloorList, frontCeilList, frontFloorList;
 			TBarycentricCoordinatesStruct barycentricCoordinates;
@@ -271,7 +282,7 @@ namespace BRTServices
 
 	private:
 
-		void SortListByAzimuthAndSplit(float _newAzimuth, std::vector<orientation>& listToSort, std::vector<orientation>& _azimuthBackList, std::vector<orientation>& _azimuthFrontList)
+		void SortListByAzimuthAndSplit(double _newAzimuth, std::vector<orientation>& listToSort, std::vector<orientation>& _azimuthBackList, std::vector<orientation>& _azimuthFrontList)
 		{
 			// Sort List By Azimuth
 			if (listToSort.size() != 0) {
@@ -282,8 +293,7 @@ namespace BRTServices
 			}
 
 			// NEW SPLIT
-
-			float resta;
+			double azimuthDifference;
 
 			for (auto& it : listToSort)
 			{
@@ -293,16 +303,16 @@ namespace BRTServices
 				}
 				else
 				{
-					resta = it.azimuth - _newAzimuth;
-					if (resta > 0 && resta <= 180)
+					azimuthDifference = it.azimuth - _newAzimuth;
+					if (azimuthDifference > 0 && azimuthDifference <= 180)
 					{
 						_azimuthFrontList.push_back(it);
 					}
-					else if (resta < 0 && resta > -180)
+					else if (azimuthDifference < 0 && azimuthDifference > -180)
 					{
 						_azimuthBackList.push_back(it);
 					}
-					else if (resta > 0 && resta > 180)
+					else if (azimuthDifference > 0 && azimuthDifference > 180)
 					{
 						_azimuthBackList.push_back(it);
 					}
@@ -321,7 +331,7 @@ namespace BRTServices
 			//std::copy_if(listToSort.begin(), listToSort.end(), back_inserter(_azimuthFrontList), [_newAzimuth](orientation n) {return n.azimuth > _newAzimuth; });
 		}
 
-		void SortListByElevationAndSplit(float _newElevation, std::vector<orientation>& listToSort, std::vector<orientation>& ceilList, std::vector<orientation>& floorList)
+		void SortListByElevationAndSplit(double _newElevation, std::vector<orientation>& listToSort, std::vector<orientation>& ceilList, std::vector<orientation>& floorList)
 		{
 			// Sort List By Elevation
 			if (listToSort.size() != 0) {
@@ -331,7 +341,7 @@ namespace BRTServices
 				SET_RESULT(RESULT_WARNING, "Orientation list sorted by distances is empty");
 			}
 
-			float elevationFromListTransformed;
+			double elevationFromListTransformed;
 			for (auto& it : listToSort)
 			{
 				// Transform elevation to then range [-90, 90] in order to make the comparison
@@ -356,7 +366,7 @@ namespace BRTServices
 			//std::copy_if(listToSort.begin(), listToSort.end(), back_inserter(ceilList), [_newElevation](orientation n) {return n.elevation > _newElevation; });
 		}
 
-		std::vector<T_PairDistanceOrientation> GetSortedDistancesList(const std::vector<orientation>& listToSort, float _newAzimuth, float _newElevation)
+		std::vector<T_PairDistanceOrientation> GetSortedDistancesList(const std::vector<orientation>& listToSort, double _newAzimuth, double _newElevation)
 		{
 
 			T_PairDistanceOrientation temp;

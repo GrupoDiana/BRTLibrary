@@ -107,9 +107,11 @@ namespace BRTServices {
 	class CHRTFAuxiliarMethods {
 	public:
 
-		/** \brief Get Pole Elevation
-		*	\param [in] Tpole var that indicates of which pole we need elevation
-		*   \eh  On error, an error code is reported to the error handler.
+		/** 
+		*	@brief Get Pole Elevation
+		*	@param [in] Tpole var that indicates of which pole we need elevation
+		*	@return azimuth changed to the new range
+		*	@eh  On error, an error code is reported to the error handler.
 		*/
 		static int GetPoleElevation(TPole _pole)
 		{
@@ -122,13 +124,15 @@ namespace BRTServices {
 		}
 
 
-		/** \brief Transform azimuth range to [0, 360]
-		*   \param [in] azimuth to be checked and transformed, just in case.
+		/** 
+		 *	@brief Transform azimuth range to [0, 360]
+		 *  @param [in] azimuth to be checked and transformed, just in case.
+		 *  @return azimuth changed to the new range
 		*/
-		static double CheckAzimuthRangeAndTransform(double _azimuth) {						
+		static double CalculateAzimuthIn0_360Range(double _azimuth) {						
 			if (_azimuth < 0) {
 				_azimuth = std::fmod(_azimuth, (float)360) + 360;
-			} else if ( _azimuth > 360) {
+			} else if ( _azimuth >= 360) {
 				_azimuth = std::fmod(_azimuth, (float)360);
 			}
 			else {
@@ -137,11 +141,35 @@ namespace BRTServices {
 			
 			return _azimuth;
 		}
-
-		/** \brief Transform [-90, 90] to the ([0,90] U [270, 360]) range
-		*   \param [in] elevation to be checked and transformed, just in case.
+		
+		/**
+		 * @brief Transform azimuth range to [-180, 180]
+		 * @param _azimuth [in] azimuth to be checked and transformed, just in case.
+		 * @return azimuth changed to the new range
 		*/
-		static double CheckElevationRangeAndTransform(double _elevation) {										
+		static double CalculateAzimuthIn180Range(double _azimuth) {
+			
+			if (_azimuth < -180) {
+				_azimuth = std::fmod(_azimuth, (float)180) + 180;
+			}
+			else if (_azimuth >= 180) {
+				_azimuth = std::fmod(_azimuth, (float)180) - 180;
+			}
+			
+			else {
+				//DO nothing
+			}
+
+			return _azimuth;
+		}
+
+
+		/** 
+		 *	@brief ransform elevation range from [-90, 90] to the ([0,90] U [270, 360]) 
+		 *  @param [in] elevation to be checked and transformed, just in case.
+		 *	@return azimuth changed to the new range
+		*/
+		static double CalculateElevationIn0_90_270_360Range(double _elevation) {										
 			if (_elevation >= -90 && _elevation < 0) {
 				_elevation += 360;
 			}
@@ -150,7 +178,7 @@ namespace BRTServices {
 			}
 			return _elevation;
 		}
-		static float CheckElevationRangeAndTransform(float _elevation)
+		static float CalculateElevationIn0_90_270_360Range(float _elevation)
 		{
 			/*if (elevation < 0) { elevation = elevation + 360; }
 			if (elevation >= 360) { elevation = elevation - 360; }
@@ -163,7 +191,19 @@ namespace BRTServices {
 			}
 			return _elevation;
 		}
-		
+				
+		/**
+		 *	@brief ransform elevation range from [-90, 90] to the ([0,90] U [270, 360])
+		 *  @param [in] elevation to be checked and transformed, just in case.
+		 *	@return azimuth changed to the new range
+		*/
+		static double CalculateElevationIn90Range(double _elevation) {
+			if (_elevation >= 270) {
+				_elevation -= 360;
+			}			
+			return _elevation;
+		}
+
 		/**
 		 * @brief Calculate the distance between two points [(azimuth1, elevation1) and (azimuth2, elevation2)] using the Haversine formula
 		 * @param azimuth1
