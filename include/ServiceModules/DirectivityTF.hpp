@@ -58,7 +58,7 @@ namespace BRTServices
 		*   \eh Nothing is reported to the error handler.
 		*/
 		CDirectivityTF()
-			:resamplingStep{ DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP }, DirectivityTFloaded{ false }, setupDirectivityTFInProgress{ false }, aziMin{ DEFAULT_MIN_AZIMUTH }, aziMax{ DEFAULT_MAX_AZIMUTH },
+			:resamplingStep{ DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP }, directivityTFloaded{ false }, setupDirectivityTFInProgress{ false }, aziMin{ DEFAULT_MIN_AZIMUTH }, aziMax{ DEFAULT_MAX_AZIMUTH },
 			eleMin{ DEFAULT_MIN_ELEVATION }, eleMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER }, epsilon_sewing{ EPSILON_SEWING }, samplingRate{ -1 }
 		{}
 
@@ -114,7 +114,7 @@ namespace BRTServices
 			 
 			//Change class state
 			setupDirectivityTFInProgress = true;
-			DirectivityTFloaded = false;
+			directivityTFloaded = false;
 
 			SET_RESULT(RESULT_OK, "HRTF Setup started");
 		}
@@ -138,7 +138,7 @@ namespace BRTServices
 
 					//Setup values
 					setupDirectivityTFInProgress = false;
-					DirectivityTFloaded = true;
+					directivityTFloaded = true;
 
 					SET_RESULT(RESULT_OK, "DirectivityTF Table completed succesfully");
 					return true;
@@ -197,10 +197,10 @@ namespace BRTServices
 		*	\param [in] newDirectivityTF DirectivityTF data for both ears
 		*   \eh Warnings may be reported to the error handler.
 		*/
-		void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF)
+		void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& directivityTF)
 		{
 			if (setupDirectivityTFInProgress) {
-				auto returnValue = t_DirectivityTF_DataBase.emplace(orientation(_azimuth, _elevation), std::forward<TDirectivityTFStruct>(DirectivityTF));
+				auto returnValue = t_DirectivityTF_DataBase.emplace(orientation(_azimuth, _elevation), std::forward<TDirectivityTFStruct>(directivityTF));
 				//Error handler
 				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing DirectivityTF in t_DirectivityTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
 			}
@@ -446,7 +446,7 @@ namespace BRTServices
 		std::string fileName;
 		int samplingRate;
 		int resamplingStep;
-		bool DirectivityTFloaded;
+		bool directivityTFloaded;
 		bool setupDirectivityTFInProgress;
 		int32_t directivityTF_length;	
 		int32_t directivityTF_numberOfSubfilters;	
