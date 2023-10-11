@@ -223,10 +223,10 @@ namespace BRTServices
 
 
 			// Now each list will be sort by distance to the orientation of interest
-			std::vector<T_PairDistanceOrientation> backCeilListSortedByDistance = GetSortedDistancesList(backCeilList, newAzimuth, newElevation);
-			std::vector<T_PairDistanceOrientation> backFloorListSortedByDistance = GetSortedDistancesList(backFloorList, newAzimuth, newElevation);
-			std::vector<T_PairDistanceOrientation> frontCeilListSortedByDistance = GetSortedDistancesList(frontCeilList, newAzimuth, newElevation);
-			std::vector<T_PairDistanceOrientation> frontFloorlListSortedByDistance = GetSortedDistancesList(frontFloorList, newAzimuth, newElevation);
+			std::vector<T_PairDistanceOrientation> backCeilListSortedByDistance = CHRTFAuxiliarMethods::GetListOrderedDistancesToPoint(backCeilList, newAzimuth, newElevation);
+			std::vector<T_PairDistanceOrientation> backFloorListSortedByDistance = CHRTFAuxiliarMethods::GetListOrderedDistancesToPoint(backFloorList, newAzimuth, newElevation);
+			std::vector<T_PairDistanceOrientation> frontCeilListSortedByDistance = CHRTFAuxiliarMethods::GetListOrderedDistancesToPoint(frontCeilList, newAzimuth, newElevation);
+			std::vector<T_PairDistanceOrientation> frontFloorlListSortedByDistance = CHRTFAuxiliarMethods::GetListOrderedDistancesToPoint(frontFloorList, newAzimuth, newElevation);
 
 			// Transform Azimuth and Elevation to avoid the sewing ////// First column is Distance, so Azimuth is 2nd and Elevation 3rd
 			// Azimuth
@@ -366,35 +366,35 @@ namespace BRTServices
 			//std::copy_if(listToSort.begin(), listToSort.end(), back_inserter(ceilList), [_newElevation](orientation n) {return n.elevation > _newElevation; });
 		}
 
-		std::vector<T_PairDistanceOrientation> GetSortedDistancesList(const std::vector<orientation>& listToSort, double _newAzimuth, double _newElevation)
-		{
+		//std::vector<T_PairDistanceOrientation> GetSortedDistancesList(const std::vector<orientation>& listToSort, double _newAzimuth, double _newElevation)
+		//{
 
-			T_PairDistanceOrientation temp;
-			float distance;
-			std::vector<T_PairDistanceOrientation> sortedList;
-			sortedList.reserve(listToSort.size());
+		//	T_PairDistanceOrientation temp;
+		//	float distance;
+		//	std::vector<T_PairDistanceOrientation> sortedList;
+		//	sortedList.reserve(listToSort.size());
 
-			// Algorithm to calculate the three shortest distances between the point (newAzimuth, newelevation) and all the points in the given list
-			for (auto it = listToSort.begin(); it != listToSort.end(); ++it)
-			{
-				distance = CHRTFAuxiliarMethods::CalculateDistance_HaversineFormula(_newAzimuth, _newElevation, it->azimuth, it->elevation);
+		//	// Algorithm to calculate the three shortest distances between the point (newAzimuth, newelevation) and all the points in the given list
+		//	for (auto it = listToSort.begin(); it != listToSort.end(); ++it)
+		//	{
+		//		distance = CHRTFAuxiliarMethods::CalculateDistance_HaversineFormula(_newAzimuth, _newElevation, it->azimuth, it->elevation);
 
-				temp.first = distance;
-				temp.second.azimuth = it->azimuth;
-				temp.second.elevation = it->elevation;
+		//		temp.first = distance;
+		//		temp.second.azimuth = it->azimuth;
+		//		temp.second.elevation = it->elevation;
 
-				sortedList.push_back(temp);
-			}
+		//		sortedList.push_back(temp);
+		//	}
 
-			if (sortedList.size() != 0) {
-				std::sort(sortedList.begin(), sortedList.end(), [](const T_PairDistanceOrientation& a, const T_PairDistanceOrientation& b) { return a.first < b.first; });
-			}
-			else {
-				SET_RESULT(RESULT_WARNING, "Orientation list sorted by distances is empty");
-			}
+		//	if (sortedList.size() != 0) {
+		//		std::sort(sortedList.begin(), sortedList.end(), [](const T_PairDistanceOrientation& a, const T_PairDistanceOrientation& b) { return a.first < b.first; });
+		//	}
+		//	else {
+		//		SET_RESULT(RESULT_WARNING, "Orientation list sorted by distances is empty");
+		//	}
 
-			return sortedList;
-		}
+		//	return sortedList;
+		//}
 
 		THRIRStruct DataInterpolation(const T_HRTFTable& table, TBarycentricCoordinatesStruct _barycentricCoordinates, int HRIRLength, float azimuthPnt1, float elevationPnt1, float azimuthPnt2, float elevationPnt2, float azimuthPnt3, float elevationPnt3)
 		{

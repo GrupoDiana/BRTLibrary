@@ -50,7 +50,7 @@ namespace BRTServices {
 #endif
 
 #ifndef DEFAULT_EXTRAPOLATION_STEP
-#define DEFAULT_EXTRAPOLATION_STEP 20
+#define DEFAULT_EXTRAPOLATION_STEP 10
 #endif
 
 	/** \brief Type definition for a left-right pair of impulse response subfilter set with the ITD removed and stored in a specific struct field
@@ -227,11 +227,11 @@ namespace BRTServices {
 			term4 = term4 * term4;
 			float raiz = term1 + term2 * term3 * term4;
 
-			ASSERT(raiz > 0, RESULT_ERROR_OUTOFRANGE, "Attempt to compute square root of a negative value using Haversine Formula to compute distance", "");
+			ASSERT(raiz >= 0, RESULT_ERROR_OUTOFRANGE, "Attempt to compute square root of a negative value using Haversine Formula to compute distance", "");
 			float sqrtDistance = std::sqrt(raiz);
 
 			ASSERT(sqrtDistance >= -1.0f && sqrtDistance <= 1.0f, RESULT_ERROR_OUTOFRANGE,
-				"Attempt to compute arcsin of a value outside [-1..1] using Harvesine Formula to compute distnace",
+				"Attempt to compute arcsin of a value outside [-1..1] using Harvesine Formula to compute distance",
 				"");
 
 			float distance = std::asin(std::sqrt(raiz));
@@ -239,6 +239,40 @@ namespace BRTServices {
 			return distance;
 		}
 
+
+		/**
+		 * @brief Get Sort a list of orientations according to the distance to a point.
+		 * @param listToSort List of orientations to be ordered
+		 * @param _newAzimuth Reference point azimuth
+		 * @param _newElevation Reference point elevation
+		 * @return List of orientations ordered by distance to the point
+		*/
+		static std::vector<T_PairDistanceOrientation> GetListOrderedDistancesToPoint(const std::vector<orientation>& listToSort, double _pointAzimuth, double _pointElevation)
+		{						
+			std::vector<T_PairDistanceOrientation> sortedList;
+			sortedList.reserve(listToSort.size());
+
+			// Get all the distance to the point
+			for (auto it = listToSort.begin(); it != listToSort.end(); ++it)
+			{
+				float distance = CalculateDistance_HaversineFormula(_pointAzimuth, _pointElevation, it->azimuth, it->elevation);
+				orientation _orientation(it->azimuth, it->elevation);
+				T_PairDistanceOrientation temp (distance, _orientation);
+				/*temp.first = distance;
+				temp.second.azimuth = it->azimuth;
+				temp.second.elevation = it->elevation;*/
+				sortedList.push_back(temp);
+			}
+
+			if (sortedList.size() != 0) {
+				std::sort(sortedList.begin(), sortedList.end(), [](const T_PairDistanceOrientation& a, const T_PairDistanceOrientation& b) { return a.first < b.first; });
+			}
+			else {
+				SET_RESULT(RESULT_WARNING, "Orientation list sorted by distances is empty");
+			}
+
+			return sortedList;
+		}
 
 		/**
 		 * @brief Calculate the barycentric coordinates of three vertex [(x1,y1), (x2,y2), (x3,y3)] and the orientation of interest (x,y)

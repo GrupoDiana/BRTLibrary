@@ -147,15 +147,17 @@ namespace BRTServices
 		//}
 
 		void AddHRIR(double _azimuth, double _elevation, THRIRStruct&& newHRIR)
-		{
+		{			
 			if (setupInProgress) {				
 				_azimuth = CHRTFAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
 				_elevation = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);				
 				Common::CVector3 cartessianPos;
-				cartessianPos.SetFromAED(_azimuth, _elevation, GetHRTFDistanceOfMeasurement());
-				auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), std::forward<THRIRStruct>(newHRIR));
+				//cartessianPos.SetFromAED(_azimuth, _elevation, GetHRTFDistanceOfMeasurement());
+				//auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), std::forward<THRIRStruct>(newHRIR));
+				auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation), std::forward<THRIRStruct>(newHRIR));
 				//Error handler
-				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
+				if (!returnValue.second) { 
+					SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
 			}
 		}
 
@@ -169,15 +171,15 @@ namespace BRTServices
 			if (setupInProgress) {
 				if (!t_HRTF_DataBase.empty())
 				{
-					//Delete the common delay of every HRIR functions of the DataBase Table
-					RemoveCommonDelay_HRTFDataBaseTable();
 					
-					CalculateExtrapolation();			// Make the extrapolation if it's needed
+					RemoveCommonDelay_HRTFDataBaseTable();				// Delete the common delay of every HRIR functions of the DataBase Table					
+					CalculateListOfOrientations_T_HRTF_DataBase();		// Extract the list of orientations
+					CalculateExtrapolation();							// Make the extrapolation if it's needed
 					// Preparation of table read from sofa file
 					CalculateHRIR_InPoles(resamplingStep);
 					FillOutTableOfAzimuth360(resamplingStep); 
 					FillSphericalCap_HRTF(gapThreshold, resamplingStep);
-					CalculateListOfOrientations_T_HRTF_DataBase();
+					CalculateListOfOrientations_T_HRTF_DataBase();		// The table has changed so we re-extract the list of orientations.
 
 
 					//Creation and filling of resampling HRTF table
@@ -206,6 +208,7 @@ namespace BRTServices
 		 * @brief Fill vector with the list of orientations of the T_HRTF_DataBase table
 		*/
 		void CalculateListOfOrientations_T_HRTF_DataBase() {
+			t_HRTF_DataBase_ListOfOrientations.clear();
 			t_HRTF_DataBase_ListOfOrientations.reserve(t_HRTF_DataBase.size());
 			for (auto& kv : t_HRTF_DataBase)
 			{
@@ -668,7 +671,7 @@ namespace BRTServices
 		CQuadrantBasedInterpolator quadrantBasedInterpolator;
 		//CMidPointOnlineInterpolator midPointOnlineInterpolator;
 		CSlopesMethodOnlineInterpolator slopesMethodOnlineInterpolator;
-		CZeroInsertionBasedExtrapolation zeroInsertionBasedExtrapolation;
+		CExtrapolation extrapolation;		
 
 		friend class CHRTFTester;
 		
@@ -1168,7 +1171,8 @@ namespace BRTServices
 		/// TESTING
 		void CalculateExtrapolation() {
 			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.
-			zeroInsertionBasedExtrapolation.Process(t_HRTF_DataBase, DEFAULT_EXTRAPOLATION_STEP);
+			//extrapolation.ProcessZeroInsertionBasedExtrapolation(t_HRTF_DataBase, DEFAULT_EXTRAPOLATION_STEP);
+			extrapolation.ProcessNearestPointBasedExtrapolation(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, DEFAULT_EXTRAPOLATION_STEP);
 			
 		}
 
