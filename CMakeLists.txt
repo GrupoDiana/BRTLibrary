@@ -30,7 +30,7 @@ target_compile_features(brt INTERFACE cxx_std_17)
 # then by default build also tests.  
 # See https://www.foonathan.net/2022/06/cmake-fetchcontent/ to understand the "if" 
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    option(BRT_BUILD_TESTS  "whether or not build tests, sofaexamples, etc should be built" ON)
+    option(BRT_BUILD_TESTS  "whether brt library tests should be built" ON)
 endif()
 
 # This shows how we could add more tests.
@@ -43,6 +43,7 @@ if (BRT_BUILD_TESTS)
     
     add_executable(testBRT test/test.cpp)
     target_link_libraries(testBRT PUBLIC brt) 
+    # The working directory is where hrtf.sofa is otherwise it fails.  
     add_test(NAME TestBRT COMMAND testBRT WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/test )
 endif()
 
