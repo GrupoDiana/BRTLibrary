@@ -360,8 +360,8 @@ namespace BRTServices
 
 			// SLOPE METHOD
 			// First make the slope of 2 points, always the same 2 points, A->D			
-			float slopeDiagonalTrapezoid		= std::abs(orientation_ptoD.elevation - orientation_ptoA.elevation) / (orientation_ptoD.azimuth - orientation_ptoA.azimuth);
-			float slopeOrientationOfInterest	= std::abs(_elevation - orientation_ptoA.elevation) / (_azimuth - orientation_ptoA.azimuth);
+			float slopeDiagonalTrapezoid		= std::abs((orientation_ptoD.elevation - orientation_ptoA.elevation) / (orientation_ptoD.azimuth - orientation_ptoA.azimuth));
+			float slopeOrientationOfInterest	= std::abs((_elevation - orientation_ptoA.elevation) / (_azimuth - orientation_ptoA.azimuth));
 
 			if (slopeOrientationOfInterest >= slopeDiagonalTrapezoid)
 			{
