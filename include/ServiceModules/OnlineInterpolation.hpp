@@ -222,8 +222,8 @@ namespace BRTServices
 			float eleCeil = eleStep * idxEle;
 			float eleFloor = eleStep * (idxEle - 1);
 
-			eleCeil = CHRTFAuxiliarMethods::CheckElevationRangeAndTransform(eleCeil);				//			   Back	  Front
-			eleFloor = CHRTFAuxiliarMethods::CheckElevationRangeAndTransform(eleFloor);				//	Ceil		A		B
+			eleCeil = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(eleCeil);				//			   Back	  Front
+			eleFloor = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(eleFloor);				//	Ceil		A		B
 
 			auto stepItr = stepMap.find(orientation(0, eleCeil));										//	Floor		C		D
 			float aziStepCeil = stepItr->second;
@@ -440,8 +440,8 @@ namespace BRTServices
 			float elevationCeil = elevationStep * indexElevation;
 			float elevationFloor = elevationStep * (indexElevation - 1);
 
-			elevationCeil = CHRTFAuxiliarMethods::CheckElevationRangeAndTransform(elevationCeil);				//			   Back	  Front
-			elevationFloor = CHRTFAuxiliarMethods::CheckElevationRangeAndTransform(elevationFloor);				//	Ceil		A		B
+			elevationCeil = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(elevationCeil);				//			   Back	  Front
+			elevationFloor = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(elevationFloor);				//	Ceil		A		B
 
 			auto stepItr = stepMap.find(orientation(0, elevationCeil));										//	Floor		C		D
 			float azimuthStepCeil = stepItr->second;

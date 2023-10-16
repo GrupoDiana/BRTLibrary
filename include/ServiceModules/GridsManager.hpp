@@ -147,7 +147,7 @@ namespace BRTServices
 
 			float nearestElevation = (round(_elevation / eleStep) * eleStep);
 
-			nearestElevation = CHRTFAuxiliarMethods::CheckElevationRangeAndTransform(nearestElevation);
+			nearestElevation = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(nearestElevation);
 
 			float aziStep = stepMap.find(orientation(0, nearestElevation))->second;
 
@@ -185,7 +185,7 @@ namespace BRTServices
 
 			float nearestElevation = (round(_elevationCenter / eleStep) * eleStep);
 
-			nearestElevation = CHRTFAuxiliarMethods::CheckElevationRangeAndTransform(nearestElevation);
+			nearestElevation = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(nearestElevation);
 
 			float aziStep = stepMap.find(orientation(0, nearestElevation))->second;
 
