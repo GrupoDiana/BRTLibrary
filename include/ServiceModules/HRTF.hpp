@@ -60,8 +60,8 @@ namespace BRTServices
 			:enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, gapThreshold{ DEFAULT_GAP_THRESHOLD }, HRIRLength{ 0 }, fileName{ "" },
 			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, headRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }, leftEarLocalPosition{ Common::CVector3() }, rightEarLocalPosition{ Common::CVector3() },
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER },
-			epsilon_sewing{ EPSILON_SEWING }, samplingRate{ -1 }, elevationNorth{ 0 }, elevationSouth { 0 }, bufferSize { 0 }
-		{}
+			epsilon_sewing{ EPSILON_SEWING }, samplingRate{ -1 }, elevationNorth{ 0 }, elevationSouth{ 0 }, bufferSize{ 0 }, extrapolationMethod{ TExtrapolationMethod::nearestPoint }
+		{ }
 
 		/** \brief Get size of each HRIR buffer
 		*	\retval size number of samples of each HRIR buffer for one ear
@@ -85,7 +85,7 @@ namespace BRTServices
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
-		void BeginSetup(int32_t _HRIRLength, float _distance)
+		void BeginSetup(int32_t _HRIRLength, float _distance, std::string _extrapolationMethod)
 		{
 			//if ((ownerListener != nullptr) && ownerListener->ownerCore!=nullptr)
 			{
@@ -93,6 +93,7 @@ namespace BRTServices
 				HRIRLength = _HRIRLength;
 				distanceOfMeasurement = _distance;
 				bufferSize = globalParameters.GetBufferSize();
+				SetExtrapolationMethod(_extrapolationMethod);
 
 				float partitions = (float)HRIRLength / (float)bufferSize;
 				HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
@@ -616,6 +617,9 @@ namespace BRTServices
 
 
 	private:
+		
+		enum TExtrapolationMethod { zeroInsertion, nearestPoint};		
+
 		///////////////
 		// ATTRIBUTES
 		///////////////		
@@ -627,7 +631,7 @@ namespace BRTServices
 		float headRadius;								// Head radius of listener 
 		Common::CVector3 leftEarLocalPosition;			// Listener left ear relative position
 		Common::CVector3 rightEarLocalPosition;			// Listener right ear relative position
-
+		TExtrapolationMethod extrapolationMethod;		// Methods that is going to be used to extrapolate
 
 		float sphereBorder;								// Define spheere "sewing"
 		float epsilon_sewing;
@@ -1168,18 +1172,41 @@ namespace BRTServices
 			return 0;// ITD;
 		}
 				
-		/// TESTING
-		void CalculateExtrapolation() {
-			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.
-			//extrapolation.ProcessZeroInsertionBasedExtrapolation(t_HRTF_DataBase, DEFAULT_EXTRAPOLATION_STEP);
-			extrapolation.ProcessNearestPointBasedExtrapolation(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, DEFAULT_EXTRAPOLATION_STEP);
-			
+		
+		// ETRAPOLATION
+
+		void SetExtrapolationMethod(std::string _extrapolationMethod) {
+		
+			if (_extrapolationMethod == EXTRAPOLATION_METHOD_ZEROINSERTION_STRING) {
+				extrapolationMethod = TExtrapolationMethod::zeroInsertion;
+			}
+			else if (_extrapolationMethod == EXTRAPOLATION_METHOD_NEARESTPOINT_STRING) {
+				extrapolationMethod = TExtrapolationMethod::nearestPoint;
+			}
+			else {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Extrapolation Method not identified.");
+				extrapolationMethod = TExtrapolationMethod::nearestPoint;
+			}
+
 		}
 
-		
-		
+		void CalculateExtrapolation() {
+			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.
+			
+			if (extrapolationMethod == TExtrapolationMethod::zeroInsertion) {
+				extrapolation.ProcessZeroInsertionBasedExtrapolation(t_HRTF_DataBase, DEFAULT_EXTRAPOLATION_STEP);
+			}
+			else if (extrapolationMethod == TExtrapolationMethod::nearestPoint) {
+				extrapolation.ProcessNearestPointBasedExtrapolation(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, DEFAULT_EXTRAPOLATION_STEP);
+			}
+			else {
+				SET_RESULT(RESULT_ERROR_NOTSET, "Extrapolation Method not set up.");
+				// Do nothing
+			}									
+		}
 
-		//// END
+				
+		
 
 		// Reset HRTF		
 		void Reset() {

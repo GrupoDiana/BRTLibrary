@@ -105,6 +105,9 @@ namespace std
 
 namespace BRTServices {
 
+	const char EXTRAPOLATION_METHOD_NEARESTPOINT_STRING[]	= "NearestPoint";
+	const char EXTRAPOLATION_METHOD_ZEROINSERTION_STRING[] = "ZeroInsertion";
+
 	/** \brief Type definition for a left-right pair of impulse response with the ITD removed and stored in a specific struct field
 */
 	struct THRIRStruct {
@@ -134,7 +137,7 @@ namespace BRTServices {
 		
 		virtual void BeginSetup() {}
 		virtual void BeginSetup(int32_t _DirectivityTFLength) {}
-		virtual void BeginSetup(int32_t _HRIRLength, float _distance) {}
+		virtual void BeginSetup(int32_t _HRIRLength, float _distance, std::string extrapolationMethod) {}
 		virtual bool EndSetup() = 0;
 
 		virtual void SetResamplingStep(int _resamplingStep) {};
