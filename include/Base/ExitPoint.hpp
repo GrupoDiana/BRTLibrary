@@ -31,7 +31,7 @@
 #include <Base/Command.hpp>
 
 
-namespace BRTServices { class CHRTF; class CILD; class CSRTF; }
+namespace BRTServices { class CHRTF; class CILD; class CDirectivityTF; }
 
 namespace BRTBase {          
     template <class T>
@@ -66,6 +66,6 @@ namespace BRTBase {
 
     using CExitPointHRTFPtr = CExitPointBase< std::weak_ptr<BRTServices::CHRTF> >;
     using CExitPointILDPtr = CExitPointBase< std::weak_ptr<BRTServices::CILD> >;
-    using CExitPointSRTFPtr = CExitPointBase< std::weak_ptr<BRTServices::CSRTF> >;
+    using CExitPointDirectivityTFPtr = CExitPointBase< std::weak_ptr<BRTServices::CDirectivityTF> >;
 }
 #endif

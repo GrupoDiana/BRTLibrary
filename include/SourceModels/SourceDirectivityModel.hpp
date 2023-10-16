@@ -25,11 +25,11 @@
 
 #include <vector>
 #include <Base/SourceModelBase.hpp>
-#include <ProcessingModules/SRTFConvolver.hpp>
-#include <ServiceModules/SRTF.hpp>
+#include <ProcessingModules/DirectivityTFConvolver.hpp>
+#include <ServiceModules/DirectivityTF.hpp>
 
 namespace BRTSourceModel {
-	class CSourceDirectivityModel : public BRTBase::CSourceModelBase, BRTProcessing::CSRTFConvolver {
+	class CSourceDirectivityModel : public BRTBase::CSourceModelBase, BRTProcessing::CDirectivityTFConvolver {
 
 	public:			
 		CSourceDirectivityModel(std::string _sourceID) : BRTBase::CSourceModelBase(_sourceID) {
@@ -47,7 +47,7 @@ namespace BRTSourceModel {
 				Common::CTransform sourcePosition = GetCurrentSourceTransform();
 				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
 				if (inBuffer.size() != 0) {
-					Process(inBuffer, outBuffer, sourcePosition, listenerPosition, sourceSRTF);
+					Process(inBuffer, outBuffer, sourcePosition, listenerPosition, sourceDirectivityTF);
 					SendData(outBuffer);
 				}
 			}			
@@ -88,20 +88,22 @@ namespace BRTSourceModel {
 			}
 		}
 
-		/** \brief SET SRTF of source
-		*	\param[in] pointer to SRTF to be stored
+		/** \brief SET DirectivityTF of source
+		*	\param[in] pointer to DirectivityTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		void SetSRTF(std::shared_ptr< BRTServices::CSRTF > _sourceSRTF) {			
-			sourceSRTF = _sourceSRTF;			
+		bool SetDirectivityTF(std::shared_ptr< BRTServices::CDirectivityTF > _sourceDirectivityTF) {			
+			sourceDirectivityTF = _sourceDirectivityTF;						
+			ResetSourceConvolutionBuffers();
+			return true;
 		}
 
-		std::shared_ptr< BRTServices::CSRTF > GetSRFT() {
-			return sourceSRTF;
+		std::shared_ptr< BRTServices::CDirectivityTF > GetDirectivityTF() {
+			return sourceDirectivityTF;
 		}
 
-		void RemoveSRTF() {
-			sourceSRTF = std::make_shared<BRTServices::CSRTF>();	// empty HRTF		
+		void RemoveDirectivityTF() {
+			sourceDirectivityTF = std::make_shared<BRTServices::CDirectivityTF>();	// empty HRTF		
 		}
 
 		// TODO Move to command
@@ -116,12 +118,9 @@ namespace BRTSourceModel {
 
 	private:		
 		mutable std::mutex mutex;
-		std::shared_ptr<BRTServices::CSRTF> sourceSRTF;			// SHRTF of source
-
-		//// METHODS
-		//bool IsToMySoundSource(std::string _sourceID) {			
-		//	return GetSourceID() == _sourceID;
-		//}
+		std::shared_ptr<BRTServices::CDirectivityTF> sourceDirectivityTF;			// SHRTF of source
+		Common::CGlobalParameters globalParameters;
+		
 	};
 }
 #endif

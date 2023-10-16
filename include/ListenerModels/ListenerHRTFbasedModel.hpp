@@ -71,9 +71,16 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		void SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) {			
+		bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) {			
+			
+			if (_listenerHRTF->GetSamplingRate() != globalParameters.GetSampleRate()) { 
+				SET_RESULT(RESULT_ERROR_NOTSET, "This HRTF has not been assigned to the listener. The sample rate of the HRTF does not match the one set in the library Global Parameters.");
+				return false;
+			}
 			listenerHRTF = _listenerHRTF;			
-			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);			
+			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);	
+			ResetConvolutionsBuffers();
+			return true;
 		}
 
 		/** \brief Get HRTF of listener
@@ -99,7 +106,7 @@ namespace BRTListenerModel {
 		*/
 		void SetILD(std::shared_ptr< BRTServices::CILD > _listenerILD) {
 			listenerILD = _listenerILD;
-			GetILDExitPoint()->sendDataPtr(listenerILD);			
+			GetILDExitPoint()->sendDataPtr(listenerILD);				
 		}
 
 		/** \brief Get HRTF of listener
@@ -268,6 +275,12 @@ namespace BRTListenerModel {
 		*/
 		//bool IsNearFieldEffectEnabled();
 
+		void ResetConvolutionsBuffers() {
+			nlohmann::json j;
+			j["command"] = "/listener/resetBuffers";
+			j["listenerID"] = listenerID;			
+			brtManager->ExecuteCommand(j.dump());
+		}
 
 		void Update(std::string entryPointID) {
 			// Nothing to do
@@ -286,7 +299,8 @@ namespace BRTListenerModel {
 		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;	// HRTF of listener														
 		std::shared_ptr<BRTServices::CILD> listenerILD;		// ILD of listener						
 		std::vector< CSourceProcessors> sourcesConnectedProcessors;
-		BRTBase::CBRTManager* brtManager;				
+		BRTBase::CBRTManager* brtManager;		
+		Common::CGlobalParameters globalParameters;
 	};
 }
 #endif

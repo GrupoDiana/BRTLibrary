@@ -64,6 +64,7 @@
 
 #include <Common/Transform.hpp>
 #include <Common/Vector3.hpp>
+#include <Common/CommonDefinitions.hpp>
 
 namespace Common {
 		
@@ -87,7 +88,13 @@ namespace Common {
 		////////////////////////
 		// Set the buffer size
 		void SetBufferSize(int _bufferSize) { 
-			bufferSize = _bufferSize;	
+			bufferSize = _bufferSize;
+			if (!CalculateIsPowerOfTwo(_bufferSize)) {
+				SET_RESULT(RESULT_WARNING, "This buffer size is not a power of two, so processing will not be as efficient as it could be. Convolution and FFT operations will be done on the next largest number that is a power of two.");
+			} else {
+				SET_RESULT(RESULT_OK, "This buffer size has been set correctly.");
+			}
+
 		}
 		// Get buffer size
 		int GetBufferSize()	{ return bufferSize; }				

@@ -109,6 +109,7 @@ namespace BRTReaders {
 			try
 			{				
 				std::string samplingRatesUnits = mysofa_getAttribute(hrtf->hrtf->DataSamplingRate.attributes, "Units");
+				std::transform(samplingRatesUnits.begin(), samplingRatesUnits.end(), samplingRatesUnits.begin(), ::tolower);
 				if (samplingRatesUnits != "hertz")
 				{
 					SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Sampling rate units are not Herzs");

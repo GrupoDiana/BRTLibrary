@@ -84,6 +84,9 @@ namespace BRTProcessing {
 					if (command.GetBoolParameter("enable")) { EnableInterpolation(); }
 					else { DisableInterpolation(); }
 				}
+				else if (command.GetCommand() == "/listener/resetBuffers") {
+					ResetSourceConvolutionBuffers();					
+				}
 			//}
 
 			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {

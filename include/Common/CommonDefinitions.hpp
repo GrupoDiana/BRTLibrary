@@ -61,6 +61,15 @@ namespace Common {
 		T right;	///< right channel
 	};
 
+	static bool AreSameDouble(double a, double b, double epsilon)
+	{
+		//float absA = fabs(a);
+		//float absB = fabs(b);
+		float diff = std::fabs(a - b);
+
+		return diff < epsilon;
+	}
+
 	static bool AreSame(float a, float b, float epsilon)
 	{
 		//float absA = fabs(a);
@@ -68,6 +77,33 @@ namespace Common {
 		float diff = std::fabs(a - b);
 
 		return diff < epsilon;
-	}	
+	}
+
+	/** \brief This method check if a number is a power of 2
+		*	\param [in] integer to check
+		*	\param [out] return true if the number is power of two
+		*/
+	static bool CalculateIsPowerOfTwo(int x)
+	{
+		return (x != 0) && ((x & (x - 1)) == 0);
+	}
+
+	
+	/**
+	 * @brief This method Round up to the next highest power of 2 
+	 * @param integer to check 
+	 * @return next highest power of 2
+	*/
+	static int CalculateNextPowerOfTwo(int v)
+	{
+		v--;
+		v |= v >> 1;
+		v |= v >> 2;
+		v |= v >> 4;
+		v |= v >> 8;
+		v |= v >> 16;
+		v++;
+		return v;
+	}
 }
 #endif
