@@ -55,9 +55,9 @@ struct orientation
 {
 	double azimuth;					///< Azimuth angle in degrees
 	double elevation;				///< Elevation angle in degrees	
-	Common::CVector3 cartessianPos; ///< Position in X, Y and Z
+	//Common::CVector3 cartessianPos; ///< Position in X, Y and Z
 	orientation(double _azimuth, double _elevation) :azimuth{ _azimuth }, elevation{ _elevation } {}
-	orientation(double _azimuth, double _elevation, Common::CVector3 _cartessianPos) :azimuth{ _azimuth }, elevation{ _elevation }, cartessianPos{ _cartessianPos } {}
+	//orientation(double _azimuth, double _elevation, Common::CVector3 _cartessianPos) :azimuth{ _azimuth }, elevation{ _elevation }, cartessianPos{ _cartessianPos } {}
 	//orientation(float _azimuth, float _elevation) :azimuth{ static_cast<double>(_azimuth) }, elevation{ static_cast<double>(_elevation) } {}
 	//orientation(float _azimuth, float _elevation, Common::CVector3 _cartessianPos) :azimuth{ static_cast<double>(_azimuth) }, elevation{ static_cast<double>(_elevation) }, cartessianPos{ _cartessianPos } {}
 	orientation() :orientation{ 0.0, 0.0 } {}
@@ -105,6 +105,9 @@ namespace std
 
 namespace BRTServices {
 
+	const char EXTRAPOLATION_METHOD_NEARESTPOINT_STRING[]	= "NearestPoint";
+	const char EXTRAPOLATION_METHOD_ZEROINSERTION_STRING[] = "ZeroInsertion";
+
 	/** \brief Type definition for a left-right pair of impulse response with the ITD removed and stored in a specific struct field
 */
 	struct THRIRStruct {
@@ -134,7 +137,7 @@ namespace BRTServices {
 		
 		virtual void BeginSetup() {}
 		virtual void BeginSetup(int32_t _DirectivityTFLength) {}
-		virtual void BeginSetup(int32_t _HRIRLength, float _distance) {}
+		virtual void BeginSetup(int32_t _HRIRLength, float _distance, std::string extrapolationMethod) {}
 		virtual bool EndSetup() = 0;
 
 		virtual void SetResamplingStep(int _resamplingStep) {};

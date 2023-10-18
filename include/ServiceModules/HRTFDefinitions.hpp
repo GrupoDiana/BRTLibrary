@@ -49,6 +49,9 @@ namespace BRTServices {
 #define DEFAULT_HRTF_MEASURED_DISTANCE 1.95f
 #endif
 
+#ifndef DEFAULT_EXTRAPOLATION_STEP
+#define DEFAULT_EXTRAPOLATION_STEP 10
+#endif
 
 	/** \brief Type definition for a left-right pair of impulse response subfilter set with the ITD removed and stored in a specific struct field
 	*/
@@ -107,9 +110,11 @@ namespace BRTServices {
 	class CHRTFAuxiliarMethods {
 	public:
 
-		/** \brief Get Pole Elevation
-		*	\param [in] Tpole var that indicates of which pole we need elevation
-		*   \eh  On error, an error code is reported to the error handler.
+		/** 
+		*	@brief Get Pole Elevation
+		*	@param [in] Tpole var that indicates of which pole we need elevation
+		*	@return azimuth changed to the new range
+		*	@eh  On error, an error code is reported to the error handler.
 		*/
 		static int GetPoleElevation(TPole _pole)
 		{
@@ -122,13 +127,15 @@ namespace BRTServices {
 		}
 
 
-		/** \brief Transform azimuth range to [0, 360]
-		*   \param [in] azimuth to be checked and transformed, just in case.
+		/** 
+		 *	@brief Transform azimuth range to [0, 360]
+		 *  @param [in] azimuth to be checked and transformed, just in case.
+		 *  @return azimuth changed to the new range
 		*/
-		static double CheckAzimuthRangeAndTransform(double _azimuth) {						
+		static double CalculateAzimuthIn0_360Range(double _azimuth) {						
 			if (_azimuth < 0) {
 				_azimuth = std::fmod(_azimuth, (float)360) + 360;
-			} else if ( _azimuth > 360) {
+			} else if ( _azimuth >= 360) {
 				_azimuth = std::fmod(_azimuth, (float)360);
 			}
 			else {
@@ -137,11 +144,35 @@ namespace BRTServices {
 			
 			return _azimuth;
 		}
-
-		/** \brief Transform [-90, 90] to the ([0,90] U [270, 360]) range
-		*   \param [in] elevation to be checked and transformed, just in case.
+		
+		/**
+		 * @brief Transform azimuth range to [-180, 180]
+		 * @param _azimuth [in] azimuth to be checked and transformed, just in case.
+		 * @return azimuth changed to the new range
 		*/
-		static double CheckElevationRangeAndTransform(double _elevation) {										
+		static double CalculateAzimuthIn180Range(double _azimuth) {
+			
+			if (_azimuth < -180) {
+				_azimuth = std::fmod(_azimuth, (float)180) + 180;
+			}
+			else if (_azimuth >= 180) {
+				_azimuth = std::fmod(_azimuth, (float)180) - 180;
+			}
+			
+			else {
+				//DO nothing
+			}
+
+			return _azimuth;
+		}
+
+
+		/** 
+		 *	@brief ransform elevation range from [-90, 90] to the ([0,90] U [270, 360]) 
+		 *  @param [in] elevation to be checked and transformed, just in case.
+		 *	@return azimuth changed to the new range
+		*/
+		static double CalculateElevationIn0_90_270_360Range(double _elevation) {										
 			if (_elevation >= -90 && _elevation < 0) {
 				_elevation += 360;
 			}
@@ -150,7 +181,7 @@ namespace BRTServices {
 			}
 			return _elevation;
 		}
-		static float CheckElevationRangeAndTransform(float _elevation)
+		static float CalculateElevationIn0_90_270_360Range(float _elevation)
 		{
 			/*if (elevation < 0) { elevation = elevation + 360; }
 			if (elevation >= 360) { elevation = elevation - 360; }
@@ -163,34 +194,18 @@ namespace BRTServices {
 			}
 			return _elevation;
 		}
-		
-		//		Transform the orientation in order to move the orientation of interest to 180 degrees
-		//returnval	float	transformed azimuth		
-		static float TransformAzimuthToAvoidSewing(float azimuthOrientationOfInterest, float originalAzimuth)
-		{
-			float azimuth;
-			azimuth = originalAzimuth + 180 - azimuthOrientationOfInterest;
-
-			// Check limits (always return 0 instead of 360)
-			if (azimuth >= DEFAULT_MAX_AZIMUTH)
-				azimuth = std::fmod(azimuth, (float)360);
-
-			if (azimuth < DEFAULT_MIN_AZIMUTH)
-				azimuth = azimuth + 360;
-
-			return azimuth;
+				
+		/**
+		 *	@brief ransform elevation range from [-90, 90] to the ([0,90] U [270, 360])
+		 *  @param [in] elevation to be checked and transformed, just in case.
+		 *	@return azimuth changed to the new range
+		*/
+		static double CalculateElevationIn90Range(double _elevation) {
+			if (_elevation >= 270) {
+				_elevation -= 360;
+			}			
+			return _elevation;
 		}
-
-		//		Transform the orientation in order to express the elevation in the interval [-90,90]
-		//returnval float transformed elevation		
-		static float TransformElevationToAvoidSewing(float elevationOrientationOfInterest, float originalElevation)
-		{
-			if (originalElevation >= ELEVATION_SOUTH_POLE) {
-				originalElevation = originalElevation - 360;
-			}
-			return originalElevation;
-		}
-
 
 		/**
 		 * @brief Calculate the distance between two points [(azimuth1, elevation1) and (azimuth2, elevation2)] using the Haversine formula
@@ -212,11 +227,11 @@ namespace BRTServices {
 			term4 = term4 * term4;
 			float raiz = term1 + term2 * term3 * term4;
 
-			ASSERT(raiz > 0, RESULT_ERROR_OUTOFRANGE, "Attempt to compute square root of a negative value using Haversine Formula to compute distance", "");
+			ASSERT(raiz >= 0, RESULT_ERROR_OUTOFRANGE, "Attempt to compute square root of a negative value using Haversine Formula to compute distance", "");
 			float sqrtDistance = std::sqrt(raiz);
 
 			ASSERT(sqrtDistance >= -1.0f && sqrtDistance <= 1.0f, RESULT_ERROR_OUTOFRANGE,
-				"Attempt to compute arcsin of a value outside [-1..1] using Harvesine Formula to compute distnace",
+				"Attempt to compute arcsin of a value outside [-1..1] using Harvesine Formula to compute distance",
 				"");
 
 			float distance = std::asin(std::sqrt(raiz));
@@ -224,6 +239,40 @@ namespace BRTServices {
 			return distance;
 		}
 
+
+		/**
+		 * @brief Get Sort a list of orientations according to the distance to a point.
+		 * @param listToSort List of orientations to be ordered
+		 * @param _newAzimuth Reference point azimuth
+		 * @param _newElevation Reference point elevation
+		 * @return List of orientations ordered by distance to the point
+		*/
+		static std::vector<T_PairDistanceOrientation> GetListOrderedDistancesToPoint(const std::vector<orientation>& listToSort, double _pointAzimuth, double _pointElevation)
+		{						
+			std::vector<T_PairDistanceOrientation> sortedList;
+			sortedList.reserve(listToSort.size());
+
+			// Get all the distance to the point
+			for (auto it = listToSort.begin(); it != listToSort.end(); ++it)
+			{
+				float distance = CalculateDistance_HaversineFormula(_pointAzimuth, _pointElevation, it->azimuth, it->elevation);
+				orientation _orientation(it->azimuth, it->elevation);
+				T_PairDistanceOrientation temp (distance, _orientation);
+				/*temp.first = distance;
+				temp.second.azimuth = it->azimuth;
+				temp.second.elevation = it->elevation;*/
+				sortedList.push_back(temp);
+			}
+
+			if (sortedList.size() != 0) {
+				std::sort(sortedList.begin(), sortedList.end(), [](const T_PairDistanceOrientation& a, const T_PairDistanceOrientation& b) { return a.first < b.first; });
+			}
+			else {
+				SET_RESULT(RESULT_WARNING, "Orientation list sorted by distances is empty");
+			}
+
+			return sortedList;
+		}
 
 		/**
 		 * @brief Calculate the barycentric coordinates of three vertex [(x1,y1), (x2,y2), (x3,y3)] and the orientation of interest (x,y)

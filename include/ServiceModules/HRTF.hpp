@@ -40,6 +40,8 @@
 #include <ServiceModules/OnlineInterpolation.hpp>
 #include <ServiceModules/GridsManager.hpp>
 #include <ServiceModules/Preprocessor.hpp>
+#include <ServiceModules/Extrapolation.hpp>
+
 
 
 namespace BRTBase { class CListener; }
@@ -60,8 +62,8 @@ namespace BRTServices
 			:enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, gapThreshold{ DEFAULT_GAP_THRESHOLD }, HRIRLength{ 0 }, fileName{ "" },
 			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, headRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }, leftEarLocalPosition{ Common::CVector3() }, rightEarLocalPosition{ Common::CVector3() },
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER },
-			epsilon_sewing{ EPSILON_SEWING }, samplingRate{ -1 }, elevationNorth{ 0 }, elevationSouth { 0 }, bufferSize { 0 }
-		{}
+			epsilon_sewing{ EPSILON_SEWING }, samplingRate{ -1 }, elevationNorth{ 0 }, elevationSouth{ 0 }, bufferSize{ 0 }, extrapolationMethod{ TExtrapolationMethod::nearestPoint }
+		{ }
 
 		/** \brief Get size of each HRIR buffer
 		*	\retval size number of samples of each HRIR buffer for one ear
@@ -85,7 +87,7 @@ namespace BRTServices
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
-		void BeginSetup(int32_t _HRIRLength, float _distance)
+		void BeginSetup(int32_t _HRIRLength, float _distance, std::string _extrapolationMethod)
 		{
 			//if ((ownerListener != nullptr) && ownerListener->ownerCore!=nullptr)
 			{
@@ -93,6 +95,7 @@ namespace BRTServices
 				HRIRLength = _HRIRLength;
 				distanceOfMeasurement = _distance;
 				bufferSize = globalParameters.GetBufferSize();
+				SetExtrapolationMethod(_extrapolationMethod);
 
 				float partitions = (float)HRIRLength / (float)bufferSize;
 				HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
@@ -147,15 +150,17 @@ namespace BRTServices
 		//}
 
 		void AddHRIR(double _azimuth, double _elevation, THRIRStruct&& newHRIR)
-		{
+		{			
 			if (setupInProgress) {				
-				_azimuth = CHRTFAuxiliarMethods::CheckAzimuthRangeAndTransform(_azimuth);
-				_elevation = CHRTFAuxiliarMethods::CheckElevationRangeAndTransform(_elevation);				
+				_azimuth = CHRTFAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
+				_elevation = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);				
 				Common::CVector3 cartessianPos;
-				cartessianPos.SetFromAED(_azimuth, _elevation, GetHRTFDistanceOfMeasurement());
-				auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), std::forward<THRIRStruct>(newHRIR));
+				//cartessianPos.SetFromAED(_azimuth, _elevation, GetHRTFDistanceOfMeasurement());
+				//auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), std::forward<THRIRStruct>(newHRIR));
+				auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation), std::forward<THRIRStruct>(newHRIR));
 				//Error handler
-				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
+				if (!returnValue.second) { 
+					SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
 			}
 		}
 
@@ -169,8 +174,11 @@ namespace BRTServices
 			if (setupInProgress) {
 				if (!t_HRTF_DataBase.empty())
 				{
-					//Delete the common delay of every HRIR functions of the DataBase Table
-					RemoveCommonDelay_HRTFDataBaseTable();
+					
+					RemoveCommonDelay_HRTFDataBaseTable();				// Delete the common delay of every HRIR functions of the DataBase Table					
+					//CalculateListOfOrientations_T_HRTF_DataBase();		// Extract the list of orientations
+					t_HRTF_DataBase_ListOfOrientations = preprocessor.CalculateListOfOrientations_T_HRTF_DataBase(t_HRTF_DataBase);
+					CalculateExtrapolation();							// Make the extrapolation if it's needed
 					// Preparation of table read from sofa file
 					preprocessor.CalculateHRIR_InPoles(t_HRTF_DataBase, HRIRLength, resamplingStep);
 					//CalculateHRIR_InPoles(resamplingStep);
@@ -180,7 +188,6 @@ namespace BRTServices
 					//FillSphericalCap_HRTF(gapThreshold, resamplingStep);
 					t_HRTF_DataBase_ListOfOrientations = preprocessor.CalculateListOfOrientations_T_HRTF_DataBase(t_HRTF_DataBase);
 					//CalculateListOfOrientations_T_HRTF_DataBase();
-
 					//Creation and filling of resampling HRTF table
 					quasiUniformSphereDistribution.CreateGrid(t_HRTF_Resampled_partitioned, stepVector, resamplingStep);					
 					FillResampledTable();
@@ -207,12 +214,14 @@ namespace BRTServices
 		// * @brief Fill vector with the list of orientations of the T_HRTF_DataBase table
 		//*/
 		//void CalculateListOfOrientations_T_HRTF_DataBase() {
+		//	t_HRTF_DataBase_ListOfOrientations.clear();
 		//	t_HRTF_DataBase_ListOfOrientations.reserve(t_HRTF_DataBase.size());
 		//	for (auto& kv : t_HRTF_DataBase)
 		//	{
 		//		t_HRTF_DataBase_ListOfOrientations.push_back(kv.first);
 		//	}
 		//}
+
 
 		/** \brief Switch on ITD customization in accordance with the listener head radius
 		*   \eh Nothing is reported to the error handler.
@@ -614,6 +623,9 @@ namespace BRTServices
 
 
 	private:
+		
+		enum TExtrapolationMethod { zeroInsertion, nearestPoint};		
+
 		///////////////
 		// ATTRIBUTES
 		///////////////		
@@ -625,7 +637,7 @@ namespace BRTServices
 		float headRadius;								// Head radius of listener 
 		Common::CVector3 leftEarLocalPosition;			// Listener left ear relative position
 		Common::CVector3 rightEarLocalPosition;			// Listener right ear relative position
-
+		TExtrapolationMethod extrapolationMethod;		// Methods that is going to be used to extrapolate
 
 		float sphereBorder;								// Define spheere "sewing"
 		float epsilon_sewing;
@@ -663,15 +675,19 @@ namespace BRTServices
 
 		Common::CGlobalParameters globalParameters;
 
-
+		// Processors
 		CQuasiUniformSphereDistribution quasiUniformSphereDistribution;
 		CDistanceBasedInterpolator distanceBasedInterpolator;
 		CQuadrantBasedInterpolator quadrantBasedInterpolator;
 		//CMidPointOnlineInterpolator midPointOnlineInterpolator;
 		CSlopesMethodOnlineInterpolator slopesMethodOnlineInterpolator;
 		CPreporcessor preprocessor;
+		CExtrapolation extrapolation;		
 
 		friend class CHRTFTester;
+		
+		
+		
 		/////////////
 		// METHODS
 		/////////////
@@ -1044,7 +1060,7 @@ namespace BRTServices
 		/// <param name="newAzimuth"></param>
 		/// <param name="newElevation"></param>
 		/// <returns>interpolatedHRIRs: true if the HRIR has been calculated using the interpolation</returns>
-		bool CalculateAndEmplaceNewPartitionedHRIR(float _azimuth, float _elevation) {
+		bool CalculateAndEmplaceNewPartitionedHRIR(double _azimuth, double _elevation) {
 			THRIRStruct interpolatedHRIR;
 			bool bHRIRInterpolated = false;
 
@@ -1162,6 +1178,40 @@ namespace BRTServices
 			float ITD = _headRadius * (_interauralAzimuth + std::sin(_interauralAzimuth)) / globalParameters.GetSoundSpeed(); //_azimuth in radians!
 			return 0;// ITD;
 		}
+				
+		
+		// ETRAPOLATION
+
+		void SetExtrapolationMethod(std::string _extrapolationMethod) {
+		
+			if (_extrapolationMethod == EXTRAPOLATION_METHOD_ZEROINSERTION_STRING) {
+				extrapolationMethod = TExtrapolationMethod::zeroInsertion;
+			}
+			else if (_extrapolationMethod == EXTRAPOLATION_METHOD_NEARESTPOINT_STRING) {
+				extrapolationMethod = TExtrapolationMethod::nearestPoint;
+			}
+			else {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Extrapolation Method not identified.");
+				extrapolationMethod = TExtrapolationMethod::nearestPoint;
+			}
+
+		}
+
+		void CalculateExtrapolation() {
+			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.
+			
+			if (extrapolationMethod == TExtrapolationMethod::zeroInsertion) {
+				extrapolation.ProcessZeroInsertionBasedExtrapolation(t_HRTF_DataBase, DEFAULT_EXTRAPOLATION_STEP);
+			}
+			else if (extrapolationMethod == TExtrapolationMethod::nearestPoint) {
+				extrapolation.ProcessNearestPointBasedExtrapolation(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, DEFAULT_EXTRAPOLATION_STEP);
+			}
+			else {
+				SET_RESULT(RESULT_ERROR_NOTSET, "Extrapolation Method not set up.");
+				// Do nothing
+			}									
+		}
+
 				
 		
 

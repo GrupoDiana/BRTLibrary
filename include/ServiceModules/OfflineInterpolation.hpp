@@ -31,15 +31,59 @@
 
 namespace BRTServices
 {
+	/**
+	 * @brief Base class for offline interpolators
+	*/
 	class COfflineInterpolatorInterface {
 	public:		
-		virtual THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, std::vector<orientation>& listToSort, float newAzimuth, float newElevation, int HRIRLength, int pole) = 0;
+		
+		virtual THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, std::vector<orientation>& listToSort, double newAzimuth, double newElevation, int HRIRLength, int pole) = 0;
+
+	protected:
+		/**
+		 * @brief Transform the orientation in order to move the orientation of interest to 180 degrees
+		 * @param azimuthOrientationOfInterest 
+		 * @param originalAzimuth 
+		 * @return transformed azimuth	
+		*/
+		float TransformAzimuthToAvoidSewing(double azimuthOrientationOfInterest, double originalAzimuth)
+		{
+			float azimuth;
+			azimuth = originalAzimuth + 180 - azimuthOrientationOfInterest;
+
+			// Check limits (always return 0 instead of 360)
+			if (azimuth >= DEFAULT_MAX_AZIMUTH)
+				azimuth = std::fmod(azimuth, (float)360);
+
+			if (azimuth < DEFAULT_MIN_AZIMUTH)
+				azimuth = azimuth + 360;
+
+			return azimuth;
+		}
+		
+		/**
+		 * @brief Transform the orientation in order to express the elevation in the interval [-90,90]
+		 * @param elevationOrientationOfInterest 
+		 * @param originalElevation 
+		 * @return transformed elevation	
+		*/
+		float TransformElevationToAvoidSewing(double elevationOrientationOfInterest, double originalElevation)
+		{
+			if (originalElevation >= ELEVATION_SOUTH_POLE) {
+				originalElevation = originalElevation - 360;
+			}
+			return originalElevation;
+		}
 	};
 
+
+	/**
+	 * @brief Offline interpolation based on the search for the 3 closest points for each point to be interpolated.
+	*/
 	class CDistanceBasedInterpolator : COfflineInterpolatorInterface {
 	public:
 
-		THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, std::vector<orientation>& listToSort, float newAzimuth, float newElevation, int HRIRLength, int pole = 0)
+		THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, std::vector<orientation>& listToSort, double newAzimuth, double newElevation, int HRIRLength, int pole = 0)
 		{
 			THRIRStruct newHRIR;
 			//// Get a list sorted by distances to the orientation of interest
@@ -77,14 +121,14 @@ namespace BRTServices
 							}
 
 							//Azimuth and elevation transformation in order to get the barientric coordinates (due to we are working with a spehere not a plane)
-							float newAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth, newAzimuth);
-							float iAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth, mygroup[i].azimuth);
-							float jAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth, mygroup[j].azimuth);
-							float kAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth, mygroup[k].azimuth);
-							float newElevationTransformed = CHRTFAuxiliarMethods::TransformElevationToAvoidSewing(newElevation, newElevation);
-							float iElevationTransformed = CHRTFAuxiliarMethods::TransformElevationToAvoidSewing(newElevation, mygroup[i].elevation);
-							float jElevationTransformed = CHRTFAuxiliarMethods::TransformElevationToAvoidSewing(newElevation, mygroup[j].elevation);
-							float kElevationTransformed = CHRTFAuxiliarMethods::TransformElevationToAvoidSewing(newElevation, mygroup[k].elevation);
+							float newAzimuthTransformed = TransformAzimuthToAvoidSewing(newAzimuth, newAzimuth);
+							float iAzimuthTransformed	= TransformAzimuthToAvoidSewing(newAzimuth, mygroup[i].azimuth);
+							float jAzimuthTransformed	= TransformAzimuthToAvoidSewing(newAzimuth, mygroup[j].azimuth);
+							float kAzimuthTransformed	= TransformAzimuthToAvoidSewing(newAzimuth, mygroup[k].azimuth);
+							float newElevationTransformed = TransformElevationToAvoidSewing(newElevation, newElevation);
+							float iElevationTransformed = TransformElevationToAvoidSewing(newElevation, mygroup[i].elevation);
+							float jElevationTransformed = TransformElevationToAvoidSewing(newElevation, mygroup[j].elevation);
+							float kElevationTransformed = TransformElevationToAvoidSewing(newElevation, mygroup[k].elevation);
 
 							barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(newAzimuthTransformed, newElevationTransformed, iAzimuthTransformed, iElevationTransformed, jAzimuthTransformed, jElevationTransformed, kAzimuthTransformed, kElevationTransformed);
 
@@ -155,10 +199,13 @@ namespace BRTServices
 		}
 	};
 
+	/**
+	 * @brief Offline interpolation based on quadrant method
+	*/
 	class CQuadrantBasedInterpolator : COfflineInterpolatorInterface {
 	public:
 
-		THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, std::vector<orientation>& listToSort, float newAzimuth, float newElevation, int HRIRLength, int pole = 0)
+		THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, std::vector<orientation>& listToSort, double newAzimuth, double newElevation, int HRIRLength, int pole = 0)
 		{
 			std::vector<orientation> azimuthBackList, azimuthFrontList, backCeilList, backFloorList, frontCeilList, frontFloorList;
 			TBarycentricCoordinatesStruct barycentricCoordinates;
@@ -176,24 +223,24 @@ namespace BRTServices
 
 
 			// Now each list will be sort by distance to the orientation of interest
-			std::vector<T_PairDistanceOrientation> backCeilListSortedByDistance = GetSortedDistancesList(backCeilList, newAzimuth, newElevation);
-			std::vector<T_PairDistanceOrientation> backFloorListSortedByDistance = GetSortedDistancesList(backFloorList, newAzimuth, newElevation);
-			std::vector<T_PairDistanceOrientation> frontCeilListSortedByDistance = GetSortedDistancesList(frontCeilList, newAzimuth, newElevation);
-			std::vector<T_PairDistanceOrientation> frontFloorlListSortedByDistance = GetSortedDistancesList(frontFloorList, newAzimuth, newElevation);
+			std::vector<T_PairDistanceOrientation> backCeilListSortedByDistance = CHRTFAuxiliarMethods::GetListOrderedDistancesToPoint(backCeilList, newAzimuth, newElevation);
+			std::vector<T_PairDistanceOrientation> backFloorListSortedByDistance = CHRTFAuxiliarMethods::GetListOrderedDistancesToPoint(backFloorList, newAzimuth, newElevation);
+			std::vector<T_PairDistanceOrientation> frontCeilListSortedByDistance = CHRTFAuxiliarMethods::GetListOrderedDistancesToPoint(frontCeilList, newAzimuth, newElevation);
+			std::vector<T_PairDistanceOrientation> frontFloorlListSortedByDistance = CHRTFAuxiliarMethods::GetListOrderedDistancesToPoint(frontFloorList, newAzimuth, newElevation);
 
 			// Transform Azimuth and Elevation to avoid the sewing ////// First column is Distance, so Azimuth is 2nd and Elevation 3rd
 			// Azimuth
-			float newAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth, newAzimuth);
-			float backCeilAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth,	backCeilListSortedByDistance[0].second.azimuth);
-			float backFloorAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth,	backFloorListSortedByDistance[0].second.azimuth);
-			float frontCeilAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth,	frontCeilListSortedByDistance[0].second.azimuth);
-			float frontFloorAzimuthTransformed = CHRTFAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth, frontFloorlListSortedByDistance[0].second.azimuth);
+			float newAzimuthTransformed			= TransformAzimuthToAvoidSewing(newAzimuth, newAzimuth);
+			float backCeilAzimuthTransformed	= TransformAzimuthToAvoidSewing(newAzimuth,	backCeilListSortedByDistance[0].second.azimuth);
+			float backFloorAzimuthTransformed	= TransformAzimuthToAvoidSewing(newAzimuth,	backFloorListSortedByDistance[0].second.azimuth);
+			float frontCeilAzimuthTransformed	= TransformAzimuthToAvoidSewing(newAzimuth,	frontCeilListSortedByDistance[0].second.azimuth);
+			float frontFloorAzimuthTransformed	= TransformAzimuthToAvoidSewing(newAzimuth, frontFloorlListSortedByDistance[0].second.azimuth);
 			// Elevation
-			float newElevationTransformed = CHRTFAuxiliarMethods::TransformElevationToAvoidSewing(newElevation, newElevation);
-			float backCeilElevationTransformed = CHRTFAuxiliarMethods::TransformElevationToAvoidSewing(newElevation,		backCeilListSortedByDistance[0].second.elevation);
-			float backFloorElevationTransformed = CHRTFAuxiliarMethods::TransformElevationToAvoidSewing(newElevation,	backFloorListSortedByDistance[0].second.elevation);
-			float frontCeilElevationTransformed = CHRTFAuxiliarMethods::TransformElevationToAvoidSewing(newElevation,	frontCeilListSortedByDistance[0].second.elevation);
-			float frontFloorElevationTransformed = CHRTFAuxiliarMethods::TransformElevationToAvoidSewing(newElevation,	frontFloorlListSortedByDistance[0].second.elevation);
+			float newElevationTransformed		= TransformElevationToAvoidSewing(newElevation, newElevation);
+			float backCeilElevationTransformed	= TransformElevationToAvoidSewing(newElevation,		backCeilListSortedByDistance[0].second.elevation);
+			float backFloorElevationTransformed	= TransformElevationToAvoidSewing(newElevation,	backFloorListSortedByDistance[0].second.elevation);
+			float frontCeilElevationTransformed	= TransformElevationToAvoidSewing(newElevation,	frontCeilListSortedByDistance[0].second.elevation);
+			float frontFloorElevationTransformed= TransformElevationToAvoidSewing(newElevation,	frontFloorlListSortedByDistance[0].second.elevation);
 
 			// Calculate slopes to make the triangulation
 			float slopeDiagonalTrapezoid = std::abs(frontFloorElevationTransformed - backCeilElevationTransformed) / (frontFloorAzimuthTransformed - backCeilAzimuthTransformed);
@@ -235,7 +282,7 @@ namespace BRTServices
 
 	private:
 
-		void SortListByAzimuthAndSplit(float _newAzimuth, std::vector<orientation>& listToSort, std::vector<orientation>& _azimuthBackList, std::vector<orientation>& _azimuthFrontList)
+		void SortListByAzimuthAndSplit(double _newAzimuth, std::vector<orientation>& listToSort, std::vector<orientation>& _azimuthBackList, std::vector<orientation>& _azimuthFrontList)
 		{
 			// Sort List By Azimuth
 			if (listToSort.size() != 0) {
@@ -246,8 +293,7 @@ namespace BRTServices
 			}
 
 			// NEW SPLIT
-
-			float resta;
+			double azimuthDifference;
 
 			for (auto& it : listToSort)
 			{
@@ -257,16 +303,16 @@ namespace BRTServices
 				}
 				else
 				{
-					resta = it.azimuth - _newAzimuth;
-					if (resta > 0 && resta <= 180)
+					azimuthDifference = it.azimuth - _newAzimuth;
+					if (azimuthDifference > 0 && azimuthDifference <= 180)
 					{
 						_azimuthFrontList.push_back(it);
 					}
-					else if (resta < 0 && resta > -180)
+					else if (azimuthDifference < 0 && azimuthDifference > -180)
 					{
 						_azimuthBackList.push_back(it);
 					}
-					else if (resta > 0 && resta > 180)
+					else if (azimuthDifference > 0 && azimuthDifference > 180)
 					{
 						_azimuthBackList.push_back(it);
 					}
@@ -285,7 +331,7 @@ namespace BRTServices
 			//std::copy_if(listToSort.begin(), listToSort.end(), back_inserter(_azimuthFrontList), [_newAzimuth](orientation n) {return n.azimuth > _newAzimuth; });
 		}
 
-		void SortListByElevationAndSplit(float _newElevation, std::vector<orientation>& listToSort, std::vector<orientation>& ceilList, std::vector<orientation>& floorList)
+		void SortListByElevationAndSplit(double _newElevation, std::vector<orientation>& listToSort, std::vector<orientation>& ceilList, std::vector<orientation>& floorList)
 		{
 			// Sort List By Elevation
 			if (listToSort.size() != 0) {
@@ -295,7 +341,7 @@ namespace BRTServices
 				SET_RESULT(RESULT_WARNING, "Orientation list sorted by distances is empty");
 			}
 
-			float elevationFromListTransformed;
+			double elevationFromListTransformed;
 			for (auto& it : listToSort)
 			{
 				// Transform elevation to then range [-90, 90] in order to make the comparison
@@ -320,35 +366,35 @@ namespace BRTServices
 			//std::copy_if(listToSort.begin(), listToSort.end(), back_inserter(ceilList), [_newElevation](orientation n) {return n.elevation > _newElevation; });
 		}
 
-		std::vector<T_PairDistanceOrientation> GetSortedDistancesList(const std::vector<orientation>& listToSort, float _newAzimuth, float _newElevation)
-		{
+		//std::vector<T_PairDistanceOrientation> GetSortedDistancesList(const std::vector<orientation>& listToSort, double _newAzimuth, double _newElevation)
+		//{
 
-			T_PairDistanceOrientation temp;
-			float distance;
-			std::vector<T_PairDistanceOrientation> sortedList;
-			sortedList.reserve(listToSort.size());
+		//	T_PairDistanceOrientation temp;
+		//	float distance;
+		//	std::vector<T_PairDistanceOrientation> sortedList;
+		//	sortedList.reserve(listToSort.size());
 
-			// Algorithm to calculate the three shortest distances between the point (newAzimuth, newelevation) and all the points in the given list
-			for (auto it = listToSort.begin(); it != listToSort.end(); ++it)
-			{
-				distance = CHRTFAuxiliarMethods::CalculateDistance_HaversineFormula(_newAzimuth, _newElevation, it->azimuth, it->elevation);
+		//	// Algorithm to calculate the three shortest distances between the point (newAzimuth, newelevation) and all the points in the given list
+		//	for (auto it = listToSort.begin(); it != listToSort.end(); ++it)
+		//	{
+		//		distance = CHRTFAuxiliarMethods::CalculateDistance_HaversineFormula(_newAzimuth, _newElevation, it->azimuth, it->elevation);
 
-				temp.first = distance;
-				temp.second.azimuth = it->azimuth;
-				temp.second.elevation = it->elevation;
+		//		temp.first = distance;
+		//		temp.second.azimuth = it->azimuth;
+		//		temp.second.elevation = it->elevation;
 
-				sortedList.push_back(temp);
-			}
+		//		sortedList.push_back(temp);
+		//	}
 
-			if (sortedList.size() != 0) {
-				std::sort(sortedList.begin(), sortedList.end(), [](const T_PairDistanceOrientation& a, const T_PairDistanceOrientation& b) { return a.first < b.first; });
-			}
-			else {
-				SET_RESULT(RESULT_WARNING, "Orientation list sorted by distances is empty");
-			}
+		//	if (sortedList.size() != 0) {
+		//		std::sort(sortedList.begin(), sortedList.end(), [](const T_PairDistanceOrientation& a, const T_PairDistanceOrientation& b) { return a.first < b.first; });
+		//	}
+		//	else {
+		//		SET_RESULT(RESULT_WARNING, "Orientation list sorted by distances is empty");
+		//	}
 
-			return sortedList;
-		}
+		//	return sortedList;
+		//}
 
 		THRIRStruct DataInterpolation(const T_HRTFTable& table, TBarycentricCoordinatesStruct _barycentricCoordinates, int HRIRLength, float azimuthPnt1, float elevationPnt1, float azimuthPnt2, float elevationPnt2, float azimuthPnt3, float elevationPnt3)
 		{
