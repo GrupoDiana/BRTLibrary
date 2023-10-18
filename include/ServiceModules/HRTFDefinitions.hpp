@@ -91,6 +91,15 @@ namespace BRTServices {
 	*/
 	typedef std::unordered_map<orientation, BRTServices::THRIRStruct> T_HRTFTable;
 
+	struct CHRTFTable {
+		T_HRTFTable table;
+
+		BRTServices::THRIRStruct GetEmptyValue() {
+			THRIRStruct temp;
+			return temp;
+		}
+	};
+
 	/** \brief Type definition for the HRTF partitioned table used when UPConvolution is activated
 	*/
 	typedef std::unordered_map<orientation, THRIRPartitionedStruct> T_HRTFPartitionedTable;
@@ -453,6 +462,97 @@ namespace BRTServices {
 			else if (azimuth >= 360) { azimuth = azimuth - 360; }
 			return azimuth;
 		}
+
+		/// <summary>
+		/// Calculate HRIR and delay from a given set of orientations		
+		/// </summary>
+		/// <param name="_t_HRTF_DataBase"></param>
+		/// <param name="_HRIRLength"></param>
+		/// <param name="_hemisphereParts"></param>
+		/// <returns></returns>
+		struct CalculateHRIRFromHemisphereParts{
+			//static THRIRStruct CalculateHRIRFromHemisphereParts(T_HRTFTable& _t_HRTF_DataBase, int _HRIRLength, std::vector < std::vector <orientation>> _hemisphereParts) {
+			 THRIRStruct operator () (T_HRTFTable& _t_HRTF_DataBase, int _HRIRLength, std::vector < std::vector <orientation>> _hemisphereParts) {
+
+				THRIRStruct calculatedHRIR;
+
+				//Calculate the delay and the HRIR of each hemisphere part
+				float totalDelay_left = 0.0f;
+				float totalDelay_right = 0.0f;
+
+				std::vector< THRIRStruct> newHRIR;
+				newHRIR.resize(_hemisphereParts.size());
+
+				for (int q = 0; q < _hemisphereParts.size(); q++)
+				{
+					newHRIR[q].leftHRIR.resize(_HRIRLength, 0.0f);
+					newHRIR[q].rightHRIR.resize(_HRIRLength, 0.0f);
+
+					float scaleFactor;
+					if (_hemisphereParts[q].size())
+					{
+						scaleFactor = 1.0f / _hemisphereParts[q].size();
+					}
+					else
+					{
+						scaleFactor = 0.0f;
+					}
+
+					for (auto it = _hemisphereParts[q].begin(); it != _hemisphereParts[q].end(); it++)
+					{
+						auto itHRIR = _t_HRTF_DataBase.find(orientation(it->azimuth, it->elevation));
+
+						//Get the delay
+						newHRIR[q].leftDelay = (newHRIR[q].leftDelay + itHRIR->second.leftDelay);
+						newHRIR[q].rightDelay = (newHRIR[q].rightDelay + itHRIR->second.rightDelay);
+
+						//Get the HRIR
+						for (int i = 0; i < _HRIRLength; i++) {
+							newHRIR[q].leftHRIR[i] = (newHRIR[q].leftHRIR[i] + itHRIR->second.leftHRIR[i]);
+							newHRIR[q].rightHRIR[i] = (newHRIR[q].rightHRIR[i] + itHRIR->second.rightHRIR[i]);
+						}
+					}//END loop hemisphere part
+
+					 //Multiply by the factor (weighted sum)
+					 //Delay 
+					totalDelay_left = totalDelay_left + (scaleFactor * newHRIR[q].leftDelay);
+					totalDelay_right = totalDelay_right + (scaleFactor * newHRIR[q].rightDelay);
+					//HRIR
+					for (int i = 0; i < _HRIRLength; i++)
+					{
+						newHRIR[q].leftHRIR[i] = newHRIR[q].leftHRIR[i] * scaleFactor;
+						newHRIR[q].rightHRIR[i] = newHRIR[q].rightHRIR[i] * scaleFactor;
+					}
+				}
+
+				//Get the FINAL values
+				float scaleFactor_final = 1.0f / _hemisphereParts.size();
+
+				//Calculate Final delay
+				calculatedHRIR.leftDelay = static_cast <unsigned long> (round(scaleFactor_final * totalDelay_left));
+				calculatedHRIR.rightDelay = static_cast <unsigned long> (round(scaleFactor_final * totalDelay_right));
+
+				//calculate Final HRIR
+				calculatedHRIR.leftHRIR.resize(_HRIRLength, 0.0f);
+				calculatedHRIR.rightHRIR.resize(_HRIRLength, 0.0f);
+
+				for (int i = 0; i < _HRIRLength; i++)
+				{
+					for (int q = 0; q < _hemisphereParts.size(); q++)
+					{
+						calculatedHRIR.leftHRIR[i] = calculatedHRIR.leftHRIR[i] + newHRIR[q].leftHRIR[i];
+						calculatedHRIR.rightHRIR[i] = calculatedHRIR.rightHRIR[i] + newHRIR[q].rightHRIR[i];
+					}
+				}
+				for (int i = 0; i < _HRIRLength; i++)
+				{
+					calculatedHRIR.leftHRIR[i] = calculatedHRIR.leftHRIR[i] * scaleFactor_final;
+					calculatedHRIR.rightHRIR[i] = calculatedHRIR.rightHRIR[i] * scaleFactor_final;
+				}
+
+				return calculatedHRIR;
+		}
+		};
 	};
 }
 #endif

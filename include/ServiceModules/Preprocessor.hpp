@@ -43,10 +43,12 @@ namespace BRTServices
 		{}
 
 		//	Fill out the HRTF for every azimuth and two specific elevations: 90 and 270 degrees	
-		template<typename T>
-		void CalculateHRIR_InPoles(T& _t_TF_DataBase, int _TFlength, int _resamplingStep)
+		template<typename T, typename U, typename Functor>
+		void CalculateHRIR_InPoles(T& _t_TF_DataBase, int _TFlength, int _resamplingStep, Functor f)
 		{
-			THRIRStruct precalculatedTF_270, precalculatedTF_90;
+			//auto precalculatedTF_270 = _t_TF_DataBase.GetEmptyValue();
+			//auto precalculatedTF_90 = _t_TF_DataBase.GetEmptyValue();
+			U precalculatedTF_270, precalculatedTF_90;
 			bool found = false;
 			//Clasify every HRIR of the HRTF into the two hemispheres by their t_HRTF_DataBase_ListOfOrientations
 			std::vector<orientation> keys_southernHemisphere, keys_northenHemisphere;
@@ -74,7 +76,7 @@ namespace BRTServices
 				struct { bool operator()(orientation a, orientation b) const { return a.elevation > b.elevation; } } customLess;
 				std::sort(keys_northenHemisphere.begin(), keys_northenHemisphere.end(), customLess);
 
-				precalculatedTF_90 = CalculateTF_InOneHemispherePole(_t_TF_DataBase, _TFlength, keys_northenHemisphere);
+				precalculatedTF_90 = CalculateTF_InOneHemispherePole<T, U, Functor>(_t_TF_DataBase, _TFlength, keys_northenHemisphere, f);
 
 				SET_RESULT(RESULT_WARNING, "Transfer Function interpolated in the pole [ " + std::to_string(iAzimuthPoles) + ", " + std::to_string(iElevationNorthPole) + "]");
 			}
@@ -99,7 +101,7 @@ namespace BRTServices
 				} customLess;
 				std::sort(keys_southernHemisphere.begin(), keys_southernHemisphere.end(), customLess);
 
-				precalculatedTF_270 = CalculateTF_InOneHemispherePole(_t_TF_DataBase, _TFlength, keys_southernHemisphere);
+				precalculatedTF_270 = CalculateTF_InOneHemispherePole<T,U, Functor>(_t_TF_DataBase, _TFlength, keys_southernHemisphere, f);
 
 				SET_RESULT(RESULT_WARNING, "Transfer Function interpolated in the pole [ " + std::to_string(iAzimuthPoles) + ", " + std::to_string(iElevationSouthPole) + "]");
 			}
@@ -115,10 +117,10 @@ namespace BRTServices
 
 		//	Calculate the HRIR in the pole of one of the hemispheres
 		//param hemisphereParts	vector of the HRTF t_HRTF_DataBase_ListOfOrientations of the hemisphere		
-		template<typename T>
-		THRIRStruct CalculateTF_InOneHemispherePole(T& _t_TF_DataBase, int _TFlength, std::vector<orientation> keys_hemisphere)
+		template<typename T, typename U, typename Functor>
+		U CalculateTF_InOneHemispherePole(T& _t_TF_DataBase, int _TFlength, std::vector<orientation> keys_hemisphere, Functor f)
 		{
-			THRIRStruct calculatedHRIR;
+			U calculatedHRIR;
 			std::vector < std::vector <orientation>> hemisphereParts;
 			hemisphereParts.resize(NUMBER_OF_PARTS);
 			int border = std::ceil(SPHERE_BORDER / NUMBER_OF_PARTS);
@@ -172,7 +174,8 @@ namespace BRTServices
 				}// END else of 'if(it.elevation == currentElevation)'
 			}//END loop keys_hemisphere
 
-			calculatedHRIR = CalculateHRIRFromHemisphereParts(_t_TF_DataBase, _TFlength, hemisphereParts);
+			//calculatedHRIR = CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts(_t_TF_DataBase, _TFlength, hemisphereParts);
+			calculatedHRIR = f(_t_TF_DataBase, _TFlength, hemisphereParts);
 
 			// //Calculate the delay and the HRIR of each hemisphere part
 			//float totalDelay_left = 0.0f;
@@ -255,94 +258,7 @@ namespace BRTServices
 		// HRTF specific methods
 		//////////////////////////////////////////////////////////////////////////////
 
-		/// <summary>
-		/// Calculate HRIR and delay from a given set of orientations		
-		/// </summary>
-		/// <param name="_t_HRTF_DataBase"></param>
-		/// <param name="_HRIRLength"></param>
-		/// <param name="_hemisphereParts"></param>
-		/// <returns></returns>
-
-		THRIRStruct CalculateHRIRFromHemisphereParts(T_HRTFTable& _t_HRTF_DataBase, int _HRIRLength, std::vector < std::vector <orientation>> _hemisphereParts) {
-
-			THRIRStruct calculatedHRIR;
-			
-			//Calculate the delay and the HRIR of each hemisphere part
-			float totalDelay_left = 0.0f;
-			float totalDelay_right = 0.0f;
-
-			std::vector< THRIRStruct> newHRIR;
-			newHRIR.resize(_hemisphereParts.size());
-
-			for (int q = 0; q < _hemisphereParts.size(); q++)
-			{
-				newHRIR[q].leftHRIR.resize(_HRIRLength, 0.0f);
-				newHRIR[q].rightHRIR.resize(_HRIRLength, 0.0f);
-
-				float scaleFactor;
-				if (_hemisphereParts[q].size())
-				{
-					scaleFactor = 1.0f / _hemisphereParts[q].size();
-				}
-				else
-				{
-					scaleFactor = 0.0f;
-				}
-
-				for (auto it = _hemisphereParts[q].begin(); it != _hemisphereParts[q].end(); it++)
-				{
-					auto itHRIR = _t_HRTF_DataBase.find(orientation(it->azimuth, it->elevation));
-
-					//Get the delay
-					newHRIR[q].leftDelay = (newHRIR[q].leftDelay + itHRIR->second.leftDelay);
-					newHRIR[q].rightDelay = (newHRIR[q].rightDelay + itHRIR->second.rightDelay);
-
-					//Get the HRIR
-					for (int i = 0; i < _HRIRLength; i++) {
-						newHRIR[q].leftHRIR[i] = (newHRIR[q].leftHRIR[i] + itHRIR->second.leftHRIR[i]);
-						newHRIR[q].rightHRIR[i] = (newHRIR[q].rightHRIR[i] + itHRIR->second.rightHRIR[i]);
-					}
-				}//END loop hemisphere part
-
-				 //Multiply by the factor (weighted sum)
-				 //Delay 
-				totalDelay_left = totalDelay_left + (scaleFactor * newHRIR[q].leftDelay);
-				totalDelay_right = totalDelay_right + (scaleFactor * newHRIR[q].rightDelay);
-				//HRIR
-				for (int i = 0; i < _HRIRLength; i++)
-				{
-					newHRIR[q].leftHRIR[i] = newHRIR[q].leftHRIR[i] * scaleFactor;
-					newHRIR[q].rightHRIR[i] = newHRIR[q].rightHRIR[i] * scaleFactor;
-				}
-			}
-
-			//Get the FINAL values
-			float scaleFactor_final = 1.0f / _hemisphereParts.size();
-
-			//Calculate Final delay
-			calculatedHRIR.leftDelay = static_cast <unsigned long> (round(scaleFactor_final * totalDelay_left));
-			calculatedHRIR.rightDelay = static_cast <unsigned long> (round(scaleFactor_final * totalDelay_right));
-
-			//calculate Final HRIR
-			calculatedHRIR.leftHRIR.resize(_HRIRLength, 0.0f);
-			calculatedHRIR.rightHRIR.resize(_HRIRLength, 0.0f);
-
-			for (int i = 0; i < _HRIRLength; i++)
-			{
-				for (int q = 0; q < _hemisphereParts.size(); q++)
-				{
-					calculatedHRIR.leftHRIR[i] = calculatedHRIR.leftHRIR[i] + newHRIR[q].leftHRIR[i];
-					calculatedHRIR.rightHRIR[i] = calculatedHRIR.rightHRIR[i] + newHRIR[q].rightHRIR[i];
-				}
-			}
-			for (int i = 0; i < _HRIRLength; i++)
-			{
-				calculatedHRIR.leftHRIR[i] = calculatedHRIR.leftHRIR[i] * scaleFactor_final;
-				calculatedHRIR.rightHRIR[i] = calculatedHRIR.rightHRIR[i] * scaleFactor_final;
-			}
-
-			return calculatedHRIR;
-		}
+		
 
 		/// <summary>
 		/// Get HRIR of azimith 0 and emplace again with azimuth 360 in the HRTF database table for every elevations
