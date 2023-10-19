@@ -74,7 +74,7 @@ namespace BRTProcessing {
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
 			
 			//if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
-				if (command.GetCommand() == "/listener/enableNearFiedlEffect") {
+				if (command.GetCommand() == "/listener/enableNearFieldEffect") {
 					if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
 					else { DisableNearFieldEffect(); }
 				}
