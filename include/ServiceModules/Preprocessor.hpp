@@ -27,6 +27,7 @@
 #include <unordered_map>
 #include <vector>
 #include <ServiceModules/HRTFDefinitions.hpp>
+#include <ServiceModules/OfflineInterpolation.hpp>
 
 
 namespace BRTServices
@@ -34,10 +35,10 @@ namespace BRTServices
 	/**
 	 * @brief Base class for extrapolation processors
 	*/
-	class CPreporcessor {
+	class CPreprocessor {
 	public:
 
-		CPreporcessor()
+		CPreprocessor()
 			:resamplingStep{DEFAULT_RESAMPLING_STEP}, gapThreshold{DEFAULT_GAP_THRESHOLD}, HRTFLoaded{ false }, setupInProgress{ false },
 			epsilon_sewing{ EPSILON_SEWING }
 		{}
@@ -46,8 +47,6 @@ namespace BRTServices
 		template<typename T, typename U, typename Functor>
 		void CalculateHRIR_InPoles(T& _t_TF_DataBase, int _TFlength, int _resamplingStep, Functor f)
 		{
-			//auto precalculatedTF_270 = _t_TF_DataBase.GetEmptyValue();
-			//auto precalculatedTF_90 = _t_TF_DataBase.GetEmptyValue();
 			U precalculatedTF_270, precalculatedTF_90;
 			bool found = false;
 			//Clasify every HRIR of the HRTF into the two hemispheres by their t_HRTF_DataBase_ListOfOrientations
