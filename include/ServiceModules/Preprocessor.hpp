@@ -263,18 +263,19 @@ namespace BRTServices
 		/// Get HRIR of azimith 0 and emplace again with azimuth 360 in the HRTF database table for every elevations
 		/// </summary>
 		/// <param name="_resamplingStep"></param>
-		void FillOutTableOfAzimuth360(T_HRTFTable& _t_TF_DataBase, int _resamplingStep) {
+		template <typename T>
+		void FillOutTableInAzimuth360(T& _t_TF_DataBase, int _resamplingStep) {
 
 			int iElevationNorthPole = CHRTFAuxiliarMethods::GetPoleElevation(TPole::north);
 			int iElevationSouthPole = CHRTFAuxiliarMethods::GetPoleElevation(TPole::south);
 
 			for (int el = DEFAULT_MIN_ELEVATION; el <= iElevationNorthPole; el = el + _resamplingStep)
 			{
-				GetAndEmplaceHRIRinAzimuth360(_t_TF_DataBase, el);
+				GetAndEmplaceTF_inAzimuth360(_t_TF_DataBase, el);
 			}
 			for (int el = iElevationSouthPole; el < DEFAULT_MAX_ELEVATION; el = el + _resamplingStep)
 			{
-				GetAndEmplaceHRIRinAzimuth360(_t_TF_DataBase, el);
+				GetAndEmplaceTF_inAzimuth360(_t_TF_DataBase, el);
 			}
 		}
 
@@ -282,10 +283,11 @@ namespace BRTServices
 		/// Get HRIR of azimith 0 and emplace again with azimuth 360 in the HRTF database table for an specific elevation
 		/// </summary>
 		/// <param name="_elevation"></param>
-		void GetAndEmplaceHRIRinAzimuth360(T_HRTFTable& _t_TF_DataBase, float _elevation) {
+		template <typename T>
+		void GetAndEmplaceTF_inAzimuth360(T& _t_TF_DataBase, float _elevation) {
 			auto it = _t_TF_DataBase.find(orientation(DEFAULT_MIN_AZIMUTH, _elevation));
 			if (it != _t_TF_DataBase.end()) {
-				_t_TF_DataBase.emplace(orientation(DEFAULT_MIN_AZIMUTH, _elevation), it->second);
+				_t_TF_DataBase.emplace(orientation(DEFAULT_MAX_AZIMUTH, _elevation), it->second);
 			}
 		}
 
@@ -294,7 +296,8 @@ namespace BRTServices
 		/// </summary>
 		/// <param name="_gapThreshold"></param>
 		/// <param name="_resamplingStep"></param>
-		void FillSphericalCap_HRTF(T_HRTFTable& _t_TF_DataBase, int _TFlength, int _gapThreshold, int _resamplingStep)
+		template <typename T>
+		void FillSphericalCap_HRTF(T& _t_TF_DataBase, int _TFlength, int _gapThreshold, int _resamplingStep)
 		{
 			// Initialize some variables
 			float max_dist_elev = 0;
@@ -366,12 +369,13 @@ namespace BRTServices
 		/// <param name="_hemisphere"></param>
 		/// <param name="elevationLastRing"></param>
 		/// <param name="_fillStep"></param>
-		void Calculate_and_EmplaceHRIR(T_HRTFTable& _t_HRTF_DataBase,int _HRIRLength, int _pole, std::vector<orientation> _hemisphere, float _elevationLastRing, int _fillStep)
+		template <typename T>
+		void Calculate_and_EmplaceHRIR(T& _t_Table,int _HRIRLength, int _pole, std::vector<orientation> _hemisphere, float _elevationLastRing, int _fillStep)
 		{
 			std::vector<orientation> lastRingOrientationList;
 			std::vector<T_PairDistanceOrientation> sortedList;
 			int azimuth_Step = _fillStep;
-			THRIRStruct HRIR_interpolated;
+			//THRIRStruct HRIR_interpolated;
 
 			// Get a list with only the points of the nearest known ring
 			for (auto& itr : _hemisphere)
@@ -389,8 +393,8 @@ namespace BRTServices
 					for (float azim = DEFAULT_MIN_AZIMUTH; azim < DEFAULT_MAX_AZIMUTH; azim = azim + azimuth_Step)
 					{
 						//sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
-						HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod (_t_HRTF_DataBase, lastRingOrientationList, azim, elevat, _HRIRLength, _pole);
-						_t_HRTF_DataBase.emplace(orientation(azim, elevat), HRIR_interpolated);
+						auto HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod (_t_Table, lastRingOrientationList, azim, elevat, _HRIRLength, _pole);
+						_t_Table.emplace(orientation(azim, elevat), HRIR_interpolated);
 					}
 				}
 			}	// NORTH HEMISPHERE
@@ -401,8 +405,8 @@ namespace BRTServices
 					for (float azim = DEFAULT_MIN_AZIMUTH; azim < DEFAULT_MAX_AZIMUTH; azim = azim + azimuth_Step)
 					{
 						//sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
-						HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod(_t_HRTF_DataBase, lastRingOrientationList, azim, elevat, _HRIRLength, _pole);
-						_t_HRTF_DataBase.emplace(orientation(azim, elevat), HRIR_interpolated);
+						auto HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod(_t_Table, lastRingOrientationList, azim, elevat, _HRIRLength, _pole);
+						_t_Table.emplace(orientation(azim, elevat), HRIR_interpolated);
 					}
 				}
 			}

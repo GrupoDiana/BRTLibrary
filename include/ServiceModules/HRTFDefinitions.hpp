@@ -545,6 +545,39 @@ namespace BRTServices {
 				return calculatedHRIR;
 		}
 		};
+
+		///// <summary>
+		/////  		
+		///// </summary>
+		///// <param name="_t_HRTF_DataBase"></param>
+		///// <param name="_HRIRLength"></param>
+		///// <param name="_hemisphereParts"></param>
+		///// <returns></returns>
+		//struct CalculateHRIRFromBarycentrics_OfflineInterpolation {
+
+		//	BRTServices::THRIRStruct operator () (T_HRTFTable& _t_HRTF_DataBase, int _HRIRLength, std::vector < std::vector <orientation>> _hemisphereParts) {
+
+		//		BRTServices::THRIRStruct calculatedHRIR;
+		//		////FIXME!!! another way to initialize?
+		//		//newHRIR = it0->second;
+		//		////END FIXME
+
+		//		//for (int i = 0; i < HRIRLength; i++) {
+		//		//	newHRIR.leftHRIR[i] = barycentricCoordinates.alpha * it0->second.leftHRIR[i] + barycentricCoordinates.beta * it1->second.leftHRIR[i] + barycentricCoordinates.gamma * it2->second.leftHRIR[i];
+		//		//	newHRIR.rightHRIR[i] = barycentricCoordinates.alpha * it0->second.rightHRIR[i] + barycentricCoordinates.beta * it1->second.rightHRIR[i] + barycentricCoordinates.gamma * it2->second.rightHRIR[i];
+		//		//}
+
+		//		//// Calculate delay
+		//		//newHRIR.leftDelay = barycentricCoordinates.alpha * it0->second.leftDelay + barycentricCoordinates.beta * it1->second.leftDelay + barycentricCoordinates.gamma * it2->second.leftDelay;
+		//		//newHRIR.rightDelay = barycentricCoordinates.alpha * it0->second.rightDelay + barycentricCoordinates.beta * it1->second.rightDelay + barycentricCoordinates.gamma * it2->second.rightDelay;
+		//		////SET_RESULT(RESULT_OK, "HRIR calculated with interpolation method succesfully");
+		//		//return newHRIR;
+
+		//		return calculatedHRIR;
+		//	}
+		//};
+
+		
 	};
 }
 #endif
