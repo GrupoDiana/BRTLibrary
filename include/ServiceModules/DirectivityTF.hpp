@@ -98,17 +98,18 @@ namespace BRTServices
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
-		void BeginSetup(int32_t directivityTFPartLength){
+		void BeginSetup(int32_t _directivityTFPartLength){
 			//Update parameters			
 			eleNorth = GetPoleElevation(TPole::north);
 			eleSouth = GetPoleElevation(TPole::south);
 
-			if (directivityTFPartLength != globalParameters.GetBufferSize()) //
+			if (_directivityTFPartLength != globalParameters.GetBufferSize()) //
 			{
 				SET_RESULT(RESULT_ERROR_BADSIZE, "Number of frequency samples (N) in SOFA file is different from Buffer Size");
 			}
 
-			directivityTF_length = 4.0 * directivityTFPartLength; //directivityTF will store the Real and Img parts interlaced
+			directivityTFPart_length = _directivityTFPartLength;
+			directivityTF_length = 4.0 * _directivityTFPartLength; //directivityTF will store the Real and Img parts interlaced
 			directivityTF_numberOfSubfilters = 1;
 
 			//Clear every table			
@@ -132,7 +133,7 @@ namespace BRTServices
 				if (!t_DirectivityTF_DataBase.empty())
 				{
 					//DirectivityTF Resampling methdos
-					preprocessor.CalculateHRIR_InPoles<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, directivityTF_length, resamplingStep, CDirectivityTFAuxiliarMethods::CalculateDirectivityTFFromHemisphereParts());
+					preprocessor.CalculateTF_InPoles<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, directivityTFPart_length, resamplingStep, CDirectivityTFAuxiliarMethods::CalculateDirectivityTFFromHemisphereParts());
 					//FillOutTableOfAzimuth360(resamplingStep);
 					//FillSphericalCap_HRTF(gapThreshold, resamplingStep);
 					CalculateResampled_DirectivityTFTable(resamplingStep);
@@ -454,6 +455,7 @@ namespace BRTServices
 		bool directivityTFloaded;
 		bool setupDirectivityTFInProgress;
 		int32_t directivityTF_length;	
+		int32_t directivityTFPart_length;
 		int32_t directivityTF_numberOfSubfilters;	
 		
 		T_DirectivityTFTable					t_DirectivityTF_DataBase;

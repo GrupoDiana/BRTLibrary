@@ -45,7 +45,7 @@ namespace BRTServices
 
 		//	Fill out the HRTF for every azimuth and two specific elevations: 90 and 270 degrees	
 		template<typename T, typename U, typename Functor>
-		void CalculateHRIR_InPoles(T& _t_TF_DataBase, int _TFlength, int _resamplingStep, Functor f)
+		void CalculateTF_InPoles(T& _t_TF_DataBase, int _TFlength, int _resamplingStep, Functor f)
 		{
 			U precalculatedTF_270, precalculatedTF_90;
 			bool found = false;

@@ -154,7 +154,7 @@ namespace BRTServices
 			if (setupInProgress) {				
 				_azimuth = CHRTFAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
 				_elevation = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);				
-				Common::CVector3 cartessianPos;
+				//Common::CVector3 cartessianPos;
 				//cartessianPos.SetFromAED(_azimuth, _elevation, GetHRTFDistanceOfMeasurement());
 				//auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), std::forward<THRIRStruct>(newHRIR));
 				auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation), std::forward<THRIRStruct>(newHRIR));
@@ -181,7 +181,7 @@ namespace BRTServices
 					CalculateExtrapolation();							// Make the extrapolation if it's needed
 					// Preparation of table read from sofa file
 					//preprocessor.CalculateHRIR_InPoles(t_HRTF_DataBase, HRIRLength, resamplingStep);
-					preprocessor.CalculateHRIR_InPoles<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, HRIRLength, resamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts());
+					preprocessor.CalculateTF_InPoles<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, HRIRLength, resamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts());
 					//CalculateHRIR_InPoles(resamplingStep);
 					preprocessor.FillOutTableOfAzimuth360(t_HRTF_DataBase, resamplingStep);
 					//FillOutTableOfAzimuth360(resamplingStep);
