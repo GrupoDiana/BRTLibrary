@@ -625,8 +625,7 @@ namespace BRTServices
 
 	private:
 		
-		enum TExtrapolationMethod { zeroInsertion, nearestPoint};		
-
+		enum TExtrapolationMethod { zeroInsertion, nearestPoint };
 		///////////////
 		// ATTRIBUTES
 		///////////////		
@@ -1206,10 +1205,10 @@ namespace BRTServices
 			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.
 			
 			if (extrapolationMethod == TExtrapolationMethod::zeroInsertion) {
-				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetZerosHRIR());
+				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, HRIRLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetZerosHRIR());
 			}
 			else if (extrapolationMethod == TExtrapolationMethod::nearestPoint) {
-				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetNearestPointHRIR());
+				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, HRIRLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetNearestPointHRIR());
 			}
 			else {
 				SET_RESULT(RESULT_ERROR_NOTSET, "Extrapolation Method not set up.");

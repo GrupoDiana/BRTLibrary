@@ -136,7 +136,7 @@ namespace BRTServices {
 		virtual ~CServicesBase() {}		
 		
 		virtual void BeginSetup() {}
-		virtual void BeginSetup(int32_t _DirectivityTFLength) {}
+		virtual void BeginSetup(int32_t _DirectivityTFLength, std::string extrapolationMethod) {}
 		virtual void BeginSetup(int32_t _HRIRLength, float _distance, std::string extrapolationMethod) {}
 		virtual bool EndSetup() = 0;
 

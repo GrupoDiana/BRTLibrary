@@ -95,9 +95,65 @@ namespace BRTServices
 				return calculatedDirectivityTF;
 			}
 		};
+	
+		/**
+		 * @brief Returns an DirectivityTF filled with zeros in all cases.
+		*/
+		struct GetZerosDirectivityTF {
+
+			/**
+			 * @brief Returns an Directivity TF filled with zeros in all cases.
+			 * @param table data table
+			 * @param orientations List Orientations of the data table. This data is not used
+			 * @param _azimuth This data is not used
+			 * @param _elevation This data is not used
+			 * @return TDirectivityTFStruct filled with zeros
+			*/
+			TDirectivityTFStruct operator() (const T_DirectivityTFTable& table, const std::vector<orientation>& orientationsList, int _DirectivityTFLength, double _azimuth, double _elevation) {
+				
+				TDirectivityTFStruct directivityTFZeros;								
+				directivityTFZeros.realPart.resize(_DirectivityTFLength, 0.0f);
+				directivityTFZeros.imagPart.resize(_DirectivityTFLength, 0.0f);
+				return directivityTFZeros;
+			}
+		};
+	
+		/**
+		 * @brief Given any point returns the DirectivityTF of the closest point to that point.
+		*/
+		struct GetNearestPointDirectivityTF {
+			/**
+			 * @brief Given any point returns the DirectivityTF of the closest point to that point.
+			 * @param table data table
+			 * @param orientationsList List Orientations of the data table
+			 * @param _azimuth point of interest azimuth
+			 * @param _elevation point of interest elevation
+			 * @return TDirectivityTFStruct filled with the nearest point data
+			*/
+			TDirectivityTFStruct operator() (const T_DirectivityTFTable& table, const std::vector<orientation>& orientationsList, int _DirectivityTFLength, double _azimuth, double _elevation) {
+				// Order list of orientation
+				std::vector<T_PairDistanceOrientation> pointsOrderedByDistance = CHRTFAuxiliarMethods::GetListOrderedDistancesToPoint(orientationsList, _azimuth, _elevation);
+				// Get nearest
+				double nearestAzimuth = pointsOrderedByDistance.begin()->second.azimuth;
+				double nearestElevation = pointsOrderedByDistance.begin()->second.elevation;
+				// Find nearest HRIR and copy
+				TDirectivityTFStruct nearestDirectivityTF;
+
+				auto it = table.find(orientation(nearestAzimuth, nearestElevation));
+				if (it != table.end()) {
+					nearestDirectivityTF = it->second;
+				}
+				else {
+					SET_RESULT(RESULT_WARNING, "No point close enough to make the extrapolation has been found, this must not happen.");
+						
+					nearestDirectivityTF.realPart.resize(_DirectivityTFLength, 0.0f);
+					nearestDirectivityTF.imagPart.resize(_DirectivityTFLength, 0.0f);
+				}
+
+				return nearestDirectivityTF;
+			}
+		};
 	};
 
 }
-
-
 #endif

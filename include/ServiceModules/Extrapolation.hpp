@@ -47,12 +47,12 @@ namespace BRTServices
 		 * @param f Structure containing an operator () function that calculates the extrapolation for a point.
 		*/
 		template <typename T, typename U, typename Functor>
-		void Process(T& table, const std::vector<orientation>& orientationsList, int extrapolationStep, Functor f) {
+		void Process(T& table, const std::vector<orientation>& orientationsList, int _TFSize, int extrapolationStep, Functor f) {
 			// Look for gaps and their borders
 			TAzimuthElevationBorders borders;
 			TGapsFound gapsFound = AreGapsInIRGrid(table, borders);
 			
-			FillGaps<T, U>(table, orientationsList, extrapolationStep, gapsFound, borders, f);
+			FillGaps<T, U>(table, orientationsList, _TFSize, extrapolationStep, gapsFound, borders, f);
 		};
 		
 
@@ -100,7 +100,8 @@ namespace BRTServices
 		 * @param _borders Borders of gaps found, if found at all
 		 * @return Set of booleans indicating whether a gap has been found and which one.
 		*/
-		TGapsFound AreGapsInIRGrid(const T_HRTFTable& table, TAzimuthElevationBorders& _borders) {
+		template <typename T>
+		TGapsFound AreGapsInIRGrid(const T& table, TAzimuthElevationBorders& _borders) {
 			int totalSourcePositions = table.size();
 			double averageStep = 360 / std::sqrt(totalSourcePositions * M_PI);
 			
@@ -126,7 +127,8 @@ namespace BRTServices
 		 * @param tableH RIR table where to look for gaps
 		 * @return azimuth and elevation values
 		*/
-		TAzimuthElevationBorders Find_AzimuthAndElevationBorders(const T_HRTFTable& table) {
+		template <typename T>
+		TAzimuthElevationBorders Find_AzimuthAndElevationBorders(const T& table) {
 			// Init values with the opposite
 			TAzimuthElevationBorders borders(-18, 180, -90, 90);
 			// Process
@@ -146,7 +148,7 @@ namespace BRTServices
 		 * @brief Perform the extrapolation
 		*/
 		template <typename T, typename U, typename Functor>
-		void FillGaps(T& table, const std::vector<orientation>& orientationsList, int extrapolationStep, TGapsFound gapsFound, TAzimuthElevationBorders borders, Functor f) {
+		void FillGaps(T& table, const std::vector<orientation>& orientationsList, int _TFSize, int extrapolationStep, TGapsFound gapsFound, TAzimuthElevationBorders borders, Functor f) {
 			
 			T originalTable = table;
 
@@ -155,8 +157,8 @@ namespace BRTServices
 					double _elevationInRage = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
 					int cont=0;
 					for (double _azimuth = 0; _azimuth < 360; _azimuth += extrapolationStep) {
-						U newHRIR = f(originalTable, orientationsList, _azimuth, _elevationInRage);
-						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<THRIRStruct>(newHRIR));						
+						U newTF = f(originalTable, orientationsList, _TFSize, _azimuth, _elevationInRage);
+						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
 					}
 				}
 			}
@@ -164,8 +166,8 @@ namespace BRTServices
 				for (double _elevation = 270; _elevation <= (borders.minElevation - extrapolationStep); _elevation += extrapolationStep) {
 					double _elevationInRage = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
 					for (double _azimuth = 0; _azimuth < 360; _azimuth += extrapolationStep) {						
-						U newHRIR = f(originalTable, orientationsList, _azimuth, _elevationInRage);
-						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<THRIRStruct>(newHRIR));
+						U newTF = f(originalTable, orientationsList, _TFSize, _azimuth, _elevationInRage);
+						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
 					}
 				}
 			}
@@ -178,8 +180,8 @@ namespace BRTServices
 				for (double _elevation = _minElevationIn90Range; _elevation <= _maxElevationIn90Range; _elevation += extrapolationStep) {
 					double _elevationInRage = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
 					for (double _azimuth = borders.maxAzimuth + extrapolationStep; _azimuth <= 180; _azimuth += extrapolationStep) {						
-						THRIRStruct newHRIR = f(originalTable, orientationsList, _azimuth, _elevationInRage);
-						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<THRIRStruct>(newHRIR));						
+						U newTF = f(originalTable, orientationsList, _TFSize, _azimuth, _elevationInRage);
+						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
 					}
 				}
 			}
@@ -193,8 +195,8 @@ namespace BRTServices
 					double _elevationInRage = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
 										
 					for (double _azimuth = borders.minAzimuth - extrapolationStep; _azimuth >= 180; _azimuth -= extrapolationStep) {					
-						THRIRStruct newHRIR = f(originalTable, orientationsList, _azimuth, _elevationInRage);
-						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<THRIRStruct>(newHRIR));												
+						U newTF = f(originalTable, orientationsList, _TFSize, _azimuth, _elevationInRage);
+						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
 					}
 				}
 				

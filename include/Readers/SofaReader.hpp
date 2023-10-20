@@ -351,7 +351,7 @@ namespace BRTReaders {
 			int numberOfReceivers = loader.getHRTF()->R;
 
 			// Get and save TFs			
-			dataDirectivityTF->BeginSetup(numberOfFrequencySamples);
+			dataDirectivityTF->BeginSetup(numberOfFrequencySamples, extrapolationMethod);
 
 			// This outtermost loop iterates over TFs
 			for (std::size_t i = 0; i < numberOfReceivers; i++)

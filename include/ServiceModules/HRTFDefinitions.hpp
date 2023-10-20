@@ -591,12 +591,12 @@ namespace BRTServices {
 			 * @param _elevation This data is not used
 			 * @return HRIR struct filled with zeros
 			*/
-			THRIRStruct operator() (const T_HRTFTable& table, const std::vector<orientation>& orientationsList, double _azimuth, double _elevation) {
+			THRIRStruct operator() (const T_HRTFTable& table, const std::vector<orientation>& orientationsList, int _HRIRSize, double _azimuth, double _elevation) {
 				// Initialization
-				int HRIRSize = table.begin()->second.leftHRIR.size();	// Justa took the first one
+				//int HRIRSize = table.begin()->second.leftHRIR.size();	// Justa took the first one
 				THRIRStruct HRIRZeros;
-				HRIRZeros.leftHRIR.resize(HRIRSize, 0);
-				HRIRZeros.rightHRIR.resize(HRIRSize, 0);
+				HRIRZeros.leftHRIR.resize(_HRIRSize, 0);
+				HRIRZeros.rightHRIR.resize(_HRIRSize, 0);
 				return HRIRZeros;
 			}
 		};
@@ -613,7 +613,7 @@ namespace BRTServices {
 			 * @param _elevation point of interest elevation
 			 * @return HRIR struct filled with the nearest point data
 			*/
-			THRIRStruct operator() (const T_HRTFTable& table, const std::vector<orientation>& orientationsList, double _azimuth, double _elevation) {
+			THRIRStruct operator() (const T_HRTFTable& table, const std::vector<orientation>& orientationsList, int _HRIRSize, double _azimuth, double _elevation) {
 				// Order list of orientation
 				std::vector<T_PairDistanceOrientation> pointsOrderedByDistance = CHRTFAuxiliarMethods::GetListOrderedDistancesToPoint(orientationsList, _azimuth, _elevation);
 				// Get nearest
@@ -629,9 +629,9 @@ namespace BRTServices {
 				else {
 					SET_RESULT(RESULT_WARNING, "No point close enough to make the extrapolation has been found, this must not happen.");
 
-					int HRIRSize = table.begin()->second.leftHRIR.size();	// Justa took the first one					
-					nearestHRIR.leftHRIR.resize(HRIRSize, 0);
-					nearestHRIR.rightHRIR.resize(HRIRSize, 0);
+					//int HRIRSize = table.begin()->second.leftHRIR.size();	// Justa took the first one					
+					nearestHRIR.leftHRIR.resize(_HRIRSize, 0);
+					nearestHRIR.rightHRIR.resize(_HRIRSize, 0);
 				}
 
 				return nearestHRIR;
