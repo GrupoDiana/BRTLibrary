@@ -30,6 +30,9 @@
 #include <Common/GlobalParameters.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/Preprocessor.hpp>
+#include <ServiceModules/DirectivityTFDefinitions.hpp>
+#include <ServiceModules/DirectivityTFAuxiliarMethods.hpp>
 
 #ifndef DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP
 #define DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP 5
@@ -39,13 +42,13 @@
 namespace BRTServices
 {
 	
-	struct TDirectivityInterlacedTFStruct {
-		CMonoBuffer<float> data;
-	};
+	//struct TDirectivityInterlacedTFStruct {
+	//	CMonoBuffer<float> data;
+	//};
 
-	/** \brief Type definition for the DirectivityTF table */
-	typedef std::unordered_map<orientation, BRTServices::TDirectivityTFStruct> T_DirectivityTFTable;
-	typedef std::unordered_map<orientation, BRTServices::TDirectivityInterlacedTFStruct> T_DirectivityTFInterlacedDataTable;
+	///** \brief Type definition for the DirectivityTF table */
+	//typedef std::unordered_map<orientation, BRTServices::TDirectivityTFStruct> T_DirectivityTFTable;
+	//typedef std::unordered_map<orientation, BRTServices::TDirectivityInterlacedTFStruct> T_DirectivityTFInterlacedDataTable;
 
 
 	/** \details This class gets impulse response data to compose HRTFs and implements different algorithms to interpolate the HRIR functions.
@@ -129,7 +132,7 @@ namespace BRTServices
 				if (!t_DirectivityTF_DataBase.empty())
 				{
 					//DirectivityTF Resampling methdos
-					//CalculateHRIR_InPoles(resamplingStep);
+					preprocessor.CalculateHRIR_InPoles<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, directivityTF_length, resamplingStep, CDirectivityTFAuxiliarMethods::CalculateDirectivityTFFromHemisphereParts());
 					//FillOutTableOfAzimuth360(resamplingStep);
 					//FillSphericalCap_HRTF(gapThreshold, resamplingStep);
 					CalculateResampled_DirectivityTFTable(resamplingStep);
@@ -460,6 +463,8 @@ namespace BRTServices
 		float sphereBorder;
 		float epsilon_sewing;
 		enum class TPole { north, south };
+
+		CPreprocessor preprocessor;
 		
 		///////////////////
 		///// METHODS

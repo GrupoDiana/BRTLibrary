@@ -91,15 +91,6 @@ namespace BRTServices {
 	*/
 	typedef std::unordered_map<orientation, BRTServices::THRIRStruct> T_HRTFTable;
 
-	struct CHRTFTable {
-		T_HRTFTable table;
-
-		BRTServices::THRIRStruct GetEmptyValue() {
-			THRIRStruct temp;
-			return temp;
-		}
-	};
-
 	/** \brief Type definition for the HRTF partitioned table used when UPConvolution is activated
 	*/
 	typedef std::unordered_map<orientation, THRIRPartitionedStruct> T_HRTFPartitionedTable;
@@ -109,8 +100,8 @@ namespace BRTServices {
 	typedef std::pair <float, orientation> T_PairDistanceOrientation;
 
 
-
-
+	/** \brief Type definitions to indentify the poles
+	*/
 	enum class TPole { north, south };
 
 
@@ -472,15 +463,15 @@ namespace BRTServices {
 		/// <returns></returns>
 		struct CalculateHRIRFromHemisphereParts{
 			//static THRIRStruct CalculateHRIRFromHemisphereParts(T_HRTFTable& _t_HRTF_DataBase, int _HRIRLength, std::vector < std::vector <orientation>> _hemisphereParts) {
-			 THRIRStruct operator () (T_HRTFTable& _t_HRTF_DataBase, int _HRIRLength, std::vector < std::vector <orientation>> _hemisphereParts) {
+			BRTServices::THRIRStruct operator () (T_HRTFTable& _t_HRTF_DataBase, int _HRIRLength, std::vector < std::vector <orientation>> _hemisphereParts) {
 
-				THRIRStruct calculatedHRIR;
+				BRTServices::THRIRStruct calculatedHRIR;
 
 				//Calculate the delay and the HRIR of each hemisphere part
 				float totalDelay_left = 0.0f;
 				float totalDelay_right = 0.0f;
 
-				std::vector< THRIRStruct> newHRIR;
+				std::vector< BRTServices::THRIRStruct> newHRIR;
 				newHRIR.resize(_hemisphereParts.size());
 
 				for (int q = 0; q < _hemisphereParts.size(); q++)
@@ -489,7 +480,7 @@ namespace BRTServices {
 					newHRIR[q].rightHRIR.resize(_HRIRLength, 0.0f);
 
 					float scaleFactor;
-					if (_hemisphereParts[q].size())
+					if (_hemisphereParts[q].size() != 0)
 					{
 						scaleFactor = 1.0f / _hemisphereParts[q].size();
 					}
@@ -514,6 +505,7 @@ namespace BRTServices {
 					}//END loop hemisphere part
 
 					 //Multiply by the factor (weighted sum)
+					 // TODO: Use the previous loop to multiply by the factor
 					 //Delay 
 					totalDelay_left = totalDelay_left + (scaleFactor * newHRIR[q].leftDelay);
 					totalDelay_right = totalDelay_right + (scaleFactor * newHRIR[q].rightDelay);

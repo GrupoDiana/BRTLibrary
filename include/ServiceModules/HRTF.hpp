@@ -180,10 +180,8 @@ namespace BRTServices
 					t_HRTF_DataBase_ListOfOrientations = preprocessor.CalculateListOfOrientations_T_HRTF_DataBase(t_HRTF_DataBase);
 					CalculateExtrapolation();							// Make the extrapolation if it's needed
 					// Preparation of table read from sofa file
-					//t_HRTF_DataBase2.table = t_HRTF_DataBase;
-					//preprocessor.CalculateHRIR_InPoles(t_HRTF_DataBase2, HRIRLength, resamplingStep);
-					preprocessor.CalculateHRIR_InPoles<T_HRTFTable, THRIRStruct>(t_HRTF_DataBase, HRIRLength, resamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts());
-					//t_HRTF_DataBase = t_HRTF_DataBase2.table;
+					//preprocessor.CalculateHRIR_InPoles(t_HRTF_DataBase, HRIRLength, resamplingStep);
+					preprocessor.CalculateHRIR_InPoles<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, HRIRLength, resamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts());
 					//CalculateHRIR_InPoles(resamplingStep);
 					preprocessor.FillOutTableOfAzimuth360(t_HRTF_DataBase, resamplingStep);
 					//FillOutTableOfAzimuth360(resamplingStep);
@@ -664,7 +662,6 @@ namespace BRTServices
 
 		// HRTF tables			
 		T_HRTFTable				t_HRTF_DataBase;
-		CHRTFTable				t_HRTF_DataBase2;
 		std::vector<orientation> t_HRTF_DataBase_ListOfOrientations;
 		
 		T_HRTFTable				t_HRTF_Resampled_frequency;
@@ -685,7 +682,7 @@ namespace BRTServices
 		CQuadrantBasedInterpolator quadrantBasedInterpolator;
 		//CMidPointOnlineInterpolator midPointOnlineInterpolator;
 		CSlopesMethodOnlineInterpolator slopesMethodOnlineInterpolator;
-		CPreporcessor preprocessor;
+		CPreprocessor preprocessor;
 		CExtrapolation extrapolation;		
 
 		friend class CHRTFTester;
