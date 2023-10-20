@@ -177,7 +177,7 @@ namespace BRTServices
 					
 					RemoveCommonDelay_HRTFDataBaseTable();				// Delete the common delay of every HRIR functions of the DataBase Table					
 					//CalculateListOfOrientations_T_HRTF_DataBase();		// Extract the list of orientations
-					t_HRTF_DataBase_ListOfOrientations = preprocessor.CalculateListOfOrientations_T_HRTF_DataBase(t_HRTF_DataBase);
+					t_HRTF_DataBase_ListOfOrientations = preprocessor.CalculateListOfOrientations(t_HRTF_DataBase);
 					CalculateExtrapolation();							// Make the extrapolation if it's needed
 					// Preparation of table read from sofa file
 					//preprocessor.CalculateHRIR_InPoles(t_HRTF_DataBase, HRIRLength, resamplingStep);
@@ -187,7 +187,7 @@ namespace BRTServices
 					//FillOutTableOfAzimuth360(resamplingStep);
 					preprocessor.FillSphericalCap_HRTF(t_HRTF_DataBase, HRIRLength, gapThreshold, resamplingStep);
 					//FillSphericalCap_HRTF(gapThreshold, resamplingStep);
-					t_HRTF_DataBase_ListOfOrientations = preprocessor.CalculateListOfOrientations_T_HRTF_DataBase(t_HRTF_DataBase);
+					t_HRTF_DataBase_ListOfOrientations = preprocessor.CalculateListOfOrientations(t_HRTF_DataBase);
 					//CalculateListOfOrientations_T_HRTF_DataBase();
 					//Creation and filling of resampling HRTF table
 					quasiUniformSphereDistribution.CreateGrid(t_HRTF_Resampled_partitioned, stepVector, resamplingStep);					

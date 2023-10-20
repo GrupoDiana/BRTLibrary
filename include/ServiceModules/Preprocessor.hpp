@@ -408,17 +408,22 @@ namespace BRTServices
 			}
 		}
 
+
 		/**
 		 * @brief Fill vector with the list of orientations of the T_HRTF_DataBase table
+		 * @tparam T Type of the table 
+		 * @param table Table of data 
+		 * @return List of orientations
 		*/
-		std::vector<orientation> CalculateListOfOrientations_T_HRTF_DataBase(T_HRTFTable& _t_HRTF_DataBase) {
-			std::vector<orientation> t_HRTF_DataBase_ListOfOrientations;
-			t_HRTF_DataBase_ListOfOrientations.reserve(_t_HRTF_DataBase.size());
-			for (auto& kv : _t_HRTF_DataBase)
+		template <typename T>
+		std::vector<orientation> CalculateListOfOrientations(T& table) {
+			std::vector<orientation> table_ListOfOrientations;
+			table_ListOfOrientations.reserve(table.size());
+			for (auto& kv : table)
 			{
-				t_HRTF_DataBase_ListOfOrientations.push_back(kv.first);
+				table_ListOfOrientations.push_back(kv.first);
 			}
-			return t_HRTF_DataBase_ListOfOrientations;
+			return table_ListOfOrientations;
 		}
 
 	private:
