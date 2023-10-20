@@ -203,6 +203,8 @@ namespace BRTServices
 		void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& directivityTF)
 		{
 			if (setupDirectivityTFInProgress) {
+				_azimuth = CHRTFAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
+				_elevation = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
 				auto returnValue = t_DirectivityTF_DataBase.emplace(orientation(_azimuth, _elevation), std::forward<TDirectivityTFStruct>(directivityTF));
 				//Error handler
 				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing DirectivityTF in t_DirectivityTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }

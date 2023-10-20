@@ -360,7 +360,7 @@ namespace BRTReaders {
 				CMonoBuffer<float> dataRealPartPI;
 				CMonoBuffer <float> dataImagPartPI;
 				double azimuth = receiverPositionsVector[array2DIndex(i, 0, 0, numberOfCoordinates)];
-				double elevation = GetPositiveElevation(receiverPositionsVector[array2DIndex(i, 1, 0, numberOfCoordinates)]);				
+				double elevation = receiverPositionsVector[array2DIndex(i, 1, 0, numberOfCoordinates)];				
 				
 				GetDirectivityData(dataMeasurementsRealPart, dataRealPartPI, numberOfFrequencySamples, i);
 				GetDirectivityData(dataMeasurementsImagPart, dataImagPartPI, numberOfFrequencySamples, i);
@@ -375,12 +375,12 @@ namespace BRTReaders {
 		
 		/////////////////////////
 		// AUXILAR METHODS
-		/////////////////////////
-		double GetPositiveElevation(double _elevation) {
+		///////////////////////////
+		//double GetPositiveElevation(double _elevation) {
 
-			while (_elevation < 0) _elevation += 360;
-			return _elevation;
-		}
+		//	while (_elevation < 0) _elevation += 360;
+		//	return _elevation;
+		//}
 
 		void GetData(const std::vector<double>& dataIR, std::vector<float>& outIR, int numberOfMeasurements,int numberOfReceivers, int numberOfSamples, int ear, int i) {
 			std::vector<float> IR(numberOfSamples, 0);
