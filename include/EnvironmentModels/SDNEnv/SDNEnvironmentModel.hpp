@@ -73,6 +73,8 @@ namespace BRTEnvironmentModel {
 			virtualSourceBuffers = std::vector<CMonoBuffer<float>>(N_VIRTUAL_SOURCES, inBuffer);
 			virtualSourcePositions = std::vector<Common::CTransform>(N_VIRTUAL_SOURCES);
 
+			SyncVirtualSourcesToModel();
+
 			sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
 			listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
 

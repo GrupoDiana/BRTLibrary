@@ -57,16 +57,7 @@ namespace BRTEnvironmentModel {
 
 			int bufferDim = _inBuffer.size();
 
-			//if (numInputChannels >= 2)
-			//{
-			//	for (int ch = 1; ch < numInputChannels; ch++)
-			//	{
-			//		sourceBuffer.addFrom(0, 0, sourceBuffer, ch, 0, bufferDim); // source to mono
-			//	}
-			//}
-
 			int maxIndex = bufferDim - 1;
-			//const float* currentReadPointer = sourceBuffer.getReadPointer(0);
 
 			// Sample by sample processing of the input buffer
 			for (int i = 0; i < bufferDim; i++)
