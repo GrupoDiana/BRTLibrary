@@ -185,7 +185,7 @@ namespace BRTServices
 					//CalculateHRIR_InPoles(resamplingStep);
 					preprocessor.FillOutTableInAzimuth360(t_HRTF_DataBase, resamplingStep);
 					//FillOutTableOfAzimuth360(resamplingStep);
-					preprocessor.FillSphericalCap_HRTF(t_HRTF_DataBase, HRIRLength, gapThreshold, resamplingStep);
+					preprocessor.FillSphericalCap_HRTF<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, HRIRLength, gapThreshold, resamplingStep);
 					//FillSphericalCap_HRTF(gapThreshold, resamplingStep);
 					t_HRTF_DataBase_ListOfOrientations = preprocessor.CalculateListOfOrientations(t_HRTF_DataBase);
 					//CalculateListOfOrientations_T_HRTF_DataBase();

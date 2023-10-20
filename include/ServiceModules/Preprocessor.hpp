@@ -296,7 +296,7 @@ namespace BRTServices
 		/// </summary>
 		/// <param name="_gapThreshold"></param>
 		/// <param name="_resamplingStep"></param>
-		template <typename T>
+		template <typename T, typename U>
 		void FillSphericalCap_HRTF(T& _t_TF_DataBase, int _TFlength, int _gapThreshold, int _resamplingStep)
 		{
 			// Initialize some variables
@@ -330,7 +330,7 @@ namespace BRTServices
 
 			if (max_dist_elev > _gapThreshold)
 			{
-				Calculate_and_EmplaceHRIR(_t_TF_DataBase, _TFlength, iElevationSouthPole, south_hemisphere, elev_south, elev_Step);
+				Calculate_and_EmplaceTF <T, U>(_t_TF_DataBase, _TFlength, iElevationSouthPole, south_hemisphere, elev_south, elev_Step);
 			}
 			// Reset var to use it in north hemisphere
 			max_dist_elev = 0;
@@ -340,7 +340,7 @@ namespace BRTServices
 
 			if (max_dist_elev > _gapThreshold)
 			{
-				Calculate_and_EmplaceHRIR(_t_TF_DataBase,_TFlength, iElevationNorthPole, north_hemisphere, elev_north, elev_Step);
+				Calculate_and_EmplaceTF <T, U>(_t_TF_DataBase,_TFlength, iElevationNorthPole, north_hemisphere, elev_north, elev_Step);
 			}
 		}
 
@@ -369,13 +369,13 @@ namespace BRTServices
 		/// <param name="_hemisphere"></param>
 		/// <param name="elevationLastRing"></param>
 		/// <param name="_fillStep"></param>
-		template <typename T>
-		void Calculate_and_EmplaceHRIR(T& _t_Table,int _HRIRLength, int _pole, std::vector<orientation> _hemisphere, float _elevationLastRing, int _fillStep)
+		template <typename T, typename U>
+		void Calculate_and_EmplaceTF(T& _t_Table,int _TFLength, int _pole, std::vector<orientation> _hemisphere, float _elevationLastRing, int _fillStep)
 		{
 			std::vector<orientation> lastRingOrientationList;
 			std::vector<T_PairDistanceOrientation> sortedList;
 			int azimuth_Step = _fillStep;
-			//THRIRStruct HRIR_interpolated;
+			U TF_interpolated;
 
 			// Get a list with only the points of the nearest known ring
 			for (auto& itr : _hemisphere)
@@ -393,8 +393,8 @@ namespace BRTServices
 					for (float azim = DEFAULT_MIN_AZIMUTH; azim < DEFAULT_MAX_AZIMUTH; azim = azim + azimuth_Step)
 					{
 						//sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
-						auto HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod (_t_Table, lastRingOrientationList, azim, elevat, _HRIRLength, _pole);
-						_t_Table.emplace(orientation(azim, elevat), HRIR_interpolated);
+						TF_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod<T,U>(_t_Table, lastRingOrientationList, azim, elevat, _TFLength, _pole);
+						_t_Table.emplace(orientation(azim, elevat), TF_interpolated);
 					}
 				}
 			}	// NORTH HEMISPHERE
@@ -405,8 +405,8 @@ namespace BRTServices
 					for (float azim = DEFAULT_MIN_AZIMUTH; azim < DEFAULT_MAX_AZIMUTH; azim = azim + azimuth_Step)
 					{
 						//sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
-						auto HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod(_t_Table, lastRingOrientationList, azim, elevat, _HRIRLength, _pole);
-						_t_Table.emplace(orientation(azim, elevat), HRIR_interpolated);
+						TF_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod<T, U>(_t_Table, lastRingOrientationList, azim, elevat, _TFLength, _pole);
+						_t_Table.emplace(orientation(azim, elevat), TF_interpolated);
 					}
 				}
 			}
