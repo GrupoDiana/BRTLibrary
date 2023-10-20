@@ -33,6 +33,7 @@
 #include <ServiceModules/Preprocessor.hpp>
 #include <ServiceModules/DirectivityTFDefinitions.hpp>
 #include <ServiceModules/DirectivityTFAuxiliarMethods.hpp>
+#include <ServiceModules/Extrapolation.hpp>
 
 #ifndef DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP
 #define DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP 5
@@ -132,6 +133,10 @@ namespace BRTServices
 			if (setupDirectivityTFInProgress) {
 				if (!t_DirectivityTF_DataBase.empty())
 				{
+
+					t_DirectivityTF_DataBase_ListOfOrientations = preprocessor.CalculateListOfOrientations(t_DirectivityTF_DataBase);
+					//CalculateExtrapolation();							// Make the extrapolation if it's needed
+
 					//DirectivityTF Resampling methdos
 					preprocessor.CalculateTF_InPoles<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, directivityTFPart_length, resamplingStep, CDirectivityTFAuxiliarMethods::CalculateDirectivityTFFromHemisphereParts());
 					//preprocessor.FillOutTableInAzimuth360(t_DirectivityTF_DataBase, resamplingStep);
@@ -459,8 +464,9 @@ namespace BRTServices
 		int32_t directivityTF_numberOfSubfilters;	
 		
 		T_DirectivityTFTable					t_DirectivityTF_DataBase;
-		T_DirectivityTFInterlacedDataTable	t_DirectivityTF_Resampled;
-
+		std::vector<orientation>				t_DirectivityTF_DataBase_ListOfOrientations;
+		T_DirectivityTFInterlacedDataTable		t_DirectivityTF_Resampled;
+		
 		Common::CGlobalParameters globalParameters;
 
 		float aziMin, aziMax, eleMin, eleMax, eleNorth, eleSouth;	// Variables that define limits of work area
@@ -469,6 +475,7 @@ namespace BRTServices
 		enum class TPole { north, south };
 
 		CPreprocessor preprocessor;
+		CExtrapolation extrapolation;
 		
 		///////////////////
 		///// METHODS
