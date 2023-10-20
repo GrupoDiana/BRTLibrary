@@ -545,6 +545,66 @@ namespace BRTServices {
 				return calculatedHRIR;
 		}
 		};
+
+		/**
+		 * @brief Returns an HRIR filled with zeros in all cases.
+		*/
+		struct GetZerosHRIR {
+
+			/**
+			 * @brief Returns an HRIR filled with zeros in all cases.
+			 * @param table data table
+			 * @param orientations List Orientations of the data table. This data is not used
+			 * @param _azimuth This data is not used
+			 * @param _elevation This data is not used
+			 * @return HRIR struct filled with zeros
+			*/
+			THRIRStruct operator() (const T_HRTFTable& table, const std::vector<orientation>& orientationsList, double _azimuth, double _elevation) {
+				// Initialization
+				int HRIRSize = table.begin()->second.leftHRIR.size();	// Justa took the first one
+				THRIRStruct HRIRZeros;
+				HRIRZeros.leftHRIR.resize(HRIRSize, 0);
+				HRIRZeros.rightHRIR.resize(HRIRSize, 0);
+				return HRIRZeros;
+			}
+		};
+
+		/**
+		 * @brief Given any point returns the HRIR of the closest point to that point.
+		*/
+		struct GetNearestPointHRIR {
+			/**
+			 * @brief Given any point returns the HRIR of the closest point to that point.
+			 * @param table data table
+			 * @param orientationsList List Orientations of the data table
+			 * @param _azimuth point of interest azimuth
+			 * @param _elevation point of interest elevation
+			 * @return HRIR struct filled with the nearest point data
+			*/
+			THRIRStruct operator() (const T_HRTFTable& table, const std::vector<orientation>& orientationsList, double _azimuth, double _elevation) {
+				// Order list of orientation
+				std::vector<T_PairDistanceOrientation> pointsOrderedByDistance = CHRTFAuxiliarMethods::GetListOrderedDistancesToPoint(orientationsList, _azimuth, _elevation);
+				// Get nearest
+				double nearestAzimuth = pointsOrderedByDistance.begin()->second.azimuth;
+				double nearestElevation = pointsOrderedByDistance.begin()->second.elevation;
+				// Find nearest HRIR and copy
+				THRIRStruct nearestHRIR;
+
+				auto it = table.find(orientation(nearestAzimuth, nearestElevation));
+				if (it != table.end()) {
+					nearestHRIR = it->second;
+				}
+				else {
+					SET_RESULT(RESULT_WARNING, "No point close enough to make the extrapolation has been found, this must not happen.");
+
+					int HRIRSize = table.begin()->second.leftHRIR.size();	// Justa took the first one					
+					nearestHRIR.leftHRIR.resize(HRIRSize, 0);
+					nearestHRIR.rightHRIR.resize(HRIRSize, 0);
+				}
+
+				return nearestHRIR;
+			}
+		};
 	};
 }
 #endif

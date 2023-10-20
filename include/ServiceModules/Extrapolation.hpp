@@ -1,7 +1,7 @@
 /**
-* \class CExtrapolationInterface, CExtrapolation
+* \class CExtrapolation
 *
-* \brief Declaration of CExtrapolationInterface and CExtrapolationBasedNearestPoint classes interface
+* \brief Declaration of CExtrapolationBasedNearestPoint classes interface
 * \date	October 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
@@ -35,99 +35,29 @@ namespace BRTServices
 	*/
 	class CExtrapolation {
 	public:
-		
-
+				
 		/**
-		 * @brief Perform, if necessary, the extrapolation process by padding with zeros.
+		 * @brief Look in the table to see if there are any large gaps and if there are, extrapolate to fill them
+		 * @tparam T Type of the table 
+		 * @tparam U Type of the table Value data
+		 * @tparam Functor Structure containing an operator () function that calculates the extrapolation for a point.
 		 * @param table Table of data to be extrapolated
-		 * @param extrapolationStep 
+		 * @param orientationsList List of guidelines contained in the table
+		 * @param extrapolationStep  Extrapolation step 
+		 * @param f Structure containing an operator () function that calculates the extrapolation for a point.
 		*/
-		void ProcessZeroInsertionBasedExtrapolation(T_HRTFTable& table, int extrapolationStep) {
+		template <typename T, typename U, typename Functor>
+		void Process(T& table, const std::vector<orientation>& orientationsList, int extrapolationStep, Functor f) {
 			// Look for gaps and their borders
 			TAzimuthElevationBorders borders;
 			TGapsFound gapsFound = AreGapsInIRGrid(table, borders);
-
-			std::vector<orientation> orientationsList;		// Just and empty list
-			FillGaps(table, orientationsList, extrapolationStep, gapsFound, borders, GetZerosHRIR());
+			
+			FillGaps<T, U>(table, orientationsList, extrapolationStep, gapsFound, borders, f);
 		};
 		
-		/**
-		 * @brief Perform, if necessary, the extrapolation process by filling to the nearest point
-		 * @param table 
-		 * @param orientationsList 
-		 * @param extrapolationStep 
-		*/
-		void ProcessNearestPointBasedExtrapolation(T_HRTFTable& table, const std::vector<orientation>& orientationsList, int extrapolationStep) {
-			// Look for gaps and their borders
-			TAzimuthElevationBorders borders;
-			TGapsFound gapsFound = AreGapsInIRGrid(table, borders);
-
-			FillGaps(table, orientationsList, extrapolationStep, gapsFound, borders, GetNearestPointHRIR());
-		};
 
 	private:
-		
-		/**
-		 * @brief Returns an HRIR filled with zeros in all cases.
-		*/
-		struct GetZerosHRIR {
-
-			/**
-			 * @brief Returns an HRIR filled with zeros in all cases.
-			 * @param table data table
-			 * @param orientations List Orientations of the data table. This data is not used
-			 * @param _azimuth This data is not used
-			 * @param _elevation This data is not used
-			 * @return HRIR struct filled with zeros
-			*/
-			THRIRStruct operator() (const T_HRTFTable& table, const std::vector<orientation>& orientationsList, double _azimuth, double _elevation) {
-				// Initialization
-				int HRIRSize = table.begin()->second.leftHRIR.size();	// Justa took the first one
-				THRIRStruct HRIRZeros;
-				HRIRZeros.leftHRIR.resize(HRIRSize, 0);
-				HRIRZeros.rightHRIR.resize(HRIRSize, 0);
-				return HRIRZeros;
-			}
-		};
-		
-		/**
-		 * @brief Given any point returns the HRIR of the closest point to that point.
-		*/
-		struct GetNearestPointHRIR {
-			/**
-			 * @brief Given any point returns the HRIR of the closest point to that point.
-			 * @param table data table
-			 * @param orientationsList List Orientations of the data table
-			 * @param _azimuth point of interest azimuth
-			 * @param _elevation point of interest elevation
-			 * @return HRIR struct filled with the nearest point data
-			*/
-			THRIRStruct operator() (const T_HRTFTable& table, const std::vector<orientation>& orientationsList, double _azimuth, double _elevation) {
-				// Order list of orientation
-				std::vector<T_PairDistanceOrientation> pointsOrderedByDistance = CHRTFAuxiliarMethods::GetListOrderedDistancesToPoint(orientationsList, _azimuth, _elevation);
-				// Get nearest
-				double nearestAzimuth = pointsOrderedByDistance.begin()->second.azimuth;
-				double nearestElevation = pointsOrderedByDistance.begin()->second.elevation;
-				// Find nearest HRIR and copy
-				THRIRStruct nearestHRIR;
-
-				auto it = table.find(orientation(nearestAzimuth, nearestElevation));
-				if (it != table.end()) {
-					nearestHRIR = it->second;
-				}
-				else {
-					SET_RESULT(RESULT_WARNING, "No point close enough to make the extrapolation has been found, this must not happen.");
-
-					int HRIRSize = table.begin()->second.leftHRIR.size();	// Justa took the first one					
-					nearestHRIR.leftHRIR.resize(HRIRSize, 0);
-					nearestHRIR.rightHRIR.resize(HRIRSize, 0);
-				}
-
-				return nearestHRIR;
-			}
-		};
-
-
+				
 		/**
 		 * @brief Struct to store azimtuh and elevation gap borders
 		*/
@@ -215,18 +145,17 @@ namespace BRTServices
 		/**
 		 * @brief Perform the extrapolation
 		*/
-		template <typename Functor>
-		void FillGaps(T_HRTFTable& table, const std::vector<orientation>& orientationsList, int extrapolationStep, TGapsFound gapsFound, TAzimuthElevationBorders borders, Functor f) {
-
-			//THRIRStruct HRIRZeros = f(table);
-			T_HRTFTable originalTable = table;
+		template <typename T, typename U, typename Functor>
+		void FillGaps(T& table, const std::vector<orientation>& orientationsList, int extrapolationStep, TGapsFound gapsFound, TAzimuthElevationBorders borders, Functor f) {
+			
+			T originalTable = table;
 
 			if (gapsFound.gapMaxElevation) {
 				for (double _elevation = 90; _elevation >= (borders.maxElevation + extrapolationStep); _elevation -= extrapolationStep) {
 					double _elevationInRage = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
 					int cont=0;
 					for (double _azimuth = 0; _azimuth < 360; _azimuth += extrapolationStep) {
-						THRIRStruct newHRIR = f(originalTable, orientationsList, _azimuth, _elevationInRage);
+						U newHRIR = f(originalTable, orientationsList, _azimuth, _elevationInRage);
 						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<THRIRStruct>(newHRIR));						
 					}
 				}
@@ -235,7 +164,7 @@ namespace BRTServices
 				for (double _elevation = 270; _elevation <= (borders.minElevation - extrapolationStep); _elevation += extrapolationStep) {
 					double _elevationInRage = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
 					for (double _azimuth = 0; _azimuth < 360; _azimuth += extrapolationStep) {						
-						THRIRStruct newHRIR = f(originalTable, orientationsList, _azimuth, _elevationInRage);
+						U newHRIR = f(originalTable, orientationsList, _azimuth, _elevationInRage);
 						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<THRIRStruct>(newHRIR));
 					}
 				}

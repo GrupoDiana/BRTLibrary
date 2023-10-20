@@ -1181,8 +1181,10 @@ namespace BRTServices
 		}
 				
 		
-		// ETRAPOLATION
-
+		/**
+		 * @brief Set the extrapolation method that is going to be used
+		 * @param _extrapolationMethod 
+		*/
 		void SetExtrapolationMethod(std::string _extrapolationMethod) {
 		
 			if (_extrapolationMethod == EXTRAPOLATION_METHOD_ZEROINSERTION_STRING) {
@@ -1197,15 +1199,17 @@ namespace BRTServices
 			}
 
 		}
-
+		/**
+		 * @brief Call the extrapolation method
+		*/
 		void CalculateExtrapolation() {
 			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.
 			
 			if (extrapolationMethod == TExtrapolationMethod::zeroInsertion) {
-				extrapolation.ProcessZeroInsertionBasedExtrapolation(t_HRTF_DataBase, DEFAULT_EXTRAPOLATION_STEP);
+				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetZerosHRIR());
 			}
 			else if (extrapolationMethod == TExtrapolationMethod::nearestPoint) {
-				extrapolation.ProcessNearestPointBasedExtrapolation(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, DEFAULT_EXTRAPOLATION_STEP);
+				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetNearestPointHRIR());
 			}
 			else {
 				SET_RESULT(RESULT_ERROR_NOTSET, "Extrapolation Method not set up.");
