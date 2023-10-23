@@ -31,51 +31,6 @@
 
 namespace BRTServices
 {
-	/**
-	 * @brief Base class for offline interpolators
-	*/
-	//class COfflineInterpolatorInterface {
-	//public:		
-	//	
-	//	virtual THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, std::vector<orientation>& listToSort, double newAzimuth, double newElevation, int HRIRLength, int pole) = 0;
-
-	//protected:
-	//	/**
-	//	 * @brief Transform the orientation in order to move the orientation of interest to 180 degrees
-	//	 * @param azimuthOrientationOfInterest 
-	//	 * @param originalAzimuth 
-	//	 * @return transformed azimuth	
-	//	*/
-	//	static float TransformAzimuthToAvoidSewing(double azimuthOrientationOfInterest, double originalAzimuth)
-	//	{
-	//		float azimuth;
-	//		azimuth = originalAzimuth + 180 - azimuthOrientationOfInterest;
-
-	//		// Check limits (always return 0 instead of 360)
-	//		if (azimuth >= DEFAULT_MAX_AZIMUTH)
-	//			azimuth = std::fmod(azimuth, (float)360);
-
-	//		if (azimuth < DEFAULT_MIN_AZIMUTH)
-	//			azimuth = azimuth + 360;
-
-	//		return azimuth;
-	//	}
-	//	
-	//	/**
-	//	 * @brief Transform the orientation in order to express the elevation in the interval [-90,90]
-	//	 * @param elevationOrientationOfInterest 
-	//	 * @param originalElevation 
-	//	 * @return transformed elevation	
-	//	*/
-	//	static float TransformElevationToAvoidSewing(double elevationOrientationOfInterest, double originalElevation)
-	//	{
-	//		if (originalElevation >= ELEVATION_SOUTH_POLE) {
-	//			originalElevation = originalElevation - 360;
-	//		}
-	//		return originalElevation;
-	//	}
-	//};
-
 	class COfflineInterpolatorAuxiliarMethods {
 	public:
 		/**
@@ -122,8 +77,8 @@ namespace BRTServices
 	class CDistanceBasedInterpolator {
 	public:
 
-		template <typename T, typename U>
-		U CalculateHRIR_offlineMethod(const T& table, std::vector<orientation>& listToSort, double newAzimuth, double newElevation, int HRIRLength, int pole = 0)
+		template <typename T, typename U, typename Functor>
+		U CalculateHRIR_offlineMethod(const T& table, Functor f_CalculateHRIR_Offline, std::vector<orientation>& listToSort, double newAzimuth, double newElevation, int HRIRLength, int pole = 0)
 		{
 			U newHRIR;
 			//// Get a list sorted by distances to the orientation of interest
@@ -172,34 +127,9 @@ namespace BRTServices
 
 							barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(newAzimuthTransformed, newElevationTransformed, iAzimuthTransformed, iElevationTransformed, jAzimuthTransformed, jElevationTransformed, kAzimuthTransformed, kElevationTransformed);
 
-							if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f) {
-								// Calculate the new HRIR with the barycentric coorfinates
-								auto it0 = table.find(orientation(mygroup[i].azimuth, mygroup[i].elevation));
-								auto it1 = table.find(orientation(mygroup[j].azimuth, mygroup[j].elevation));
-								auto it2 = table.find(orientation(mygroup[k].azimuth, mygroup[k].elevation));
-
-								if (it0 != table.end() && it1 != table.end() && it2 != table.end()) {
-
-									//FIXME!!! another way to initialize?
-									newHRIR = it0->second;
-									//END FIXME
-
-									for (int i = 0; i < HRIRLength; i++) {
-										newHRIR.leftHRIR[i] = barycentricCoordinates.alpha * it0->second.leftHRIR[i] + barycentricCoordinates.beta * it1->second.leftHRIR[i] + barycentricCoordinates.gamma * it2->second.leftHRIR[i];
-										newHRIR.rightHRIR[i] = barycentricCoordinates.alpha * it0->second.rightHRIR[i] + barycentricCoordinates.beta * it1->second.rightHRIR[i] + barycentricCoordinates.gamma * it2->second.rightHRIR[i];
-									}
-
-									// Calculate delay
-									newHRIR.leftDelay = barycentricCoordinates.alpha * it0->second.leftDelay + barycentricCoordinates.beta * it1->second.leftDelay + barycentricCoordinates.gamma * it2->second.leftDelay;
-									newHRIR.rightDelay = barycentricCoordinates.alpha * it0->second.rightDelay + barycentricCoordinates.beta * it1->second.rightDelay + barycentricCoordinates.gamma * it2->second.rightDelay;
-									//SET_RESULT(RESULT_OK, "HRIR calculated with interpolation method succesfully");
-									return newHRIR;
-								}
-								else {
-									SET_RESULT(RESULT_WARNING, "GetHRIR_InterpolationMethod return empty because HRIR with a specific orientation was not found");
-									return newHRIR;
-								}
-							}
+							newHRIR = f_CalculateHRIR_Offline(table, orientation(mygroup[i].azimuth, mygroup[i].elevation), orientation(mygroup[j].azimuth, mygroup[j].elevation), orientation(mygroup[k].azimuth, mygroup[k].elevation), HRIRLength, barycentricCoordinates);
+							
+							return newHRIR;
 						}
 					}
 				}
@@ -242,7 +172,7 @@ namespace BRTServices
 	/**
 	 * @brief Offline interpolation based on quadrant method
 	*/
-	class CQuadrantBasedInterpolator /*: COfflineInterpolatorInterface*/ {
+	class CQuadrantBasedInterpolator {
 	public:
 
 		THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, std::vector<orientation>& listToSort, double newAzimuth, double newElevation, int HRIRLength, int pole = 0)
@@ -294,6 +224,7 @@ namespace BRTServices
 
 				if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f)
 				{
+					//TODO: Use CalculateHRIRFromBarycentrics_OfflineInterpolation from HRTFAuxiliarMethods
 					return DataInterpolation(table, barycentricCoordinates, HRIRLength, backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation, 
 						backFloorListSortedByDistance[0].second.azimuth, backFloorListSortedByDistance[0].second.elevation, frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation);
 				}
@@ -310,6 +241,7 @@ namespace BRTServices
 
 				if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f)
 				{
+					//TODO: Use CalculateHRIRFromBarycentrics_OfflineInterpolation from HRTFAuxiliarMethods
 					return DataInterpolation(table, barycentricCoordinates, HRIRLength, backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation,
 						frontCeilListSortedByDistance[0].second.azimuth, frontCeilListSortedByDistance[0].second.elevation, frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation);
 				}
@@ -363,12 +295,6 @@ namespace BRTServices
 				}
 
 			}
-
-
-			//Split
-			//std::copy_if(listToSort.begin(), listToSort.end(), back_inserter(_azimuthBackList), [_newAzimuth](orientation n) {return n.azimuth <= _newAzimuth; });
-
-			//std::copy_if(listToSort.begin(), listToSort.end(), back_inserter(_azimuthFrontList), [_newAzimuth](orientation n) {return n.azimuth > _newAzimuth; });
 		}
 
 		void SortListByElevationAndSplit(double _newElevation, std::vector<orientation>& listToSort, std::vector<orientation>& ceilList, std::vector<orientation>& floorList)
@@ -401,41 +327,9 @@ namespace BRTServices
 	
 			}
 
-			//std::copy_if(listToSort.begin(), listToSort.end(), back_inserter(floorList), [_newElevation](orientation n) {return n.elevation <= _newElevation; });
-
-			//std::copy_if(listToSort.begin(), listToSort.end(), back_inserter(ceilList), [_newElevation](orientation n) {return n.elevation > _newElevation; });
 		}
 
-		//std::vector<T_PairDistanceOrientation> GetSortedDistancesList(const std::vector<orientation>& listToSort, double _newAzimuth, double _newElevation)
-		//{
-
-		//	T_PairDistanceOrientation temp;
-		//	float distance;
-		//	std::vector<T_PairDistanceOrientation> sortedList;
-		//	sortedList.reserve(listToSort.size());
-
-		//	// Algorithm to calculate the three shortest distances between the point (newAzimuth, newelevation) and all the points in the given list
-		//	for (auto it = listToSort.begin(); it != listToSort.end(); ++it)
-		//	{
-		//		distance = CHRTFAuxiliarMethods::CalculateDistance_HaversineFormula(_newAzimuth, _newElevation, it->azimuth, it->elevation);
-
-		//		temp.first = distance;
-		//		temp.second.azimuth = it->azimuth;
-		//		temp.second.elevation = it->elevation;
-
-		//		sortedList.push_back(temp);
-		//	}
-
-		//	if (sortedList.size() != 0) {
-		//		std::sort(sortedList.begin(), sortedList.end(), [](const T_PairDistanceOrientation& a, const T_PairDistanceOrientation& b) { return a.first < b.first; });
-		//	}
-		//	else {
-		//		SET_RESULT(RESULT_WARNING, "Orientation list sorted by distances is empty");
-		//	}
-
-		//	return sortedList;
-		//}
-
+		
 		THRIRStruct DataInterpolation(const T_HRTFTable& table, TBarycentricCoordinatesStruct _barycentricCoordinates, int HRIRLength, float azimuthPnt1, float elevationPnt1, float azimuthPnt2, float elevationPnt2, float azimuthPnt3, float elevationPnt3)
 		{
 			// Calculate the new HRIR with the barycentric coorfinates
@@ -467,7 +361,6 @@ namespace BRTServices
 				return newHRIR;
 			}
 		}
-
 
 	};
 

@@ -253,12 +253,6 @@ namespace BRTServices
 			return calculatedHRIR;
 		}
 
-		//////////////////////////////////////////////////////////////////////////////
-		// HRTF specific methods
-		//////////////////////////////////////////////////////////////////////////////
-
-		
-
 		/// <summary>
 		/// Get HRIR of azimith 0 and emplace again with azimuth 360 in the HRTF database table for every elevations
 		/// </summary>
@@ -296,8 +290,8 @@ namespace BRTServices
 		/// </summary>
 		/// <param name="_gapThreshold"></param>
 		/// <param name="_resamplingStep"></param>
-		template <typename T, typename U>
-		void FillSphericalCap_HRTF(T& _t_TF_DataBase, int _TFlength, int _gapThreshold, int _resamplingStep)
+		template <typename T, typename U, typename Functor>
+		void FillSphericalCap_HRTF(T& _t_TF_DataBase, int _TFlength, int _gapThreshold, int _resamplingStep, Functor f_CalculateHRIR_Offline)
 		{
 			// Initialize some variables
 			float max_dist_elev = 0;
@@ -330,7 +324,7 @@ namespace BRTServices
 
 			if (max_dist_elev > _gapThreshold)
 			{
-				Calculate_and_EmplaceTF <T, U>(_t_TF_DataBase, _TFlength, iElevationSouthPole, south_hemisphere, elev_south, elev_Step);
+				Calculate_and_EmplaceTF<T, U, Functor>(_t_TF_DataBase, _TFlength, iElevationSouthPole, south_hemisphere, elev_south, elev_Step, f_CalculateHRIR_Offline);
 			}
 			// Reset var to use it in north hemisphere
 			max_dist_elev = 0;
@@ -340,7 +334,7 @@ namespace BRTServices
 
 			if (max_dist_elev > _gapThreshold)
 			{
-				Calculate_and_EmplaceTF <T, U>(_t_TF_DataBase,_TFlength, iElevationNorthPole, north_hemisphere, elev_north, elev_Step);
+				Calculate_and_EmplaceTF<T, U, Functor>(_t_TF_DataBase,_TFlength, iElevationNorthPole, north_hemisphere, elev_north, elev_Step, f_CalculateHRIR_Offline);
 			}
 		}
 
@@ -369,8 +363,8 @@ namespace BRTServices
 		/// <param name="_hemisphere"></param>
 		/// <param name="elevationLastRing"></param>
 		/// <param name="_fillStep"></param>
-		template <typename T, typename U>
-		void Calculate_and_EmplaceTF(T& _t_Table,int _TFLength, int _pole, std::vector<orientation> _hemisphere, float _elevationLastRing, int _fillStep)
+		template <typename T, typename U, typename Functor>
+		void Calculate_and_EmplaceTF(T& _t_Table,int _TFLength, int _pole, std::vector<orientation> _hemisphere, float _elevationLastRing, int _fillStep, Functor f_CalculateHRIR_Offline)
 		{
 			std::vector<orientation> lastRingOrientationList;
 			std::vector<T_PairDistanceOrientation> sortedList;
@@ -393,7 +387,7 @@ namespace BRTServices
 					for (float azim = DEFAULT_MIN_AZIMUTH; azim < DEFAULT_MAX_AZIMUTH; azim = azim + azimuth_Step)
 					{
 						//sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
-						TF_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod<T,U>(_t_Table, lastRingOrientationList, azim, elevat, _TFLength, _pole);
+						TF_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod<T,U, Functor>(_t_Table, f_CalculateHRIR_Offline, lastRingOrientationList, azim, elevat, _TFLength, _pole);
 						_t_Table.emplace(orientation(azim, elevat), TF_interpolated);
 					}
 				}
@@ -405,7 +399,7 @@ namespace BRTServices
 					for (float azim = DEFAULT_MIN_AZIMUTH; azim < DEFAULT_MAX_AZIMUTH; azim = azim + azimuth_Step)
 					{
 						//sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
-						TF_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod<T, U>(_t_Table, lastRingOrientationList, azim, elevat, _TFLength, _pole);
+						TF_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod<T, U, Functor>(_t_Table, f_CalculateHRIR_Offline, lastRingOrientationList, azim, elevat, _TFLength, _pole);
 						_t_Table.emplace(orientation(azim, elevat), TF_interpolated);
 					}
 				}

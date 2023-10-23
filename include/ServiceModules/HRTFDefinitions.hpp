@@ -462,7 +462,6 @@ namespace BRTServices {
 		/// <param name="_hemisphereParts"></param>
 		/// <returns></returns>
 		struct CalculateHRIRFromHemisphereParts{
-			//static THRIRStruct CalculateHRIRFromHemisphereParts(T_HRTFTable& _t_HRTF_DataBase, int _HRIRLength, std::vector < std::vector <orientation>> _hemisphereParts) {
 			BRTServices::THRIRStruct operator () (T_HRTFTable& _t_HRTF_DataBase, int _HRIRLength, std::vector < std::vector <orientation>> _hemisphereParts) {
 
 				BRTServices::THRIRStruct calculatedHRIR;
@@ -546,36 +545,48 @@ namespace BRTServices {
 		}
 		};
 
-		///// <summary>
-		/////  		
-		///// </summary>
-		///// <param name="_t_HRTF_DataBase"></param>
-		///// <param name="_HRIRLength"></param>
-		///// <param name="_hemisphereParts"></param>
-		///// <returns></returns>
-		//struct CalculateHRIRFromBarycentrics_OfflineInterpolation {
+		/// <summary>
+		///  		
+		/// </summary>
+		/// <param name="_t_HRTF_DataBase"></param>
+		/// <param name="_HRIRLength"></param>
+		/// <param name="_hemisphereParts"></param>
+		/// <returns></returns>
+					
+		struct CalculateHRIRFromBarycentrics_OfflineInterpolation {
 
-		//	BRTServices::THRIRStruct operator () (T_HRTFTable& _t_HRTF_DataBase, int _HRIRLength, std::vector < std::vector <orientation>> _hemisphereParts) {
+			BRTServices::THRIRStruct operator () (const T_HRTFTable & _table, orientation _orientation1, orientation _orientation2, orientation _orientation3, int _HRIRLength, BRTServices::TBarycentricCoordinatesStruct barycentricCoordinates) {
 
-		//		BRTServices::THRIRStruct calculatedHRIR;
-		//		////FIXME!!! another way to initialize?
-		//		//newHRIR = it0->second;
-		//		////END FIXME
+				BRTServices::THRIRStruct calculatedHRIR;
+				calculatedHRIR.leftHRIR.resize(_HRIRLength, 0.0f);
+				calculatedHRIR.rightHRIR.resize(_HRIRLength, 0.0f);
 
-		//		//for (int i = 0; i < HRIRLength; i++) {
-		//		//	newHRIR.leftHRIR[i] = barycentricCoordinates.alpha * it0->second.leftHRIR[i] + barycentricCoordinates.beta * it1->second.leftHRIR[i] + barycentricCoordinates.gamma * it2->second.leftHRIR[i];
-		//		//	newHRIR.rightHRIR[i] = barycentricCoordinates.alpha * it0->second.rightHRIR[i] + barycentricCoordinates.beta * it1->second.rightHRIR[i] + barycentricCoordinates.gamma * it2->second.rightHRIR[i];
-		//		//}
+				// Calculate the new HRIR with the barycentric coorfinates
+				auto it1 = _table.find(_orientation1);
+				auto it2 = _table.find(_orientation2);
+				auto it3 = _table.find(_orientation3);
 
-		//		//// Calculate delay
-		//		//newHRIR.leftDelay = barycentricCoordinates.alpha * it0->second.leftDelay + barycentricCoordinates.beta * it1->second.leftDelay + barycentricCoordinates.gamma * it2->second.leftDelay;
-		//		//newHRIR.rightDelay = barycentricCoordinates.alpha * it0->second.rightDelay + barycentricCoordinates.beta * it1->second.rightDelay + barycentricCoordinates.gamma * it2->second.rightDelay;
-		//		////SET_RESULT(RESULT_OK, "HRIR calculated with interpolation method succesfully");
-		//		//return newHRIR;
+				if (it1 != _table.end() && it2 != _table.end() && it3 != _table.end()) {
 
-		//		return calculatedHRIR;
-		//	}
-		//};
+					for (int i = 0; i < _HRIRLength; i++) {
+						calculatedHRIR.leftHRIR[i] = barycentricCoordinates.alpha * it1->second.leftHRIR[i] + barycentricCoordinates.beta * it2->second.leftHRIR[i] + barycentricCoordinates.gamma * it3->second.leftHRIR[i];
+						calculatedHRIR.rightHRIR[i] = barycentricCoordinates.alpha * it1->second.rightHRIR[i] + barycentricCoordinates.beta * it2->second.rightHRIR[i] + barycentricCoordinates.gamma * it3->second.rightHRIR[i];
+					}
+
+					// Calculate delay
+					calculatedHRIR.leftDelay = barycentricCoordinates.alpha * it1->second.leftDelay + barycentricCoordinates.beta * it2->second.leftDelay + barycentricCoordinates.gamma * it3->second.leftDelay;
+					calculatedHRIR.rightDelay = barycentricCoordinates.alpha * it1->second.rightDelay + barycentricCoordinates.beta * it2->second.rightDelay + barycentricCoordinates.gamma * it3->second.rightDelay;
+					//SET_RESULT(RESULT_OK, "HRIR calculated with interpolation method succesfully");
+					return calculatedHRIR;
+				}
+
+				else {
+					SET_RESULT(RESULT_WARNING, "GetHRIR_InterpolationMethod return empty because HRIR with a specific orientation was not found");
+					return calculatedHRIR;
+				}
+
+			}
+		};
 
 		
 		/**
