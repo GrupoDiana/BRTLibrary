@@ -190,7 +190,7 @@ namespace BRTServices
 					t_HRTF_DataBase_ListOfOrientations = preprocessor.CalculateListOfOrientations(t_HRTF_DataBase);
 					//CalculateListOfOrientations_T_HRTF_DataBase();
 					//Creation and filling of resampling HRTF table
-					quasiUniformSphereDistribution.CreateGrid(t_HRTF_Resampled_partitioned, stepVector, resamplingStep);					
+					quasiUniformSphereDistribution.CreateGrid<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, resamplingStep);
 					FillResampledTable();
 
 					//Setup values
@@ -272,9 +272,13 @@ namespace BRTServices
 				return newHRIR;
 
 			}
-			if (!runTimeInterpolation) {
-				//FindNearestHRIR_NewGrid(newHRIR, _azimuth, _elevation, ear, stepVector);
-				quasiUniformSphereDistribution.FindNearestHRIR(t_HRTF_Resampled_partitioned, newHRIR, stepVector, ear, _azimuth, _elevation);
+			if (!runTimeInterpolation) {				
+				THRIRPartitionedStruct temp = quasiUniformSphereDistribution.FindNearest<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, _azimuth, _elevation);
+				
+				if (ear == Common::T_ear::LEFT)			{ newHRIR = temp.leftHRIR_Partitioned; }
+				else if (ear == Common::T_ear::RIGHT)	{ newHRIR = temp.rightHRIR_Partitioned;}
+				else { SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get HRIR for a wrong ear (BOTH or NONE)"); }
+
 				return newHRIR;
 			}
 
@@ -374,13 +378,14 @@ namespace BRTServices
 	
 			if (!runTimeInterpolation)
 			{
-				float leftDelay;
-				float rightDelay;
-				quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, leftDelay, stepVector, Common::T_ear::LEFT, _azimuthCenter, _elevationCenter);
-				quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, rightDelay, stepVector, Common::T_ear::RIGHT, _azimuthCenter, _elevationCenter);
+				//float leftDelay;
+				//float rightDelay;				
+				//quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, leftDelay, stepVector, Common::T_ear::LEFT, _azimuthCenter, _elevationCenter);
+				//quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, rightDelay, stepVector, Common::T_ear::RIGHT, _azimuthCenter, _elevationCenter);
+				data = quasiUniformSphereDistribution.FindNearest<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, _azimuthCenter, _elevationCenter);							
 
-				data.leftDelay	= static_cast<uint64_t>(leftDelay);
-				data.rightDelay = static_cast<uint64_t>(rightDelay);
+				//data.leftDelay	= static_cast<uint64_t>(temp.leftDelay);
+				//data.rightDelay = static_cast<uint64_t>(temp.rightDelay);
 				return data;				
 			}
 		
@@ -651,7 +656,7 @@ namespace BRTServices
 		bool enableCustomizedITD;					// Indicate the use of a customized delay
 		int gapThreshold;							// Max distance between pole and next elevation to be consider as a gap
 
-		std::unordered_map<orientation, float> stepVector;
+		std::unordered_map<orientation, float> stepVector;		// Store hrtf interpolated grids steps
 
 		std::string title;
 		std::string databaseName;

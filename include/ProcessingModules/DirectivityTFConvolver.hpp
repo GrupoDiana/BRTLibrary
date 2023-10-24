@@ -103,10 +103,8 @@ namespace BRTProcessing {
 			// GET DirectivityTF
 			CMonoBuffer<float>  dataDirectivityTF;
 			std::vector<CMonoBuffer<float>>  dataDirectivityTF_vector;
-
-			std::unordered_map<orientation, float> stepVector = _sourceDirectivityTF->CalculateStep();
-			
-			dataDirectivityTF = _sourceDirectivityTF->GetDirectivityTF(listener_azimuth, listener_elevation, stepVector).data;
+						
+			dataDirectivityTF = _sourceDirectivityTF->GetDirectivityTF(listener_azimuth, listener_elevation).data;
 			dataDirectivityTF_vector.push_back(dataDirectivityTF);
 
 
