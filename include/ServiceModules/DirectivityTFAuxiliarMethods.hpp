@@ -117,6 +117,41 @@ namespace BRTServices
 				return directivityTFZeros;
 			}
 		};
+
+
+		/**
+		 * @brief 
+		 * @param 
+		*/
+		struct CalculateDirectivityTF_FromBarycentrics_OfflineInterpolation {
+
+			BRTServices::TDirectivityTFStruct operator () (const T_DirectivityTFTable& _table, orientation _orientation1, orientation _orientation2, orientation _orientation3, int _HRIRLength, BRTServices::TBarycentricCoordinatesStruct barycentricCoordinates) {
+
+				BRTServices::TDirectivityTFStruct calculatedDirectivityTF;
+				calculatedDirectivityTF.realPart.resize(_HRIRLength, 0.0f);
+				calculatedDirectivityTF.imagPart.resize(_HRIRLength, 0.0f);
+
+				// Calculate the new DirectivityTF with the barycentric coordinates
+				auto it1 = _table.find(_orientation1);
+				auto it2 = _table.find(_orientation2);
+				auto it3 = _table.find(_orientation3);
+
+				if (it1 != _table.end() && it2 != _table.end() && it3 != _table.end()) 
+				{
+					for (int i = 0; i < _HRIRLength; i++) {
+						calculatedDirectivityTF.realPart[i] = barycentricCoordinates.alpha * it1->second.realPart[i] + barycentricCoordinates.beta * it2->second.realPart[i] + barycentricCoordinates.gamma * it3->second.realPart[i];
+						calculatedDirectivityTF.imagPart[i] = barycentricCoordinates.alpha * it1->second.imagPart[i] + barycentricCoordinates.beta * it2->second.imagPart[i] + barycentricCoordinates.gamma * it3->second.imagPart[i];
+					}
+					return calculatedDirectivityTF;
+				}
+
+				else {
+					SET_RESULT(RESULT_WARNING, "GetDirectivityTF_OffInterpolationMethod return empty because DirectivityTF with a specific orientation was not found");
+					return calculatedDirectivityTF;
+				}
+
+			}
+		};
 	
 		/**
 		 * @brief Given any point returns the DirectivityTF of the closest point to that point.

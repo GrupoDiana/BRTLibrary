@@ -550,9 +550,7 @@ namespace BRTServices {
 		/// </summary>
 		/// <param name="_t_HRTF_DataBase"></param>
 		/// <param name="_HRIRLength"></param>
-		/// <param name="_hemisphereParts"></param>
-		/// <returns></returns>
-					
+		/// <returns></returns>			
 		struct CalculateHRIRFromBarycentrics_OfflineInterpolation {
 
 			BRTServices::THRIRStruct operator () (const T_HRTFTable & _table, orientation _orientation1, orientation _orientation2, orientation _orientation3, int _HRIRLength, BRTServices::TBarycentricCoordinatesStruct barycentricCoordinates) {

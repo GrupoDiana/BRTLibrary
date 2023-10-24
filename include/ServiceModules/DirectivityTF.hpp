@@ -141,7 +141,7 @@ namespace BRTServices
 					//DirectivityTF Resampling methdos
 					preprocessor.CalculateTF_InPoles<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, directivityTFPart_length, resamplingStep, CDirectivityTFAuxiliarMethods::CalculateDirectivityTFFromHemisphereParts());
 					//preprocessor.FillOutTableInAzimuth360(t_DirectivityTF_DataBase, resamplingStep);
-					//preprocessor.FillSphericalCap_HRTF(t_HRTF_DataBase, HRIRLength, gapThreshold, resamplingStep);
+					preprocessor.CalculateTF_SphericalCaps<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, directivityTFPart_length, DEFAULT_GAP_THRESHOLD, resamplingStep, CDirectivityTFAuxiliarMethods::CalculateDirectivityTF_FromBarycentrics_OfflineInterpolation());
 					CalculateResampled_DirectivityTFTable(resamplingStep);
 					auto stepVector = CalculateStep();
 					//CalculateExtendUpTo2PI();

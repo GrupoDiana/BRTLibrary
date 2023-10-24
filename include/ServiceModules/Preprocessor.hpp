@@ -291,7 +291,7 @@ namespace BRTServices
 		/// <param name="_gapThreshold"></param>
 		/// <param name="_resamplingStep"></param>
 		template <typename T, typename U, typename Functor>
-		void FillSphericalCap_HRTF(T& _t_TF_DataBase, int _TFlength, int _gapThreshold, int _resamplingStep, Functor f_CalculateHRIR_Offline)
+		void CalculateTF_SphericalCaps(T& _t_TF_DataBase, int _TFlength, int _gapThreshold, int _resamplingStep, Functor f_CalculateHRIR_Offline)
 		{
 			// Initialize some variables
 			float max_dist_elev = 0;
