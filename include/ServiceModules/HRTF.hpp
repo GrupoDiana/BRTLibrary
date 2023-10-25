@@ -183,7 +183,7 @@ namespace BRTServices
 					//preprocessor.CalculateHRIR_InPoles(t_HRTF_DataBase, HRIRLength, resamplingStep);
 					preprocessor.CalculateTF_InPoles<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, HRIRLength, resamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts());
 					//CalculateHRIR_InPoles(resamplingStep);
-					preprocessor.FillOutTableInAzimuth360(t_HRTF_DataBase, resamplingStep);
+					//preprocessor.FillOutTableInAzimuth360(t_HRTF_DataBase, resamplingStep);
 					//FillOutTableOfAzimuth360(resamplingStep);
 					preprocessor.CalculateTF_SphericalCaps<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, HRIRLength, gapThreshold, resamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
 					//FillSphericalCap_HRTF(gapThreshold, resamplingStep);
@@ -191,7 +191,7 @@ namespace BRTServices
 					//CalculateListOfOrientations_T_HRTF_DataBase();
 					//Creation and filling of resampling HRTF table
 					quasiUniformSphereDistribution.CreateGrid(t_HRTF_Resampled_partitioned, stepVector, resamplingStep);					
-					FillResampledTable();
+					preprocessor.FillResampledTable(t_HRTF_DataBase, t_HRTF_Resampled_partitioned, bufferSize, HRIRLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData());
 
 					//Setup values
 					auto it = t_HRTF_Resampled_partitioned.begin();
@@ -1045,21 +1045,21 @@ namespace BRTServices
 		//	}
 		//}	
 
-		void FillResampledTable() {
-			int numOfInterpolatedHRIRs = 0;
-			for (auto& it : t_HRTF_Resampled_partitioned)
-			{
-				if (CalculateAndEmplaceNewPartitionedHRIR(it.first.azimuth, it.first.elevation)) { numOfInterpolatedHRIRs++; }
-			}
-			SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
-		}
+		//void FillResampledTable() {
+		//	int numOfInterpolatedHRIRs = 0;
+		//	for (auto& it : t_HRTF_Resampled_partitioned)
+		//	{
+		//		if (CalculateAndEmplaceNewPartitionedHRIR(it.first.azimuth, it.first.elevation)) { numOfInterpolatedHRIRs++; }
+		//	}
+		//	SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
+		//}
 
-		/// <summary>
-		/// Calculate the resample HRIR using the Barycentric interpolation Method 
-		/// </summary>
-		/// <param name="newAzimuth"></param>
-		/// <param name="newElevation"></param>
-		/// <returns>interpolatedHRIRs: true if the HRIR has been calculated using the interpolation</returns>
+		///// <summary>
+		///// Calculate the resample HRIR using the Barycentric interpolation Method 
+		///// </summary>
+		///// <param name="newAzimuth"></param>
+		///// <param name="newElevation"></param>
+		///// <returns>interpolatedHRIRs: true if the HRIR has been calculated using the interpolation</returns>
 		bool CalculateAndEmplaceNewPartitionedHRIR(double _azimuth, double _elevation) {
 			THRIRStruct interpolatedHRIR;
 			bool bHRIRInterpolated = false;

@@ -424,6 +424,51 @@ namespace BRTServices
 			return table_ListOfOrientations;
 		}
 
+		
+		template <typename T, typename U, typename Functor>
+		void FillResampledTable(T& table_dataBase, U& t_HRTF_Resampled_partitioned, int _bufferSize, int _HRIRLength, int _HRIRPartitioned_NumberOfSubfilters, Functor f) {
+			int numOfInterpolatedHRIRs = 0;
+			for (auto& it : t_HRTF_Resampled_partitioned)
+			{
+				if (CalculateAndEmplaceNewPartitionedHRIR(table_dataBase, t_HRTF_Resampled_partitioned, it.first.azimuth, it.first.elevation, _bufferSize, _HRIRLength, _HRIRPartitioned_NumberOfSubfilters, f)) { numOfInterpolatedHRIRs++; }
+			}
+			SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
+		}
+
+		template <typename T, typename U, typename Functor>
+		bool CalculateAndEmplaceNewPartitionedHRIR(T& t_HRTF_DataBase, U& t_HRTF_Resampled_partitioned, double _azimuth, double _elevation, int _bufferSize, int _HRIRLength, int _HRIRPartitioned_NumberOfSubfilters, Functor f) {
+			//THRIRStruct interpolatedHRIR;
+			bool bHRIRInterpolated = false;
+
+			auto it = t_HRTF_DataBase.find(orientation(_azimuth, _elevation));
+			if (it != t_HRTF_DataBase.end())
+			{
+				//Fill out HRTF partitioned table.IR in frequency domain
+				//THRIRPartitionedStruct newHRIR_partitioned;
+				auto newHRIR_partitioned = f(it->second, _bufferSize, _HRIRPartitioned_NumberOfSubfilters);
+				t_HRTF_Resampled_partitioned[orientation(_azimuth, _elevation)] = std::forward<THRIRPartitionedStruct>(newHRIR_partitioned);
+			}
+			else
+			{
+				// Get a list sorted by distances to the orientation of interest
+				//std::vector<T_PairDistanceOrientation> sortedList = distanceBasedInterpolator.GetSortedDistancesList(t_HRTF_DataBase_ListOfOrientations, _azimuth, _elevation);
+				//Get the interpolated HRIR 
+				//auto interpolatedHRIR = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, _azimuth, _elevation, HRIRLength);
+				auto t_HRTF_DataBase_ListOfOrientations = CalculateListOfOrientations(t_HRTF_DataBase);
+				auto interpolatedHRIR = quadrantBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, _HRIRLength, _azimuth, _elevation);
+				bHRIRInterpolated = true;
+
+				//Fill out HRTF partitioned table.IR in frequency domain
+				//THRIRPartitionedStruct newHRIR_partitioned;
+				auto newHRIR_partitioned = f(interpolatedHRIR, _bufferSize, _HRIRPartitioned_NumberOfSubfilters);
+				t_HRTF_Resampled_partitioned[orientation(_azimuth, _elevation)] = std::forward<THRIRPartitionedStruct>(newHRIR_partitioned);
+			}
+			return bHRIRInterpolated;
+
+		}
+
+
+
 	private:
 
 		float epsilon_sewing;
@@ -435,6 +480,7 @@ namespace BRTServices
 		int resamplingStep; 						// HRTF Resample table step (azimuth and elevation)
 
 		CDistanceBasedInterpolator distanceBasedInterpolator;
+		CQuadrantBasedInterpolator quadrantBasedInterpolator;
 		
 	};
 	
