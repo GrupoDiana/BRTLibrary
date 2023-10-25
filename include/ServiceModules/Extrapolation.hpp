@@ -151,6 +151,7 @@ namespace BRTServices
 		void FillGaps(T& table, const std::vector<orientation>& orientationsList, int _TFSize, int extrapolationStep, TGapsFound gapsFound, TAzimuthElevationBorders borders, Functor f) {
 			
 			T originalTable = table;
+			int cont = 0;			
 
 			if (gapsFound.gapMaxElevation) {
 				for (double _elevation = 90; _elevation >= (borders.maxElevation + extrapolationStep); _elevation -= extrapolationStep) {
@@ -159,6 +160,7 @@ namespace BRTServices
 					for (double _azimuth = 0; _azimuth < 360; _azimuth += extrapolationStep) {
 						U newTF = f(originalTable, orientationsList, _TFSize, _azimuth, _elevationInRage);
 						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
+						cont++;
 					}
 				}
 			}
@@ -168,6 +170,7 @@ namespace BRTServices
 					for (double _azimuth = 0; _azimuth < 360; _azimuth += extrapolationStep) {						
 						U newTF = f(originalTable, orientationsList, _TFSize, _azimuth, _elevationInRage);
 						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
+						cont++;
 					}
 				}
 			}
@@ -182,6 +185,7 @@ namespace BRTServices
 					for (double _azimuth = borders.maxAzimuth + extrapolationStep; _azimuth <= 180; _azimuth += extrapolationStep) {						
 						U newTF = f(originalTable, orientationsList, _TFSize, _azimuth, _elevationInRage);
 						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
+						cont++;
 					}
 				}
 			}
@@ -197,10 +201,12 @@ namespace BRTServices
 					for (double _azimuth = borders.minAzimuth - extrapolationStep; _azimuth >= 180; _azimuth -= extrapolationStep) {					
 						U newTF = f(originalTable, orientationsList, _TFSize, _azimuth, _elevationInRage);
 						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
+						cont++;
 					}
 				}
 				
 			}
+			SET_RESULT(RESULT_WARNING, "Number of extrapolated points: " + std::to_string(cont));
 		}
 
 	};
