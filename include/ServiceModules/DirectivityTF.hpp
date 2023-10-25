@@ -34,6 +34,7 @@
 #include <ServiceModules/DirectivityTFDefinitions.hpp>
 #include <ServiceModules/DirectivityTFAuxiliarMethods.hpp>
 #include <ServiceModules/Extrapolation.hpp>
+#include <ServiceModules/GridsManager.hpp>
 
 #ifndef DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP
 #define DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP 5
@@ -142,9 +143,12 @@ namespace BRTServices
 					preprocessor.CalculateTF_InPoles<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, directivityTFPart_length, resamplingStep, CDirectivityTFAuxiliarMethods::CalculateDirectivityTFFromHemisphereParts());
 					//preprocessor.FillOutTableInAzimuth360(t_DirectivityTF_DataBase, resamplingStep);
 					preprocessor.CalculateTF_SphericalCaps<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, directivityTFPart_length, DEFAULT_GAP_THRESHOLD, resamplingStep, CDirectivityTFAuxiliarMethods::CalculateDirectivityTF_FromBarycentrics_OfflineInterpolation());
-					CalculateResampled_DirectivityTFTable(resamplingStep);
-					auto stepVector = CalculateStep();
-					//CalculateExtendUpTo2PI();
+					
+					
+					t_DirectivityTF_DataBase_ListOfOrientations = preprocessor.CalculateListOfOrientations(t_DirectivityTF_DataBase);
+					quasiUniformSphereDistribution.CreateGrid<T_DirectivityTFInterlacedDataTable, TDirectivityInterlacedTFStruct>(t_DirectivityTF_Resampled, gridResamplingStepsVector, resamplingStep);
+					
+					CalculateResampled_DirectivityTFTable(resamplingStep);					
 
 					//Setup values
 					setupDirectivityTFInProgress = false;
@@ -292,7 +296,7 @@ namespace BRTServices
 		*	\retval unordered map with all the orientations of the resampled table 
 		*   \eh Warnings may be reported to the error handler.
 		*/
-		std::unordered_map<orientation, float> CalculateStep()
+		std::unordered_map<orientation, float> CalculateStep() const
 		{
 			std::unordered_map<orientation, float> stepVector;
 			float elevation, aziStep, diff = 360, actual_ele = -1.0f;
@@ -345,8 +349,8 @@ namespace BRTServices
 		* *	\param [in] _stepsMap map that contains orientations of the grid
 		*	\retval  Directivity TF with the Real and Imag part interlaced
 		*/
-		const TDirectivityInterlacedTFStruct GetDirectivityTF(float _azimuth, float _elevation, std::unordered_map<orientation, float> _stepsMap) const {
-
+		const TDirectivityInterlacedTFStruct GetDirectivityTF(float _azimuth, float _elevation) const {
+			
 			TDirectivityInterlacedTFStruct newSRIR;
 			auto it0 = t_DirectivityTF_Resampled.find(orientation(_azimuth, _elevation));
 			if (it0 != t_DirectivityTF_Resampled.end()) {
@@ -365,13 +369,13 @@ namespace BRTServices
 				eleCeil = CheckLimitsElevation_and_Transform(eleCeil);										//			   Back	  Front
 				eleFloor = CheckLimitsElevation_and_Transform(eleFloor);									//	Ceil		A		B
 
-				auto stepItr = _stepsMap.find(orientation(0, eleCeil));										//	Floor		D		C
+				auto stepItr = gridResamplingStepsVector.find(orientation(0, eleCeil));						//	Floor		D		C
 				float aziStepCeil = stepItr->second;
 																										
 				CalculateAzimuth_BackandFront(aziCeilBack, aziCeilFront, aziStepCeil, _azimuth);
 				// azimuth values passed by reference
 
-				auto stepIt = _stepsMap.find(orientation(0, eleFloor));
+				auto stepIt = gridResamplingStepsVector.find(orientation(0, eleFloor));
 				float aziStepFloor = stepIt->second;							
 
 				CalculateAzimuth_BackandFront(aziFloorBack, aziFloorFront, aziStepFloor, _azimuth); 
@@ -466,14 +470,16 @@ namespace BRTServices
 		int32_t directivityTF_length;	
 		int32_t directivityTFPart_length;
 		int32_t directivityTF_numberOfSubfilters;	
-		TExtrapolationMethod extrapolationMethod;		// Methods that is going to be used to extrapolate
+		TExtrapolationMethod extrapolationMethod;						// Methods that is going to be used to extrapolate
 		
 		T_DirectivityTFTable					t_DirectivityTF_DataBase;
 		std::vector<orientation>				t_DirectivityTF_DataBase_ListOfOrientations;
 		T_DirectivityTFInterlacedDataTable		t_DirectivityTF_Resampled;
 		
-		Common::CGlobalParameters globalParameters;
+		std::unordered_map<orientation, float>  gridResamplingStepsVector;		// Store hrtf interpolated grids steps
 
+		Common::CGlobalParameters globalParameters;
+		
 		float aziMin, aziMax, eleMin, eleMax, eleNorth, eleSouth;	// Variables that define limits of work area
 		float sphereBorder;
 		float epsilon_sewing;
@@ -481,6 +487,7 @@ namespace BRTServices
 
 		CPreprocessor preprocessor;
 		CExtrapolation extrapolation;
+		CQuasiUniformSphereDistribution quasiUniformSphereDistribution;
 		
 		///////////////////
 		///// METHODS
