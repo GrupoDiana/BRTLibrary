@@ -550,7 +550,8 @@ namespace BRTServices {
 		/// </summary>
 		/// <param name="_t_HRTF_DataBase"></param>
 		/// <param name="_HRIRLength"></param>
-		/// <returns></returns>			
+		/// <returns></returns>
+					
 		struct CalculateHRIRFromBarycentrics_OfflineInterpolation {
 
 			BRTServices::THRIRStruct operator () (const T_HRTFTable & _table, orientation _orientation1, orientation _orientation2, orientation _orientation3, int _HRIRLength, BRTServices::TBarycentricCoordinatesStruct barycentricCoordinates) {
@@ -646,6 +647,54 @@ namespace BRTServices {
 				return nearestHRIR;
 			}
 		};
+
+
+		//	Split the input HRIR data in subfilters and get the FFT to apply the UPC algorithm
+		//param	newData_time	HRIR value in time domain	
+
+		struct SplitAndGetFFT_HRTFData{
+
+			THRIRPartitionedStruct operator()(const THRIRStruct& newData_time, int _bufferSize, int _HRIRPartitioned_NumberOfSubfilters)
+			{
+				int blockSize = _bufferSize;
+				int numberOfBlocks = _HRIRPartitioned_NumberOfSubfilters;
+				int data_time_size = newData_time.leftHRIR.size();
+
+				THRIRPartitionedStruct new_DataFFT_Partitioned;
+				new_DataFFT_Partitioned.leftHRIR_Partitioned.reserve(numberOfBlocks);
+				new_DataFFT_Partitioned.rightHRIR_Partitioned.reserve(numberOfBlocks);
+				//Index to go throught the AIR values in time domain
+				int index;
+				for (int i = 0; i < data_time_size; i = i + blockSize)
+				{
+					CMonoBuffer<float> left_data_FFT_doubleSize, right_data_FFT_doubleSize;
+					//Resize with double size and zeros to make the zero-padded demanded by the algorithm
+					left_data_FFT_doubleSize.resize(blockSize * 2, 0.0f);
+					right_data_FFT_doubleSize.resize(blockSize * 2, 0.0f);
+					//Fill each AIR block (question about this comment: AIR???)
+					for (int j = 0; j < blockSize; j++) {
+						index = i + j;
+						if (index < data_time_size) {
+							left_data_FFT_doubleSize[j] = newData_time.leftHRIR[index];
+							right_data_FFT_doubleSize[j] = newData_time.rightHRIR[index];
+						}
+					}
+					//FFT
+					CMonoBuffer<float> left_data_FFT, right_data_FFT;
+					Common::CFprocessor::CalculateFFT(left_data_FFT_doubleSize, left_data_FFT);
+					Common::CFprocessor::CalculateFFT(right_data_FFT_doubleSize, right_data_FFT);
+					//Prepare struct to return the value
+					new_DataFFT_Partitioned.leftHRIR_Partitioned.push_back(left_data_FFT);
+					new_DataFFT_Partitioned.rightHRIR_Partitioned.push_back(right_data_FFT);
+				}
+				//Store the delays
+				new_DataFFT_Partitioned.leftDelay = newData_time.leftDelay;
+				new_DataFFT_Partitioned.rightDelay = newData_time.rightDelay;
+
+				return new_DataFFT_Partitioned;
+			}
+		};
+
 	};
 }
 #endif

@@ -175,7 +175,7 @@ namespace BRTServices
 	class CQuadrantBasedInterpolator {
 	public:
 
-		THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, std::vector<orientation>& listToSort, double newAzimuth, double newElevation, int HRIRLength, int pole = 0)
+		THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, std::vector<orientation>& listToSort, int HRIRLength, double newAzimuth, double newElevation, int pole = 0)
 		{
 			std::vector<orientation> azimuthBackList, azimuthFrontList, backCeilList, backFloorList, frontCeilList, frontFloorList;
 			TBarycentricCoordinatesStruct barycentricCoordinates;
