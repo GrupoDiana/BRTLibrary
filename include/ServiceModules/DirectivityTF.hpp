@@ -570,9 +570,11 @@ namespace BRTServices
 			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.
 
 			if (extrapolationMethod == TExtrapolationMethod::zeroInsertion) {
-				extrapolation.Process<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_DataBase_ListOfOrientations, directivityTFPart_length, DEFAULT_EXTRAPOLATION_STEP, CDirectivityTFAuxiliarMethods::GetZerosDirectivityTF());
+				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded DirectivityTF sofa file, an extrapolation with zeros will be performed to fill it.");
+				extrapolation.Process<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_DataBase_ListOfOrientations, directivityTFPart_length, DEFAULT_EXTRAPOLATION_STEP, CDirectivityTFAuxiliarMethods::GetZerosDirectivityTF());			
 			}
 			else if (extrapolationMethod == TExtrapolationMethod::nearestPoint) {
+				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded DirectivityTF sofa file, an extrapolation will be made to the nearest point to fill it.");
 				extrapolation.Process<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_DataBase_ListOfOrientations, directivityTFPart_length, DEFAULT_EXTRAPOLATION_STEP, CDirectivityTFAuxiliarMethods::GetNearestPointDirectivityTF());
 			}
 			else {
