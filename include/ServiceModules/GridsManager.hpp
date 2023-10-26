@@ -28,6 +28,8 @@
 #include <vector>
 #include <ServiceModules/InterpolationAuxiliarMethods.hpp>
 
+#include <ServiceModules/HRTFDefinitions.hpp>
+
 namespace BRTServices
 {
 

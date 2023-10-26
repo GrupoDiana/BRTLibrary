@@ -28,7 +28,7 @@
 #include <vector>
 #include <ServiceModules/InterpolationAuxiliarMethods.hpp>
 
-#include <ServiceModules/HRTFDefinitions.hpp>
+//#include <ServiceModules/HRTFDefinitions.hpp>
 
 
 namespace BRTServices
@@ -179,12 +179,14 @@ namespace BRTServices
 	class CQuadrantBased_OfflineInterpolator {
 	public:
 
-		THRIRStruct CalculateHRIR_offlineMethod(const T_HRTFTable& table, std::vector<orientation>& listToSort, int HRIRLength, double newAzimuth, double newElevation, int pole = 0)
+		template <typename T, typename W_THRIRStruct, typename Functor2>
+		W_THRIRStruct CalculateHRIR_offlineMethod(const T& table, Functor2 f2, std::vector<orientation>& listToSort, int _TFLength, double newAzimuth, double newElevation, int pole = 0)
 		{
 			std::vector<orientation> azimuthBackList, azimuthFrontList, backCeilList, backFloorList, frontCeilList, frontFloorList;
 			TBarycentricCoordinatesStruct barycentricCoordinates;
 
-			THRIRStruct emptyHRIR;
+			//THRIRStruct emptyHRIR;
+			W_THRIRStruct newTF;
 
 			// Get 2 list sorted by azimuth to the orientation of interest, Back and Front
 			SortListByAzimuthAndSplit(newAzimuth, listToSort, azimuthBackList, azimuthFrontList);
@@ -228,13 +230,15 @@ namespace BRTServices
 
 				if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f)
 				{
-					//TODO: Use CalculateHRIRFromBarycentrics_OfflineInterpolation from HRTFAuxiliarMethods
-					return DataInterpolation(table, barycentricCoordinates, HRIRLength, backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation, 
-						backFloorListSortedByDistance[0].second.azimuth, backFloorListSortedByDistance[0].second.elevation, frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation);
+					newTF = f2(table, orientation(backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation), orientation(backFloorListSortedByDistance[0].second.azimuth, backFloorListSortedByDistance[0].second.elevation), orientation(frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation), _TFLength, barycentricCoordinates);
+					return newTF;
+					
+					//return DataInterpolation(table, barycentricCoordinates, _TFLength, backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation, 
+					//	backFloorListSortedByDistance[0].second.azimuth, backFloorListSortedByDistance[0].second.elevation, frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation);
 				}
 				else
 				{
-					return emptyHRIR;
+					return newTF;
 				}
 			}
 			else
@@ -245,13 +249,14 @@ namespace BRTServices
 
 				if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f)
 				{
-					//TODO: Use CalculateHRIRFromBarycentrics_OfflineInterpolation from HRTFAuxiliarMethods
-					return DataInterpolation(table, barycentricCoordinates, HRIRLength, backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation,
-						frontCeilListSortedByDistance[0].second.azimuth, frontCeilListSortedByDistance[0].second.elevation, frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation);
+					newTF = f2(table, orientation(backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation), orientation(frontCeilListSortedByDistance[0].second.azimuth, frontCeilListSortedByDistance[0].second.elevation), orientation(frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation), _TFLength, barycentricCoordinates);
+					return newTF;
+					//return DataInterpolation(table, barycentricCoordinates, _TFLength, backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation,
+					//	frontCeilListSortedByDistance[0].second.azimuth, frontCeilListSortedByDistance[0].second.elevation, frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation);
 				}
 				else
 				{
-					return emptyHRIR;
+					return newTF;
 				}
 			}		
 		}
@@ -334,37 +339,37 @@ namespace BRTServices
 		}
 
 		
-		THRIRStruct DataInterpolation(const T_HRTFTable& table, TBarycentricCoordinatesStruct _barycentricCoordinates, int HRIRLength, float azimuthPnt1, float elevationPnt1, float azimuthPnt2, float elevationPnt2, float azimuthPnt3, float elevationPnt3)
-		{
-			// Calculate the new HRIR with the barycentric coorfinates
-			auto it1 = table.find(orientation(azimuthPnt1, elevationPnt1));
-			auto it2 = table.find(orientation(azimuthPnt2, elevationPnt2));
-			auto it3 = table.find(orientation(azimuthPnt3, elevationPnt3));
+		//THRIRStruct DataInterpolation(const T_HRTFTable& table, TBarycentricCoordinatesStruct _barycentricCoordinates, int HRIRLength, float azimuthPnt1, float elevationPnt1, float azimuthPnt2, float elevationPnt2, float azimuthPnt3, float elevationPnt3)
+		//{
+		//	// Calculate the new HRIR with the barycentric coorfinates
+		//	auto it1 = table.find(orientation(azimuthPnt1, elevationPnt1));
+		//	auto it2 = table.find(orientation(azimuthPnt2, elevationPnt2));
+		//	auto it3 = table.find(orientation(azimuthPnt3, elevationPnt3));
 
-			THRIRStruct newHRIR;
+		//	THRIRStruct newHRIR;
 
-			if (it1 != table.end() && it2 != table.end() && it3 != table.end()) {
+		//	if (it1 != table.end() && it2 != table.end() && it3 != table.end()) {
 
-				//FIXME!!! another way to initialize?
-				newHRIR = it1->second;
-				//END FIXME
+		//		//FIXME!!! another way to initialize?
+		//		newHRIR = it1->second;
+		//		//END FIXME
 
-				for (int i = 0; i < HRIRLength; i++) {
-					newHRIR.leftHRIR[i] = _barycentricCoordinates.alpha * it1->second.leftHRIR[i] + _barycentricCoordinates.beta * it2->second.leftHRIR[i] + _barycentricCoordinates.gamma * it3->second.leftHRIR[i];
-					newHRIR.rightHRIR[i] = _barycentricCoordinates.alpha * it1->second.rightHRIR[i] + _barycentricCoordinates.beta * it2->second.rightHRIR[i] + _barycentricCoordinates.gamma * it3->second.rightHRIR[i];
-				}
+		//		for (int i = 0; i < HRIRLength; i++) {
+		//			newHRIR.leftHRIR[i] = _barycentricCoordinates.alpha * it1->second.leftHRIR[i] + _barycentricCoordinates.beta * it2->second.leftHRIR[i] + _barycentricCoordinates.gamma * it3->second.leftHRIR[i];
+		//			newHRIR.rightHRIR[i] = _barycentricCoordinates.alpha * it1->second.rightHRIR[i] + _barycentricCoordinates.beta * it2->second.rightHRIR[i] + _barycentricCoordinates.gamma * it3->second.rightHRIR[i];
+		//		}
 
-				// Calculate delay
-				newHRIR.leftDelay = _barycentricCoordinates.alpha * it1->second.leftDelay + _barycentricCoordinates.beta * it2->second.leftDelay + _barycentricCoordinates.gamma * it3->second.leftDelay;
-				newHRIR.rightDelay = _barycentricCoordinates.alpha * it1->second.rightDelay + _barycentricCoordinates.beta * it2->second.rightDelay + _barycentricCoordinates.gamma * it3->second.rightDelay;
-				//SET_RESULT(RESULT_OK, "HRIR calculated with interpolation method succesfully");
-				return newHRIR;
-			}
-			else {
-				SET_RESULT(RESULT_WARNING, "GetHRIR_InterpolationMethod return empty because HRIR with a specific orientation was not found");
-				return newHRIR;
-			}
-		}
+		//		// Calculate delay
+		//		newHRIR.leftDelay = _barycentricCoordinates.alpha * it1->second.leftDelay + _barycentricCoordinates.beta * it2->second.leftDelay + _barycentricCoordinates.gamma * it3->second.leftDelay;
+		//		newHRIR.rightDelay = _barycentricCoordinates.alpha * it1->second.rightDelay + _barycentricCoordinates.beta * it2->second.rightDelay + _barycentricCoordinates.gamma * it3->second.rightDelay;
+		//		//SET_RESULT(RESULT_OK, "HRIR calculated with interpolation method succesfully");
+		//		return newHRIR;
+		//	}
+		//	else {
+		//		SET_RESULT(RESULT_WARNING, "GetHRIR_InterpolationMethod return empty because HRIR with a specific orientation was not found");
+		//		return newHRIR;
+		//	}
+		//}
 
 	};
 
