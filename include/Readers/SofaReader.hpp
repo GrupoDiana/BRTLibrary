@@ -265,13 +265,18 @@ namespace BRTReaders {
 			for (std::size_t i = 0; i < numberOfMeasurements; i++)
 			{
 				BRTServices::THRIRStruct hrir_value;
-				double azimuth = sourcePositionsVector[array2DIndex(i, 0, numberOfMeasurements, numberOfCoordinates)];
-				//double elevation = GetPositiveElevation(sourcePositionsVector[array2DIndex(i, 1, numberOfMeasurements, numberOfCoordinates)]);
+				double azimuth = sourcePositionsVector[array2DIndex(i, 0, numberOfMeasurements, numberOfCoordinates)];				
 				double elevation = sourcePositionsVector[array2DIndex(i, 1, numberOfMeasurements, numberOfCoordinates)];
-				//double distance = sourcePositionsVector[array2DIndex(i, 2, numberOfMeasurements, numberOfCoordinates)];
+												
+				double leftDelay = dataDelays[specifiedDelays ? array2DIndex(i, left_ear, numberOfMeasurements, 2) : 0];
+				double rightDelay = dataDelays[specifiedDelays ? array2DIndex(i, right_ear, numberOfMeasurements, 2) : 1];
+				if (leftDelay < 0 || rightDelay <0) { 
+					SET_RESULT(RESULT_WARNING, "Error reading HRIR from SOFA file, one of the delay fields is negative. This data is rejected. [" + std::to_string(azimuth) + ", " + std::to_string(elevation) + "]");			
+					continue; 
+				}
+				hrir_value.leftDelay = leftDelay;
+				hrir_value.rightDelay = rightDelay;
 
-				hrir_value.leftDelay = dataDelays[specifiedDelays ? array2DIndex(i, left_ear, numberOfMeasurements, 2) : 0];
-				hrir_value.rightDelay = dataDelays[specifiedDelays ? array2DIndex(i, right_ear, numberOfMeasurements, 2) : 1];
 				GetData(dataMeasurements, hrir_value.leftHRIR, numberOfMeasurements, 2,  numberOfSamples, left_ear, i);
 				GetData(dataMeasurements, hrir_value.rightHRIR, numberOfMeasurements, 2, numberOfSamples, right_ear, i);
 

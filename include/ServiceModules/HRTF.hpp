@@ -157,7 +157,7 @@ namespace BRTServices
 				_elevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
 				//Common::CVector3 cartessianPos;
 				//cartessianPos.SetFromAED(_azimuth, _elevation, GetHRTFDistanceOfMeasurement());
-				//auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), std::forward<THRIRStruct>(newHRIR));
+				//auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), std::forward<THRIRStruct>(newHRIR));				
 				auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation), std::forward<THRIRStruct>(newHRIR));
 				//Error handler
 				if (!returnValue.second) { 
@@ -745,12 +745,13 @@ namespace BRTServices
 		 * @brief Call the extrapolation method
 		*/
 		void CalculateExtrapolation() {
-			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.
-			
+			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.			
 			if (extrapolationMethod == TExtrapolationMethod::zeroInsertion) {
+				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded HRTF sofa file, an extrapolation with zeros will be performed to fill it.");
 				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, HRIRLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetZerosHRIR());
 			}
 			else if (extrapolationMethod == TExtrapolationMethod::nearestPoint) {
+				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded HRTF sofa file, an extrapolation will be made to the nearest point to fill it.");
 				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, HRIRLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetNearestPointHRIR());
 			}
 			else {
