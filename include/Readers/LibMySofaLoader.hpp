@@ -229,7 +229,7 @@ namespace BRTReaders {
 			}
 		}
 
-		MYSOFA_ARRAY* mysofa_getVariable(struct MYSOFA_VARIABLE* var, char* name) {
+		MYSOFA_ARRAY* mysofa_getVariable(struct MYSOFA_VARIABLE* var, const char* name) {
 			while (var) {
 				if (var->name && !strcmp(name, var->name)) {
 					return var->value;
