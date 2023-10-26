@@ -35,6 +35,9 @@
 #include <Common/GlobalParameters.hpp>
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
 #include <ServiceModules/DirectivityTFDefinitions.hpp>
+#include <ServiceModules/OfflineInterpolationAuxiliarMethods.hpp>
+#include <ServiceModules/InterpolationAuxiliarMethods.hpp>
+
 
 namespace BRTServices
 {
@@ -167,7 +170,7 @@ namespace BRTServices
 			*/
 			TDirectivityTFStruct operator() (const T_DirectivityTFTable& table, const std::vector<orientation>& orientationsList, int _DirectivityTFLength, double _azimuth, double _elevation) {
 				// Order list of orientation
-				std::vector<T_PairDistanceOrientation> pointsOrderedByDistance = CHRTFAuxiliarMethods::GetListOrderedDistancesToPoint(orientationsList, _azimuth, _elevation);
+				std::vector<T_PairDistanceOrientation> pointsOrderedByDistance = CInterpolationAuxiliarMethods::GetListOrderedDistancesToPoint(orientationsList, _azimuth, _elevation);
 				// Get nearest
 				double nearestAzimuth = pointsOrderedByDistance.begin()->second.azimuth;
 				double nearestElevation = pointsOrderedByDistance.begin()->second.elevation;

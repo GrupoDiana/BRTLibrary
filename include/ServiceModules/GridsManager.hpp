@@ -26,7 +26,7 @@
 
 #include <unordered_map>
 #include <vector>
-#include <ServiceModules/HRTFDefinitions.hpp>
+#include <ServiceModules/InterpolationAuxiliarMethods.hpp>
 
 namespace BRTServices
 {
@@ -54,7 +54,7 @@ namespace BRTServices
 			if (nearestAzimuth == DEFAULT_MAX_AZIMUTH) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
 			if (nearestElevation == DEFAULT_MAX_ELEVATION) { nearestElevation = DEFAULT_MIN_ELEVATION; }
 			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
-			if ((nearestElevation == CHRTFAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CHRTFAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
+			if ((nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
 			auto it = table.find(orientation(nearestAzimuth, nearestElevation));
 			if (it != table.end())
 			{
@@ -83,7 +83,7 @@ namespace BRTServices
 			if (nearestAzimuth == DEFAULT_MAX_AZIMUTH) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
 			if (nearestElevation == DEFAULT_MAX_ELEVATION) { nearestElevation = DEFAULT_MIN_ELEVATION; }
 			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
-			if ((nearestElevation == CHRTFAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CHRTFAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
+			if ((nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
 
 			auto it = table.find(orientation(nearestAzimuth, nearestElevation));
 			if (it != table.end())
@@ -155,7 +155,7 @@ namespace BRTServices
 
 			float nearestElevation = (round(_elevation / eleStep) * eleStep);
 
-			nearestElevation = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(nearestElevation);
+			nearestElevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(nearestElevation);
 
 			auto nearestElevationStep = stepMap.find(orientation(0, nearestElevation));
 			if (nearestElevationStep == stepMap.end()) {
@@ -170,7 +170,7 @@ namespace BRTServices
 			if (nearestAzimuth == DEFAULT_MAX_AZIMUTH) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
 			if (nearestElevation == DEFAULT_MAX_ELEVATION) { nearestElevation = DEFAULT_MIN_ELEVATION; }
 			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
-			if ((nearestElevation == CHRTFAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CHRTFAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
+			if ((nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
 
 			auto it = table.find(orientation(nearestAzimuth, nearestElevation));
 			if (it != table.end())

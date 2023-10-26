@@ -30,11 +30,13 @@
 #include <Common/GlobalParameters.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
-#include <ServiceModules/Preprocessor.hpp>
 #include <ServiceModules/DirectivityTFDefinitions.hpp>
 #include <ServiceModules/DirectivityTFAuxiliarMethods.hpp>
 #include <ServiceModules/Extrapolation.hpp>
 #include <ServiceModules/GridsManager.hpp>
+#include <ServiceModules/OfflineInterpolation.hpp>
+#include <ServiceModules/InterpolationAuxiliarMethods.hpp>
+
 
 #ifndef DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP
 #define DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP 5
@@ -44,15 +46,6 @@
 namespace BRTServices
 {
 	
-	//struct TDirectivityInterlacedTFStruct {
-	//	CMonoBuffer<float> data;
-	//};
-
-	///** \brief Type definition for the DirectivityTF table */
-	//typedef std::unordered_map<orientation, BRTServices::TDirectivityTFStruct> T_DirectivityTFTable;
-	//typedef std::unordered_map<orientation, BRTServices::TDirectivityInterlacedTFStruct> T_DirectivityTFInterlacedDataTable;
-
-
 	/** \details This class gets impulse response data to compose HRTFs and implements different algorithms to interpolate the HRIR functions.
 	*/
 	class CDirectivityTF : public CServicesBase
@@ -102,8 +95,8 @@ namespace BRTServices
 		*/
 		void BeginSetup(int32_t _directivityTFPartLength, std::string _extrapolationMethod){
 			//Update parameters			
-			eleNorth = GetPoleElevation(TPole::north);
-			eleSouth = GetPoleElevation(TPole::south);
+			eleNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
+			eleSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
 
 			if (_directivityTFPartLength != globalParameters.GetBufferSize()) //
 			{
@@ -136,16 +129,15 @@ namespace BRTServices
 				if (!t_DirectivityTF_DataBase.empty())
 				{
 
-					t_DirectivityTF_DataBase_ListOfOrientations = preprocessor.CalculateListOfOrientations(t_DirectivityTF_DataBase);
+					t_DirectivityTF_DataBase_ListOfOrientations = offlineInterpolation.CalculateListOfOrientations(t_DirectivityTF_DataBase);
 					CalculateExtrapolation();							// Make the extrapolation if it's needed
 
 					//DirectivityTF Resampling methdos
-					preprocessor.CalculateTF_InPoles<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, directivityTFPart_length, resamplingStep, CDirectivityTFAuxiliarMethods::CalculateDirectivityTFFromHemisphereParts());
-					//preprocessor.FillOutTableInAzimuth360(t_DirectivityTF_DataBase, resamplingStep);
-					preprocessor.CalculateTF_SphericalCaps<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, directivityTFPart_length, DEFAULT_GAP_THRESHOLD, resamplingStep, CDirectivityTFAuxiliarMethods::CalculateDirectivityTF_FromBarycentrics_OfflineInterpolation());
+					offlineInterpolation.CalculateTF_InPoles<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, directivityTFPart_length, resamplingStep, CDirectivityTFAuxiliarMethods::CalculateDirectivityTFFromHemisphereParts());
+					offlineInterpolation.CalculateTF_SphericalCaps<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, directivityTFPart_length, DEFAULT_GAP_THRESHOLD, resamplingStep, CDirectivityTFAuxiliarMethods::CalculateDirectivityTF_FromBarycentrics_OfflineInterpolation());
 					
 					
-					t_DirectivityTF_DataBase_ListOfOrientations = preprocessor.CalculateListOfOrientations(t_DirectivityTF_DataBase);
+					t_DirectivityTF_DataBase_ListOfOrientations = offlineInterpolation.CalculateListOfOrientations(t_DirectivityTF_DataBase);
 					quasiUniformSphereDistribution.CreateGrid<T_DirectivityTFInterlacedDataTable, TDirectivityInterlacedTFStruct>(t_DirectivityTF_Resampled, gridResamplingStepsVector, resamplingStep);
 					
 					CalculateResampled_DirectivityTFTable(resamplingStep);					
@@ -214,8 +206,8 @@ namespace BRTServices
 		void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& directivityTF)
 		{
 			if (setupDirectivityTFInProgress) {
-				_azimuth = CHRTFAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
-				_elevation = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
+				_azimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
+				_elevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
 				auto returnValue = t_DirectivityTF_DataBase.emplace(orientation(_azimuth, _elevation), std::forward<TDirectivityTFStruct>(directivityTF));
 				//Error handler
 				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing DirectivityTF in t_DirectivityTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
@@ -483,9 +475,9 @@ namespace BRTServices
 		float aziMin, aziMax, eleMin, eleMax, eleNorth, eleSouth;	// Variables that define limits of work area
 		float sphereBorder;
 		float epsilon_sewing;
-		enum class TPole { north, south };
+		//enum class TPole { north, south };
 
-		CPreprocessor preprocessor;
+		COfflineInterpolation offlineInterpolation;
 		CExtrapolation extrapolation;
 		CQuasiUniformSphereDistribution quasiUniformSphereDistribution;
 		
@@ -493,19 +485,19 @@ namespace BRTServices
 		///// METHODS
 		///////////////////
 
-		/** \brief Get Pole Elevation
-		*	\param [in] Tpole var that indicates of which pole we need elevation
-		*   \eh  On error, an error code is reported to the error handler.
-		*/
-		int GetPoleElevation(TPole _pole)const
-		{
-			if (_pole == TPole::north) { return ELEVATION_NORTH_POLE; }
-			else if (_pole == TPole::south) { return ELEVATION_SOUTH_POLE; }
-			else {
-				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get a non-existent pole");
-				return 0;
-			}
-		}
+		///** \brief Get Pole Elevation
+		//*	\param [in] Tpole var that indicates of which pole we need elevation
+		//*   \eh  On error, an error code is reported to the error handler.
+		//*/
+		//int GetPoleElevation(TPole _pole)const
+		//{
+		//	if (_pole == TPole::north) { return ELEVATION_NORTH_POLE; }
+		//	else if (_pole == TPole::south) { return ELEVATION_SOUTH_POLE; }
+		//	else {
+		//		SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get a non-existent pole");
+		//		return 0;
+		//	}
+		//}
 
 		/** \brief Transform Real part of the Directivity TF to 2PI
 		*	\param [in] inBuffer Samples with the original Real part

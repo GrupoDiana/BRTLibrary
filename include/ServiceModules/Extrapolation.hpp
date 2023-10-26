@@ -26,7 +26,8 @@
 
 #include <unordered_map>
 #include <vector>
-#include <ServiceModules/HRTFDefinitions.hpp>
+#include <ServiceModules/InterpolationAuxiliarMethods.hpp>
+
 
 namespace BRTServices
 {
@@ -114,10 +115,10 @@ namespace BRTServices
 			if ((180 + _borders.minAzimuth) > (2 * averageStep)) { gapsFound.gapMinAzimuth = true; }
 
 			// Transforrm back to library ranges
-			_borders.maxAzimuth = CHRTFAuxiliarMethods::CalculateAzimuthIn0_360Range(_borders.maxAzimuth);
-			_borders.minAzimuth = CHRTFAuxiliarMethods::CalculateAzimuthIn0_360Range(_borders.minAzimuth);
-			_borders.maxElevation = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_borders.maxElevation);
-			_borders.minElevation = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_borders.minElevation);
+			_borders.maxAzimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_borders.maxAzimuth);
+			_borders.minAzimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_borders.minAzimuth);
+			_borders.maxElevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_borders.maxElevation);
+			_borders.minElevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_borders.minElevation);
 			
 			return gapsFound;
 		}
@@ -133,8 +134,8 @@ namespace BRTServices
 			TAzimuthElevationBorders borders(-18, 180, -90, 90);
 			// Process
 			for (auto it = table.begin(); it != table.end(); it++) {
-				double _azimuthTemp = CHRTFAuxiliarMethods::CalculateAzimuthIn180Range(it->first.azimuth);
-				double _elevationTemp = CHRTFAuxiliarMethods::CalculateElevationIn90Range(it->first.elevation);
+				double _azimuthTemp = CInterpolationAuxiliarMethods::CalculateAzimuthIn180Range(it->first.azimuth);
+				double _elevationTemp = CInterpolationAuxiliarMethods::CalculateElevationIn90Range(it->first.elevation);
 
 				borders.maxAzimuth		= (_azimuthTemp		> borders.maxAzimuth) && (_azimuthTemp != 180)	? _azimuthTemp : borders.maxAzimuth;
 				borders.minAzimuth		= (_azimuthTemp		< borders.minAzimuth) && (_azimuthTemp != -180)	? _azimuthTemp	: borders.minAzimuth;
@@ -154,7 +155,7 @@ namespace BRTServices
 
 			if (gapsFound.gapMaxElevation) {
 				for (double _elevation = 90; _elevation >= (borders.maxElevation + extrapolationStep); _elevation -= extrapolationStep) {
-					double _elevationInRage = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
+					double _elevationInRage = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
 					int cont=0;
 					for (double _azimuth = 0; _azimuth < 360; _azimuth += extrapolationStep) {
 						U newTF = f(originalTable, orientationsList, _TFSize, _azimuth, _elevationInRage);
@@ -164,7 +165,7 @@ namespace BRTServices
 			}
 			if (gapsFound.gapMinElevation) {
 				for (double _elevation = 270; _elevation <= (borders.minElevation - extrapolationStep); _elevation += extrapolationStep) {
-					double _elevationInRage = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
+					double _elevationInRage = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
 					for (double _azimuth = 0; _azimuth < 360; _azimuth += extrapolationStep) {						
 						U newTF = f(originalTable, orientationsList, _TFSize, _azimuth, _elevationInRage);
 						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
@@ -174,11 +175,11 @@ namespace BRTServices
 
 			if (gapsFound.gapMaxAzimuth) {
 				// We need to loop from minimun to maximum posible elevation, so we change the elevation to [-90 to 90] range
-				double _minElevationIn90Range = CHRTFAuxiliarMethods::CalculateElevationIn90Range(borders.minElevation);
-				double _maxElevationIn90Range = CHRTFAuxiliarMethods::CalculateElevationIn90Range(borders.maxElevation);
+				double _minElevationIn90Range = CInterpolationAuxiliarMethods::CalculateElevationIn90Range(borders.minElevation);
+				double _maxElevationIn90Range = CInterpolationAuxiliarMethods::CalculateElevationIn90Range(borders.maxElevation);
 
 				for (double _elevation = _minElevationIn90Range; _elevation <= _maxElevationIn90Range; _elevation += extrapolationStep) {
-					double _elevationInRage = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
+					double _elevationInRage = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
 					for (double _azimuth = borders.maxAzimuth + extrapolationStep; _azimuth <= 180; _azimuth += extrapolationStep) {						
 						U newTF = f(originalTable, orientationsList, _TFSize, _azimuth, _elevationInRage);
 						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
@@ -188,11 +189,11 @@ namespace BRTServices
 			
 			if (gapsFound.gapMinAzimuth) {
 				// We need to loop from minimun to maximum posible elevation, so we change the elevation to [-90 to 90] range
-				double _minElevationIn90Range = CHRTFAuxiliarMethods::CalculateElevationIn90Range(borders.minElevation);
-				double _maxElevationIn90Range = CHRTFAuxiliarMethods::CalculateElevationIn90Range(borders.maxElevation);				
+				double _minElevationIn90Range = CInterpolationAuxiliarMethods::CalculateElevationIn90Range(borders.minElevation);
+				double _maxElevationIn90Range = CInterpolationAuxiliarMethods::CalculateElevationIn90Range(borders.maxElevation);
 				
 				for (double _elevation = _minElevationIn90Range; _elevation <= _maxElevationIn90Range; _elevation += extrapolationStep) {
-					double _elevationInRage = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
+					double _elevationInRage = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
 										
 					for (double _azimuth = borders.minAzimuth - extrapolationStep; _azimuth >= 180; _azimuth -= extrapolationStep) {					
 						U newTF = f(originalTable, orientationsList, _TFSize, _azimuth, _elevationInRage);

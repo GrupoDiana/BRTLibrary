@@ -27,7 +27,7 @@
 
 #include <unordered_map>
 #include <vector>
-#include <ServiceModules/HRTFDefinitions.hpp>
+#include <ServiceModules/InterpolationAuxiliarMethods.hpp>
 
 namespace BRTServices
 {
@@ -182,7 +182,7 @@ namespace BRTServices
 		{
 			//std::vector<CMonoBuffer<float>> newHRIR;
 			THRIRPartitionedStruct data;
-			TBarycentricCoordinatesStruct barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, point1.azimuth, point1.elevation, point2.azimuth, point2.elevation, point3.azimuth, point3.elevation);
+			TBarycentricCoordinatesStruct barycentricCoordinates = CInterpolationAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, point1.azimuth, point1.elevation, point2.azimuth, point2.elevation, point3.azimuth, point3.elevation);
 
 			if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0) {
 				barycentricCoordinates = Check_Triangles_Left(_azimuth, _elevation, point1, point2, point3, point4);
@@ -222,8 +222,8 @@ namespace BRTServices
 			float eleCeil = eleStep * idxEle;
 			float eleFloor = eleStep * (idxEle - 1);
 
-			eleCeil = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(eleCeil);				//			   Back	  Front
-			eleFloor = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(eleFloor);				//	Ceil		A		B
+			eleCeil = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(eleCeil);				//			   Back	  Front
+			eleFloor = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(eleFloor);				//	Ceil		A		B
 
 			auto stepItr = stepMap.find(orientation(0, eleCeil));										//	Floor		C		D
 			float aziStepCeil = stepItr->second;
@@ -277,13 +277,13 @@ namespace BRTServices
 			// The triangle with points 1, 2 and 3 is the one just check, so we are going to check the others
 
 			TBarycentricCoordinatesStruct barycentricCoordinates;
-			barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, pnt1.azimuth, pnt1.elevation, pnt2.azimuth, pnt2.elevation, pnt4.azimuth, pnt4.elevation);
+			barycentricCoordinates = CInterpolationAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, pnt1.azimuth, pnt1.elevation, pnt2.azimuth, pnt2.elevation, pnt4.azimuth, pnt4.elevation);
 			if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0)
 			{
-				barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, pnt1.azimuth, pnt1.elevation, pnt3.azimuth, pnt3.elevation, pnt4.azimuth, pnt4.elevation);
+				barycentricCoordinates = CInterpolationAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, pnt1.azimuth, pnt1.elevation, pnt3.azimuth, pnt3.elevation, pnt4.azimuth, pnt4.elevation);
 				if (barycentricCoordinates.alpha < 0 || barycentricCoordinates.beta < 0 || barycentricCoordinates.gamma < 0)
 				{
-					barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, pnt2.azimuth, pnt2.elevation, pnt3.azimuth, pnt3.elevation, pnt4.azimuth, pnt4.elevation);
+					barycentricCoordinates = CInterpolationAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, pnt2.azimuth, pnt2.elevation, pnt3.azimuth, pnt3.elevation, pnt4.azimuth, pnt4.elevation);
 				}
 			}
 			return barycentricCoordinates;
@@ -404,7 +404,7 @@ namespace BRTServices
 		{
 			//std::vector<CMonoBuffer<float>> newHRIR;
 			THRIRPartitionedStruct data;
-			TBarycentricCoordinatesStruct barycentricCoordinates = CHRTFAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, point1.azimuth, point1.elevation, point2.azimuth, point2.elevation, point3.azimuth, point3.elevation);
+			TBarycentricCoordinatesStruct barycentricCoordinates = CInterpolationAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, point1.azimuth, point1.elevation, point2.azimuth, point2.elevation, point3.azimuth, point3.elevation);
 
 			if (elevationCeil == ELEVATION_NORTH_POLE) { point2.azimuth = DEFAULT_MIN_AZIMUTH; }
 			else if (elevationFloor == ELEVATION_SOUTH_POLE) { point3.azimuth = DEFAULT_MIN_AZIMUTH; }
@@ -440,8 +440,8 @@ namespace BRTServices
 			float elevationCeil = elevationStep * indexElevation;
 			float elevationFloor = elevationStep * (indexElevation - 1);
 
-			elevationCeil = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(elevationCeil);				//			   Back	  Front
-			elevationFloor = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(elevationFloor);				//	Ceil		A		B
+			elevationCeil = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(elevationCeil);				//			   Back	  Front
+			elevationFloor = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(elevationFloor);				//	Ceil		A		B
 
 			auto stepItr = stepMap.find(orientation(0, elevationCeil));										//	Floor		C		D
 			float azimuthStepCeil = stepItr->second;
