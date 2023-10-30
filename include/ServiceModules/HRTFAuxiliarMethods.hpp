@@ -54,7 +54,8 @@ namespace BRTServices {
 		 * @param orientation_pto3
 		 * @return
 		*/
-		static const THRIRPartitionedStruct CalculateHRIR_partitioned_FromBarycentricCoordinates(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, Common::T_ear ear, TBarycentricCoordinatesStruct barycentricCoordinates, orientation orientation_pto1, orientation orientation_pto2, orientation orientation_pto3)
+		struct CalculatePartitionedHRIR_FromBarycentricCoordinates{
+		const THRIRPartitionedStruct operator()(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, Common::T_ear ear, TBarycentricCoordinatesStruct barycentricCoordinates, orientation orientation_pto1, orientation orientation_pto2, orientation orientation_pto3)
 		{
 			THRIRPartitionedStruct data;
 			//std::vector<CMonoBuffer<float>> newHRIR;
@@ -122,6 +123,7 @@ namespace BRTServices {
 
 			return data;
 		}
+		};
 
 		/**
 		 * @brief Calculate HRIR DELAY using a barycentric coordinates of the three nearest orientation, in number of samples
@@ -132,8 +134,10 @@ namespace BRTServices {
 		 * @param orientation_pto3
 		 * @return
 		*/
-		static const THRIRPartitionedStruct CalculateHRIRDelayFromBarycentricCoordinates(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, TBarycentricCoordinatesStruct barycentricCoordinates, orientation orientation_pto1, orientation orientation_pto2, orientation orientation_pto3)
-		{
+		struct CalculateDelay_FromBarycentricCoordinates{
+		//const THRIRPartitionedStruct operator()(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, TBarycentricCoordinatesStruct barycentricCoordinates, orientation orientation_pto1, orientation orientation_pto2, orientation orientation_pto3)
+		const THRIRPartitionedStruct operator()	(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, Common::T_ear ear, TBarycentricCoordinatesStruct barycentricCoordinates, orientation orientation_pto1, orientation orientation_pto2, orientation orientation_pto3)
+			{
 			THRIRPartitionedStruct data;
 
 			if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f)
@@ -168,7 +172,7 @@ namespace BRTServices {
 
 			return data;
 		}
-
+		};
 
 		static void CalculateAzimuth_BackandFront(float& aziBack, float& aziFront, float aziStep, float _azimuth)
 		{

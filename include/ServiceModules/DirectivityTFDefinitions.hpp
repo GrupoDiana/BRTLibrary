@@ -37,8 +37,11 @@
 namespace BRTServices
 {
 
+	//struct TDirectivityInterlacedTFStruct {
+	//	CMonoBuffer<float> data;
+	//};
 	struct TDirectivityInterlacedTFStruct {
-		CMonoBuffer<float> data;
+		std::vector<CMonoBuffer<float>> data;
 	};
 
 	/** \brief Type definition for the DirectivityTF table */

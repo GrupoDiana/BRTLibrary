@@ -104,7 +104,7 @@ namespace BRTProcessing {
 			CMonoBuffer<float>  dataDirectivityTF;
 			std::vector<CMonoBuffer<float>>  dataDirectivityTF_vector;
 						
-			dataDirectivityTF = _sourceDirectivityTF->GetDirectivityTF(listener_azimuth, listener_elevation).data;
+			dataDirectivityTF = _sourceDirectivityTF->GetDirectivityTF(listener_azimuth, listener_elevation).data[0];
 			dataDirectivityTF_vector.push_back(dataDirectivityTF);
 
 

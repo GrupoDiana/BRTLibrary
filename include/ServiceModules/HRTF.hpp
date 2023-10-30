@@ -294,7 +294,8 @@ namespace BRTServices
 
 			// ONLINE Interpolation 
 			//const THRIRPartitionedStruct data = midPointOnlineInterpolator.CalculateHRIRPartitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);
-			const THRIRPartitionedStruct data = slopesMethodOnlineInterpolator.CalculateHRIRPartitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);
+			const THRIRPartitionedStruct data = slopesMethodOnlineInterpolator.CalculateHRIRPartitionedORDelay_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates());
+			
 			if (ear == Common::T_ear::LEFT) {
 				return data.leftHRIR_Partitioned;
 			}
@@ -400,7 +401,7 @@ namespace BRTServices
 
 			// ONLINE Interpolation 
 			//return GetHRIRDelayInterpolationMethod(ear, _azimuthCenter, _elevationCenter, resamplingStep, stepVector);	
-			const THRIRPartitionedStruct temp = slopesMethodOnlineInterpolator.CalculateDelay_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuthCenter, _elevationCenter, stepVector);
+			const THRIRPartitionedStruct temp = slopesMethodOnlineInterpolator.CalculateHRIRPartitionedORDelay_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuthCenter, _elevationCenter, stepVector, CHRTFAuxiliarMethods::CalculateDelay_FromBarycentricCoordinates());
 			return temp;
 		}
 
@@ -664,6 +665,7 @@ namespace BRTServices
 
 		// Processors
 		CQuasiUniformSphereDistribution quasiUniformSphereDistribution;
+		CMidPointOnlineInterpolator midPointOnlineInterpolator;
 		CSlopesMethodOnlineInterpolator slopesMethodOnlineInterpolator;
 		COfflineInterpolation offlineInterpolation;
 		CExtrapolation extrapolation;		

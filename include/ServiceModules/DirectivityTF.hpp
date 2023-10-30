@@ -56,8 +56,7 @@ namespace BRTServices
 		*   \eh Nothing is reported to the error handler.
 		*/
 		CDirectivityTF()
-			:resamplingStep{ DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP }, directivityTFloaded{ false }, setupDirectivityTFInProgress{ false }, aziMin{ DEFAULT_MIN_AZIMUTH }, aziMax{ DEFAULT_MAX_AZIMUTH },
-			eleMin{ DEFAULT_MIN_ELEVATION }, eleMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER }, epsilon_sewing{ EPSILON_SEWING }
+			:resamplingStep{ DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP }, directivityTFloaded{ false }, setupDirectivityTFInProgress{ false }
 		{}
 
 		/** \brief Set the title of the SOFA file
@@ -95,8 +94,8 @@ namespace BRTServices
 		*/
 		void BeginSetup(int32_t _directivityTFPartLength, std::string _extrapolationMethod){
 			//Update parameters			
-			eleNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
-			eleSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
+			elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
+			elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
 
 			if (_directivityTFPartLength != globalParameters.GetBufferSize()) //
 			{
@@ -215,8 +214,8 @@ namespace BRTServices
 				CalculateTFImagPartTo2PI(newData.imagPart, dataImagPart2PI);
 				// Invert sign of imag part
 				CalculateTFImagPartToBeCompatibleWithOouraFFTLibrary(dataImagPart2PI);
-				// Interlaced real and imag part
-				interlacedData.data.Interlace(dataRealPart2PI, dataImagPart2PI);
+				// Interlaced real and imag part of the first subfilter (IMPORTANT: We only have one partition in the Directivity)
+				interlacedData.data[_TF_NumberOfSubfilters-1].Interlace(dataRealPart2PI, dataImagPart2PI);
 
 				return interlacedData;
 			}
@@ -420,6 +419,74 @@ namespace BRTServices
 			return newSRIR;
 		}
 
+		/** \brief Get interpolated and partitioned HRIR buffer with Delay, for one ear
+		*	\param [in] ear for which ear we want to get the HRIR
+		*	\param [in] _azimuth azimuth angle in degrees
+		*	\param [in] _elevation elevation angle in degrees
+		*	\param [in] runTimeInterpolation switch run-time interpolation
+		*	\param [in] runTimeInterpolation switch run-time interpolation
+		*	\retval HRIR interpolated buffer with delay for specified ear
+		*   \eh On error, an error code is reported to the error handler.
+		*       Warnings may be reported to the error handler.
+		*/
+		const std::vector<CMonoBuffer<float>> GetDirectivityTF2(float _azimuth, float _elevation, bool runTimeInterpolation) const
+		{
+			std::vector<CMonoBuffer<float>> newDirectivityTF;
+						
+			if (setupDirectivityTFInProgress) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetDirectivityTF: Directivity setup in progress, return empty");
+				return newDirectivityTF;
+
+			}
+			if (!runTimeInterpolation) {
+				TDirectivityInterlacedTFStruct temp = quasiUniformSphereDistribution.FindNearest<T_DirectivityTFInterlacedDataTable, TDirectivityInterlacedTFStruct>(t_DirectivityTF_Resampled, gridResamplingStepsVector, _azimuth, _elevation);
+				return temp.data;
+				
+			}
+
+			//  We have to do the run time interpolation -- (runTimeInterpolation = true)
+
+			// Check if we are close to 360 azimuth or elevation and change to 0
+			if (Common::AreSame(_azimuth, SPHERE_BORDER, EPSILON_SEWING)) { _azimuth = DEFAULT_MIN_AZIMUTH; }
+			if (Common::AreSame(_elevation, SPHERE_BORDER, EPSILON_SEWING)) { _elevation = DEFAULT_MIN_ELEVATION; }
+
+			// Check if we are at a pole
+			int ielevation = static_cast<int>(round(_elevation));
+			if ((ielevation == elevationNorth) || (ielevation == elevationSouth)) {
+				_elevation = ielevation;
+				_azimuth = DEFAULT_MIN_AZIMUTH;
+				//newDirectivityTF = GetPoleDirectivityTF(ielevation);
+				//return newDirectivityTF;
+				//GetDirectivityTF2(DEFAULT_MIN_AZIMUTH, ielevation, true);
+			}
+
+			// We search if the point already exists
+			auto it = t_DirectivityTF_Resampled.find(orientation(_azimuth, _elevation));
+			if (it != t_DirectivityTF_Resampled.end())
+			{
+				return it->second.data;
+			}
+			else
+			{
+				SET_RESULT(RESULT_WARNING, "Orientations in GetDirectivityTF2() not found");
+			}
+
+			// ONLINE Interpolation 
+			
+			//const THRIRPartitionedStruct data = slopesMethodOnlineInterpolator.CalculateHRIRPartitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);
+			//if (ear == Common::T_ear::LEFT) {
+			//	return data.leftHRIR_Partitioned;
+			//}
+			//else
+			//{
+			//	return data.rightHRIR_Partitioned;
+			//}
+		}
+
+
+
+		
+
 		/** \brief  Check limit values for elevation and transform to the desired intervals
 		*	\retval elevation value within the desired intervals
 		*/
@@ -476,14 +543,15 @@ namespace BRTServices
 
 		Common::CGlobalParameters globalParameters;
 		
-		float aziMin, aziMax, eleMin, eleMax, eleNorth, eleSouth;	// Variables that define limits of work area
-		float sphereBorder;
-		float epsilon_sewing;
+		float  elevationNorth, elevationSouth;	
+		//float sphereBorder;
+		//float epsilon_sewing;
 		//enum class TPole { north, south };
 
+		CQuasiUniformSphereDistribution quasiUniformSphereDistribution;
+		//CSlopesMethodOnlineInterpolator slopesMethodOnlineInterpolator;
 		COfflineInterpolation offlineInterpolation;
 		CExtrapolation extrapolation;
-		CQuasiUniformSphereDistribution quasiUniformSphereDistribution;
 		
 		///////////////////
 		///// METHODS
