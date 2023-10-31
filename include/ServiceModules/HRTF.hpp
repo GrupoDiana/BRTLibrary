@@ -294,7 +294,7 @@ namespace BRTServices
 
 			// ONLINE Interpolation 
 			//const THRIRPartitionedStruct data = midPointOnlineInterpolator.CalculateHRIRPartitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);
-			const THRIRPartitionedStruct data = slopesMethodOnlineInterpolator.CalculateHRIRPartitionedORDelay_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates());
+			const THRIRPartitionedStruct data = slopesMethodOnlineInterpolator.CalculateTF_OnlineMethod<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates());
 			
 			if (ear == Common::T_ear::LEFT) {
 				return data.leftHRIR_Partitioned;
@@ -401,7 +401,7 @@ namespace BRTServices
 
 			// ONLINE Interpolation 
 			//return GetHRIRDelayInterpolationMethod(ear, _azimuthCenter, _elevationCenter, resamplingStep, stepVector);	
-			const THRIRPartitionedStruct temp = slopesMethodOnlineInterpolator.CalculateHRIRPartitionedORDelay_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuthCenter, _elevationCenter, stepVector, CHRTFAuxiliarMethods::CalculateDelay_FromBarycentricCoordinates());
+			const THRIRPartitionedStruct temp = slopesMethodOnlineInterpolator.CalculateTF_OnlineMethod<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuthCenter, _elevationCenter, stepVector, CHRTFAuxiliarMethods::CalculateDelay_FromBarycentricCoordinates());
 			return temp;
 		}
 

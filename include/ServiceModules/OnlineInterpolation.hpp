@@ -301,11 +301,10 @@ namespace BRTServices
 
 		///**
 		// * @brief Calculate from resample table HRIR subfilters using a barycentric interpolation of the three nearest orientation.
-		template <typename Functor>
-		THRIRPartitionedStruct CalculateHRIRPartitionedORDelay_onlineMethod(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, Common::T_ear ear, float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap, Functor f) const
+		template <typename T, typename U, typename Functor>
+		U CalculateTF_OnlineMethod(const T& resampledTable, int32_t numberOfSubfilters, int32_t subfilterLength, Common::T_ear ear, float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap, Functor f) const
 		{
-
-			THRIRPartitionedStruct data;
+			U data;
 			TBarycentricCoordinatesStruct barycentricCoordinates;
 
 			// Find four nearest points					
@@ -325,13 +324,13 @@ namespace BRTServices
 			if (slopeOrientationOfInterest >= slopeDiagonalTrapezoid)
 			{
 				// Uses A,C,D
-				data = CalculateBarycentricHRIRInterpolation(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation,
+				data = CalculateBarycentricHRIRInterpolation(resampledTable, numberOfSubfilters, subfilterLength, ear, _azimuth, _elevation,
 					eleCeil, eleFloor, orientation_ptoA, orientation_ptoC, orientation_ptoD, orientation_ptoB, f);
 			}
 			else
 			{
 				//Uses A,B,D
-				data = CalculateBarycentricHRIRInterpolation(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation,
+				data = CalculateBarycentricHRIRInterpolation(resampledTable, numberOfSubfilters, subfilterLength, ear, _azimuth, _elevation,
 					eleCeil, eleFloor, orientation_ptoA, orientation_ptoB, orientation_ptoD, orientation_ptoC, f);
 
 			}
@@ -362,8 +361,8 @@ namespace BRTServices
 		 * @param parameterToBeCalculated 
 		 * @return 
 		*/
-		template <typename Functor>
-		THRIRPartitionedStruct CalculateBarycentricHRIRInterpolation(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength,
+		template <typename T, typename Functor>
+		THRIRPartitionedStruct CalculateBarycentricHRIRInterpolation(const T& resampledTable, int32_t numberOfSubfilters, int32_t subfilterLength,
 			Common::T_ear ear, float _azimuth, float _elevation, float elevationCeil, float elevationFloor, orientation point1, orientation point2, orientation point3, orientation point4, Functor f) const
 		{
 			THRIRPartitionedStruct data;
@@ -372,7 +371,7 @@ namespace BRTServices
 			if (elevationCeil == ELEVATION_NORTH_POLE) { point2.azimuth = DEFAULT_MIN_AZIMUTH; }
 			else if (elevationFloor == ELEVATION_SOUTH_POLE) { point3.azimuth = DEFAULT_MIN_AZIMUTH; }
 
-			data = f(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, barycentricCoordinates, point1, point2, point3);
+			data = f(resampledTable, numberOfSubfilters, subfilterLength, ear, barycentricCoordinates, point1, point2, point3);
 
 			return data;
 		}
