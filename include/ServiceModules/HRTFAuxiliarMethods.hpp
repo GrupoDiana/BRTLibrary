@@ -54,21 +54,51 @@ namespace BRTServices {
 		 * @param orientation_pto3
 		 * @return
 		*/
-		struct CalculatePartitionedHRIR_FromBarycentricCoordinates{
-		const THRIRPartitionedStruct operator()(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, Common::T_ear ear, TBarycentricCoordinatesStruct barycentricCoordinates, orientation orientation_pto1, orientation orientation_pto2, orientation orientation_pto3)
+		struct CalculatePartitionedHRIR_FromBarycentricCoordinates_LeftEar{
+		const THRIRPartitionedStruct operator()(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, TBarycentricCoordinatesStruct barycentricCoordinates, orientation orientation_pto1, orientation orientation_pto2, orientation orientation_pto3)
 		{
 			THRIRPartitionedStruct data;
-			//std::vector<CMonoBuffer<float>> newHRIR;
+			
+			// Find the HRIR for the given t_HRTF_DataBase_ListOfOrientations
+			auto it1 = t_HRTF_Resampled_partitioned.find(orientation(orientation_pto1.azimuth, orientation_pto1.elevation));
+			auto it2 = t_HRTF_Resampled_partitioned.find(orientation(orientation_pto2.azimuth, orientation_pto2.elevation));
+			auto it3 = t_HRTF_Resampled_partitioned.find(orientation(orientation_pto3.azimuth, orientation_pto3.elevation));
 
-			if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f)
+			if (it1 != t_HRTF_Resampled_partitioned.end() && it2 != t_HRTF_Resampled_partitioned.end() && it3 != t_HRTF_Resampled_partitioned.end())
 			{
-				// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
-				if (orientation_pto1.azimuth == DEFAULT_MAX_AZIMUTH) { orientation_pto1.azimuth = DEFAULT_MIN_AZIMUTH; }
-				if (orientation_pto2.azimuth == DEFAULT_MAX_AZIMUTH) { orientation_pto2.azimuth = DEFAULT_MIN_AZIMUTH; }
-				if (orientation_pto3.azimuth == DEFAULT_MAX_AZIMUTH) { orientation_pto3.azimuth = DEFAULT_MIN_AZIMUTH; }
-				if (orientation_pto1.elevation == DEFAULT_MAX_ELEVATION) { orientation_pto1.elevation = DEFAULT_MIN_ELEVATION; }
-				if (orientation_pto2.elevation == DEFAULT_MAX_ELEVATION) { orientation_pto2.elevation = DEFAULT_MIN_ELEVATION; }
-				if (orientation_pto3.elevation == DEFAULT_MAX_ELEVATION) { orientation_pto3.elevation = DEFAULT_MIN_ELEVATION; }
+				int subfilterLength = HRIR_partitioned_SubfilterLength;
+				data.leftHRIR_Partitioned.resize(HRIR_partitioned_NumberOfSubfilters);
+
+				for (int subfilterID = 0; subfilterID < HRIR_partitioned_NumberOfSubfilters; subfilterID++)
+				{
+					data.leftHRIR_Partitioned[subfilterID].resize(subfilterLength);
+					for (int i = 0; i < subfilterLength; i++)
+					{
+						data.leftHRIR_Partitioned[subfilterID][i] = barycentricCoordinates.alpha * it1->second.leftHRIR_Partitioned[subfilterID][i] + barycentricCoordinates.beta * it2->second.leftHRIR_Partitioned[subfilterID][i] + barycentricCoordinates.gamma * it3->second.leftHRIR_Partitioned[subfilterID][i];
+					}
+				}
+			}
+			else {
+				SET_RESULT(RESULT_WARNING, "Orientations in CalculatePartitionedHRIR_FromBarycentricCoordinates_LeftEar() not found");
+			}
+
+			return data;
+		}
+		};
+
+		/**
+		 * @brief Calculate HRIR subfilters using a barycentric coordinates of the three nearest orientation.
+		 * @param ear
+		 * @param barycentricCoordinates
+		 * @param orientation_pto1
+		 * @param orientation_pto2
+		 * @param orientation_pto3
+		 * @return
+		*/
+		struct CalculatePartitionedHRIR_FromBarycentricCoordinates_RightEar {
+			const THRIRPartitionedStruct operator()(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, TBarycentricCoordinatesStruct barycentricCoordinates, orientation orientation_pto1, orientation orientation_pto2, orientation orientation_pto3)
+			{
+				THRIRPartitionedStruct data;
 
 				// Find the HRIR for the given t_HRTF_DataBase_ListOfOrientations
 				auto it1 = t_HRTF_Resampled_partitioned.find(orientation(orientation_pto1.azimuth, orientation_pto1.elevation));
@@ -78,51 +108,22 @@ namespace BRTServices {
 				if (it1 != t_HRTF_Resampled_partitioned.end() && it2 != t_HRTF_Resampled_partitioned.end() && it3 != t_HRTF_Resampled_partitioned.end())
 				{
 					int subfilterLength = HRIR_partitioned_SubfilterLength;
-					//newHRIR.resize(HRIR_partitioned_NumberOfSubfilters);
 
-					if (ear == Common::T_ear::LEFT)
+					data.rightHRIR_Partitioned.resize(HRIR_partitioned_NumberOfSubfilters);
+					for (int subfilterID = 0; subfilterID < HRIR_partitioned_NumberOfSubfilters; subfilterID++)
 					{
-						data.leftHRIR_Partitioned.resize(HRIR_partitioned_NumberOfSubfilters);
-
-						for (int subfilterID = 0; subfilterID < HRIR_partitioned_NumberOfSubfilters; subfilterID++)
+						data.rightHRIR_Partitioned[subfilterID].resize(subfilterLength, 0.0f);
+						for (int i = 0; i < subfilterLength; i++)
 						{
-							data.leftHRIR_Partitioned[subfilterID].resize(subfilterLength);
-							for (int i = 0; i < subfilterLength; i++)
-							{
-								data.leftHRIR_Partitioned[subfilterID][i] = barycentricCoordinates.alpha * it1->second.leftHRIR_Partitioned[subfilterID][i] + barycentricCoordinates.beta * it2->second.leftHRIR_Partitioned[subfilterID][i] + barycentricCoordinates.gamma * it3->second.leftHRIR_Partitioned[subfilterID][i];
-							}
+							data.rightHRIR_Partitioned[subfilterID][i] = barycentricCoordinates.alpha * it1->second.rightHRIR_Partitioned[subfilterID][i] + barycentricCoordinates.beta * it2->second.rightHRIR_Partitioned[subfilterID][i] + barycentricCoordinates.gamma * it3->second.rightHRIR_Partitioned[subfilterID][i];
 						}
 					}
-
-					else if (ear == Common::T_ear::RIGHT)
-					{
-						data.rightHRIR_Partitioned.resize(HRIR_partitioned_NumberOfSubfilters);
-						for (int subfilterID = 0; subfilterID < HRIR_partitioned_NumberOfSubfilters; subfilterID++)
-						{
-							data.rightHRIR_Partitioned[subfilterID].resize(subfilterLength, 0.0f);
-							for (int i = 0; i < subfilterLength; i++)
-							{
-								data.rightHRIR_Partitioned[subfilterID][i] = barycentricCoordinates.alpha * it1->second.rightHRIR_Partitioned[subfilterID][i] + barycentricCoordinates.beta * it2->second.rightHRIR_Partitioned[subfilterID][i] + barycentricCoordinates.gamma * it3->second.rightHRIR_Partitioned[subfilterID][i];
-							}
-						}
-					}
-
-					else {
-						SET_RESULT(RESULT_WARNING, "Ear Type for calculating HRIR from Barycentric Coordinates is not valid");
-					}
-
-					//SET_RESULT(RESULT_OK, "CalculateHRIRFromBarycentricCoordinates completed succesfully");
 				}
 				else {
-					SET_RESULT(RESULT_WARNING, "Orientations in CalculateHRIR_partitioned_FromBarycentricCoordinates not found");
+					SET_RESULT(RESULT_WARNING, "Orientations in CalculatePartitionedHRIR_FromBarycentricCoordinates_RightEar() not found");
 				}
+				return data;
 			}
-			else {
-				SET_RESULT(RESULT_WARNING, "No Barycentric coordinates Triangle in CalculateHRIR_partitioned_FromBarycentricCoordinates");
-			}
-
-			return data;
-		}
 		};
 
 		/**
@@ -135,20 +136,10 @@ namespace BRTServices {
 		 * @return
 		*/
 		struct CalculateDelay_FromBarycentricCoordinates{
-		//const THRIRPartitionedStruct operator()(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, TBarycentricCoordinatesStruct barycentricCoordinates, orientation orientation_pto1, orientation orientation_pto2, orientation orientation_pto3)
-		const THRIRPartitionedStruct operator()	(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, Common::T_ear ear, TBarycentricCoordinatesStruct barycentricCoordinates, orientation orientation_pto1, orientation orientation_pto2, orientation orientation_pto3)
+		
+			const THRIRPartitionedStruct operator()	(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, TBarycentricCoordinatesStruct barycentricCoordinates, orientation orientation_pto1, orientation orientation_pto2, orientation orientation_pto3)
 			{
-			THRIRPartitionedStruct data;
-
-			if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f)
-			{
-				// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
-				if (orientation_pto1.azimuth == DEFAULT_MAX_AZIMUTH) { orientation_pto1.azimuth = DEFAULT_MIN_AZIMUTH; }
-				if (orientation_pto2.azimuth == DEFAULT_MAX_AZIMUTH) { orientation_pto2.azimuth = DEFAULT_MIN_AZIMUTH; }
-				if (orientation_pto3.azimuth == DEFAULT_MAX_AZIMUTH) { orientation_pto3.azimuth = DEFAULT_MIN_AZIMUTH; }
-				if (orientation_pto1.elevation == DEFAULT_MAX_ELEVATION) { orientation_pto1.elevation = DEFAULT_MIN_ELEVATION; }
-				if (orientation_pto2.elevation == DEFAULT_MAX_ELEVATION) { orientation_pto2.elevation = DEFAULT_MIN_ELEVATION; }
-				if (orientation_pto3.elevation == DEFAULT_MAX_ELEVATION) { orientation_pto3.elevation = DEFAULT_MIN_ELEVATION; }
+				THRIRPartitionedStruct data;
 
 				// Find the HRIR for the given t_HRTF_DataBase_ListOfOrientations
 				auto it1 = t_HRTF_Resampled_partitioned.find(orientation(orientation_pto1.azimuth, orientation_pto1.elevation));
@@ -157,21 +148,15 @@ namespace BRTServices {
 
 				if (it1 != t_HRTF_Resampled_partitioned.end() && it2 != t_HRTF_Resampled_partitioned.end() && it3 != t_HRTF_Resampled_partitioned.end())
 				{
-
 					data.leftDelay = static_cast <unsigned long> (round(barycentricCoordinates.alpha * it1->second.leftDelay + barycentricCoordinates.beta * it2->second.leftDelay + barycentricCoordinates.gamma * it3->second.leftDelay));
 					data.rightDelay = static_cast <unsigned long> (round(barycentricCoordinates.alpha * it1->second.rightDelay + barycentricCoordinates.beta * it2->second.rightDelay + barycentricCoordinates.gamma * it3->second.rightDelay));
 					//SET_RESULT(RESULT_OK, "CalculateHRIRFromBarycentricCoordinates completed succesfully");
 				}
 				else {
-					SET_RESULT(RESULT_WARNING, "Orientations in CalculateHRIRDelayFromBarycentricCoordinates not found");
+					SET_RESULT(RESULT_WARNING, "Orientations in CalculateDelay_FromBarycentricCoordinates() not found");
 				}
+				return data;
 			}
-			else {
-				SET_RESULT(RESULT_WARNING, "No Barycentric coordinates Triangle in CalculateHRIRDelayFromBarycentricCoordinates");
-			}
-
-			return data;
-		}
 		};
 
 		static void CalculateAzimuth_BackandFront(float& aziBack, float& aziFront, float aziStep, float _azimuth)
