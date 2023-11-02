@@ -36,6 +36,7 @@
 #include <ServiceModules/GridsManager.hpp>
 #include <ServiceModules/OfflineInterpolation.hpp>
 #include <ServiceModules/InterpolationAuxiliarMethods.hpp>
+#include <ServiceModules/OnlineInterpolation.hpp>
 
 
 #ifndef DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP
@@ -136,7 +137,7 @@ namespace BRTServices
 					//Creation and filling of resampling HRTF table
 					t_DirectivityTF_DataBase_ListOfOrientations = offlineInterpolation.CalculateListOfOrientations(t_DirectivityTF_DataBase);
 					quasiUniformSphereDistribution.CreateGrid<T_DirectivityTFInterlacedDataTable, TDirectivityInterlacedTFStruct>(t_DirectivityTF_Resampled, gridResamplingStepsVector, resamplingStep);
-					offlineInterpolation.FillResampledTable<T_DirectivityTFTable, T_DirectivityTFInterlacedDataTable, BRTServices::TDirectivityTFStruct, BRTServices::TDirectivityInterlacedTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_Resampled, bufferSize, directivityTFPart_length, directivityTF_numberOfSubfilters, CalculateInterlacedTFTo2PI(), CalculateDirectivityTFFromBarycentrics_OfflineInterpolation());		
+					offlineInterpolation.FillResampledTable<T_DirectivityTFTable, T_DirectivityTFInterlacedDataTable, BRTServices::TDirectivityTFStruct, BRTServices::TDirectivityInterlacedTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_Resampled, bufferSize, directivityTFPart_length, directivityTF_numberOfSubfilters, CalculateInterlacedTFTo2PI(), CDirectivityTFAuxiliarMethods::CalculateDirectivityTFFromBarycentrics_OfflineInterpolation());		
 
 					//Setup values
 					setupDirectivityTFInProgress = false;
@@ -197,96 +198,6 @@ namespace BRTServices
 		}
 				
 
-
-		/** \brief Calculate the regular resampled-table using an interpolation method
-		*	\param [in] _resamplingStep step for both azimuth and elevation
-		*   \eh Warnings may be reported to the error handler.
-		*/
-		struct CalculateInterlacedTFTo2PI{
-			TDirectivityInterlacedTFStruct operator()(const TDirectivityTFStruct& newData, int _bufferSize, int _TF_NumberOfSubfilters)
-			{
-				TDirectivityInterlacedTFStruct interlacedData;
-				// Extend to 2PI real part
-				CMonoBuffer<float> dataRealPart2PI;
-				CalculateTFRealPartTo2PI(newData.realPart, dataRealPart2PI);
-				// Extend to 2PI imag part
-				CMonoBuffer<float> dataImagPart2PI;
-				CalculateTFImagPartTo2PI(newData.imagPart, dataImagPart2PI);
-				// Invert sign of imag part
-				CalculateTFImagPartToBeCompatibleWithOouraFFTLibrary(dataImagPart2PI);
-				// Interlaced real and imag part of the first subfilter (IMPORTANT: We only have one partition in the Directivity)
-				interlacedData.data[_TF_NumberOfSubfilters-1].Interlace(dataRealPart2PI, dataImagPart2PI);
-
-				return interlacedData;
-			}
-		};
-
-		/// <summary>
-		///  		
-		/// </summary>
-		/// <param name="_t_HRTF_DataBase"></param>
-		/// <param name="_HRIRLength"></param>
-		/// <returns></returns>
-
-		struct CalculateDirectivityTFFromBarycentrics_OfflineInterpolation {
-
-			BRTServices::TDirectivityTFStruct operator () (const T_DirectivityTFTable& _table, orientation _orientation1, orientation _orientation2, orientation _orientation3, int _TFLength, BRTServices::TBarycentricCoordinatesStruct barycentricCoordinates) {
-
-				BRTServices::TDirectivityTFStruct interpolatedTF;
-				interpolatedTF.realPart.resize(_TFLength, 0.0f);
-				interpolatedTF.imagPart.resize(_TFLength, 0.0f);
-
-				// Calculate the new HRIR with the barycentric coorfinates
-				auto it1 = _table.find(_orientation1);
-				auto it2 = _table.find(_orientation2);
-				auto it3 = _table.find(_orientation3);
-
-				if (it1 != _table.end() && it2 != _table.end() && it3 != _table.end()) {
-
-					for (int i = 0; i < _TFLength; i++) {
-						interpolatedTF.realPart[i] = barycentricCoordinates.alpha * it1->second.realPart[i] + barycentricCoordinates.beta * it2->second.realPart[i] + barycentricCoordinates.gamma * it3->second.realPart[i];
-						interpolatedTF.imagPart[i] = barycentricCoordinates.alpha * it1->second.imagPart[i] + barycentricCoordinates.beta * it2->second.imagPart[i] + barycentricCoordinates.gamma * it3->second.imagPart[i];
-					}
-					return interpolatedTF;
-				}
-
-				else {
-					SET_RESULT(RESULT_WARNING, "CalculateDirectivityTFFromBarycentrics_OfflineInterpolation: TF for a specific orientation was not found");
-					return interpolatedTF;
-				}
-
-			}
-		};
-
-
-		/// <returns></returns>
-		
-		
-		///** \brief  Calculate the DirectivityTF using the an interpolation Method 
-		//*	\param [in] _azimuth orientation of the sound source (relative to the listener)
-		//*	\param [in] _elevation orientation of the sound source (relative to the listener)
-		//*	\retval interpolatedDTFs: true if the Directivity TF has been calculated using the interpolation
-		//*   \eh Warnings may be reported to the error handler.
-		//*/
-		//bool CalculateAndEmplaceNewDirectivityTF(float _azimuth, float _elevation) {
-		//	TDirectivityInterlacedTFStruct interpolatedHRIR;
-		//	bool bDirectivityTFInterpolated = false;
-		//	auto it = t_DirectivityTF_DataBase.find(orientation(_azimuth, _elevation));
-		//	if (it != t_DirectivityTF_DataBase.end()){				
-		//		interpolatedHRIR.data.Interlace(it->second.realPart, it->second.imagPart);	// Interlaced
-		//		//Fill out Directivity TF from the original Database	
-		//		auto returnValue =  t_DirectivityTF_Resampled.emplace(orientation(_azimuth, _elevation), std::forward<TDirectivityInterlacedTFStruct>(interpolatedHRIR));
-		//		//Error handler
-		//		if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing DirectivityTF into t_DirectivityTF_Resampled map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
-		//	}
-		//	else
-		//	{
-		//		SET_RESULT(RESULT_WARNING, "Resampling DirectivityTF Table: cannot find Directivity TF in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "], in the database table");
-		//	}
-		//	return bDirectivityTFInterpolated;
-		//}
-
-		
 		/** \brief  Calculate the azimuth step for each orientation
 		*	\retval unordered map with all the orientations of the resampled table 
 		*   \eh Warnings may be reported to the error handler.
@@ -472,20 +383,11 @@ namespace BRTServices
 			}
 
 			// ONLINE Interpolation 
-			
-			//const THRIRPartitionedStruct data = slopesMethodOnlineInterpolator.CalculateHRIRPartitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);
-			//if (ear == Common::T_ear::LEFT) {
-			//	return data.leftHRIR_Partitioned;
-			//}
-			//else
-			//{
-			//	return data.rightHRIR_Partitioned;
-			//}
+			const  BRTServices::TDirectivityInterlacedTFStruct temp = slopesMethodOnlineInterpolator2.CalculateTF_OnlineMethod<T_DirectivityTFInterlacedDataTable, BRTServices::TDirectivityInterlacedTFStruct>
+				(t_DirectivityTF_Resampled, directivityTF_numberOfSubfilters, directivityTF_length, _azimuth, _elevation, gridResamplingStepsVector, CDirectivityTFAuxiliarMethods::CalculateDirectivityTF_FromBarycentric_OnlineInterpolation());
+			return temp.data;
 		}
-
-
-
-		
+	
 
 		/** \brief  Check limit values for elevation and transform to the desired intervals
 		*	\retval elevation value within the desired intervals
@@ -519,6 +421,30 @@ namespace BRTServices
 			aziBack = CheckLimitsAzimuth_and_Transform(aziBack);
 		}
 
+		/** \brief Calculate the regular resampled-table using an interpolation method
+		*	\param [in] _resamplingStep step for both azimuth and elevation
+		*   \eh Warnings may be reported to the error handler.
+		*/
+		struct CalculateInterlacedTFTo2PI {
+			TDirectivityInterlacedTFStruct operator()(const TDirectivityTFStruct& newData, int _bufferSize, int _TF_NumberOfSubfilters)
+			{
+				TDirectivityInterlacedTFStruct interlacedData;
+				// Extend to 2PI real part
+				CMonoBuffer<float> dataRealPart2PI;
+				CalculateTFRealPartTo2PI(newData.realPart, dataRealPart2PI);
+				// Extend to 2PI imag part
+				CMonoBuffer<float> dataImagPart2PI;
+				CalculateTFImagPartTo2PI(newData.imagPart, dataImagPart2PI);
+				// Invert sign of imag part
+				CalculateTFImagPartToBeCompatibleWithOouraFFTLibrary(dataImagPart2PI);
+				// Interlaced real and imag part of the first subfilter 
+				interlacedData.data.resize(_TF_NumberOfSubfilters);
+				interlacedData.data.front().Interlace(dataRealPart2PI, dataImagPart2PI); //IMPORTANT: We only have one partition in the Directivity
+
+				return interlacedData;
+			}
+		};
+
 	private:
 
 		enum TExtrapolationMethod { zeroInsertion, nearestPoint };
@@ -544,32 +470,15 @@ namespace BRTServices
 		Common::CGlobalParameters globalParameters;
 		
 		float  elevationNorth, elevationSouth;	
-		//float sphereBorder;
-		//float epsilon_sewing;
-		//enum class TPole { north, south };
 
 		CQuasiUniformSphereDistribution quasiUniformSphereDistribution;
-		//CSlopesMethodOnlineInterpolator slopesMethodOnlineInterpolator;
+		CSlopesMethodOnlineInterpolator slopesMethodOnlineInterpolator2;
 		COfflineInterpolation offlineInterpolation;
 		CExtrapolation extrapolation;
 		
 		///////////////////
 		///// METHODS
 		///////////////////
-
-		///** \brief Get Pole Elevation
-		//*	\param [in] Tpole var that indicates of which pole we need elevation
-		//*   \eh  On error, an error code is reported to the error handler.
-		//*/
-		//int GetPoleElevation(TPole _pole)const
-		//{
-		//	if (_pole == TPole::north) { return ELEVATION_NORTH_POLE; }
-		//	else if (_pole == TPole::south) { return ELEVATION_SOUTH_POLE; }
-		//	else {
-		//		SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get a non-existent pole");
-		//		return 0;
-		//	}
-		//}
 
 		/** \brief Transform Real part of the Directivity TF to 2PI
 		*	\param [in] inBuffer Samples with the original Real part

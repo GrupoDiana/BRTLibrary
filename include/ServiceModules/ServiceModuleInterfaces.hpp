@@ -24,8 +24,6 @@
 #define _SERVICE_INTERFACES_H_
 
 #include <cstdint>
-//#include <ServiceModules/HRTF.h>
-//#include <ServiceModules/ILD.hpp>
 
 #define MAX_DISTANCE_BETWEEN_ELEVATIONS 5
 #define NUMBER_OF_PARTS 4 

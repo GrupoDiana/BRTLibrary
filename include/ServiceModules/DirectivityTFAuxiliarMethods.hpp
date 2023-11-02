@@ -192,6 +192,85 @@ namespace BRTServices
 			}
 		};
 
+		 
+		/// <summary>
+		///  		
+		/// </summary>
+		/// <param name="_t_HRTF_DataBase"></param>
+		/// <param name="_HRIRLength"></param>
+		/// <returns></returns>
+
+		struct CalculateDirectivityTFFromBarycentrics_OfflineInterpolation {
+
+			BRTServices::TDirectivityTFStruct operator () (const T_DirectivityTFTable& _table, orientation _orientation1, orientation _orientation2, orientation _orientation3, int _TFLength, BRTServices::TBarycentricCoordinatesStruct barycentricCoordinates) {
+
+				BRTServices::TDirectivityTFStruct interpolatedTF;
+				interpolatedTF.realPart.resize(_TFLength, 0.0f);
+				interpolatedTF.imagPart.resize(_TFLength, 0.0f);
+
+				// Calculate the new HRIR with the barycentric coorfinates
+				auto it1 = _table.find(_orientation1);
+				auto it2 = _table.find(_orientation2);
+				auto it3 = _table.find(_orientation3);
+
+				if (it1 != _table.end() && it2 != _table.end() && it3 != _table.end()) {
+
+					for (int i = 0; i < _TFLength; i++) {
+						interpolatedTF.realPart[i] = barycentricCoordinates.alpha * it1->second.realPart[i] + barycentricCoordinates.beta * it2->second.realPart[i] + barycentricCoordinates.gamma * it3->second.realPart[i];
+						interpolatedTF.imagPart[i] = barycentricCoordinates.alpha * it1->second.imagPart[i] + barycentricCoordinates.beta * it2->second.imagPart[i] + barycentricCoordinates.gamma * it3->second.imagPart[i];
+					}
+					return interpolatedTF;
+				}
+
+				else {
+					SET_RESULT(RESULT_WARNING, "CalculateDirectivityTFFromBarycentrics_OfflineInterpolation: TF for a specific orientation was not found");
+					return interpolatedTF;
+				}
+
+			}
+		};
+
+		/**
+		* @brief Calculate HRIR subfilters using a barycentric coordinates of the three nearest orientation.
+		* @param ear
+		* @param barycentricCoordinates
+		* @param orientation_pto1
+		* @param orientation_pto2
+		* @param orientation_pto3
+		* @return
+		*/
+		struct CalculateDirectivityTF_FromBarycentric_OnlineInterpolation {
+			const TDirectivityInterlacedTFStruct operator()(const T_DirectivityTFInterlacedDataTable& resampledTable, int32_t _numberOfSubfilters, int32_t _subfilterLength, TBarycentricCoordinatesStruct barycentricCoordinates, orientation orientation_pto1, orientation orientation_pto2, orientation orientation_pto3)
+			{
+				TDirectivityInterlacedTFStruct newDirectivityTF;
+
+				// Find the HRIR for the given t_HRTF_DataBase_ListOfOrientations
+				auto it1 = resampledTable.find(orientation(orientation_pto1.azimuth, orientation_pto1.elevation));
+				auto it2 = resampledTable.find(orientation(orientation_pto2.azimuth, orientation_pto2.elevation));
+				auto it3 = resampledTable.find(orientation(orientation_pto3.azimuth, orientation_pto3.elevation));
+
+				if (it1 != resampledTable.end() && it2 != resampledTable.end() && it3 != resampledTable.end())
+				{
+					newDirectivityTF.data.resize(_numberOfSubfilters);
+
+					for (int subfilterID = 0; subfilterID < _numberOfSubfilters; subfilterID++)
+					{
+						newDirectivityTF.data[subfilterID].resize(_subfilterLength);
+						for (int i = 0; i < _subfilterLength; i++)
+						{
+							newDirectivityTF.data[subfilterID][i] = barycentricCoordinates.alpha * it1->second.data[subfilterID][i] + barycentricCoordinates.beta * it2->second.data[subfilterID][i] + barycentricCoordinates.gamma * it3->second.data[subfilterID][i];
+						}
+					}
+				}
+				else {
+					SET_RESULT(RESULT_WARNING, "Orientations in CalculateDirectivityTF_FromBarycentricCoordinates() not found");
+				}
+
+				return newDirectivityTF;
+			}
+		};
+
+
 	};
 
 }

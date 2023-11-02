@@ -36,7 +36,6 @@
 
 namespace BRTServices
 {
-
 	//struct TDirectivityInterlacedTFStruct {
 	//	CMonoBuffer<float> data;
 	//};

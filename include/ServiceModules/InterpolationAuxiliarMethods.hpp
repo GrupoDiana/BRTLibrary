@@ -266,6 +266,24 @@ namespace BRTServices
 			return barycentricCoordinates;
 		}
 
+		static void CalculateAzimuth_BackandFront(float& aziBack, float& aziFront, float aziStep, float _azimuth)
+		{
+			int idxAzi = ceil(_azimuth / aziStep);
+
+			aziFront = idxAzi * aziStep;
+			aziBack = (idxAzi - 1) * aziStep;
+
+
+			aziBack = CheckLimitsAzimuth_and_Transform(aziBack);
+		}
+
+		static float CheckLimitsAzimuth_and_Transform(float azimuth)
+		{
+			if (azimuth < 0) { azimuth = azimuth + 360; }
+			else if (azimuth >= 360) { azimuth = azimuth - 360; }
+			return azimuth;
+		}
+
 	};
 }
 #endif

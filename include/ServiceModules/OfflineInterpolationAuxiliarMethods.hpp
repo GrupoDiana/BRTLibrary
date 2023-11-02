@@ -179,14 +179,14 @@ namespace BRTServices
 	class CQuadrantBased_OfflineInterpolator {
 	public:
 
-		template <typename T, typename W_THRIRStruct, typename Functor2>
-		W_THRIRStruct CalculateHRIR_offlineMethod(const T& table, Functor2 f2, std::vector<orientation>& listToSort, int _TFLength, double newAzimuth, double newElevation, int pole = 0)
+		template <typename T, typename W_TFStruct, typename Functor2>
+		W_TFStruct CalculateHRIR_offlineMethod(const T& table, Functor2 f2, std::vector<orientation>& listToSort, int _TFLength, double newAzimuth, double newElevation, int pole = 0)
 		{
 			std::vector<orientation> azimuthBackList, azimuthFrontList, backCeilList, backFloorList, frontCeilList, frontFloorList;
 			TBarycentricCoordinatesStruct barycentricCoordinates;
 
 			//THRIRStruct emptyHRIR;
-			W_THRIRStruct newTF;
+			W_TFStruct newTF;
 
 			// Get 2 list sorted by azimuth to the orientation of interest, Back and Front
 			SortListByAzimuthAndSplit(newAzimuth, listToSort, azimuthBackList, azimuthFrontList);

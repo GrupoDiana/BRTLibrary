@@ -159,7 +159,7 @@ namespace BRTServices {
 			}
 		};
 
-		static void CalculateAzimuth_BackandFront(float& aziBack, float& aziFront, float aziStep, float _azimuth)
+		/*static void CalculateAzimuth_BackandFront(float& aziBack, float& aziFront, float aziStep, float _azimuth)
 		{
 			int idxAzi = ceil(_azimuth / aziStep);
 
@@ -175,7 +175,7 @@ namespace BRTServices {
 			if (azimuth < 0) { azimuth = azimuth + 360; }
 			else if (azimuth >= 360) { azimuth = azimuth - 360; }
 			return azimuth;
-		}
+		}*/
 
 		/// <summary>
 		/// Calculate HRIR and delay from a given set of orientations		
