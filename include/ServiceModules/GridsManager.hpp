@@ -131,7 +131,6 @@ namespace BRTServices
 			// Round newElevation to avoid not saving elevation 90 due to float adding problems
 			for (double newElevation = -90.0f; round(newElevation) <= 90.0f; newElevation = newElevation + actual_Ele_Step)
 			{
-
 				n_divisions_by_elev = std::ceil(n_divisions * std::cos(d2r(newElevation)));
 				actual_Azi_Step = 360.0f / n_divisions_by_elev;
 			
