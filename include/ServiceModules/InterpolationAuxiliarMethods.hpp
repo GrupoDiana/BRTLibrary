@@ -248,7 +248,8 @@ namespace BRTServices
 
 			float denominator = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
 
-			if (round(denominator) == 0) {	//if denominator=0 -> no triangle -> barycentric coordinates NO VALID 
+			//if (round(denominator) == 0) {	//if denominator=0 -> no triangle -> barycentric coordinates NO VALID 
+			if (Common::AreSame(denominator, 0.0f, EPSILON_SEWING)){
 				//SET_RESULT(RESULT_WARNING, "Barycentric coordinates can be computed only on triangles");
 				barycentricCoordinates.alpha = -1;
 				barycentricCoordinates.beta = -1;

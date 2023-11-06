@@ -238,6 +238,7 @@ namespace BRTServices
 				}
 				else
 				{
+					SET_RESULT(RESULT_ERROR_NOTSET, "Empty TF to be emplaced in the resampled table");
 					return newTF;
 				}
 			}
@@ -256,6 +257,7 @@ namespace BRTServices
 				}
 				else
 				{
+					SET_RESULT(RESULT_ERROR_NOTSET, "Empty TF to be emplaced in the resampled table");
 					return newTF;
 				}
 			}		
