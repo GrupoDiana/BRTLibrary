@@ -318,12 +318,12 @@ namespace BRTServices
 			if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f)
 			{
 				// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
-				if (point1.azimuth == DEFAULT_MAX_AZIMUTH) { point1.azimuth = DEFAULT_MIN_AZIMUTH; }
-				if (point2.azimuth == DEFAULT_MAX_AZIMUTH) { point2.azimuth = DEFAULT_MIN_AZIMUTH; }
-				if (point3.azimuth == DEFAULT_MAX_AZIMUTH) { point3.azimuth = DEFAULT_MIN_AZIMUTH; }
-				if (point1.elevation == DEFAULT_MAX_ELEVATION) { point1.elevation = DEFAULT_MIN_ELEVATION; }
-				if (point2.elevation == DEFAULT_MAX_ELEVATION) { point2.elevation = DEFAULT_MIN_ELEVATION; }
-				if (point3.elevation == DEFAULT_MAX_ELEVATION) { point3.elevation = DEFAULT_MIN_ELEVATION; }
+				if (Common::AreSame(point1.azimuth, DEFAULT_MAX_AZIMUTH, EPSILON_SEWING)) { point1.azimuth = DEFAULT_MIN_AZIMUTH; }
+				if (Common::AreSame(point2.azimuth, DEFAULT_MAX_AZIMUTH, EPSILON_SEWING)) { point2.azimuth = DEFAULT_MIN_AZIMUTH; }
+				if (Common::AreSame(point3.azimuth, DEFAULT_MAX_AZIMUTH, EPSILON_SEWING)) { point3.azimuth = DEFAULT_MIN_AZIMUTH; }
+				if (Common::AreSame(point1.elevation, DEFAULT_MAX_ELEVATION, EPSILON_SEWING)) { point1.elevation = DEFAULT_MIN_ELEVATION; }
+				if (Common::AreSame(point2.elevation, DEFAULT_MAX_ELEVATION, EPSILON_SEWING)) { point2.elevation = DEFAULT_MIN_ELEVATION; }
+				if (Common::AreSame(point3.elevation, DEFAULT_MAX_ELEVATION, EPSILON_SEWING)) { point3.elevation = DEFAULT_MIN_ELEVATION; }
 
 				data = f(resampledTable, numberOfSubfilters, subfilterLength,  barycentricCoordinates, point1, point2, point3);
 
