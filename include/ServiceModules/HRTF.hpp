@@ -664,8 +664,8 @@ namespace BRTServices
 		THRIRStruct						emptyHRIR;
 		THRIRPartitionedStruct			emptyHRIR_partitioned;
 		CMonoBuffer<float>				emptyMonoBuffer;
-		oneEarHRIR_struct				emptyOneEarHRIR;
-		TOneEarHRIRPartitionedStruct	emptyOneEarHRIR_partitioned;
+		//oneEarHRIR_struct				emptyOneEarHRIR;
+		//TOneEarHRIRPartitionedStruct	emptyOneEarHRIR_partitioned;
 
 		Common::CGlobalParameters globalParameters;
 

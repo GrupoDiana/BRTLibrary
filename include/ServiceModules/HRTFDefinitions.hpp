@@ -53,30 +53,34 @@ namespace BRTServices {
 #define DEFAULT_EXTRAPOLATION_STEP 10
 #endif
 
-	/** \brief Type definition for a left-right pair of impulse response subfilter set with the ITD removed and stored in a specific struct field
-	*/
-	struct THRIRPartitionedStruct {
-		uint64_t leftDelay;				///< Left delay, in number of samples
-		uint64_t rightDelay;			///< Right delay, in number of samples
-		std::vector<CMonoBuffer<float>> leftHRIR_Partitioned;	///< Left partitioned impulse response data
-		std::vector<CMonoBuffer<float>> rightHRIR_Partitioned;	///< Right partitioned impulse response data
+	///** \brief Type definition for a left-right pair of impulse response subfilter set with the ITD removed and stored in a specific struct field
+	//*/
+	//struct THRIRPartitionedStruct {
+	//	uint64_t leftDelay;				///< Left delay, in number of samples
+	//	uint64_t rightDelay;			///< Right delay, in number of samples
+	//	std::vector<CMonoBuffer<float>> leftHRIR_Partitioned;	///< Left partitioned impulse response data
+	//	std::vector<CMonoBuffer<float>> rightHRIR_Partitioned;	///< Right partitioned impulse response data
 
-		THRIRPartitionedStruct() : leftDelay{ 0 }, rightDelay{ 0 } {}
-	};
+	//	THRIRPartitionedStruct() : leftDelay{ 0 }, rightDelay{ 0 } {}
+	//};
 
 	/** \brief Type definition for an impulse response with the ITD removed and stored in a specific struct field
 	*/
-	struct oneEarHRIR_struct {
+	struct TOneEarHRIR_struct {
 		uint64_t delay;				///< Delay, in number of samples
 		CMonoBuffer<float> HRIR;	///< Impulse response data
 	};
 
 	/** \brief Type definition for an impulse response subfilter set with the ITD removed and stored in a specific struct field
 	*/
-	struct TOneEarHRIRPartitionedStruct {
-		std::vector<CMonoBuffer<float>> HRIR_Partitioned;	///< Partitioned impulse response data
-		uint64_t delay;				///< Delay, in number of samples
-	};
+	//struct TOneEarHRIRPartitionedStruct {
+	//	std::vector<CMonoBuffer<float>> HRIR_Partitioned;	///< Partitioned impulse response data
+	//	uint64_t delay;										///< Delay, in number of samples
+	//	
+	//	TOneEarHRIRPartitionedStruct() {
+	//		delay = 0;
+	//	}
+	//};
 
 	/**	\brief Type definition for barycentric coordinates
 	*/

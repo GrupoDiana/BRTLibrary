@@ -109,7 +109,7 @@ namespace BRTServices {
 	const char EXTRAPOLATION_METHOD_ZEROINSERTION_STRING[] = "ZeroInsertion";
 
 	/** \brief Type definition for a left-right pair of impulse response with the ITD removed and stored in a specific struct field
-*/
+	*/
 	struct THRIRStruct {
 		uint64_t leftDelay;				///< Left delay, in number of samples
 		uint64_t rightDelay;			///< Right delay, in number of samples
@@ -117,6 +117,17 @@ namespace BRTServices {
 		CMonoBuffer<float> rightHRIR;	///< Right impulse response data
 
 		THRIRStruct() : leftDelay{0}, rightDelay{0} {}
+	};
+
+	/** \brief Type definition for a left-right pair of impulse response subfilter set with the ITD removed and stored in a specific struct field
+	*/
+	struct THRIRPartitionedStruct {
+		uint64_t leftDelay;				///< Left delay, in number of samples
+		uint64_t rightDelay;			///< Right delay, in number of samples
+		std::vector<CMonoBuffer<float>> leftHRIR_Partitioned;	///< Left partitioned impulse response data
+		std::vector<CMonoBuffer<float>> rightHRIR_Partitioned;	///< Right partitioned impulse response data
+
+		THRIRPartitionedStruct() : leftDelay{ 0 }, rightDelay{ 0 } {}
 	};
 
 	struct TILDStruct {
@@ -138,13 +149,13 @@ namespace BRTServices {
 		virtual void BeginSetup() {}
 		virtual void BeginSetup(int32_t _DirectivityTFLength) {}
 		virtual void BeginSetup(int32_t _HRIRLength, float _distance, std::string extrapolationMethod) {}
-		virtual bool EndSetup() = 0;
+		virtual bool EndSetup() { return false; }
 
 		virtual void SetResamplingStep(int _resamplingStep) {};
-		virtual void SetTitle(std::string _title) = 0;
-		virtual void SetDatabaseName(std::string _databaseName) =0;
+		virtual void SetTitle(std::string _title) {}
+		virtual void SetDatabaseName(std::string _databaseName) {}
 		virtual void SetListenerShortName(std::string _listenerShortName) {};
-		virtual void SetFilename(std::string _fileName) = 0;
+		virtual void SetFilename(std::string _fileName) {}
 		
 		virtual void SetSamplingRate(int samplingRate) {};
 		virtual void SetNumberOfEars(int _numberOfEars) {}
@@ -155,6 +166,8 @@ namespace BRTServices {
 		virtual void AddCoefficients(float azimuth, float distance, TILDStruct&& newCoefs) {}
 		virtual void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF) {}
 		
+		virtual void AddImpulseResponse(int channel, const THRIRStruct&& newIR) {}		
+		virtual void AddImpulseResponse(int channel, const THRIRPartitionedStruct&& newPartitionedIR) {}
 	};}
 
 #endif

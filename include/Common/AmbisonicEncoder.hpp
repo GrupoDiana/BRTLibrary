@@ -27,16 +27,16 @@
 
 namespace Common {
 
+	enum TAmbisonicNormalization { N3D, SN3D, maxN };
+
 	class CAmbisonicEncoder {
 	public:
-
-		enum TAmbisonicNormalization { N3D, SN3D, maxN };
-
+		
 		/**
 			\brief Default constructor
 		*/
 		CAmbisonicEncoder() : initialized{ false }, ambisonicOrder { 1 }, normalization{ TAmbisonicNormalization::N3D }, bufferSize{ 0 } {
-			numberOfChannels = CalculateNumberOfChannels();
+			numberOfChannels = CalculateNumberOfChannels(ambisonicOrder);
 		}
 
 		/**
@@ -47,14 +47,25 @@ namespace Common {
 		*/
 		void Setup(int _ambisonicOrder, TAmbisonicNormalization _ambisonicNormalization, int _bufferSize) {			
 			
-			if (_ambisonicNormalization >= 1 && _ambisonicNormalization <= 3) {
+			if (_ambisonicOrder >= 1 && _ambisonicOrder <= 3) {
 				bufferSize = _bufferSize;
 				ambisonicOrder = _ambisonicOrder;
 				normalization = _ambisonicNormalization;
-				numberOfChannels = CalculateNumberOfChannels();
+				numberOfChannels = CalculateNumberOfChannels(ambisonicOrder);
 				initialized = true;
 			}
 			
+		}
+
+		/**
+		 * @brief Set to initial state
+		*/
+		void Reset() {
+			initialized = false;
+			bufferSize = 0;
+			ambisonicOrder = 1;
+			normalization = TAmbisonicNormalization::N3D;
+			numberOfChannels = numberOfChannels = CalculateNumberOfChannels(ambisonicOrder);			
 		}
 
 		/*void SetOrder(int _order)
@@ -101,25 +112,49 @@ namespace Common {
 		 * @param azimuth source azimuth
 		 * @param elevation source elevetaion
 		*/		
-		void AmbisonicChannelsEncoder(const CMonoBuffer<float>& inBuffer, std::vector< CMonoBuffer<float> >& outVectorOfBuffers, float azimuth, float elevation) {
+		void EncodedIR(const CMonoBuffer<float>& inBuffer, std::vector< CMonoBuffer<float> >& channelsOutBuffers, float azimuth, float elevation) {
 
 			if (!initialized) { 
 				SET_RESULT(RESULT_ERROR_NOTSET, "AmbisonicEncoder class not initialised");
 				return; 
 			}
+		/*	channelsOutBuffers.clear();
+			channelsOutBuffers.resize(GetTotalChannels(), CMonoBuffer<float>(inBuffer.size(), 0));*/
 
 			std::vector<float> ambisonicFactors = GetRealSphericalHarmonics(azimuth, elevation);
-
-			// Go trough each sample
-			for (int nSample = 0; nSample < inBuffer.size(); nSample++)
-			{
-				// Add partial contribution of this source to each channel								
-				for (int i = 0; i < GetTotalChannels(); i++) {
-					outVectorOfBuffers[i][nSample] += inBuffer[nSample] * ambisonicFactors[i];
+			
+			for (int nChannel = 0; nChannel < GetTotalChannels(); nChannel++) {				
+				for (int nSample = 0; nSample < inBuffer.size(); nSample++)	{							
+					channelsOutBuffers[nChannel][nSample] += inBuffer[nSample] * ambisonicFactors[nChannel];					
 				}
 			}
 		}
+		
+		void EncodedPartitionedIR(const std::vector<CMonoBuffer<float>>& inPartitionedBuffer, std::vector<std::vector< CMonoBuffer<float>>>& partitionedChannelsOutBuffers, float azimuth, float elevation) {
 
+			if (!initialized) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "AmbisonicEncoder class not initialised");
+				return;
+			}
+			int numberOfChannels = GetTotalChannels();
+			int numberOfPartitions = inPartitionedBuffer.size();
+			int partitionsSize = inPartitionedBuffer[0].size();		// They must all be the same
+
+			
+			/*partitionedChannelsOutBuffers.clear();
+			partitionedChannelsOutBuffers.resize(numberOfChannels, std::vector<CMonoBuffer<float>>(numberOfPartitions, CMonoBuffer<float>(partitionsSize, 0)));*/
+
+			std::vector<float> ambisonicFactors = GetRealSphericalHarmonics(azimuth, elevation);
+
+			for (int nChannel = 0; nChannel < numberOfChannels; nChannel++) {
+				for (int nPartition = 0; nPartition < numberOfPartitions; nPartition++) {
+					for (int nSample = 0; nSample < partitionsSize; nSample++) {
+						partitionedChannelsOutBuffers[nChannel][nPartition][nSample] += inPartitionedBuffer[nPartition][nSample] * ambisonicFactors[nChannel];
+					}
+				}
+			}
+		}
+		
 
 	private:
 
@@ -139,7 +174,7 @@ namespace Common {
 		 * @brief Calculate the number of ambisonic channels from the ambisonic order
 		 * @return Number of ambisonic channels
 		*/
-		int CalculateNumberOfChannels() { return pow((ambisonicOrder + 1), 2); }
+		int CalculateNumberOfChannels(int _ambisonicOrder) { return pow((_ambisonicOrder + 1), 2); }
 
 		/**
 		 * @brief Get the ambisonic factors from the configured ambisonic order and normalisation and from the given azimuth and elevation.
@@ -148,7 +183,7 @@ namespace Common {
 		 * @return Vector of floats containing the factors in order, the size of the vector will depend on the order [4, 9, 16].
 		*/
 		std::vector<float> GetRealSphericalHarmonics(float _ambisonicAzimut, float _ambisonicElevation) {
-			if (!initialized) { return; }
+			if (!initialized) { return std::vector<float>(); }
 
 			std::vector<float> _factors(GetTotalChannels());	// Init
 			
