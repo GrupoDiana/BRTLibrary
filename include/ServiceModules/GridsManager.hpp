@@ -121,8 +121,8 @@ namespace BRTServices
 			
 			U emptyData;
 
-			int n_divisions = std::ceil(360 / _resamplingStep);
-			int n_rings_hemisphere = std::ceil(90 / _resamplingStep);
+			int n_divisions = std::ceil(360.0f / _resamplingStep);
+			int n_rings_hemisphere = std::ceil(90.0f / _resamplingStep);
 			float actual_Ele_Step = 90.0f / n_rings_hemisphere;
 			
 			// Saving in -1,-1 the Elevation Step, same for all grid
@@ -131,7 +131,14 @@ namespace BRTServices
 			// Round newElevation to avoid not saving elevation 90 due to float adding problems
 			for (double newElevation = -90.0f; round(newElevation) <= 90.0f; newElevation = newElevation + actual_Ele_Step)
 			{
+				float a = d2r(newElevation);
+				float b = cos(a);
+				float c = (n_divisions * b);
+
 				n_divisions_by_elev = std::ceil(n_divisions * std::cos(d2r(newElevation)));
+				if (Common::AreSame(n_divisions_by_elev, 0.0f, EPSILON_SEWING)) { 
+					n_divisions_by_elev = 1.0f;
+				}
 				actual_Azi_Step = 360.0f / n_divisions_by_elev;
 			
 				// Calculate new Elevation to be in range [270,360] and use it to create the vector and to emplace data

@@ -350,6 +350,7 @@ namespace BRTServices
 		void Find_4Nearest_Points(float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap, orientation& orientation_ptoA, orientation& orientation_ptoB, orientation& orientation_ptoC, orientation& orientation_ptoD, orientation& orientation_ptoP, std::pair<float, float>& nearestElevations)const
 		{
 			float azimuthCeilBack, azimuthCeilFront, azimuthFloorBack, azimuthFloorFront;
+			float azimuthStepCeil, azimuthStepFloor;
 
 			float elevationStep = stepMap.find(orientation(-1, -1))->second; // Elevation Step -- Same always
 			int indexElevation = ceil(_elevation / elevationStep);
@@ -359,15 +360,16 @@ namespace BRTServices
 			elevationCeil = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(elevationCeil);				//			   Back	  Front
 			elevationFloor = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(elevationFloor);				//	Ceil		A		B
 
-			auto stepItr = stepMap.find(orientation(0, elevationCeil));										//	Floor		C		D
-			float azimuthStepCeil = stepItr->second;
-
+			auto stepItr = stepMap.find(orientation(0, elevationCeil));															//	Floor		C		D
+			if(stepItr!= stepMap.end()){ azimuthStepCeil = stepItr->second; }
+			else { SET_RESULT(RESULT_ERROR_NOTSET, "OrientationCeil not found in the ONline interpolation (Find4Nearest algorithm)"); }
+			
 			CInterpolationAuxiliarMethods::CalculateAzimuth_BackandFront(azimuthCeilBack, azimuthCeilFront, azimuthStepCeil, _azimuth);
-			// azimuth values passed by reference
 
 			auto stepIt = stepMap.find(orientation(0, elevationFloor));
-			float azimuthStepFloor = stepIt->second;
-
+			if (stepItr != stepMap.end()) { azimuthStepFloor = stepIt->second;	}
+			else { SET_RESULT(RESULT_ERROR_NOTSET, "OrientationFloor not found in the ONline interpolation (Find4Nearest algorithm)"); }
+			
 			CInterpolationAuxiliarMethods::CalculateAzimuth_BackandFront(azimuthFloorBack, azimuthFloorFront, azimuthStepFloor, _azimuth);
 
 			elevationCeil = elevationStep * indexElevation;
