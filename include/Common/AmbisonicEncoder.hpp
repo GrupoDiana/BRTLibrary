@@ -112,16 +112,14 @@ namespace Common {
 		 * @param azimuth source azimuth
 		 * @param elevation source elevetaion
 		*/		
-		void EncodedIR(const CMonoBuffer<float>& inBuffer, std::vector< CMonoBuffer<float> >& channelsOutBuffers, float azimuth, float elevation) {
+		void EncodedIR(const CMonoBuffer<float>& inBuffer, std::vector< CMonoBuffer<float> >& channelsOutBuffers, float _azimuthDegress, float _elevationDegress) {
 
 			if (!initialized) { 
 				SET_RESULT(RESULT_ERROR_NOTSET, "AmbisonicEncoder class not initialised");
 				return; 
 			}
-		/*	channelsOutBuffers.clear();
-			channelsOutBuffers.resize(GetTotalChannels(), CMonoBuffer<float>(inBuffer.size(), 0));*/
-
-			std::vector<float> ambisonicFactors = GetRealSphericalHarmonics(azimuth, elevation);
+					
+			std::vector<double> ambisonicFactors = GetRealSphericalHarmonics(DegreesToRadians(_azimuthDegress), DegreesToRadians(_elevationDegress));
 			
 			for (int nChannel = 0; nChannel < GetTotalChannels(); nChannel++) {				
 				for (int nSample = 0; nSample < inBuffer.size(); nSample++)	{							
@@ -130,7 +128,7 @@ namespace Common {
 			}
 		}
 		
-		void EncodedPartitionedIR(const std::vector<CMonoBuffer<float>>& inPartitionedBuffer, std::vector<std::vector< CMonoBuffer<float>>>& partitionedChannelsOutBuffers, float azimuth, float elevation) {
+		void EncodedPartitionedIR(const std::vector<CMonoBuffer<float>>& inPartitionedBuffer, std::vector<std::vector< CMonoBuffer<float>>>& partitionedChannelsOutBuffers, float _azimuthDegress, float _elevationDegress) {
 
 			if (!initialized) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "AmbisonicEncoder class not initialised");
@@ -139,12 +137,9 @@ namespace Common {
 			int numberOfChannels = GetTotalChannels();
 			int numberOfPartitions = inPartitionedBuffer.size();
 			int partitionsSize = inPartitionedBuffer[0].size();		// They must all be the same
+						
 
-			
-			/*partitionedChannelsOutBuffers.clear();
-			partitionedChannelsOutBuffers.resize(numberOfChannels, std::vector<CMonoBuffer<float>>(numberOfPartitions, CMonoBuffer<float>(partitionsSize, 0)));*/
-
-			std::vector<float> ambisonicFactors = GetRealSphericalHarmonics(azimuth, elevation);
+			std::vector<double> ambisonicFactors = GetRealSphericalHarmonics(DegreesToRadians(_azimuthDegress), DegreesToRadians(_elevationDegress));
 
 			for (int nChannel = 0; nChannel < numberOfChannels; nChannel++) {
 				for (int nPartition = 0; nPartition < numberOfPartitions; nPartition++) {
@@ -182,10 +177,10 @@ namespace Common {
 		 * @param _ambisonicElevation elevation to calculate the factors
 		 * @return Vector of floats containing the factors in order, the size of the vector will depend on the order [4, 9, 16].
 		*/
-		std::vector<float> GetRealSphericalHarmonics(float _ambisonicAzimut, float _ambisonicElevation) {
-			if (!initialized) { return std::vector<float>(); }
+		std::vector<double> GetRealSphericalHarmonics(double _ambisonicAzimut, double _ambisonicElevation) {
+			if (!initialized) { return std::vector<double>(); }
 
-			std::vector<float> _factors(GetTotalChannels());	// Init
+			std::vector<double> _factors(GetTotalChannels());	// Init
 			
 			switch (GetOrder())
 			{
@@ -225,7 +220,7 @@ namespace Common {
 		 * @brief Apply a normalisation to the ambisonic factors
 		 * @param _factors 
 		*/
-		void ConvertN3DtoSN3D(std::vector<float>& _factors) {
+		void ConvertN3DtoSN3D(std::vector<double>& _factors) {
 			for (int i = 1; i < _factors.size(); i++) {
 				if (i < 4) { _factors[i] *= (1 / sqrt(3)); }
 				else if (i < 9) { _factors[i] *= (1 / sqrt(5)); }
@@ -236,7 +231,7 @@ namespace Common {
 		 * @brief Apply a normalisation to the ambisonic factors
 		 * @param _factors 
 		*/
-		void ConvertN3DtoMaxN(std::vector<float>& _factors) {
+		void ConvertN3DtoMaxN(std::vector<double>& _factors) {
 			switch (GetOrder())
 			{
 			case 3:
@@ -267,6 +262,9 @@ namespace Common {
 			}
 		}
 
+		double DegreesToRadians(double _degrees) {
+			return (_degrees / 180.0) * ((double)M_PI);
+		}		
 	};
 }
 #endif
