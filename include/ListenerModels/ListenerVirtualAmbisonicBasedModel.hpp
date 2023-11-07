@@ -28,7 +28,7 @@
 #include <ServiceModules/HRTFDefinitions.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/ILD.hpp>
-#include <ServiceModules/AmbisonicIR.hpp>
+#include <ServiceModules/AmbisonicBIR.hpp>
 #include <ProcessingModules/HRTFConvolverProcessor.hpp>
 #include <ProcessingModules/NearFieldEffectProcessor.hpp>
 #include <Base/SourceModelBase.hpp>
@@ -66,7 +66,7 @@ namespace BRTListenerModel {
 			ambisonicOrder{ 1 }, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D } {
 			
 			listenerHRTF = std::make_shared<BRTServices::CHRTF>();					// Create a empty HRTF	class
-			listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicIR>();	// Create a empty AmbisonicIR class
+			listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicBIR>();	// Create a empty AmbisonicIR class
 			CreateHRTFExitPoint();
 			CreateILDExitPoint();
 		}
@@ -106,7 +106,7 @@ namespace BRTListenerModel {
 		*/
 		void RemoveHRTF() {
 			listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// Empty HRTF			
-			listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicIR>();	// Empty AmbisonicIR class
+			listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicBIR>();	// Empty AmbisonicIR class
 		}
 
 		///
@@ -333,7 +333,7 @@ namespace BRTListenerModel {
 		std::string listenerID;														// Store unique listener ID
 		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;							// HRTF of listener														
 		std::shared_ptr<BRTServices::CILD> listenerILD;								// ILD of listener				
-		std::shared_ptr<BRTServices::CAmbisonicIR> listenerAmbisonicIR;				// AmbisonicIR related to the listener				
+		std::shared_ptr<BRTServices::CAmbisonicBIR> listenerAmbisonicIR;				// AmbisonicIR related to the listener				
 		int ambisonicOrder;															// Store the Ambisonic order
 		Common::TAmbisonicNormalization ambisonicNormalization;	// Store the Ambisonic normalization
 		

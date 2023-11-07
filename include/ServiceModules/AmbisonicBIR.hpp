@@ -1,7 +1,7 @@
 /**
-* \class CAmbisonicIR
+* \class CAmbisonicBIR
 *
-* \brief Declaration of CAmbisonicIR class interface.
+* \brief Declaration of CAmbisonicBIR class interface.
 * \date	October 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
@@ -20,8 +20,8 @@
 * \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 
-#ifndef _CAmbisonicIR_HPP
-#define _CAmbisonicIR_HPP
+#ifndef _CAmbisonicBIR_HPP
+#define _CAmbisonicBIR_HPP
 
 #include <unordered_map>
 #include <cmath>  
@@ -31,7 +31,7 @@
 #include <Common/CommonDefinitions.hpp>
 #include <Common/AmbisonicEncoder.hpp>
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
-#include <ServiceModules/HRTFDefinitions.hpp>		//TODO remove this line
+//#include <ServiceModules/HRTFDefinitions.hpp>		//TODO remove this line
 
 /*! \file */
 
@@ -112,13 +112,13 @@ namespace BRTServices
 	 * @tparam nVirtualSpeakers 
 	*/
 	//template <unsigned int nVirtualSpeakers, typename TVirtualSpeakerID>		
-	class CAmbisonicIR : public CServicesBase
+	class CAmbisonicBIR : public CServicesBase
 	{	
 	public:
 
 		/** \brief Default constructor.
 		*/
-		CAmbisonicIR() : setupDone{ false }, bufferSize{ 0 }, impulseResponseLength{ 0 }, impulseResponseBlockLength_time{ 0 }, impulseResponseNumberOfBlocks{ 0 }, impulseResponseBlockLength_freq {0}
+		CAmbisonicBIR() : setupDone{ false }, bufferSize{ 0 }, impulseResponseLength{ 0 }, impulseResponseBlockLength_time{ 0 }, impulseResponseNumberOfBlocks{ 0 }, impulseResponseBlockLength_freq {0}
 		{			
 		}
 
