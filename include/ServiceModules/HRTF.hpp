@@ -186,6 +186,13 @@ namespace BRTServices
 					quasiUniformSphereDistribution.CreateGrid<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, resamplingStep);
 					offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct> (t_HRTF_DataBase, t_HRTF_Resampled_partitioned, bufferSize, HRIRLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
 
+					//TESTING:
+					for (auto it = t_HRTF_Resampled_partitioned.begin(); it != t_HRTF_Resampled_partitioned.end(); it++) {
+						if (it->second.leftHRIR_Partitioned.size() == 0 || it->second.rightHRIR_Partitioned.size() == 0) {
+							SET_RESULT(RESULT_ERROR_NOTSET, "The t_HRTF_Resampled_partitioned has an empty HRIR in position [" + std::to_string(it->first.azimuth) + ", " + std::to_string(it->first.elevation) + "]");
+						}
+					
+					}
 
 					//Setup values
 					auto it = t_HRTF_Resampled_partitioned.begin();

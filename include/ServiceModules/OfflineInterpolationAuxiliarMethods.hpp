@@ -49,8 +49,8 @@ namespace BRTServices
 			float azimuth;
 			azimuth = originalAzimuth + 180 - azimuthOrientationOfInterest;
 
-			// Check limits (always return 0 instead of 360)
-			if (azimuth >= DEFAULT_MAX_AZIMUTH)
+			// Check limits 
+			if (azimuth > DEFAULT_MAX_AZIMUTH)
 				azimuth = std::fmod(azimuth, (float)360);
 
 			if (azimuth < DEFAULT_MIN_AZIMUTH)
@@ -131,6 +131,7 @@ namespace BRTServices
 
 							barycentricCoordinates = CInterpolationAuxiliarMethods::GetBarycentricCoordinates(newAzimuthTransformed, newElevationTransformed, iAzimuthTransformed, iElevationTransformed, jAzimuthTransformed, jElevationTransformed, kAzimuthTransformed, kElevationTransformed);
 
+							//FIXME: It's not checking of the barycentric coordinates are bigger than zero, and sometimes are not.
 							newHRIR = f_CalculateHRIR_Offline(table, orientation(mygroup[i].azimuth, mygroup[i].elevation), orientation(mygroup[j].azimuth, mygroup[j].elevation), orientation(mygroup[k].azimuth, mygroup[k].elevation), HRIRLength, barycentricCoordinates);
 							
 							return newHRIR;
@@ -219,8 +220,8 @@ namespace BRTServices
 			float frontFloorElevationTransformed= COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(newElevation,	frontFloorlListSortedByDistance[0].second.elevation);
 
 			// Calculate slopes to make the triangulation
-			float slopeDiagonalTrapezoid = std::abs(frontFloorElevationTransformed - backCeilElevationTransformed) / (frontFloorAzimuthTransformed - backCeilAzimuthTransformed);
-			float slopeOrientationOfInterest = std::abs(newElevationTransformed - backCeilElevationTransformed) / (newAzimuthTransformed - backCeilAzimuthTransformed);
+			float slopeDiagonalTrapezoid = std::abs((frontFloorElevationTransformed - backCeilElevationTransformed) / (frontFloorAzimuthTransformed - backCeilAzimuthTransformed));
+			float slopeOrientationOfInterest = std::abs((newElevationTransformed - backCeilElevationTransformed) / (newAzimuthTransformed - backCeilAzimuthTransformed));
 
 			if (slopeOrientationOfInterest >= slopeDiagonalTrapezoid)
 			{
@@ -238,7 +239,7 @@ namespace BRTServices
 				}
 				else
 				{
-					SET_RESULT(RESULT_ERROR_NOTSET, "Empty TF to be emplaced in the resampled table");
+					SET_RESULT(RESULT_ERROR_NOTSET, "Calculate HRIR OfflineMethod (QuadrantBased) return empty TF in position [" + std::to_string(newAzimuth) + ", " + std::to_string(newElevation) + "]");
 					return newTF;
 				}
 			}
@@ -257,7 +258,7 @@ namespace BRTServices
 				}
 				else
 				{
-					SET_RESULT(RESULT_ERROR_NOTSET, "Empty TF to be emplaced in the resampled table");
+					SET_RESULT(RESULT_ERROR_NOTSET, "Calculate HRIR OfflineMethod (QuadrantBased) return empty TF in position [" + std::to_string(newAzimuth) + ", " + std::to_string(newElevation) + "]");
 					return newTF;
 				}
 			}		

@@ -104,7 +104,7 @@ namespace BRTServices
 				SET_RESULT(RESULT_WARNING, "Transfer Function interpolated in the pole [ " + std::to_string(iAzimuthPoles) + ", " + std::to_string(iElevationSouthPole) + "]");
 			}
 			// Fill out the table for "every azimuth in the pole" ____________________________________________________________________________
-			for (int az = DEFAULT_MIN_AZIMUTH; az < DEFAULT_MAX_AZIMUTH; az = az + _resamplingStep)
+			for (int az = DEFAULT_MIN_AZIMUTH; az <= DEFAULT_MAX_AZIMUTH; az = az + _resamplingStep)
 			{
 				//Elevation 90 degrees
 				_t_TF_DataBase.emplace(orientation(az, iElevationNorthPole), precalculatedTF_90);
