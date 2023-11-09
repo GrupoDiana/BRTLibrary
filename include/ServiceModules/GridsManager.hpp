@@ -131,18 +131,22 @@ namespace BRTServices
 			// Round newElevation to avoid not saving elevation 90 due to float adding problems
 			for (double newElevation = -90.0f; round(newElevation) <= 90.0f; newElevation = newElevation + actual_Ele_Step)
 			{
-				float a = d2r(newElevation);
+				double temp_elevation = newElevation;
+				if (Common::AreSameDouble(newElevation,0.0, EPSILON_SEWING)) {
+					temp_elevation = 0.0;
+				}
+				float a = d2r(temp_elevation);
 				float b = cos(a);
 				float c = (n_divisions * b);
 
-				n_divisions_by_elev = std::ceil(n_divisions * std::cos(d2r(newElevation)));
+				n_divisions_by_elev = std::ceil(n_divisions * std::cos(d2r(temp_elevation)));
 				if (Common::AreSame(n_divisions_by_elev, 0.0f, EPSILON_SEWING)) { 
 					n_divisions_by_elev = 1.0f;
 				}
 				actual_Azi_Step = 360.0f / n_divisions_by_elev;
 			
 				// Calculate new Elevation to be in range [270,360] and use it to create the vector and to emplace data
-				elevationInRange = AdjustElevationRange(newElevation);
+				elevationInRange = AdjustElevationRange(temp_elevation);
 
 				// Create the vector
 				stepVector.emplace(orientation(0, elevationInRange), actual_Azi_Step);
@@ -235,7 +239,10 @@ namespace BRTServices
 		friend class CHRTFTester;
 	private:
 		double AdjustElevationRange(double elev) {
-			if (elev < 0) { elev = elev + 360; }
+
+			if (elev < 0) { 
+				elev = elev + 360; 
+			}
 			return elev;
 		}
 
