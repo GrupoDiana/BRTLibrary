@@ -139,6 +139,7 @@ namespace BRTServices
 					}
 				}
 			}
+			return newHRIR;
 			//SET_RESULT(RESULT_OK, "");			
 		}
 		friend class CHRTFTester;
