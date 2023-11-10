@@ -557,6 +557,32 @@ namespace Common {
 			}
 		}
 
+		void SetFromMix(std::vector <CBuffer> sourceBuffers)
+		{
+			// Get size of all sourceBuffers and check they are the same
+			size_t bufferSize = 0;
+			for (std::vector<CBuffer>::iterator it = sourceBuffers.begin(); it != sourceBuffers.end(); ++it)
+			{
+				if (bufferSize == 0)
+					bufferSize = (*it).size();
+				ASSERT((*it).size() == bufferSize, RESULT_ERROR_BADSIZE, "Attempt to mix buffers with different sizes", "");
+			}
+
+			// Iterate through all samples
+			this->clear();
+			for (int i = 0; i < bufferSize; i++)
+			{
+				// Iterate through all source buffers
+				float sum = 0.0f;
+				for (typename std::vector<CBuffer>::iterator it = sourceBuffers.begin(); it != sourceBuffers.end(); ++it)
+				{
+					sum += (*it)[i];
+				}
+				//sum = sum / sourceBuffers.size();
+				this->push_back(sum);
+			}
+		}
+
 		/** \brief Set buffer from a full-scale upward/downward ramp function
 		*	\details For debugging purposes
 		*	\param [in] upward if true, creates an upward ramp. If False, create a downward ramp

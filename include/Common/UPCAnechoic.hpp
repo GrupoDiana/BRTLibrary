@@ -183,7 +183,8 @@ namespace Common {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		//void ProcessUPConvolutionWithMemory(const CMonoBuffer<float>& inBuffer_Time, const TOneEarHRIRPartitionedStruct & IR, CMonoBuffer<float>& outBuffer);
-		void ProcessUPConvolutionWithMemory(const CMonoBuffer<float>& inBuffer_Time, const std::vector<CMonoBuffer<float>>& IR, CMonoBuffer<float>& outBuffer)
+		//void ProcessUPConvolutionWithMemory(const CMonoBuffer<float>& inBuffer_Time, const std::vector<CMonoBuffer<float>>& IR, CMonoBuffer<float>& outBuffer)
+		void ProcessUPConvolutionWithMemory(const CMonoBuffer<float>& inBuffer_Time, const std::vector<CMonoBuffer<float>>& IR, CMonoBuffer<float>& outBuffer, bool _doIFFT = true)
 		{			
 			CMonoBuffer<float> sum;
 			sum.resize(impulseResponse_Frequency_Block_Size, 0.0f);
@@ -256,14 +257,18 @@ namespace Common {
 						it_storageHRIR--;
 					}
 
-					// Make the IIF
-					CMonoBuffer<float> ouputBuffer_temp;
-					Common::CFprocessor::CalculateIFFT(sum, ouputBuffer_temp);
-					//We are left only with the final half of the result
-					//int halfsize = (int)(ouputBuffer_temp.size() * 0.5f);
-					CMonoBuffer<float> temp_OutputBlock(ouputBuffer_temp.end() - inputSize, ouputBuffer_temp.end());
-					outBuffer = std::move(temp_OutputBlock);			//To use in C++11
-
+					if (_doIFFT) {
+						// Make the IIF
+						CMonoBuffer<float> ouputBuffer_temp;
+						Common::CFprocessor::CalculateIFFT(sum, ouputBuffer_temp);
+						//We are left only with the final half of the result
+						//int halfsize = (int)(ouputBuffer_temp.size() * 0.5f);
+						CMonoBuffer<float> temp_OutputBlock(ouputBuffer_temp.end() - inputSize, ouputBuffer_temp.end());
+						outBuffer = std::move(temp_OutputBlock);			//To use in C++11
+					}
+					else {
+						outBuffer = std::move(sum);			//To use in C++11	
+					}										
 				}
 				else
 				{
@@ -278,6 +283,17 @@ namespace Common {
 
 		}
 		
+		static void CalculateIFFT(const CMonoBuffer<float>& _inBuffer, CMonoBuffer<float> &_outBuffer) {
+
+			CMonoBuffer<float> outBuffer_temp;
+			Common::CFprocessor::CalculateIFFT(_inBuffer, outBuffer_temp);
+			//We are left only with the final half of the result
+			int halfsize = (int)(outBuffer_temp.size() * 0.5f);
+
+			CMonoBuffer<float> outBufferTempHalf(outBuffer_temp.begin() + halfsize, outBuffer_temp.end());
+			_outBuffer = std::move(outBufferTempHalf);			//To use in C++11
+		}
+
 		/** \brief Reset class state and clean convolution buffers 
 		*   \details After calling this method it is necessary to do a setup again.
 		*   \details 

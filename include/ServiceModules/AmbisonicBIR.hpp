@@ -31,6 +31,7 @@
 #include <Common/CommonDefinitions.hpp>
 #include <Common/AmbisonicEncoder.hpp>
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/HRTF.hpp>
 //#include <ServiceModules/HRTFDefinitions.hpp>		//TODO remove this line
 
 /*! \file */
@@ -114,12 +115,41 @@ namespace BRTServices
 	//template <unsigned int nVirtualSpeakers, typename TVirtualSpeakerID>		
 	class CAmbisonicBIR : public CServicesBase
 	{	
+		enum TDataOrigin { BRIR, HRTF };
 	public:
 
 		/** \brief Default constructor.
 		*/
-		CAmbisonicBIR() : setupDone{ false }, bufferSize{ 0 }, impulseResponseLength{ 0 }, impulseResponseBlockLength_time{ 0 }, impulseResponseNumberOfBlocks{ 0 }, impulseResponseBlockLength_freq {0}
+		CAmbisonicBIR() : dataOrigin{ TDataOrigin::BRIR}, setupDone { false }, bufferSize{ 0 }, impulseResponseLength{ 0 }, IRNumberOfSubFilters{ 0 }, IRSubfilterLength{ 0 }
 		{			
+		}
+
+
+		/** \brief Setup input and AIR lengths
+		*	\param [in] _inputSourceLength length of input buffer
+		*	\param [in] _irLength length of impulse response
+		*   \eh On error, an error code is reported to the error handler.
+		*/
+		void Setup(int _bufferSize, int _irLength)
+		{			
+			ASSERT(((_bufferSize > 0) & (_irLength > 0)), RESULT_ERROR_BADSIZE, "AIR and input source length must be greater than 0", "AIR setup successfull");
+
+			if (setupDone) { Reset(); }
+
+			bufferSize = _bufferSize;
+			impulseResponseLength = _irLength;
+			int impulseResponseBlockLength_time = 2 * _bufferSize;
+			IRSubfilterLength = 2 * impulseResponseBlockLength_time;
+			float temp_impulseResponseNumberOfBlocks = (float)impulseResponseLength / (float)bufferSize;
+			IRNumberOfSubFilters = static_cast<int>(std::ceil(temp_impulseResponseNumberOfBlocks));
+
+			ambisonicIRTable.clear();
+			ambisonicIRPartitionedTable.clear();
+
+			ambisonicEncoder.Setup(1, Common::TAmbisonicNormalization::N3D);
+
+			dataOrigin = TDataOrigin::BRIR;
+			setupDone = true;				//	Indicate that the setup has been done
 		}
 
 		/** \brief Setup input and AIR lengths
@@ -127,7 +157,7 @@ namespace BRTServices
 		*	\param [in] _irLength length of impulse response
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		void Setup(int _ambisonicOrder, Common::TAmbisonicNormalization _ambisonicNormalization, int _bufferSize, int _irLength)
+		void Setup(int _bufferSize, int _irLength, int _numberOfSubfilters, int _partitionedSubfilterLength, int _ambisonicOrder, Common::TAmbisonicNormalization _ambisonicNormalization)
 		{
 			//ASSERT(nVirtualSpeakers > 0, RESULT_ERROR_BADSIZE, "Attempt to setup AIR for 0 virtual speakers", "");
 			ASSERT(((_bufferSize > 0) & (_irLength > 0)), RESULT_ERROR_BADSIZE, "AIR and input source length must be greater than 0", "AIR setup successfull");
@@ -136,16 +166,16 @@ namespace BRTServices
 			
 			bufferSize = _bufferSize;
 			impulseResponseLength = _irLength;
-			impulseResponseBlockLength_time = 2 * _bufferSize;
-			impulseResponseBlockLength_freq = 2 * impulseResponseBlockLength_time;
-			float temp_impulseResponseNumberOfBlocks = (float)impulseResponseLength / (float)bufferSize;
-			impulseResponseNumberOfBlocks = static_cast<int>(std::ceil(temp_impulseResponseNumberOfBlocks));
+			
+			IRSubfilterLength = _partitionedSubfilterLength;			
+			IRNumberOfSubFilters = _numberOfSubfilters;
 			
 			ambisonicIRTable.clear();
 			ambisonicIRPartitionedTable.clear();
 			
-			ambisonicEncoder.Setup(_ambisonicOrder, _ambisonicNormalization, _bufferSize);
+			ambisonicEncoder.Setup(_ambisonicOrder, _ambisonicNormalization);
 
+			dataOrigin = TDataOrigin::HRTF;
 			setupDone = true;				//	Indicate that the setup has been done
 		}
 
@@ -155,9 +185,9 @@ namespace BRTServices
 			setupDone = false;
 			bufferSize = 0;
 			impulseResponseLength = 0;
-			impulseResponseBlockLength_time = 0;
-			impulseResponseBlockLength_freq = 0;
-			impulseResponseNumberOfBlocks = 0;
+			//impulseResponseBlockLength_time = 0;
+			IRSubfilterLength = 0;
+			IRNumberOfSubFilters = 0;
 									
 			ambisonicIRTable.clear();
 			ambisonicIRPartitionedTable.clear();			
@@ -288,6 +318,24 @@ namespace BRTServices
 				return THRIRPartitionedStruct(); // returning an empty data
 			}
 		}
+
+		const std::vector<CMonoBuffer<float>>& GetChannelPartitionedIR_OneEar(int channel, Common::T_ear _ear) const
+		{			
+			auto it = ambisonicIRPartitionedTable.find(channel);
+			if (it != ambisonicIRPartitionedTable.end())
+			{
+				//SET_RESULT(RESULT_OK, "ABIR returned correct channel data");
+				if (_ear == Common::T_ear::LEFT) {
+					return it->second.leftHRIR_Partitioned;
+				}
+				else if (_ear == Common::T_ear::RIGHT) {
+					return it->second.rightHRIR_Partitioned;
+				}
+			}
+			SET_RESULT(RESULT_ERROR_OUTOFRANGE, "Error trying to get Ambisonic IR data from a ambisonicIRPartitioned Table. Either the channel is not found or the requested ear did not have a valid parameter.");
+			return std::vector<CMonoBuffer<float>>();
+			
+		}
 				
 		//////////////////////////////////////////////////////
 
@@ -310,9 +358,9 @@ namespace BRTServices
 		*	\sa SetupIFFT_OLA
 		*   \eh Nothing is reported to the error handler.
 		*/
-		const int GetDataBlockLength() const {
+	/*	const int GetDataBlockLength() const {
 			return impulseResponseBlockLength_time;
-		}
+		}*/
 
 		/** \brief Get data length of stored impulse responses in frequency domain (the length of one partition, which is the same for every partition)
 		*	\retval dataLength Impulse response FFT partition buffer size (frequency domain)
@@ -320,8 +368,8 @@ namespace BRTServices
 		*	\sa SetupIFFT_OLA
 		*   \eh Nothing is reported to the error handler.
 		*/
-		const int GetDataBlockLength_freq() const {
-			return impulseResponseBlockLength_freq;
+		const int GetIRSubfilterLength() const {
+			return IRSubfilterLength;
 		}
 
 		/** \brief Get number of sub-filters (blocks) fo the AIR partition
@@ -330,8 +378,8 @@ namespace BRTServices
 		*	\sa SetupIFFT_OLA
 		*   \eh Nothing is reported to the error handler.
 		*/
-		const int GetDataNumberOfBlocks() const {
-			return impulseResponseNumberOfBlocks;
+		const int GetIRNumberOfSubfilters() const {
+			return IRNumberOfSubFilters;
 		}
 
 
@@ -373,9 +421,9 @@ namespace BRTServices
 		//	return true;			
 		//}
 
-		bool CalculateImpulseResponsesFromHRTF(std::shared_ptr<BRTServices::CHRTF> _listenerHRTF) {
+		bool AddImpulseResponsesFromHRTF(std::shared_ptr<BRTServices::CHRTF> _listenerHRTF) {
 
-			//std::vector<THRIRPartitionedStruct> virtualSpeakersAmbisonicChannels;
+			
 									
 			std::vector<std::vector< CMonoBuffer<float>>> ambisonicChannelsLeft;
 			std::vector<std::vector< CMonoBuffer<float>>> ambisonicChannelsRight;
@@ -456,12 +504,15 @@ namespace BRTServices
 		}
 
 	private:
-		bool setupDone;							//To know if the setup has been done
-		int impulseResponseLength;				// Data length of one channel for one virtual speaker
-		int impulseResponseBlockLength_freq;	// Data length of one block of the FFT partitioned impulse response in time domain
-		int impulseResponseBlockLength_time;	// Data length of one block of the FFT partitioned impulse response in frequency domain
+		
+
+		TDataOrigin dataOrigin;					// To know the origin of the data 
+		bool setupDone;							// To know if the setup has been done
 		int bufferSize;							// Input source length		
-		int impulseResponseNumberOfBlocks;		// Number of blocks of the partitioned IR 
+		int impulseResponseLength;				// Data length of one channel for one virtual speaker
+		int IRSubfilterLength;					// Data length of one block of the FFT partitioned impulse response in time domain
+		//int impulseResponseBlockLength_time;	// Data length of one block of the FFT partitioned impulse response in frequency domain		
+		int IRNumberOfSubFilters;		// Number of blocks of the partitioned IR 
 
 			
 		TAmbisonicIRTable ambisonicIRTable;								// IR data (usally in time domain)

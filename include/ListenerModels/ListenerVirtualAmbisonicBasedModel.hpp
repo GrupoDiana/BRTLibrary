@@ -29,8 +29,8 @@
 #include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/ILD.hpp>
 #include <ServiceModules/AmbisonicBIR.hpp>
-#include <ProcessingModules/HRTFConvolverProcessor.hpp>
-#include <ProcessingModules/NearFieldEffectProcessor.hpp>
+#include <ProcessingModules/BilateralAmbisonicEncoderProcessor.hpp>
+#include <ProcessingModules/AmbisonicDomainConvolverProcessor.hpp>
 #include <Base/SourceModelBase.hpp>
 #include <Base/BRTManager.hpp>
 #include <third_party_libraries/nlohmann/json.hpp>
@@ -43,22 +43,22 @@ namespace BRTListenerModel {
 
 	class CListenerVirtualAmbisonicBasedModel : public BRTBase::CListenerModelBase {
 
-		class CSourceProcessors {
+		class CSourceToBeProcessed {
 		public:
 
-			CSourceProcessors(std::string _sourceID, BRTBase::CBRTManager* brtManager) : sourceID{ _sourceID } {
-				binauralConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CHRTFConvolverProcessor>();
-				nearFieldEffectProcessor = brtManager->CreateProcessor<BRTProcessing::CNearFieldEffectProcessor>();
+			CSourceToBeProcessed(std::string _sourceID, BRTBase::CBRTManager* brtManager) : sourceID{ _sourceID } {
+				bilateralAmbisonicEncoderProcessor = brtManager->CreateProcessor <BRTProcessing::CBilateralAmbisonicEncoderProcessor>();
+				//nearFieldEffectProcessor = brtManager->CreateProcessor<BRTProcessing::CNearFieldEffectProcessor>();
 			}
 
 			void Clear(BRTBase::CBRTManager* brtManager) {
 				sourceID = "";
-				brtManager->RemoveProcessor(nearFieldEffectProcessor);
-				brtManager->RemoveProcessor(binauralConvolverProcessor);
+				brtManager->RemoveProcessor(bilateralAmbisonicEncoderProcessor);
+				//brtManager->RemoveProcessor(binauralConvolverProcessor);
 			}
 			std::string sourceID;
-			std::shared_ptr <BRTProcessing::CHRTFConvolverProcessor> binauralConvolverProcessor;
-			std::shared_ptr <BRTProcessing::CNearFieldEffectProcessor> nearFieldEffectProcessor;
+			std::shared_ptr <BRTProcessing::CBilateralAmbisonicEncoderProcessor> bilateralAmbisonicEncoderProcessor;
+			//std::shared_ptr <BRTProcessing::CAmbisonicDomainConvolverProcessor> ambiconicDomainConvolverProcessor;
 		};
 
 	public:
@@ -67,8 +67,17 @@ namespace BRTListenerModel {
 			
 			listenerHRTF = std::make_shared<BRTServices::CHRTF>();					// Create a empty HRTF	class
 			listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicBIR>();	// Create a empty AmbisonicIR class
+			
 			CreateHRTFExitPoint();
 			CreateILDExitPoint();
+			CreateABIRExitPoint();
+
+			leftAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>();
+			leftAmbisonicDomainConvolverProcessor->SetEar(Common::T_ear::LEFT);			
+			brtManager->ConnectModuleABIR(this, leftAmbisonicDomainConvolverProcessor, "listenerAmbisonicBIR");
+			rightAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>();
+			rightAmbisonicDomainConvolverProcessor->SetEar(Common::T_ear::RIGHT);
+			brtManager->ConnectModuleABIR(this, rightAmbisonicDomainConvolverProcessor, "listenerAmbisonicBIR");
 		}
 
 
@@ -84,10 +93,11 @@ namespace BRTListenerModel {
 			}
 			listenerHRTF = _listenerHRTF;			
 			
-			listenerAmbisonicIR->Setup(ambisonicOrder, ambisonicNormalization, globalParameters.GetBufferSize(), listenerHRTF->GetHRIRLength());
-			listenerAmbisonicIR->CalculateImpulseResponsesFromHRTF(listenerHRTF);
+			listenerAmbisonicIR->Setup(globalParameters.GetBufferSize(), listenerHRTF->GetHRIRLength(), listenerHRTF->GetHRIRNumberOfSubfilters(), listenerHRTF->GetHRIRSubfilterLength(), ambisonicOrder, ambisonicNormalization);
+			listenerAmbisonicIR->AddImpulseResponsesFromHRTF(listenerHRTF);
 
 			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
+			GetABIRExitPoint()->sendDataPtr(listenerAmbisonicIR);
 			ResetConvolutionsBuffers();
 			return true;
 		}
@@ -138,10 +148,16 @@ namespace BRTListenerModel {
 
 		void SetAmbisonicOrder(int _ambisonicOrder) {
 			ambisonicOrder = _ambisonicOrder;
-			
-			listenerAmbisonicIR->Reset();
-			listenerAmbisonicIR->Setup(ambisonicOrder, ambisonicNormalization, globalParameters.GetBufferSize(), listenerHRTF->GetHRIRLength());
-			listenerAmbisonicIR->CalculateImpulseResponsesFromHRTF(listenerHRTF);
+			if (listenerHRTF->IsHRTFLoaded()) {
+				listenerAmbisonicIR->Reset();
+				listenerAmbisonicIR->Setup(globalParameters.GetBufferSize(), listenerHRTF->GetHRIRLength(), listenerHRTF->GetHRIRNumberOfSubfilters(), listenerHRTF->GetHRIRSubfilterLength(), ambisonicOrder, ambisonicNormalization);
+				listenerAmbisonicIR->AddImpulseResponsesFromHRTF(listenerHRTF);
+			}
+			for (int nSource = 0; nSource < sourcesConnectedProcessors.size(); nSource++) {
+				sourcesConnectedProcessors[nSource].bilateralAmbisonicEncoderProcessor->SetAmbisonicOrder(_ambisonicOrder);
+			}
+			leftAmbisonicDomainConvolverProcessor->SetAmbisonicOrder(_ambisonicOrder);
+			rightAmbisonicDomainConvolverProcessor->SetAmbisonicOrder(_ambisonicOrder);
 		}
 
 		int GetAmbisonicOrder() {
@@ -151,9 +167,14 @@ namespace BRTListenerModel {
 
 		void SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) {
 			ambisonicNormalization = _ambisonicNormalization;
-			listenerAmbisonicIR->Reset();
-			listenerAmbisonicIR->Setup(ambisonicOrder, ambisonicNormalization, globalParameters.GetBufferSize(), listenerHRTF->GetHRIRLength());
-			listenerAmbisonicIR->CalculateImpulseResponsesFromHRTF(listenerHRTF);
+			if (listenerHRTF->IsHRTFLoaded()) {
+				listenerAmbisonicIR->Reset();
+				listenerAmbisonicIR->Setup(globalParameters.GetBufferSize(), listenerHRTF->GetHRIRLength(), listenerHRTF->GetHRIRNumberOfSubfilters(), listenerHRTF->GetHRIRSubfilterLength(), ambisonicOrder, ambisonicNormalization);
+				listenerAmbisonicIR->AddImpulseResponsesFromHRTF(listenerHRTF);
+			}			
+			for (int nSource = 0; nSource < sourcesConnectedProcessors.size(); nSource++) {
+				sourcesConnectedProcessors[nSource].bilateralAmbisonicEncoderProcessor->SetAmbisonicNormalization(_ambisonicNormalization);
+			}
 		}
 		
 		Common::TAmbisonicNormalization GetAmbisonincNormalization() {
@@ -168,23 +189,25 @@ namespace BRTListenerModel {
 		*/
 		template <typename T>
 		bool ConnectSoundSource(std::shared_ptr<T> _source) {
-			CSourceProcessors _newSourceProcessors(_source->GetID(), brtManager);
+			CSourceToBeProcessed _newSourceProcessors(_source->GetID(), brtManager);
+			_newSourceProcessors.bilateralAmbisonicEncoderProcessor->SetAmbisonicOrder(ambisonicOrder);
+			_newSourceProcessors.bilateralAmbisonicEncoderProcessor->SetAmbisonicNormalization(ambisonicNormalization);
 
-			bool control = brtManager->ConnectModuleTransform(_source, _newSourceProcessors.binauralConvolverProcessor, "sourcePosition");
-			control = control && brtManager->ConnectModuleTransform(_source, _newSourceProcessors.nearFieldEffectProcessor, "sourcePosition");
-			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.binauralConvolverProcessor, "sourceID");
+			bool control = brtManager->ConnectModuleTransform(_source, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "sourcePosition");			
+			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "sourceID");
 
-			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.binauralConvolverProcessor, "listenerPosition");
-			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerPosition");
-			control = control && brtManager->ConnectModuleHRTF(this, _newSourceProcessors.binauralConvolverProcessor, "listenerHRTF");
-			control = control && brtManager->ConnectModuleILD(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerILD");
-			control = control && brtManager->ConnectModuleID(this, _newSourceProcessors.binauralConvolverProcessor, "listenerID");
-
-			control = control && brtManager->ConnectModulesSamples(_source, "samples", _newSourceProcessors.binauralConvolverProcessor, "inputSamples");
-			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.binauralConvolverProcessor, "leftEar", _newSourceProcessors.nearFieldEffectProcessor, "leftEar");
-			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.binauralConvolverProcessor, "rightEar", _newSourceProcessors.nearFieldEffectProcessor, "rightEar");
-			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.nearFieldEffectProcessor, "leftEar", this, "leftEar");
-			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.nearFieldEffectProcessor, "rightEar", this, "rightEar");
+			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerPosition");			
+			control = control && brtManager->ConnectModuleHRTF(this, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerHRTF");			
+			control = control && brtManager->ConnectModuleILD(this, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerILD");
+			control = control && brtManager->ConnectModuleID(this, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerID");
+			control = control && brtManager->ConnectModulesSamples(_source, "samples", _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "inputSamples");
+			
+			control = control && brtManager->ConnectModulesMultipleSamplesVectors(_newSourceProcessors.bilateralAmbisonicEncoderProcessor, "leftAmbisonicChannels", leftAmbisonicDomainConvolverProcessor, "inputChannels");
+			control = control && brtManager->ConnectModulesMultipleSamplesVectors(_newSourceProcessors.bilateralAmbisonicEncoderProcessor, "rightAmbisonicChannels", rightAmbisonicDomainConvolverProcessor, "inputChannels");
+			
+			
+			control = control && brtManager->ConnectModulesSamples(leftAmbisonicDomainConvolverProcessor, "outSamples", this, "leftEar");
+			control = control && brtManager->ConnectModulesSamples(rightAmbisonicDomainConvolverProcessor, "outSamples", this, "rightEar");
 
 			if (control) {
 				sourcesConnectedProcessors.push_back(std::move(_newSourceProcessors));
@@ -202,9 +225,9 @@ namespace BRTListenerModel {
 		template <typename T>
 		bool DisconnectSoundSource(std::shared_ptr<T> _source) {
 			std::string _sourceID = _source->GetID();
-			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSourceProcessors& sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
+			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSourceToBeProcessed& sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
 			if (it != sourcesConnectedProcessors.end()) {
-				bool control = brtManager->DisconnectModulesSamples(it->nearFieldEffectProcessor, "leftEar", this, "leftEar");
+				/*bool control = brtManager->DisconnectModulesSamples(it->nearFieldEffectProcessor, "leftEar", this, "leftEar");
 				control = control && brtManager->DisconnectModulesSamples(it->nearFieldEffectProcessor, "rightEar", this, "rightEar");
 				control = control && brtManager->DisconnectModulesSamples(it->binauralConvolverProcessor, "leftEar", it->nearFieldEffectProcessor, "leftEar");
 				control = control && brtManager->DisconnectModulesSamples(it->binauralConvolverProcessor, "rightEar", it->nearFieldEffectProcessor, "rightEar");
@@ -218,7 +241,7 @@ namespace BRTListenerModel {
 
 				control = control && brtManager->DisconnectModuleID(_source, it->binauralConvolverProcessor, "sourceID");
 				control = control && brtManager->DisconnectModuleTransform(_source, it->nearFieldEffectProcessor, "sourcePosition");
-				control = control && brtManager->DisconnectModuleTransform(_source, it->binauralConvolverProcessor, "sourcePosition");
+				control = control && brtManager->DisconnectModuleTransform(_source, it->binauralConvolverProcessor, "sourcePosition");*/
 
 				it->Clear(brtManager);
 				sourcesConnectedProcessors.erase(it);
@@ -333,11 +356,15 @@ namespace BRTListenerModel {
 		std::string listenerID;														// Store unique listener ID
 		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;							// HRTF of listener														
 		std::shared_ptr<BRTServices::CILD> listenerILD;								// ILD of listener				
-		std::shared_ptr<BRTServices::CAmbisonicBIR> listenerAmbisonicIR;				// AmbisonicIR related to the listener				
+		std::shared_ptr<BRTServices::CAmbisonicBIR> listenerAmbisonicIR;			// AmbisonicIR related to the listener				
 		int ambisonicOrder;															// Store the Ambisonic order
-		Common::TAmbisonicNormalization ambisonicNormalization;	// Store the Ambisonic normalization
+		Common::TAmbisonicNormalization ambisonicNormalization;						// Store the Ambisonic normalization
 		
-		std::vector< CSourceProcessors> sourcesConnectedProcessors;
+		std::vector< CSourceToBeProcessed> sourcesConnectedProcessors;				// List of sources connected to this listener model
+		
+		std::shared_ptr <BRTProcessing::CAmbisonicDomainConvolverProcessor> leftAmbisonicDomainConvolverProcessor;
+		std::shared_ptr <BRTProcessing::CAmbisonicDomainConvolverProcessor> rightAmbisonicDomainConvolverProcessor;
+		
 		BRTBase::CBRTManager* brtManager;
 		Common::CGlobalParameters globalParameters;
 

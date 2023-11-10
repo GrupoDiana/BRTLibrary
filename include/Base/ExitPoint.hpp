@@ -29,7 +29,7 @@
 #include <Common/Buffer.hpp>
 #include <Common/Transform.hpp>
 #include <Base/Command.hpp>
-
+#include <ServiceModules/AmbisonicBIR.hpp>
 
 namespace BRTServices { class CHRTF; class CILD; class CDirectivityTF; }
 
@@ -60,6 +60,7 @@ namespace BRTBase {
     };
     
     using CExitPointSamplesVector = CExitPointBase<CMonoBuffer<float> >;
+    using CExitPointMultipleSamplesVector = CExitPointBase<std::vector<CMonoBuffer<float>>>;
     using CExitPointTransform = CExitPointBase<Common::CTransform >;
     using CExitPointCommand = CExitPointBase<BRTBase::CCommand>;
     using CExitPointID = CExitPointBase<std::string>;
@@ -67,5 +68,6 @@ namespace BRTBase {
     using CExitPointHRTFPtr = CExitPointBase< std::weak_ptr<BRTServices::CHRTF> >;
     using CExitPointILDPtr = CExitPointBase< std::weak_ptr<BRTServices::CILD> >;
     using CExitPointDirectivityTFPtr = CExitPointBase< std::weak_ptr<BRTServices::CDirectivityTF> >;
+    using CExitPointABIRPtr = CExitPointBase< std::weak_ptr<BRTServices::CAmbisonicBIR> >;
 }
 #endif

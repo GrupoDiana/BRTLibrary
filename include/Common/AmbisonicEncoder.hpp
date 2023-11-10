@@ -35,7 +35,7 @@ namespace Common {
 		/**
 			\brief Default constructor
 		*/
-		CAmbisonicEncoder() : initialized{ false }, ambisonicOrder { 1 }, normalization{ TAmbisonicNormalization::N3D }, bufferSize{ 0 } {
+		CAmbisonicEncoder() : initialized{ false }, ambisonicOrder { 1 }, normalization{ TAmbisonicNormalization::N3D }/*, bufferSize{ 0 }*/ {
 			numberOfChannels = CalculateNumberOfChannels(ambisonicOrder);
 		}
 
@@ -45,10 +45,10 @@ namespace Common {
 		 * @param _ambisonicNormalization Possible normalisations are :N3D, SN3D, maxN
 		 * @param _bufferSize The buffer size
 		*/
-		void Setup(int _ambisonicOrder, TAmbisonicNormalization _ambisonicNormalization, int _bufferSize) {			
+		void Setup(int _ambisonicOrder, TAmbisonicNormalization _ambisonicNormalization/*, int _bufferSize*/) {			
 			
 			if (_ambisonicOrder >= 1 && _ambisonicOrder <= 3) {
-				bufferSize = _bufferSize;
+				//bufferSize = _bufferSize;
 				ambisonicOrder = _ambisonicOrder;
 				normalization = _ambisonicNormalization;
 				numberOfChannels = CalculateNumberOfChannels(ambisonicOrder);
@@ -62,7 +62,7 @@ namespace Common {
 		*/
 		void Reset() {
 			initialized = false;
-			bufferSize = 0;
+			//bufferSize = 0;
 			ambisonicOrder = 1;
 			normalization = TAmbisonicNormalization::N3D;
 			numberOfChannels = numberOfChannels = CalculateNumberOfChannels(ambisonicOrder);			
@@ -95,14 +95,13 @@ namespace Common {
 		 * @brief Init ambisonic channels 
 		 * @return vector of as many CMonoBuffers as ambisonic channels
 		*/
-		std::vector< CMonoBuffer<float> > InitAmbisonicChannels() {
+		void InitAmbisonicChannels(std::vector< CMonoBuffer<float>>& channelsBuffers, int bufferSize) {
 			if (!initialized) { 
 				SET_RESULT(RESULT_ERROR_NOTSET, "AmbisonicEncoder class not initialised");
-				return std::vector< CMonoBuffer<float> >(); 
+				channelsBuffers = std::vector< CMonoBuffer<float> >();
 			}
 
-			std::vector< CMonoBuffer<float> > ambisonicChannels(GetTotalChannels(), CMonoBuffer<float>(bufferSize, 0.0f));
-			return ambisonicChannels;
+			channelsBuffers = std::vector< CMonoBuffer<float>>(GetTotalChannels(), CMonoBuffer<float>(bufferSize, 0.0f));			
 		}
 
 		/**
@@ -117,8 +116,8 @@ namespace Common {
 			if (!initialized) { 
 				SET_RESULT(RESULT_ERROR_NOTSET, "AmbisonicEncoder class not initialised");
 				return; 
-			}
-					
+			}			
+			
 			std::vector<double> ambisonicFactors = GetRealSphericalHarmonics(DegreesToRadians(_azimuthDegress), DegreesToRadians(_elevationDegress));
 			
 			for (int nChannel = 0; nChannel < GetTotalChannels(); nChannel++) {				
@@ -155,7 +154,7 @@ namespace Common {
 
 		// Attributes
 		bool initialized;
-		int bufferSize;
+		//int bufferSize;
 		int ambisonicOrder;
 		int numberOfChannels;
 		TAmbisonicNormalization normalization;

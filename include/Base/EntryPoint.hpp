@@ -29,6 +29,7 @@
 #include <Common/Buffer.hpp>
 #include <Common/Transform.hpp>
 #include <Base/Command.hpp>
+#include <ServiceModules/AmbisonicBIR.hpp>
 
 
 namespace BRTBase {
@@ -68,6 +69,7 @@ namespace BRTBase {
     };
            
     using CEntryPointSamplesVector = CEntryPointBase<CMonoBuffer<float>>;
+    using CEntryPointMultipleSamplesVector = CEntryPointBase<std::vector<CMonoBuffer<float>>>;
     using CEntryPointTransform = CEntryPointBase<Common::CTransform>;     
     using CEntryPointCommand = CEntryPointBase<BRTBase::CCommand>;
     using CEntryPointID = CEntryPointBase<std::string>;
@@ -75,5 +77,6 @@ namespace BRTBase {
     using CEntryPointHRTFPtr = CEntryPointBase< std::weak_ptr<BRTServices::CHRTF> >;
     using CEntryPointILDPtr = CEntryPointBase< std::weak_ptr<BRTServices::CILD> >;
     using CEntryPointDirectivityTFPtr = CEntryPointBase< std::weak_ptr<BRTServices::CDirectivityTF> >;
+    using CEntryPointABIRPtr = CEntryPointBase< std::weak_ptr<BRTServices::CAmbisonicBIR> >;
 }
 #endif

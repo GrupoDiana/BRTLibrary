@@ -290,6 +290,22 @@ namespace BRTBase {
 			return true;
 		}
 
+
+		template <typename T, typename U>
+		bool ConnectModuleABIR(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectABIREntryTo(module1->GetABIRExitPoint(), entryPointID);
+			return true;
+		}
+		template <typename T, typename U>
+		bool ConnectModuleABIR(T* module1, std::shared_ptr <U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectABIREntryTo(module1->GetABIRExitPoint(), entryPointID);
+			return true;
+		}
+
+
+
 		/**
 		 * @brief Connects the ILD ExitPoint of one module to the ILD EntryPoint of another.
 		 * @tparam T 
@@ -418,6 +434,21 @@ namespace BRTBase {
 			module2->disconnectSamplesEntryTo(module1->GetSamplesExitPoint(exitPointID), entryPointID);
 			return true;
 		}
+
+
+		template <typename T, typename U>
+		bool ConnectModulesMultipleSamplesVectors(std::shared_ptr <T> module1, std::string exitPointID, std::shared_ptr <U> module2, std::string entryPointID) {			
+			if (!setupModeActivated) return false;
+			module2->connectMultipleSamplesVectorsEntryTo(module1->GetMultipleSamplesVectorExitPoint(exitPointID), entryPointID);
+			return true;
+		}
+		template <typename T, typename U>
+		bool ConnectModulesMultipleSamplesVectors(std::shared_ptr <T> module1, std::string exitPointID, U* module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectMultipleSamplesVectorsEntryTo(module1->GetMultipleSamplesVectorExitPoint(exitPointID), entryPointID);
+			return true;
+		}
+
 
 		/**
 		 * @brief Connects the Command ExitPoint of one module to the Command EntryPoint of another.
