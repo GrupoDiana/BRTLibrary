@@ -138,6 +138,13 @@ namespace BRTServices
 					t_DirectivityTF_DataBase_ListOfOrientations = offlineInterpolation.CalculateListOfOrientations(t_DirectivityTF_DataBase);
 					quasiUniformSphereDistribution.CreateGrid<T_DirectivityTFInterlacedDataTable, TDirectivityInterlacedTFStruct>(t_DirectivityTF_Resampled, gridResamplingStepsVector, resamplingStep);
 					offlineInterpolation.FillResampledTable<T_DirectivityTFTable, T_DirectivityTFInterlacedDataTable, BRTServices::TDirectivityTFStruct, BRTServices::TDirectivityInterlacedTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_Resampled, bufferSize, directivityTFPart_length, directivityTF_numberOfSubfilters, CalculateInterlacedTFTo2PI(), CDirectivityTFAuxiliarMethods::CalculateDirectivityTFFromBarycentrics_OfflineInterpolation());		
+					//TESTING:
+					for (auto it = t_DirectivityTF_Resampled.begin(); it != t_DirectivityTF_Resampled.end(); it++) {
+						if (it->second.data.size() == 0) {
+							SET_RESULT(RESULT_ERROR_NOTSET, "The t_DirectivityTF_Resampled table has an empty DirectivityTF in position [" + std::to_string(it->first.azimuth) + ", " + std::to_string(it->first.elevation) + "]");
+						}
+
+					}
 
 					//Setup values
 					setupDirectivityTFInProgress = false;
@@ -379,13 +386,11 @@ namespace BRTServices
 			}
 			else
 			{
-				SET_RESULT(RESULT_WARNING, "Orientations in GetDirectivityTF2() not found");
+				// ONLINE Interpolation 
+				const  BRTServices::TDirectivityInterlacedTFStruct temp = slopesMethodOnlineInterpolator2.CalculateTF_OnlineMethod<T_DirectivityTFInterlacedDataTable, BRTServices::TDirectivityInterlacedTFStruct>
+					(t_DirectivityTF_Resampled, directivityTF_numberOfSubfilters, directivityTF_length, _azimuth, _elevation, gridResamplingStepsVector, CDirectivityTFAuxiliarMethods::CalculateDirectivityTF_FromBarycentric_OnlineInterpolation());
+				return temp.data;
 			}
-
-			// ONLINE Interpolation 
-			const  BRTServices::TDirectivityInterlacedTFStruct temp = slopesMethodOnlineInterpolator2.CalculateTF_OnlineMethod<T_DirectivityTFInterlacedDataTable, BRTServices::TDirectivityInterlacedTFStruct>
-				(t_DirectivityTF_Resampled, directivityTF_numberOfSubfilters, directivityTF_length, _azimuth, _elevation, gridResamplingStepsVector, CDirectivityTFAuxiliarMethods::CalculateDirectivityTF_FromBarycentric_OnlineInterpolation());
-			return temp.data;
 		}
 	
 

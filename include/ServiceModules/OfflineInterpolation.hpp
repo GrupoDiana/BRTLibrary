@@ -344,34 +344,24 @@ namespace BRTServices
 
 		template <typename T, typename U, typename W_TFStruct, typename X_TFPartitionedStruct, typename Functor, typename Functor2>
 		bool CalculateAndEmplace_NewPartitionedTF(T& table, U& resampledTable, double _azimuth, double _elevation, int _bufferSize, int _TFLength, int _TFPartitioned_NumberOfSubfilters, Functor f, Functor2 f2) {
-			//THRIRStruct interpolatedHRIR;
+			W_TFStruct newTF;
 			bool bHRIRInterpolated = false;
 
 			auto it = table.find(orientation(_azimuth, _elevation));
 			if (it != table.end())
 			{
-				//Fill out HRTF partitioned table.IR in frequency domain
-				//THRIRPartitionedStruct newHRIR_partitioned;
-				X_TFPartitionedStruct newTF_partitioned = f(it->second, _bufferSize, _TFPartitioned_NumberOfSubfilters);
-				resampledTable[orientation(_azimuth, _elevation)] = std::forward<X_TFPartitionedStruct>(newTF_partitioned);
+				newTF = it->second;
 			}
 			else
-			{
-				// Get a list sorted by distances to the orientation of interest
-				//std::vector<T_PairDistanceOrientation> sortedList = distanceBasedInterpolator.GetSortedDistancesList(t_HRTF_DataBase_ListOfOrientations, _azimuth, _elevation);
-				//Get the interpolated HRIR 
-				//auto interpolatedHRIR = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, _azimuth, _elevation, HRIRLength);
+			{				
 				auto t_HRTF_DataBase_ListOfOrientations = CalculateListOfOrientations(table);
-				W_TFStruct interpolatedTF = quadrantBasedInterpolator.CalculateHRIR_offlineMethod<T, W_TFStruct, Functor2>(table, f2, t_HRTF_DataBase_ListOfOrientations, _TFLength, _azimuth, _elevation);
+				newTF = quadrantBasedInterpolator.CalculateHRIR_offlineMethod<T, W_TFStruct, Functor2>(table, f2, t_HRTF_DataBase_ListOfOrientations, _TFLength, _azimuth, _elevation);
 				bHRIRInterpolated = true;
-
-				//Fill out HRTF partitioned table.IR in frequency domain
-				//THRIRPartitionedStruct newHRIR_partitioned;
-				X_TFPartitionedStruct newTF_partitioned = f(interpolatedTF, _bufferSize, _TFPartitioned_NumberOfSubfilters);
-				resampledTable[orientation(_azimuth, _elevation)] = std::forward<X_TFPartitionedStruct>(newTF_partitioned);
 			}
+			//Fill out HRTF partitioned table.IR in frequency domain
+			X_TFPartitionedStruct newTF_partitioned = f(newTF, _bufferSize, _TFPartitioned_NumberOfSubfilters);
+			resampledTable[orientation(_azimuth, _elevation)] = std::forward<X_TFPartitionedStruct>(newTF_partitioned);
 			return bHRIRInterpolated;
-
 		}
 
 
