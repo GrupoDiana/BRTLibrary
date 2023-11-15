@@ -434,6 +434,10 @@ namespace BRTServices
 			TDirectivityInterlacedTFStruct operator()(const TDirectivityTFStruct& newData, int _bufferSize, int _TF_NumberOfSubfilters)
 			{
 				TDirectivityInterlacedTFStruct interlacedData;
+
+				if (newData.realPart.size() == 0 || newData.imagPart.size() == 0) {
+					SET_RESULT(RESULT_ERROR_NOTSET, "CalculateInterlacedTFTo2PI() get an empty data");
+				}
 				// Extend to 2PI real part
 				CMonoBuffer<float> dataRealPart2PI;
 				CalculateTFRealPartTo2PI(newData.realPart, dataRealPart2PI);

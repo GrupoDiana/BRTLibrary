@@ -234,9 +234,6 @@ namespace BRTServices
 				{
 					newTF = f2(table, orientation(backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation), orientation(backFloorListSortedByDistance[0].second.azimuth, backFloorListSortedByDistance[0].second.elevation), orientation(frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation), _TFLength, barycentricCoordinates);
 					return newTF;
-					
-					//return DataInterpolation(table, barycentricCoordinates, _TFLength, backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation, 
-					//	backFloorListSortedByDistance[0].second.azimuth, backFloorListSortedByDistance[0].second.elevation, frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation);
 				}
 				else
 				{
@@ -254,8 +251,6 @@ namespace BRTServices
 				{
 					newTF = f2(table, orientation(backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation), orientation(frontCeilListSortedByDistance[0].second.azimuth, frontCeilListSortedByDistance[0].second.elevation), orientation(frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation), _TFLength, barycentricCoordinates);
 					return newTF;
-					//return DataInterpolation(table, barycentricCoordinates, _TFLength, backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation,
-					//	frontCeilListSortedByDistance[0].second.azimuth, frontCeilListSortedByDistance[0].second.elevation, frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation);
 				}
 				else
 				{
@@ -284,16 +279,20 @@ namespace BRTServices
 			{
 				if (it.azimuth == 360)
 				{
-					// DO NOTHING
+					//Do not clasify Az360 except in the following case:
+					//If we are in Az180 we have to include in the clasification the Az360, in order to get a triangle with the barycentric coordinates
+					if (_newAzimuth == 180) {
+						_azimuthFrontList.push_back(it);
+					}
 				}
 				else
 				{
 					azimuthDifference = it.azimuth - _newAzimuth;
-					if (azimuthDifference > 0 && azimuthDifference <= 180)
+					 if (azimuthDifference > 0 && azimuthDifference <= 180)
 					{
 						_azimuthFrontList.push_back(it);
 					}
-					else if (azimuthDifference < 0 && azimuthDifference > -180)
+					else if (azimuthDifference < 0 && azimuthDifference >= -180)
 					{
 						_azimuthBackList.push_back(it);
 					}
