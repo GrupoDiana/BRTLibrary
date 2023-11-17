@@ -38,11 +38,9 @@ namespace Common {
 
 	/** \details This is a template class to manage audio streamers and buffers
 	*/
-	template <
-		unsigned int NChannels,
-		class stored
-	>
-		class CBuffer : public std::vector<stored, std::allocator<stored>>
+	template <unsigned int NChannels, class stored>
+	
+	class CBuffer : public std::vector<stored, std::allocator<stored>>
 	{
 	public:
 		using std::vector<stored>::vector;    //   inherit all std::vector constructors
