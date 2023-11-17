@@ -60,7 +60,7 @@ namespace BRTProcessing {
 		bool IsInterpolationEnabled() { return enableInterpolation; }*/
 						
 		void SetAmbisonicOrder(int _ambisonicOrder) {
-			numberOfAmbisonicChannels = pow((_ambisonicOrder + 1), 2);
+			numberOfAmbisonicChannels = Common::CAmbisonicEncoder::CalculateNumberOfChannels(_ambisonicOrder);
 		};
 		/** \brief Process data from input buffer to generate spatialization by convolution
 		*	\param [in] inBuffer input buffer with anechoic audio

@@ -50,7 +50,7 @@ namespace BRTProcessing {
 			CreateMultipleSamplesExitPoint("rightAmbisonicChannels");
         }
 
-        void Update(std::string _entryPointId) {            
+        void UpdateAllEntryPoints(std::string _entryPointId) {            
 			
 			std::lock_guard<std::mutex> l(mutex);
 
@@ -72,7 +72,7 @@ namespace BRTProcessing {
 					GetMultipleSamplesVectorExitPoint("leftAmbisonicChannels")->sendData(leftAmbisonicChannelsBuffers);
 					GetMultipleSamplesVectorExitPoint("rightAmbisonicChannels")->sendData(rightAmbisonicChannelsBuffers);
 				}				
-				this->resetUpdatingStack();				
+				//this->ResetEntryPointWaitingList();				
 			}            
         }
 

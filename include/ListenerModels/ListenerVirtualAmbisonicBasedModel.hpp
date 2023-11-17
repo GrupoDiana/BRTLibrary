@@ -204,13 +204,12 @@ namespace BRTListenerModel {
 			
 			control = control && brtManager->ConnectModulesMultipleSamplesVectors(_newSourceProcessors.bilateralAmbisonicEncoderProcessor, "leftAmbisonicChannels", leftAmbisonicDomainConvolverProcessor, "inputChannels");
 			control = control && brtManager->ConnectModulesMultipleSamplesVectors(_newSourceProcessors.bilateralAmbisonicEncoderProcessor, "rightAmbisonicChannels", rightAmbisonicDomainConvolverProcessor, "inputChannels");
-			
-			
+									
 			control = control && brtManager->ConnectModulesSamples(leftAmbisonicDomainConvolverProcessor, "outSamples", this, "leftEar");
 			control = control && brtManager->ConnectModulesSamples(rightAmbisonicDomainConvolverProcessor, "outSamples", this, "rightEar");
 
-			if (control) {
-				sourcesConnectedProcessors.push_back(std::move(_newSourceProcessors));
+			if (control) {										
+				sourcesConnectedProcessors.push_back(std::move(_newSourceProcessors));							
 				return true;
 			}
 			return false;

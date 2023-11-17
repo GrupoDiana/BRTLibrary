@@ -65,18 +65,14 @@ namespace Common {
 			//bufferSize = 0;
 			ambisonicOrder = 1;
 			normalization = TAmbisonicNormalization::N3D;
-			numberOfChannels = numberOfChannels = CalculateNumberOfChannels(ambisonicOrder);			
+			numberOfChannels = CalculateNumberOfChannels(ambisonicOrder);			
 		}
 
-		/*void SetOrder(int _order)
-		{
-			ambisonicOrder = _order;
-			numberOfChannels = CalculateNumberOfChannels();
-		}*/
-		
-		/*void SetNormalization(TAmbisonicNormalization _ambisonicNormalization) {
-			normalization = _ambisonicNormalization;
-		}*/
+		/**
+		 * @brief Calculate the number of ambisonic channels from the ambisonic order
+		 * @return Number of ambisonic channels
+		*/
+		static int CalculateNumberOfChannels(int _ambisonicOrder) { return pow((_ambisonicOrder + 1), 2); }
 
 		/**
 		 * @brief Get the set ambisonic order
@@ -163,13 +159,7 @@ namespace Common {
 		/////////////////////
 		// PRIVATE METHODS
 		/////////////////////
-
-		/**
-		 * @brief Calculate the number of ambisonic channels from the ambisonic order
-		 * @return Number of ambisonic channels
-		*/
-		int CalculateNumberOfChannels(int _ambisonicOrder) { return pow((_ambisonicOrder + 1), 2); }
-
+		
 		/**
 		 * @brief Get the ambisonic factors from the configured ambisonic order and normalisation and from the given azimuth and elevation.
 		 * @param _ambisonicAzimut azimuth to calculate the factors

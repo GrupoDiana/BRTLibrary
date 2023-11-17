@@ -36,7 +36,7 @@ namespace BRTProcessing {
 		
     public:
 		CAmbisonicDomainConvolverProcessor() {
-			CreateMultipleSamplesEntryPoint("inputChannels");
+			CreateMultipleChannelsEntryPoint("inputChannels", 1);
 
             //CreatePositionEntryPoint("sourcePosition");
 			//CreatePositionEntryPoint("listenerPosition");           
@@ -45,26 +45,35 @@ namespace BRTProcessing {
 			CreateIDEntryPoint("sourceID");
 			CreateIDEntryPoint("listenerID");
 
-            CreateSamplesExitPoint("outSamples");
-            
+            CreateSamplesExitPoint("outSamples");			            
         }
+		
+		void UpdateEntryPointPartially(std::string _entryPointId) {
+			std::lock_guard<std::mutex> l(mutex);
+			if (_entryPointId == "inputChannels") {				
+				std::vector<CMonoBuffer<float>> inputChannels = GetMultipleSamplesVectorEntryPoint("inputChannels")->GetData();
+				if (inputChannels.size() != 0) { MixChannelsBuffer(inputChannels); }
+			}
 
-        void Update(std::string _entryPointId) {            
+		}
+        
+		void UpdateAllEntryPoints(std::string _entryPointId) {            
 			
 			std::lock_guard<std::mutex> l(mutex);
 
 			CMonoBuffer<float> outBuffer;			
 
 			if (_entryPointId == "inputChannels") {
-				std::vector<CMonoBuffer<float>> channels = GetMultipleSamplesVectorEntryPoint("inputChannels")->GetData();
+				//std::vector<CMonoBuffer<float>> channels = GetMultipleSamplesVectorEntryPoint("inputChannels")->GetData();
 				//Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
 				//Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();																
 				std::weak_ptr<BRTServices::CAmbisonicBIR> listenerABIR = GetABIRPtrEntryPoint("listenerAmbisonicBIR")->GetData();
-				if (channels.size() != 0) {
-					Process(channels, outBuffer, listenerABIR);
+				if (channelsBuffer.size() != 0) {
+					Process(channelsBuffer, outBuffer, listenerABIR);
 					GetSamplesExitPoint("outSamples")->sendData(outBuffer);					
+					channelsBuffer.clear();
 				}				
-				this->resetUpdatingStack();				
+				//this->resetUpdatingStack();				
 			}            
         }
 
@@ -99,7 +108,32 @@ namespace BRTProcessing {
 
     private:
        
-		mutable std::mutex mutex;
+		mutable std::mutex mutex;		
+		//int ambisonicOrder;
+		std::vector<CMonoBuffer<float>> channelsBuffer;
+		//Common::CGlobalParameters globalParameters;
+
+		//// TODO make a static method in Ambisonic Encoder
+		//int GetNumberOfAmbisonicChannels(int _ambisonicOrder) {
+		//	return pow((_ambisonicOrder + 1), 2);
+		//}
+
+
+		//void InitChannelBuffer(int ambisonicOrder) {
+		//	inputChannelsBuffer = std::vector<CMonoBuffer<float>>(GetNumberOfAmbisonicChannels(ambisonicOrder), CMonoBuffer<float>(256,0));
+		//}
+
+		void MixChannelsBuffer(std::vector<CMonoBuffer<float>> inputChannels) {
+			
+			if (channelsBuffer.size() != inputChannels.size()) {
+				channelsBuffer = std::vector<CMonoBuffer<float>>(inputChannels.size(), CMonoBuffer<float>(inputChannels[0].size()));
+			}
+
+			for (int nChannel = 0; nChannel < inputChannels.size(); nChannel++) {
+				channelsBuffer[nChannel] += inputChannels[nChannel];
+			}
+		}
+
 
 		bool IsToMySoundSource(std::string _sourceID) {
 			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
