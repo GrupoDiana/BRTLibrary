@@ -56,14 +56,13 @@ namespace BRTProcessing {
 		
 		
 		/** \brief Process data from input buffer to generate spatialization by convolution
-		*	\param [in] inBuffer input buffer with anechoic audio
+		* *	\param [in] inBuffer input buffer with anechoic audio
 		* *	\param [in] sourceTransform transform of the source
-		* *	\param [in] listenerPosition transform of the listener
-		* *	\param [in] listenerHRTFWeak weak smart pointer to the listener HRTF
-		*	\param [out] outLeftBuffer output mono buffer with spatialized audio for the left channel
-		*	\param [out] outRightBuffer output mono buffer with spatialized audio for the right channel
+		* *	\param [in] listenerTransform transform of the listener
+		* *	\param [in] _sourceDirectivityTF shared pointer to the DirectivityTF class that will be applied to a sourc
+		*	\param [out] outBuffer output mono buffer with spatialized audio
 		*   \eh The error handler is informed if the size of the input buffer differs from that stored in the global
-		*       parameters and if the HRTF of the listener is null.		   
+		*       parameters and if the DirectivityTF of the listener is null.		   
 		*/
 		void Process(CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::shared_ptr<BRTServices::CDirectivityTF>& _sourceDirectivityTF) {
 
@@ -94,24 +93,13 @@ namespace BRTProcessing {
 
 			CalculateListenerCoordinates(sourceTransform, listenerTransform, _sourceDirectivityTF, listener_elevation, listener_azimuth);
 
-			//std::cout << "azimuth: " << listener_azimuth << ", elevation; " << listener_elevation << endl;
-
-			//To do TESTING:
-			//listener_azimuth = 5;
-			//listener_elevation = 10;
-
 			// GET DirectivityTF
 			CMonoBuffer<float>  dataDirectivityTF;
 			std::vector<CMonoBuffer<float>>  dataDirectivityTF_vector;
-						
-			//dataDirectivityTF = _sourceDirectivityTF->GetDirectivityTF(listener_azimuth, listener_elevation).data.front(); //IMPORTANT: We only have one partition in the Directivity
-			dataDirectivityTF = _sourceDirectivityTF->GetDirectivityTF2(listener_azimuth, listener_elevation, true).front(); //IMPORTANT: We only have one partition in the Directivity
+			dataDirectivityTF = _sourceDirectivityTF->GetDirectivityTF(listener_azimuth, listener_elevation, true).front(); //IMPORTANT: We only have one partition in the Directivity
 			dataDirectivityTF_vector.push_back(dataDirectivityTF);
-
-
-			// DO CONVOLUTION			
+			// Do convolution			
 			outputUPConvolution.ProcessUPConvolution(_inBuffer, dataDirectivityTF_vector, outBuffer);
-			//outputUPConvolution.ProcessUPConvolutionWithMemory(_inBuffer, dataDirectivityTF_vector, outBuffer);
 		}
 
 		/// Reset convolvers and convolution buffers
@@ -122,17 +110,17 @@ namespace BRTProcessing {
 		}
 	private:
 
-		// Atributes
 		Common::CGlobalParameters globalParameters;
 		Common::CUPCAnechoic outputUPConvolution;		// Object to make the inverse fft of the left channel with the UPC method
 
 		bool enableSourceDirectivity;					// Flags for independent control of processes		
 		bool convolutionBuffersInitialized;
 		
-
-
-		// METHODS
-		// Initialize convolvers and convolition buffers		
+		/** \brief Initialize convolvers and convolition buffers
+		*	\param [in] _sourceDirectivityTF shared pointer to the DirectivityTF class that will be applied to a source
+		*   \eh On error, an error code is reported to the error handler.
+		*       Warnings may be reported to the error handler.
+		*/
 		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CDirectivityTF>& _sourceDirectivityTF) {
 			int directivityTFLength = _sourceDirectivityTF->GetDirectivityTFLength();
 			int numOfSubfilters = _sourceDirectivityTF->GetDirectivityTFNumOfSubfilters();
@@ -141,12 +129,19 @@ namespace BRTProcessing {
 		}
 
 
-		/// Calculates the parameters derived from the source and listener position
+		/** \brief Calculates the parameters derived from the source and listener position
+		* *	\param [in] _sourceTransform transform of the source
+		* *	\param [in] _listenerTransform transform of the listener
+		* *	\param [in] _sourceDirectivityTF shared pointer to the DirectivityTF class that will be applied to a sourc
+		*	\param [out] _listenerElevation output listener elevation (from the head center) float value
+		* *	\param [out] _listenerAzimuth output listener azimuth (from the head center) float value
+		*   \eh On error, an error code is reported to the error handler.
+		*       Warnings may be reported to the error handler.
+		*/
 		void CalculateListenerCoordinates(Common::CTransform& _sourceTransform, Common::CTransform& _listenerTransform, std::shared_ptr<BRTServices::CDirectivityTF>& _sourceDirectivityTF, float& _listenerElevation, float& _listenerAzimuth)
 		{
 			//Get azimuth and elevation between listener and source
 			Common::CVector3 vectorToListener = _sourceTransform.GetVectorTo(_listenerTransform);
-			//std::cout << "Vector to Listener: " << vectorToListener << std::endl;
 			float distance = vectorToListener.GetDistance();
 
 			//Check listener and source are in the same position

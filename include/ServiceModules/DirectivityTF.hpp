@@ -53,7 +53,7 @@ namespace BRTServices
 	{
 	public:
 		/** \brief Default Constructor
-		*	\details By default, customized ITD is switched off, resampling step is set to 5 degrees and listener is a null pointer
+		*	\details By default, customized ITD is switched off, resampling step is set to DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP degrees 
 		*   \eh Nothing is reported to the error handler.
 		*/
 		CDirectivityTF()
@@ -67,21 +67,21 @@ namespace BRTServices
 			title = _title;
 		}
 
-		/** \brief Set the title of the SOFA file
+		/** \brief Set the name of the database of the SOFA file
 		*    \param [in]	_title		string contains title
 		*/
 		void SetDatabaseName(std::string _databaseName) {
 			databaseName = _databaseName;
 		}
 
-		/** \brief Set the name of the SOFA file
+		/** \brief Set the file name of the SOFA file
 		*    \param [in]	_fileName		string contains filename
 		*/
 		void SetFilename(std::string _fileName) {
 			fileName = _fileName;
 		}
 
-		/** \brief Get the name of the SOFA file
+		/** \brief Get the file name of the SOFA file
 		*   \return string contains filename
 		*/
 		std::string GetFilename() {
@@ -89,7 +89,8 @@ namespace BRTServices
 		}
 		
 		/** \Start a new DirectivityTF configuration
-		*	\param [in] directivityTFPartLength number of samples in the frequency domain (size of the real part or the imaginary part)
+		* *	\param [in] directivityTFPartLength number of samples in the frequency domain (size of the real part or the imaginary part)
+		* *	\param [in] _extrapolationMethod indicate which kind of extrapolation methor use
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
@@ -188,9 +189,9 @@ namespace BRTServices
 		int GetDirectivityTFNumOfSubfilters() { return directivityTF_numberOfSubfilters; }
 
 		/** \brief Add a new TF to the DirectivityTF table
-		*	\param [in] azimuth azimuth angle in degrees
-		*	\param [in] elevation elevation angle in degrees
-		*	\param [in] newDirectivityTF DirectivityTF data for both ears
+		*	\param [in] _azimuth azimuth angle in degrees
+		*	\param [in] _elevation elevation angle in degrees
+		*	\param [in] directivityTF DirectivityTF data for both ears
 		*   \eh Warnings may be reported to the error handler.
 		*/
 		void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& directivityTF)
@@ -256,98 +257,16 @@ namespace BRTServices
 		}
 
 	
-		/** \brief  Get the Directivity TF of the nearest point to  the given one
-		*	\param [in] _azimuth orientation of the sound source (relative to the listener)
-		*	\param [in] _elevation orientation of the sound source (relative to the listener)
-		* *	\param [in] _stepsMap map that contains orientations of the grid
-		*	\retval  Directivity TF with the Real and Imag part interlaced
-		*/
-		const TDirectivityInterlacedTFStruct GetDirectivityTF(float _azimuth, float _elevation) const {
-			
-			TDirectivityInterlacedTFStruct newSRIR;
-			auto it0 = t_DirectivityTF_Resampled.find(orientation(_azimuth, _elevation));
-			if (it0 != t_DirectivityTF_Resampled.end()) {
-				newSRIR.data = it0->second.data;
-			}
-			else {
 
-				// HARCODE ELEVATION STEP TO 10
-				int eleStep = 10;
-
-				float aziCeilBack, aziCeilFront, aziFloorBack, aziFloorFront;
-				int idxEle = ceil(_elevation / eleStep);
-				float eleCeil = eleStep * idxEle;
-				float eleFloor = eleStep * (idxEle - 1);
-
-				eleCeil = CheckLimitsElevation_and_Transform(eleCeil);										//			   Back	  Front
-				eleFloor = CheckLimitsElevation_and_Transform(eleFloor);									//	Ceil		A		B
-
-				auto stepItr = gridResamplingStepsVector.find(orientation(0, eleCeil));						//	Floor		D		C
-				float aziStepCeil = stepItr->second;
-																										
-				CalculateAzimuth_BackandFront(aziCeilBack, aziCeilFront, aziStepCeil, _azimuth);
-				// azimuth values passed by reference
-
-				auto stepIt = gridResamplingStepsVector.find(orientation(0, eleFloor));
-				float aziStepFloor = stepIt->second;							
-
-				CalculateAzimuth_BackandFront(aziFloorBack, aziFloorFront, aziStepFloor, _azimuth); 
-
-				// Mid Point of a trapezoid can be compute by averaging all azimuths
-				float pntMid_azimuth = (aziCeilBack + aziCeilFront + aziFloorBack + aziFloorFront) / 4;
-				float pntMid_elevation = (eleCeil - eleStep * 0.5f);
-
-				// compute eleCeil being 360 to find triangles at border
-				//eleCeil = eleStep * idxEle;
-
-				if (_azimuth >= pntMid_azimuth)
-				{
-					if (_elevation >= pntMid_elevation)
-					{
-						//Second quadrant
-						auto it = t_DirectivityTF_Resampled.find(orientation(aziCeilFront, eleCeil));
-						newSRIR.data = it->second.data;
-
-					}
-					else if (_elevation < pntMid_elevation)
-					{
-						//Forth quadrant
-						auto it = t_DirectivityTF_Resampled.find(orientation(aziFloorFront, eleFloor));
-						newSRIR.data = it->second.data;
-					}
-				}
-				else if (_azimuth < pntMid_azimuth)
-				{
-					if (_elevation >= pntMid_elevation)
-					{
-						//First quadrant
-						auto it = t_DirectivityTF_Resampled.find(orientation(aziCeilBack, eleCeil));
-						newSRIR.data = it->second.data;
-					}
-					else if (_elevation < pntMid_elevation) {
-						//Third quadrant
-						auto it = t_DirectivityTF_Resampled.find(orientation(aziFloorFront, eleFloor));
-						newSRIR.data = it->second.data;
-					}
-				}
-				else { return newSRIR = {}; }
-			}
-
-			//SET_RESULT(RESULT_OK, "CalculateHRIR_InterpolationMethod completed succesfully");
-			return newSRIR;
-		}
-
-		/** \brief Get interpolated and partitioned HRIR buffer with Delay, for one ear
-		*	\param [in] ear for which ear we want to get the HRIR
+		/** \brief Get interpolated and interlaced directivity buffer 
 		*	\param [in] _azimuth azimuth angle in degrees
 		*	\param [in] _elevation elevation angle in degrees
-		*	\param [in] runTimeInterpolation switch run-time interpolation
 		*	\param [in] runTimeInterpolation switch run-time interpolation
 		*	\retval HRIR interpolated buffer with delay for specified ear
 		*   \eh On error, an error code is reported to the error handler.
 		*       Warnings may be reported to the error handler.
 		*/
-		const std::vector<CMonoBuffer<float>> GetDirectivityTF2(float _azimuth, float _elevation, bool runTimeInterpolation) const
+		const std::vector<CMonoBuffer<float>> GetDirectivityTF(float _azimuth, float _elevation, bool runTimeInterpolation) const
 		{
 			std::vector<CMonoBuffer<float>> newDirectivityTF;
 						
@@ -363,7 +282,6 @@ namespace BRTServices
 			}
 
 			//  We have to do the run time interpolation -- (runTimeInterpolation = true)
-
 			// Check if we are close to 360 azimuth or elevation and change to 0
 			if (Common::AreSame(_azimuth, SPHERE_BORDER, EPSILON_SEWING)) { _azimuth = DEFAULT_MIN_AZIMUTH; }
 			if (Common::AreSame(_elevation, SPHERE_BORDER, EPSILON_SEWING)) { _elevation = DEFAULT_MIN_ELEVATION; }
@@ -373,9 +291,6 @@ namespace BRTServices
 			if ((ielevation == elevationNorth) || (ielevation == elevationSouth)) {
 				_elevation = ielevation;
 				_azimuth = DEFAULT_MIN_AZIMUTH;
-				//newDirectivityTF = GetPoleDirectivityTF(ielevation);
-				//return newDirectivityTF;
-				//GetDirectivityTF2(DEFAULT_MIN_AZIMUTH, ielevation, true);
 			}
 
 			// We search if the point already exists
@@ -404,7 +319,7 @@ namespace BRTServices
 			return elevation;
 		}
 
-		/** \brief  Check limit values for elevation and transform to the desired intervals
+		/** \brief  Check limit values for azimuth and transform to the desired intervals
 		*	\retval azimuth value within the desired intervals
 		*/
 		float CheckLimitsAzimuth_and_Transform(float azimuth)const
@@ -414,6 +329,12 @@ namespace BRTServices
 			return azimuth;
 		}
 
+		/** \brief  Calculate azimuth back and front of an specific azimuth considering the azimuth step value
+		* *	\param [out] aziBack azimuth value placed back to the _azimuth data
+		* *	\param [out] aziFront azimuth value placed in front of the _azimuth data
+		* *	\param [in] aziStep step between two adjacent azimuths
+		* *	\param [in] _azimuth value of reference
+		*/
 		void CalculateAzimuth_BackandFront(float& aziBack, float& aziFront, float aziStep, float _azimuth)const
 		{
 
@@ -426,24 +347,26 @@ namespace BRTServices
 			aziBack = CheckLimitsAzimuth_and_Transform(aziBack);
 		}
 
-		/** \brief Calculate the regular resampled-table using an interpolation method
-		*	\param [in] _resamplingStep step for both azimuth and elevation
+		/** \brief Interlace real and imaginary part and extend to 2PI
+		*	\param [in] _newData data to be interlaced and extended
+		* 	\param [in] _bufferSize configired buffer size
+		* 	\param [in] _TF_NumberOfSubfilters number of partitions of the directivity TF
 		*   \eh Warnings may be reported to the error handler.
 		*/
 		struct CalculateInterlacedTFTo2PI {
-			TDirectivityInterlacedTFStruct operator()(const TDirectivityTFStruct& newData, int _bufferSize, int _TF_NumberOfSubfilters)
+			TDirectivityInterlacedTFStruct operator()(const TDirectivityTFStruct& _newData, int _bufferSize, int _TF_NumberOfSubfilters)
 			{
 				TDirectivityInterlacedTFStruct interlacedData;
 
-				if (newData.realPart.size() == 0 || newData.imagPart.size() == 0) {
+				if (_newData.realPart.size() == 0 || _newData.imagPart.size() == 0) {
 					SET_RESULT(RESULT_ERROR_NOTSET, "CalculateInterlacedTFTo2PI() get an empty data");
 				}
 				// Extend to 2PI real part
 				CMonoBuffer<float> dataRealPart2PI;
-				CalculateTFRealPartTo2PI(newData.realPart, dataRealPart2PI);
+				CalculateTFRealPartTo2PI(_newData.realPart, dataRealPart2PI);
 				// Extend to 2PI imag part
 				CMonoBuffer<float> dataImagPart2PI;
-				CalculateTFImagPartTo2PI(newData.imagPart, dataImagPart2PI);
+				CalculateTFImagPartTo2PI(_newData.imagPart, dataImagPart2PI);
 				// Invert sign of imag part
 				CalculateTFImagPartToBeCompatibleWithOouraFFTLibrary(dataImagPart2PI);
 				// Interlaced real and imag part of the first subfilter 
@@ -525,7 +448,6 @@ namespace BRTServices
 				buffer[i] = buffer[i] * -1;
 			}
 		}
-
 
 		/**
 		 * @brief Set the extrapolation method that is going to be used
