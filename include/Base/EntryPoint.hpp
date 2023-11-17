@@ -35,27 +35,34 @@
 namespace BRTBase {
    
     template <class T>
-    class CEntryPointBase : public Observer/*, public CEntryExitPointData<T> */{
+    class CEntryPointBase : public Observer {
     public:
-        CEntryPointBase(std::function<void(std::string)> _callBack, std::string _id, int _multiplicity) : callBackUpdate{ _callBack }, id{ _id }, multiplicity{ _multiplicity }/*, CEntryExitPointData<T>() */{}
+        CEntryPointBase(std::function<void(std::string)> _callBack, std::string _id, bool _notify) : callBackUpdate{ _callBack }, id{ _id }, notify{ _notify }, connections{ 0 } {}
         ~CEntryPointBase() {}
-        
+
         void Update(Subject* subject) {
             CExitPointBase<T>* _subject = (static_cast<CExitPointBase<T>*>(subject));
             Update(_subject);
         };
 
         void Update(CExitPointBase<T>* subject)
-        {            
-            this->SetData(subject->GetData());            
-            if (multiplicity == 0) { /*Do nothing*/ }
-            else if (multiplicity == 1) { callBackUpdate(this->GetID()); }
-            else if (multiplicity >1 ) { /*TODO manage this */ callBackUpdate(this->GetID()); }
-            
+        {
+            this->SetData(subject->GetData());
+            if (notify) { callBackUpdate(this->GetID()); }
         }
         
-        int GetMultiplicity() { return multiplicity; }
+        int AddConnection() { 
+            connections++; 
+            return connections;
+        }
+        int RemoveConnection() { 
+            if (connections > 0) { connections--; }
+            return connections;
+        }
+        int GetConnections() { return connections; }
+        
         std::string GetID() { return id; };
+
         void SetData(const T& _data) { data = _data; }
         T GetData() { return data; }
 
@@ -63,8 +70,9 @@ namespace BRTBase {
         // Vars
         std::function<void(std::string)> callBackUpdate;
         std::string id;
-        int multiplicity;
- 
+        int connections;          
+        bool notify;
+        
         T data;
     };
            

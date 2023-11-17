@@ -124,7 +124,7 @@ namespace BRTBase {
 		/////////////////////		
 		// Update Callbacks
 		/////////////////////
-		void updateFromEntryPoint(std::string id) {
+		void UpdateEntryPointData(std::string id) {
 			if (id == "leftEar") {
 				UpdateLeftBuffer();
 			}

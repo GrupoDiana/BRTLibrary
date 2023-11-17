@@ -43,7 +43,7 @@ namespace BRTProcessing {
         void Update() {
             CMonoBuffer<float> buffer = GetSamplesEntryPoint("inputSamples")->GetData();
             Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
-            this->resetUpdatingStack();
+            //this->ResetEntryPointWaitingList();
 
             Process(buffer, sourcePosition);
         }

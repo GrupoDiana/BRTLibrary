@@ -49,7 +49,7 @@ namespace BRTProcessing {
             CreateSamplesExitPoint("rightEar");   									
         }
 
-        void Update(std::string _entryPointId) {            
+        void UpdateAllEntryPoints(std::string _entryPointId) {            
 			
 			std::lock_guard<std::mutex> l(mutex);
 
@@ -66,7 +66,7 @@ namespace BRTProcessing {
 					GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
 					GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);
 				}				
-				this->resetUpdatingStack();				
+				//this->ResetEntryPointWaitingList();				
 			}            
         }
 

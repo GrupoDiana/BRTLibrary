@@ -40,7 +40,7 @@ namespace BRTProcessing {
             CreatePositionEntryPoint("listenerPosition");            
         }
         
-        void Update(std::string _entryPointId) {
+        void UpdateAllEntryPoints(std::string _entryPointId) {
             if (_entryPointId == "inputSamples") {
                 CMonoBuffer<float> inBuffer = GetSamplesEntryPoint("inputSamples")->GetData();
                 Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
@@ -50,7 +50,7 @@ namespace BRTProcessing {
                     Process(inBuffer, outBuffer, sourcePosition, listenerPosition);                    
                     GetSamplesExitPoint("outputSamples")->sendData(outBuffer);          // Send output buffer to next module
                 }                                
-                this->resetUpdatingStack();
+                //this->ResetEntryPointWaitingList();
             }            
         }
 

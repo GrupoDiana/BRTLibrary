@@ -87,7 +87,7 @@ namespace BRTBase {
 		std::string GetID() { return sourceID; }
 
 		// Update callback
-		void updateFromEntryPoint(std::string entryPointID) {
+		void UpdateEntryPointData(std::string entryPointID) {
 			Update(entryPointID);
 		}
 		void updateFromCommandEntryPoint(std::string entryPointID) {			   
