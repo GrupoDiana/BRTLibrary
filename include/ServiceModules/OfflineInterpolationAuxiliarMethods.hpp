@@ -81,19 +81,29 @@ namespace BRTServices
 	class CDistanceBased_OfflineInterpolator {
 	public:
 
+		/**
+		 * @brief Offline calculation of the interpolated TF using the Distance-based method
+		 * @tparam T Type of table where the TF (or IR) will be included
+		 * @tparam U Type of data to be included in the table
+		 * @tparam Functor Function that performs the interpolation
+		 * @param _table Table where the newTF will be emplaced
+		 * @param f_CalculateTF_Offline Function that performs the interpolation
+		 * @param listToSort List will all orientation ordered
+		 * @param _newAzimuth Azimuth of the point to be interpolated
+		 * @param _newElevation Elevation of the point to be interpolated
+		 * @param _TFLength Lenght of the TF (or IR) to be emplaced in the _table
+		 * @param pole Indicates if the oritation is a pole or not
+		 * @return 
+		*/
 		template <typename T, typename U, typename Functor>
-		U CalculateHRIR_offlineMethod(const T& table, Functor f_CalculateHRIR_Offline, std::vector<orientation>& listToSort, double newAzimuth, double newElevation, int HRIRLength, int pole = 0)
+		U CalculateHRIR_offlineMethod(const T& _table, Functor f_CalculateTF_Offline, std::vector<orientation>& listToSort, double _newAzimuth, double _newElevation, int _TFLength, int pole = 0)
 		{
-			U newHRIR;
-			//// Get a list sorted by distances to the orientation of interest
-
-			//std::list<T_PairDistanceOrientation> sortedList = GetSortedDistancesList(newAzimuth, newElevation);
-			std::vector<T_PairDistanceOrientation> sortedList = GetSortedDistancesList(listToSort, newAzimuth, newElevation);
-
-			// PASS THE SORTED LIST TO THE FUNCTION
+			U newTF;
+			// Get a list sorted by distances to the orientation of interest
+			std::vector<T_PairDistanceOrientation> sortedList = GetSortedDistancesList(listToSort, _newAzimuth, _newElevation);
 			if (sortedList.size() == 0) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "Orientation List sorted by distances in GetHRIR_InterpolationMethod is empty");
-				return newHRIR;
+				return newTF;
 			}
 
 			// Obtain  the valid Barycentric coordinates:
@@ -115,34 +125,34 @@ namespace BRTServices
 						{
 							if (pole == ELEVATION_SOUTH_POLE || pole == ELEVATION_NORTH_POLE)
 							{
-								mygroup[i].azimuth = newAzimuth;
+								mygroup[i].azimuth = _newAzimuth;
 								mygroup[i].elevation = pole;
 							}
-
 							//Azimuth and elevation transformation in order to get the barientric coordinates (due to we are working with a spehere not a plane)
-							float newAzimuthTransformed = COfflineInterpolationAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth, newAzimuth);
-							float iAzimuthTransformed	= COfflineInterpolationAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth, mygroup[i].azimuth);
-							float jAzimuthTransformed	= COfflineInterpolationAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth, mygroup[j].azimuth);
-							float kAzimuthTransformed	= COfflineInterpolationAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth, mygroup[k].azimuth);
-							float newElevationTransformed = COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(newElevation, newElevation);
-							float iElevationTransformed = COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(newElevation, mygroup[i].elevation);
-							float jElevationTransformed = COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(newElevation, mygroup[j].elevation);
-							float kElevationTransformed = COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(newElevation, mygroup[k].elevation);
+							float newAzimuthTransformed = COfflineInterpolationAuxiliarMethods::TransformAzimuthToAvoidSewing(_newAzimuth, _newAzimuth);
+							float iAzimuthTransformed	= COfflineInterpolationAuxiliarMethods::TransformAzimuthToAvoidSewing(_newAzimuth, mygroup[i].azimuth);
+							float jAzimuthTransformed	= COfflineInterpolationAuxiliarMethods::TransformAzimuthToAvoidSewing(_newAzimuth, mygroup[j].azimuth);
+							float kAzimuthTransformed	= COfflineInterpolationAuxiliarMethods::TransformAzimuthToAvoidSewing(_newAzimuth, mygroup[k].azimuth);
+							float newElevationTransformed = COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(_newElevation, _newElevation);
+							float iElevationTransformed = COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(_newElevation, mygroup[i].elevation);
+							float jElevationTransformed = COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(_newElevation, mygroup[j].elevation);
+							float kElevationTransformed = COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(_newElevation, mygroup[k].elevation);
 
 							barycentricCoordinates = CInterpolationAuxiliarMethods::GetBarycentricCoordinates(newAzimuthTransformed, newElevationTransformed, iAzimuthTransformed, iElevationTransformed, jAzimuthTransformed, jElevationTransformed, kAzimuthTransformed, kElevationTransformed);
-
 							//FIXME: It's not checking of the barycentric coordinates are bigger than zero, and sometimes are not.
-							newHRIR = f_CalculateHRIR_Offline(table, orientation(mygroup[i].azimuth, mygroup[i].elevation), orientation(mygroup[j].azimuth, mygroup[j].elevation), orientation(mygroup[k].azimuth, mygroup[k].elevation), HRIRLength, barycentricCoordinates);
+							newTF = f_CalculateTF_Offline(_table, orientation(mygroup[i].azimuth, mygroup[i].elevation), orientation(mygroup[j].azimuth, mygroup[j].elevation), orientation(mygroup[k].azimuth, mygroup[k].elevation), _TFLength, barycentricCoordinates);
 							
-							return newHRIR;
+							return newTF;
 						}
 					}
 				}
 			}
-			return newHRIR;
+			return newTF;
 			//SET_RESULT(RESULT_OK, "");			
 		}
 		friend class CHRTFTester;
+
+
 	private:
 		std::vector<T_PairDistanceOrientation> GetSortedDistancesList(const std::vector<orientation>& listToSort, float newAzimuth, float newElevation)
 		{
@@ -181,8 +191,22 @@ namespace BRTServices
 	class CQuadrantBased_OfflineInterpolator {
 	public:
 
-		template <typename T, typename W_TFStruct, typename Functor2>
-		W_TFStruct CalculateHRIR_offlineMethod(const T& table, Functor2 f2, std::vector<orientation>& listToSort, int _TFLength, double newAzimuth, double newElevation, int pole = 0)
+		/**
+		 * @brief Offline calculation of the interpolated TF using the Quadrant-based method
+		 * @tparam T Type of table where the TF (or IR) will be included
+		 * @tparam W_TFStruct Type of table where the TF (or IR) will be included
+		 * @tparam Functor Function that performs the interpolation
+		 * @param _table Table where the newTF will be emplaced
+		 * @param f_CalculateTF_Offline Function that performs the interpolation
+		 * @param listToSort List will all orientation ordered
+		 * @param _TFLength Lenght of the TF (or IR) to be emplaced in the _table
+		 * @param _newAzimuth Lenght of the TF (or IR) to be emplaced in the _table
+		 * @param _newElevation Elevation of the point to be interpolated
+		 * @param pole Indicates if the oritation is a pole or not
+		 * @return 
+		*/
+		template <typename T, typename W_TFStruct, typename Functor>
+		W_TFStruct CalculateHRIR_offlineMethod(const T& _table, Functor f_CalculateTF_Offline, std::vector<orientation>& listToSort, int _TFLength, double _newAzimuth, double _newElevation, int pole = 0)
 		{
 			std::vector<orientation> azimuthBackList, azimuthFrontList, backCeilList, backFloorList, frontCeilList, frontFloorList;
 			TBarycentricCoordinatesStruct barycentricCoordinates;
@@ -191,34 +215,34 @@ namespace BRTServices
 			W_TFStruct newTF;
 
 			// Get 2 list sorted by azimuth to the orientation of interest, Back and Front
-			SortListByAzimuthAndSplit(newAzimuth, listToSort, azimuthBackList, azimuthFrontList);
+			SortListByAzimuthAndSplit(_newAzimuth, listToSort, azimuthBackList, azimuthFrontList);
 
 			// Get 2 lists sorted by elevation to the orientation of interest, Back Ceil and Back Floor
-			SortListByElevationAndSplit(newElevation, azimuthBackList, backCeilList, backFloorList);
+			SortListByElevationAndSplit(_newElevation, azimuthBackList, backCeilList, backFloorList);
 
 			// Get 2 lists sorted by elevation to the orientation of interest, Front Ceil and Front Floor
-			SortListByElevationAndSplit(newElevation, azimuthFrontList, frontCeilList, frontFloorList);
+			SortListByElevationAndSplit(_newElevation, azimuthFrontList, frontCeilList, frontFloorList);
 
 
 			// Now each list will be sort by distance to the orientation of interest
-			std::vector<T_PairDistanceOrientation> backCeilListSortedByDistance = CInterpolationAuxiliarMethods::GetListOrderedDistancesToPoint(backCeilList, newAzimuth, newElevation);
-			std::vector<T_PairDistanceOrientation> backFloorListSortedByDistance = CInterpolationAuxiliarMethods::GetListOrderedDistancesToPoint(backFloorList, newAzimuth, newElevation);
-			std::vector<T_PairDistanceOrientation> frontCeilListSortedByDistance = CInterpolationAuxiliarMethods::GetListOrderedDistancesToPoint(frontCeilList, newAzimuth, newElevation);
-			std::vector<T_PairDistanceOrientation> frontFloorlListSortedByDistance = CInterpolationAuxiliarMethods::GetListOrderedDistancesToPoint(frontFloorList, newAzimuth, newElevation);
+			std::vector<T_PairDistanceOrientation> backCeilListSortedByDistance = CInterpolationAuxiliarMethods::GetListOrderedDistancesToPoint(backCeilList, _newAzimuth, _newElevation);
+			std::vector<T_PairDistanceOrientation> backFloorListSortedByDistance = CInterpolationAuxiliarMethods::GetListOrderedDistancesToPoint(backFloorList, _newAzimuth, _newElevation);
+			std::vector<T_PairDistanceOrientation> frontCeilListSortedByDistance = CInterpolationAuxiliarMethods::GetListOrderedDistancesToPoint(frontCeilList, _newAzimuth, _newElevation);
+			std::vector<T_PairDistanceOrientation> frontFloorlListSortedByDistance = CInterpolationAuxiliarMethods::GetListOrderedDistancesToPoint(frontFloorList, _newAzimuth, _newElevation);
 
 			// Transform Azimuth and Elevation to avoid the sewing ////// First column is Distance, so Azimuth is 2nd and Elevation 3rd
 			// Azimuth
-			float newAzimuthTransformed			= COfflineInterpolationAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth, newAzimuth);
-			float backCeilAzimuthTransformed	= COfflineInterpolationAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth,	backCeilListSortedByDistance[0].second.azimuth);
-			float backFloorAzimuthTransformed	= COfflineInterpolationAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth,	backFloorListSortedByDistance[0].second.azimuth);
-			float frontCeilAzimuthTransformed	= COfflineInterpolationAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth,	frontCeilListSortedByDistance[0].second.azimuth);
-			float frontFloorAzimuthTransformed	= COfflineInterpolationAuxiliarMethods::TransformAzimuthToAvoidSewing(newAzimuth, frontFloorlListSortedByDistance[0].second.azimuth);
+			float newAzimuthTransformed			= COfflineInterpolationAuxiliarMethods::TransformAzimuthToAvoidSewing(_newAzimuth, _newAzimuth);
+			float backCeilAzimuthTransformed	= COfflineInterpolationAuxiliarMethods::TransformAzimuthToAvoidSewing(_newAzimuth,	backCeilListSortedByDistance[0].second.azimuth);
+			float backFloorAzimuthTransformed	= COfflineInterpolationAuxiliarMethods::TransformAzimuthToAvoidSewing(_newAzimuth,	backFloorListSortedByDistance[0].second.azimuth);
+			float frontCeilAzimuthTransformed	= COfflineInterpolationAuxiliarMethods::TransformAzimuthToAvoidSewing(_newAzimuth,	frontCeilListSortedByDistance[0].second.azimuth);
+			float frontFloorAzimuthTransformed	= COfflineInterpolationAuxiliarMethods::TransformAzimuthToAvoidSewing(_newAzimuth, frontFloorlListSortedByDistance[0].second.azimuth);
 			// Elevation
-			float newElevationTransformed		= COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(newElevation, newElevation);
-			float backCeilElevationTransformed	= COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(newElevation,		backCeilListSortedByDistance[0].second.elevation);
-			float backFloorElevationTransformed	= COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(newElevation,	backFloorListSortedByDistance[0].second.elevation);
-			float frontCeilElevationTransformed	= COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(newElevation,	frontCeilListSortedByDistance[0].second.elevation);
-			float frontFloorElevationTransformed= COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(newElevation,	frontFloorlListSortedByDistance[0].second.elevation);
+			float newElevationTransformed		= COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(_newElevation, _newElevation);
+			float backCeilElevationTransformed	= COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(_newElevation,		backCeilListSortedByDistance[0].second.elevation);
+			float backFloorElevationTransformed	= COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(_newElevation,	backFloorListSortedByDistance[0].second.elevation);
+			float frontCeilElevationTransformed	= COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(_newElevation,	frontCeilListSortedByDistance[0].second.elevation);
+			float frontFloorElevationTransformed= COfflineInterpolationAuxiliarMethods::TransformElevationToAvoidSewing(_newElevation,	frontFloorlListSortedByDistance[0].second.elevation);
 
 			// Calculate slopes to make the triangulation
 			float slopeDiagonalTrapezoid = std::abs((frontFloorElevationTransformed - backCeilElevationTransformed) / (frontFloorAzimuthTransformed - backCeilAzimuthTransformed));
@@ -232,12 +256,12 @@ namespace BRTServices
 
 				if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f)
 				{
-					newTF = f2(table, orientation(backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation), orientation(backFloorListSortedByDistance[0].second.azimuth, backFloorListSortedByDistance[0].second.elevation), orientation(frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation), _TFLength, barycentricCoordinates);
+					newTF = f_CalculateTF_Offline(_table, orientation(backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation), orientation(backFloorListSortedByDistance[0].second.azimuth, backFloorListSortedByDistance[0].second.elevation), orientation(frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation), _TFLength, barycentricCoordinates);
 					return newTF;
 				}
 				else
 				{
-					SET_RESULT(RESULT_ERROR_NOTSET, "Calculate HRIR OfflineMethod (QuadrantBased) return empty TF in position [" + std::to_string(newAzimuth) + ", " + std::to_string(newElevation) + "]");
+					SET_RESULT(RESULT_ERROR_NOTSET, "Calculate HRIR OfflineMethod (QuadrantBased) return empty TF in position [" + std::to_string(_newAzimuth) + ", " + std::to_string(_newElevation) + "]");
 					return newTF;
 				}
 			}
@@ -249,12 +273,12 @@ namespace BRTServices
 
 				if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f)
 				{
-					newTF = f2(table, orientation(backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation), orientation(frontCeilListSortedByDistance[0].second.azimuth, frontCeilListSortedByDistance[0].second.elevation), orientation(frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation), _TFLength, barycentricCoordinates);
+					newTF = f_CalculateTF_Offline(_table, orientation(backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation), orientation(frontCeilListSortedByDistance[0].second.azimuth, frontCeilListSortedByDistance[0].second.elevation), orientation(frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation), _TFLength, barycentricCoordinates);
 					return newTF;
 				}
 				else
 				{
-					SET_RESULT(RESULT_ERROR_NOTSET, "Calculate HRIR OfflineMethod (QuadrantBased) return empty TF in position [" + std::to_string(newAzimuth) + ", " + std::to_string(newElevation) + "]");
+					SET_RESULT(RESULT_ERROR_NOTSET, "Calculate HRIR OfflineMethod (QuadrantBased) return empty TF in position [" + std::to_string(_newAzimuth) + ", " + std::to_string(_newElevation) + "]");
 					return newTF;
 				}
 			}		
@@ -340,40 +364,6 @@ namespace BRTServices
 			}
 
 		}
-
-		
-		//THRIRStruct DataInterpolation(const T_HRTFTable& table, TBarycentricCoordinatesStruct _barycentricCoordinates, int HRIRLength, float azimuthPnt1, float elevationPnt1, float azimuthPnt2, float elevationPnt2, float azimuthPnt3, float elevationPnt3)
-		//{
-		//	// Calculate the new HRIR with the barycentric coorfinates
-		//	auto it1 = table.find(orientation(azimuthPnt1, elevationPnt1));
-		//	auto it2 = table.find(orientation(azimuthPnt2, elevationPnt2));
-		//	auto it3 = table.find(orientation(azimuthPnt3, elevationPnt3));
-
-		//	THRIRStruct newHRIR;
-
-		//	if (it1 != table.end() && it2 != table.end() && it3 != table.end()) {
-
-		//		//FIXME!!! another way to initialize?
-		//		newHRIR = it1->second;
-		//		//END FIXME
-
-		//		for (int i = 0; i < HRIRLength; i++) {
-		//			newHRIR.leftHRIR[i] = _barycentricCoordinates.alpha * it1->second.leftHRIR[i] + _barycentricCoordinates.beta * it2->second.leftHRIR[i] + _barycentricCoordinates.gamma * it3->second.leftHRIR[i];
-		//			newHRIR.rightHRIR[i] = _barycentricCoordinates.alpha * it1->second.rightHRIR[i] + _barycentricCoordinates.beta * it2->second.rightHRIR[i] + _barycentricCoordinates.gamma * it3->second.rightHRIR[i];
-		//		}
-
-		//		// Calculate delay
-		//		newHRIR.leftDelay = _barycentricCoordinates.alpha * it1->second.leftDelay + _barycentricCoordinates.beta * it2->second.leftDelay + _barycentricCoordinates.gamma * it3->second.leftDelay;
-		//		newHRIR.rightDelay = _barycentricCoordinates.alpha * it1->second.rightDelay + _barycentricCoordinates.beta * it2->second.rightDelay + _barycentricCoordinates.gamma * it3->second.rightDelay;
-		//		//SET_RESULT(RESULT_OK, "HRIR calculated with interpolation method succesfully");
-		//		return newHRIR;
-		//	}
-		//	else {
-		//		SET_RESULT(RESULT_WARNING, "GetHRIR_InterpolationMethod return empty because HRIR with a specific orientation was not found");
-		//		return newHRIR;
-		//	}
-		//}
-
 	};
 
 }

@@ -139,14 +139,12 @@ namespace BRTServices
 					t_DirectivityTF_DataBase_ListOfOrientations = offlineInterpolation.CalculateListOfOrientations(t_DirectivityTF_DataBase);
 					quasiUniformSphereDistribution.CreateGrid<T_DirectivityTFInterlacedDataTable, TDirectivityInterlacedTFStruct>(t_DirectivityTF_Resampled, gridResamplingStepsVector, resamplingStep);
 					offlineInterpolation.FillResampledTable<T_DirectivityTFTable, T_DirectivityTFInterlacedDataTable, BRTServices::TDirectivityTFStruct, BRTServices::TDirectivityInterlacedTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_Resampled, bufferSize, directivityTFPart_length, directivityTF_numberOfSubfilters, CalculateInterlacedTFTo2PI(), CDirectivityTFAuxiliarMethods::CalculateDirectivityTFFromBarycentrics_OfflineInterpolation());		
-					//TESTING:
+					//FOR TESTING:
 					for (auto it = t_DirectivityTF_Resampled.begin(); it != t_DirectivityTF_Resampled.end(); it++) {
 						if (it->second.data.size() == 0) {
 							SET_RESULT(RESULT_ERROR_NOTSET, "The t_DirectivityTF_Resampled table has an empty DirectivityTF in position [" + std::to_string(it->first.azimuth) + ", " + std::to_string(it->first.elevation) + "]");
 						}
-
 					}
-
 					//Setup values
 					setupDirectivityTFInProgress = false;
 					directivityTFloaded = true;
@@ -230,8 +228,7 @@ namespace BRTServices
 			for (int ori = 0; ori< orientations.size(); ori++)
 			{
 				// Maybe stop in each different elevation and make the difference between the start azimuth, 0, and the next azimuth in this elevation
-				// with this form, we could save a vector like this [aziStep elevation]
-
+				// with this form, we could save a vector like this [aziStep elevation] 
 				elevation = orientations[ori].elevation;
 
 				if (actual_ele != elevation)

@@ -46,9 +46,17 @@ namespace BRTServices
 */
 	class CDirectivityTFAuxiliarMethods {
 	public:
-
+		/**
+		 * @brief Struct that contain a function to Calculate the Directivity TF using the Quadrant-based method
+		*/
 		struct CalculateDirectivityTFFromHemisphereParts {
-			//static THRIRStruct CalculateHRIRFromHemisphereParts(T_HRTFTable& _t_HRTF_DataBase, int _HRIRLength, std::vector < std::vector <orientation>> _hemisphereParts) {
+			/**
+			 * @brief Calculate the Directivity TF using the Quadrant-based method
+			 * @param _t_DirectivityTF_DataBase Table with the loaded darectivities (from the SOFA file)
+			 * @param _DirectivityTFLength Size of the directivity TF (real part or imaginary part) that came from the DataBase table
+			 * @param _hemisphereParts Vector that contains all the oritations divided in the four quadrants
+			 * @return 
+			*/
 			BRTServices::TDirectivityTFStruct operator () (T_DirectivityTFTable& _t_DirectivityTF_DataBase, int _DirectivityTFLength, std::vector < std::vector <orientation>> _hemisphereParts) {
 
 				BRTServices::TDirectivityTFStruct calculatedDirectivityTF;
@@ -124,15 +132,24 @@ namespace BRTServices
 
 		/**
 		 * @brief 
-		 * @param 
 		*/
 		struct CalculateDirectivityTF_FromBarycentrics_OfflineInterpolation {
 
-			BRTServices::TDirectivityTFStruct operator () (const T_DirectivityTFTable& _table, orientation _orientation1, orientation _orientation2, orientation _orientation3, int _HRIRLength, BRTServices::TBarycentricCoordinatesStruct barycentricCoordinates) {
+			/**
+			 * @brief 
+			 * @param _table 
+			 * @param _orientation1 
+			 * @param _orientation2 
+			 * @param _orientation3 
+			 * @param _DirectivityTFLength 
+			 * @param _barycentricCoordinates 
+			 * @return 
+			*/
+			BRTServices::TDirectivityTFStruct operator () (const T_DirectivityTFTable& _table, orientation _orientation1, orientation _orientation2, orientation _orientation3, int _DirectivityTFLength, BRTServices::TBarycentricCoordinatesStruct _barycentricCoordinates) {
 
 				BRTServices::TDirectivityTFStruct calculatedDirectivityTF;
-				calculatedDirectivityTF.realPart.resize(_HRIRLength, 0.0f);
-				calculatedDirectivityTF.imagPart.resize(_HRIRLength, 0.0f);
+				calculatedDirectivityTF.realPart.resize(_DirectivityTFLength, 0.0f);
+				calculatedDirectivityTF.imagPart.resize(_DirectivityTFLength, 0.0f);
 
 				// Calculate the new DirectivityTF with the barycentric coordinates
 				auto it1 = _table.find(_orientation1);
@@ -141,9 +158,9 @@ namespace BRTServices
 
 				if (it1 != _table.end() && it2 != _table.end() && it3 != _table.end()) 
 				{
-					for (int i = 0; i < _HRIRLength; i++) {
-						calculatedDirectivityTF.realPart[i] = barycentricCoordinates.alpha * it1->second.realPart[i] + barycentricCoordinates.beta * it2->second.realPart[i] + barycentricCoordinates.gamma * it3->second.realPart[i];
-						calculatedDirectivityTF.imagPart[i] = barycentricCoordinates.alpha * it1->second.imagPart[i] + barycentricCoordinates.beta * it2->second.imagPart[i] + barycentricCoordinates.gamma * it3->second.imagPart[i];
+					for (int i = 0; i < _DirectivityTFLength; i++) {
+						calculatedDirectivityTF.realPart[i] = _barycentricCoordinates.alpha * it1->second.realPart[i] + _barycentricCoordinates.beta * it2->second.realPart[i] + _barycentricCoordinates.gamma * it3->second.realPart[i];
+						calculatedDirectivityTF.imagPart[i] = _barycentricCoordinates.alpha * it1->second.imagPart[i] + _barycentricCoordinates.beta * it2->second.imagPart[i] + _barycentricCoordinates.gamma * it3->second.imagPart[i];
 					}
 					return calculatedDirectivityTF;
 				}
@@ -192,16 +209,20 @@ namespace BRTServices
 			}
 		};
 
-		 
-		/// <summary>
-		///  		
-		/// </summary>
-		/// <param name="_t_HRTF_DataBase"></param>
-		/// <param name="_HRIRLength"></param>
-		/// <returns></returns>
-
+		/**
+		 * @brief 
+		*/
 		struct CalculateDirectivityTFFromBarycentrics_OfflineInterpolation {
-
+			/**
+			 * @brief 
+			 * @param _table 
+			 * @param _orientation1 
+			 * @param _orientation2 
+			 * @param _orientation3 
+			 * @param _TFLength 
+			 * @param barycentricCoordinates 
+			 * @return 
+			*/
 			BRTServices::TDirectivityTFStruct operator () (const T_DirectivityTFTable& _table, orientation _orientation1, orientation _orientation2, orientation _orientation3, int _TFLength, BRTServices::TBarycentricCoordinatesStruct barycentricCoordinates) {
 
 				BRTServices::TDirectivityTFStruct interpolatedTF;
@@ -231,25 +252,30 @@ namespace BRTServices
 		};
 
 		/**
-		* @brief Calculate HRIR subfilters using a barycentric coordinates of the three nearest orientation.
-		* @param ear
-		* @param barycentricCoordinates
-		* @param orientation_pto1
-		* @param orientation_pto2
-		* @param orientation_pto3
-		* @return
+		 * @brief 
 		*/
 		struct CalculateDirectivityTF_FromBarycentric_OnlineInterpolation {
-			const TDirectivityInterlacedTFStruct operator()(const T_DirectivityTFInterlacedDataTable& resampledTable, int32_t _numberOfSubfilters, int32_t _subfilterLength, TBarycentricCoordinatesStruct barycentricCoordinates, orientation orientation_pto1, orientation orientation_pto2, orientation orientation_pto3)
+			/**
+			 * @brief 
+			 * @param _resampledTable 
+			 * @param _numberOfSubfilters 
+			 * @param _subfilterLength 
+			 * @param _barycentricCoordinates 
+			 * @param orientation_pto1 
+			 * @param orientation_pto2 
+			 * @param orientation_pto3 
+			 * @return 
+			*/
+			const TDirectivityInterlacedTFStruct operator()(const T_DirectivityTFInterlacedDataTable& _resampledTable, int32_t _numberOfSubfilters, int32_t _subfilterLength, TBarycentricCoordinatesStruct _barycentricCoordinates, orientation orientation_pto1, orientation orientation_pto2, orientation orientation_pto3)
 			{
 				TDirectivityInterlacedTFStruct newDirectivityTF;
 
 				// Find the HRIR for the given t_HRTF_DataBase_ListOfOrientations
-				auto it1 = resampledTable.find(orientation(orientation_pto1.azimuth, orientation_pto1.elevation));
-				auto it2 = resampledTable.find(orientation(orientation_pto2.azimuth, orientation_pto2.elevation));
-				auto it3 = resampledTable.find(orientation(orientation_pto3.azimuth, orientation_pto3.elevation));
+				auto it1 = _resampledTable.find(orientation(orientation_pto1.azimuth, orientation_pto1.elevation));
+				auto it2 = _resampledTable.find(orientation(orientation_pto2.azimuth, orientation_pto2.elevation));
+				auto it3 = _resampledTable.find(orientation(orientation_pto3.azimuth, orientation_pto3.elevation));
 
-				if (it1 != resampledTable.end() && it2 != resampledTable.end() && it3 != resampledTable.end())
+				if (it1 != _resampledTable.end() && it2 != _resampledTable.end() && it3 != _resampledTable.end())
 				{
 					newDirectivityTF.data.resize(_numberOfSubfilters);
 
@@ -258,7 +284,7 @@ namespace BRTServices
 						newDirectivityTF.data[subfilterID].resize(_subfilterLength);
 						for (int i = 0; i < _subfilterLength; i++)
 						{
-							newDirectivityTF.data[subfilterID][i] = barycentricCoordinates.alpha * it1->second.data[subfilterID][i] + barycentricCoordinates.beta * it2->second.data[subfilterID][i] + barycentricCoordinates.gamma * it3->second.data[subfilterID][i];
+							newDirectivityTF.data[subfilterID][i] = _barycentricCoordinates.alpha * it1->second.data[subfilterID][i] + _barycentricCoordinates.beta * it2->second.data[subfilterID][i] + _barycentricCoordinates.gamma * it3->second.data[subfilterID][i];
 						}
 					}
 				}
