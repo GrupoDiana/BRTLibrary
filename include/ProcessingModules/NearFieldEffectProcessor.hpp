@@ -47,12 +47,12 @@ namespace BRTProcessing {
             CreateSamplesExitPoint("rightEar");   									
         }
 
-        void UpdateAllEntryPoints(std::string _entryPointId) {            
+        void AllEntryPointsAllDataReady() {
 			std::lock_guard<std::mutex> l(mutex);
 			CMonoBuffer<float> outLeftBuffer;
 			CMonoBuffer<float> outRightBuffer;
 
-			if (_entryPointId == "leftEar" || _entryPointId == "rightEar") {
+			//if (_entryPointId == "leftEar" || _entryPointId == "rightEar") {
 				CMonoBuffer<float> leftBuffer = GetSamplesEntryPoint("leftEar")->GetData();
 				CMonoBuffer<float> rightBuffer = GetSamplesEntryPoint("rightEar")->GetData();
 
@@ -66,7 +66,7 @@ namespace BRTProcessing {
 					GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);
 				}				
 				//this->ResetEntryPointWaitingList();				
-			}            
+			//}            
         }
 
 		void UpdateCommand() {

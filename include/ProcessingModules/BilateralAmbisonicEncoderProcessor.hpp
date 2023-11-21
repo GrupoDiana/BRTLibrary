@@ -50,7 +50,10 @@ namespace BRTProcessing {
 			CreateMultipleSamplesExitPoint("rightAmbisonicChannels");
         }
 
-        void UpdateAllEntryPoints(std::string _entryPointId) {            
+		/**
+		 * @brief Implementation of CProcessorBase virtual method
+		*/
+        void AllEntryPointsAllDataReady() {
 			
 			std::lock_guard<std::mutex> l(mutex);
 
@@ -58,22 +61,19 @@ namespace BRTProcessing {
 			std::vector<CMonoBuffer<float>> rightAmbisonicChannelsBuffers;
 			CMonoBuffer<float> outRightBuffer;
 
-			if (_entryPointId == "inputSamples") {
+			//if (_entryPointId == "inputSamples") {
 				CMonoBuffer<float> buffer = GetSamplesEntryPoint("inputSamples")->GetData();
 				Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
 				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();												
 				std::weak_ptr<BRTServices::CHRTF> listenerHRTF = GetHRTFPtrEntryPoint("listenerHRTF")->GetData();
 				std::weak_ptr<BRTServices::CILD> listenerILD = GetILDPtrEntryPoint("listenerILD")->GetData();
 				if (buffer.size() != 0) {															
-					Process(buffer, leftAmbisonicChannelsBuffers, rightAmbisonicChannelsBuffers, sourcePosition, listenerPosition, listenerHRTF, listenerILD);
-					
-					
-					
+					Process(buffer, leftAmbisonicChannelsBuffers, rightAmbisonicChannelsBuffers, sourcePosition, listenerPosition, listenerHRTF, listenerILD);															
 					GetMultipleSamplesVectorExitPoint("leftAmbisonicChannels")->sendData(leftAmbisonicChannelsBuffers);
 					GetMultipleSamplesVectorExitPoint("rightAmbisonicChannels")->sendData(rightAmbisonicChannelsBuffers);
 				}				
-				//this->ResetEntryPointWaitingList();				
-			}            
+				
+			//}            
         }
 
 		void UpdateCommand() {					

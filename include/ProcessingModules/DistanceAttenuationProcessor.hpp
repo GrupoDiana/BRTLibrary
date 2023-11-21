@@ -40,8 +40,13 @@ namespace BRTProcessing {
             CreatePositionEntryPoint("listenerPosition");            
         }
         
-        void UpdateAllEntryPoints(std::string _entryPointId) {
-            if (_entryPointId == "inputSamples") {
+
+        /**
+         * @brief Implementation of CProcessorBase virtual method
+        */
+        void AllEntryPointsAllDataReady() {
+            std::lock_guard<std::mutex> l(mutex);
+            //if (_entryPointId == "inputSamples") {
                 CMonoBuffer<float> inBuffer = GetSamplesEntryPoint("inputSamples")->GetData();
                 Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
                 Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();               
@@ -49,9 +54,8 @@ namespace BRTProcessing {
                 if (inBuffer.size() != 0) {
                     Process(inBuffer, outBuffer, sourcePosition, listenerPosition);                    
                     GetSamplesExitPoint("outputSamples")->sendData(outBuffer);          // Send output buffer to next module
-                }                                
-                //this->ResetEntryPointWaitingList();
-            }            
+                }                                            
+            //}            
         }
 
         void UpdateCommand() {

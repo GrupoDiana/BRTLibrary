@@ -52,19 +52,20 @@ namespace BRTBase {
          * @brief This method will be called when data has been received at all input points with notification.
          * @param entryPointID 
         */
-        virtual void UpdateAllEntryPoints(std::string entryPointID) = 0;
+        virtual void AllEntryPointsAllDataReady() = 0;
         
         /**
          * @brief This method will be called when all expected data is present at an entry point. 
          * For example, if its multiplicity is two, this method will be called when the second of the data is received.         
          * @param entryPointID 
         */
-        virtual void UpdateEntryPointCompletelly(std::string entryPointID) {};
+        virtual void OneEntryPointAllDataReady(std::string entryPointID) {};
         /**
          * @brief This method shall be called whenever data is received at an entry point, with non-zero multiplicity. 
          * @param entryPointID 
         */
-        virtual void UpdateEntryPointPartially(std::string entryPointID) {};
+        virtual void OneEntryPointOneDataReceived(std::string entryPointID) {};                      
+        
         /**
          * @brief This method shall be called whenever a command is received at the command entry point.
         */
@@ -72,7 +73,7 @@ namespace BRTBase {
        
 
         ////////////////////////////////////////////////////////////////
-        /// Implementation of EntryPointManager virutal methods
+        /// Implementation of EntryPointManager virtual methods
         ///////////////////////////////////////////////////////////////
         /**
          * @brief In this method, notification is received that a new command is received at command entry point
@@ -134,13 +135,13 @@ namespace BRTBase {
                 
                 if (it->connections == 0) { return; }
                 it->timesReceived++;
-                UpdateEntryPointPartially(_entryPointID);
+                OneEntryPointOneDataReceived(_entryPointID);
 
-                if ((it->timesReceived) == (it->connections)) {
+                if ((it->timesReceived) >= (it->connections)) {
                     it->received = true;
-                    UpdateEntryPointCompletelly(_entryPointID);
+                    OneEntryPointAllDataReady(_entryPointID);
                     if (AreAllEntryPointsReady()) {
-                        UpdateAllEntryPoints(_entryPointID);
+                        AllEntryPointsAllDataReady();
                         ResetEntryPointWaitingList();
                     }
                 }               

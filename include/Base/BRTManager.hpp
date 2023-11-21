@@ -435,7 +435,15 @@ namespace BRTBase {
 			return true;
 		}
 
-
+		/**
+		 * @brief Connects the vector of multiples samples ExitPoint of one module to the vector of multiple samples EntryPoint of another.
+		  * @tparam T Type of module 1
+		 * @tparam U Type of module 2
+		 * @param module1 Pointer to module having Samples exitpoint
+		 * @param module2 Pointer to module having Samples entrypoint
+		 * @param entryPointID ID of entry point in module 2
+		 * @return Returns true if it was possible to make the disconnection. False in all other cases.
+		*/
 		template <typename T, typename U>
 		bool ConnectModulesMultipleSamplesVectors(std::shared_ptr <T> module1, std::string exitPointID, std::shared_ptr <U> module2, std::string entryPointID) {			
 			if (!setupModeActivated) return false;
@@ -449,6 +457,27 @@ namespace BRTBase {
 			return true;
 		}
 
+		/**
+		 * @brief Disconnects the vector of multiples samples ExitPoint of one module with the vector of multiples samples EntryPoint of another.
+		 * @tparam T Type of module 1
+		 * @tparam U Type of module 2
+		 * @param module1 Pointer to module having Samples exitpoint
+		 * @param module2 Pointer to module having Samples entrypoint
+		 * @param entryPointID ID of entry point in module 2
+		 * @return Returns true if it was possible to make the disconnection. False in all other cases.
+		*/
+		template <typename T, typename U>
+		bool DisconnectModulesMultipleSamplesVectors(std::shared_ptr<T> module1, std::string exitPointID, std::shared_ptr <U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectMultipleSamplesVectorsEntryTo(module1->GetMultipleSamplesVectorExitPoint(exitPointID), entryPointID);
+			return true;
+		}
+		template <typename T, typename U>
+		bool DisconnectModulesMultipleSamplesVectors(std::shared_ptr<T> module1, std::string exitPointID, U* module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectMultipleSamplesVectorsEntryTo(module1->GetMultipleSamplesVectorExitPoint(exitPointID), entryPointID);
+			return true;
+		}
 
 		/**
 		 * @brief Connects the Command ExitPoint of one module to the Command EntryPoint of another.
