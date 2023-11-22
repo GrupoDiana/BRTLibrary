@@ -131,18 +131,18 @@ namespace BRTServices
 
 
 		/**
-		 * @brief 
+		 * @brief Struct that contains the function to do the off-line calculation of the interpolated directivity TF using the three nearest points and the barycentric coordinates
 		*/
 		struct CalculateDirectivityTF_FromBarycentrics_OfflineInterpolation {
 
 			/**
-			 * @brief 
-			 * @param _table 
-			 * @param _orientation1 
-			 * @param _orientation2 
-			 * @param _orientation3 
-			 * @param _DirectivityTFLength 
-			 * @param _barycentricCoordinates 
+			 * @brief Off-line calculation of the interpolated directivity TF using the three nearest points and the barycentric coordinates
+			 * @param _table T_DirectivityTF Table
+			 * @param _orientation1 Orientation of one of the three points used for the interpolation
+			 * @param _orientation2 Orientation of one of the three points used for the interpolation
+			 * @param _orientation3 Orientation of one of the three points used for the interpolation
+			 * @param _DirectivityTFLength Lenght of the real part (or imag part, because it should be the same) of the directivity TF
+			 * @param _barycentricCoordinates Value of the three barycentric coordinates used to get the new interpolated DitectivityTF
 			 * @return 
 			*/
 			BRTServices::TDirectivityTFStruct operator () (const T_DirectivityTFTable& _table, orientation _orientation1, orientation _orientation2, orientation _orientation3, int _DirectivityTFLength, BRTServices::TBarycentricCoordinatesStruct _barycentricCoordinates) {
@@ -210,60 +210,18 @@ namespace BRTServices
 		};
 
 		/**
-		 * @brief 
-		*/
-		struct CalculateDirectivityTFFromBarycentrics_OfflineInterpolation {
-			/**
-			 * @brief 
-			 * @param _table 
-			 * @param _orientation1 
-			 * @param _orientation2 
-			 * @param _orientation3 
-			 * @param _TFLength 
-			 * @param barycentricCoordinates 
-			 * @return 
-			*/
-			BRTServices::TDirectivityTFStruct operator () (const T_DirectivityTFTable& _table, orientation _orientation1, orientation _orientation2, orientation _orientation3, int _TFLength, BRTServices::TBarycentricCoordinatesStruct barycentricCoordinates) {
-
-				BRTServices::TDirectivityTFStruct interpolatedTF;
-				interpolatedTF.realPart.resize(_TFLength, 0.0f);
-				interpolatedTF.imagPart.resize(_TFLength, 0.0f);
-
-				// Calculate the new HRIR with the barycentric coorfinates
-				auto it1 = _table.find(_orientation1);
-				auto it2 = _table.find(_orientation2);
-				auto it3 = _table.find(_orientation3);
-
-				if (it1 != _table.end() && it2 != _table.end() && it3 != _table.end()) {
-
-					for (int i = 0; i < _TFLength; i++) {
-						interpolatedTF.realPart[i] = barycentricCoordinates.alpha * it1->second.realPart[i] + barycentricCoordinates.beta * it2->second.realPart[i] + barycentricCoordinates.gamma * it3->second.realPart[i];
-						interpolatedTF.imagPart[i] = barycentricCoordinates.alpha * it1->second.imagPart[i] + barycentricCoordinates.beta * it2->second.imagPart[i] + barycentricCoordinates.gamma * it3->second.imagPart[i];
-					}
-					return interpolatedTF;
-				}
-
-				else {
-					SET_RESULT(RESULT_WARNING, "CalculateDirectivityTFFromBarycentrics_OfflineInterpolation: TF for a specific orientation was not found");
-					return interpolatedTF;
-				}
-
-			}
-		};
-
-		/**
-		 * @brief 
+		 * @brief Struct that contains the function to do the on-line calculation of the interpolated directivity TF using the three nearest points and the barycentric coordinates
 		*/
 		struct CalculateDirectivityTF_FromBarycentric_OnlineInterpolation {
 			/**
-			 * @brief 
-			 * @param _resampledTable 
+			 * @brief On-line Calculation of the interpolated directivity TF using the three nearest points and the barycentric coordinates
+			 * @param _resampledTable DirectivityTF Interlaced Data Table
 			 * @param _numberOfSubfilters 
 			 * @param _subfilterLength 
-			 * @param _barycentricCoordinates 
-			 * @param orientation_pto1 
-			 * @param orientation_pto2 
-			 * @param orientation_pto3 
+			 * @param _barycentricCoordinates Value of the three barycentric coordinates used to get the new interpolated DitectivityTF
+			 * @param orientation_pto1 Orientation of one of the three points used for the interpolation
+			 * @param orientation_pto2 Orientation of one of the three points used for the interpolation
+			 * @param orientation_pto3 Orientation of one of the three points used for the interpolation
 			 * @return 
 			*/
 			const TDirectivityInterlacedTFStruct operator()(const T_DirectivityTFInterlacedDataTable& _resampledTable, int32_t _numberOfSubfilters, int32_t _subfilterLength, TBarycentricCoordinatesStruct _barycentricCoordinates, orientation orientation_pto1, orientation orientation_pto2, orientation orientation_pto3)

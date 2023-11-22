@@ -138,7 +138,7 @@ namespace BRTServices
 					//Creation and filling of resampling HRTF table
 					t_DirectivityTF_DataBase_ListOfOrientations = offlineInterpolation.CalculateListOfOrientations(t_DirectivityTF_DataBase);
 					quasiUniformSphereDistribution.CreateGrid<T_DirectivityTFInterlacedDataTable, TDirectivityInterlacedTFStruct>(t_DirectivityTF_Resampled, gridResamplingStepsVector, resamplingStep);
-					offlineInterpolation.FillResampledTable<T_DirectivityTFTable, T_DirectivityTFInterlacedDataTable, BRTServices::TDirectivityTFStruct, BRTServices::TDirectivityInterlacedTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_Resampled, bufferSize, directivityTFPart_length, directivityTF_numberOfSubfilters, CalculateInterlacedTFTo2PI(), CDirectivityTFAuxiliarMethods::CalculateDirectivityTFFromBarycentrics_OfflineInterpolation());		
+					offlineInterpolation.FillResampledTable<T_DirectivityTFTable, T_DirectivityTFInterlacedDataTable, BRTServices::TDirectivityTFStruct, BRTServices::TDirectivityInterlacedTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_Resampled, bufferSize, directivityTFPart_length, directivityTF_numberOfSubfilters, CalculateInterlacedTFTo2PI(), CDirectivityTFAuxiliarMethods::CalculateDirectivityTF_FromBarycentrics_OfflineInterpolation());		
 					//FOR TESTING:
 					for (auto it = t_DirectivityTF_Resampled.begin(); it != t_DirectivityTF_Resampled.end(); it++) {
 						if (it->second.data.size() == 0) {
