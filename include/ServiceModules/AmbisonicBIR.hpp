@@ -32,6 +32,7 @@
 #include <Common/AmbisonicEncoder.hpp>
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
 #include <ServiceModules/HRTF.hpp>
+#include <ServiceModules/VirtualSpeakers.hpp>
 //#include <ServiceModules/HRTFDefinitions.hpp>		//TODO remove this line
 
 /*! \file */
@@ -69,6 +70,37 @@
 //*/
 //template<class TVirtualSpeakerID>
 //using TBFormat_Partitioned = std::unordered_map<TBFormatChannel, TBFormatChannelData_Partitioned<TVirtualSpeakerID>>;
+
+// Hash function to access one bformat channel
+//struct TVirtualSpeakerID {
+//	int id;	
+//	TVirtualSpeakerID() :id{ 0 } {}
+//	TVirtualSpeakerID(int _id) : id{ _id } {}	
+//
+//	bool operator==(const TVirtualSpeakerID& other) const
+//	{
+//		return (id == other.id);
+//	}
+//};
+//
+//namespace std
+//{
+//	template<>
+//	struct hash<TVirtualSpeakerID>
+//	{
+//		size_t operator()(const TVirtualSpeakerID& key) const
+//		{
+//			//size_t hID = std::hash<int32_t>()(static_cast<int>(key.id));
+//			//size_t hName = std::hash<char32_t>()(static_cast<int>(key.name));
+//
+//			//size_t h1 = std::hash<int32_t>()(hID);
+//			//size_t h2 = std::hash<int32_t>()(hName);
+//			//return h1 ^ (h2 << 1);  // exclusive or of hash functions for each int.
+//
+//			return std::hash<int>()(static_cast<int>(key.id));
+//		}		
+//	};
+//}
 
 
 //////////////////////////////////////////////////////
@@ -174,6 +206,8 @@ namespace BRTServices
 			ambisonicIRPartitionedTable.clear();
 			
 			ambisonicEncoder.Setup(_ambisonicOrder, _ambisonicNormalization);
+			
+			virtualSpeakers.Setup(_ambisonicOrder);
 
 			dataOrigin = TDataOrigin::HRTF;
 			setupDone = true;				//	Indicate that the setup has been done
@@ -432,7 +466,9 @@ namespace BRTServices
 
 			//virtualSpeakersAmbisonicChannels.resize(ambisonicEncoder.GetTotalChannels(), THRIRPartitionedStruct());
 												
-			std::vector<orientation> virtualSpeakerPositions = GetVirtualSpeakersPositions(ambisonicEncoder.GetOrder());
+			//std::vector<orientation> virtualSpeakerPositions = GetVirtualSpeakersPositions(ambisonicEncoder.GetOrder());
+			std::vector<orientation> virtualSpeakerPositions = virtualSpeakers.GetVirtualSpeakersPositions();
+
 
 			//1. Get BRIR values for each channel
 			for (int i = 0; i < virtualSpeakerPositions.size(); i++) {
@@ -460,7 +496,7 @@ namespace BRTServices
 			return true;
 		}
 
-		
+		/*
 		std::vector< orientation> GetVirtualSpeakersPositions(int ambisonicOrder) {
 			
 			std::vector< orientation> virtualSpeakerOrientationList;
@@ -481,31 +517,31 @@ namespace BRTServices
 				}
 			}
 			return virtualSpeakerOrientationList;
-		}
+		}*/
 
-		std::vector<float> GetAmbisonicAzimutsList(int ambisonicOrder) {
+		/*std::vector<float> GetAmbisonicAzimutsList(int ambisonicOrder) {
 			if (ambisonicOrder == 1) { return ambisonicAzimut_order1; }
 			else if (ambisonicOrder == 2) { return ambisonicAzimut_order2; }
 			else { return ambisonicAzimut_order3; }
-		}
+		}*/
 
-		std::vector<float> GetAmbisonicElevationsList(int ambisonicOrder)
+		/*std::vector<float> GetAmbisonicElevationsList(int ambisonicOrder)
 		{
 			if (ambisonicOrder == 1) { return ambisonicElevation_order1; }
 			else if (ambisonicOrder == 2) { return ambisonicElevation_order2; }
 			else { return ambisonicElevation_order3; }
-		}
+		}*/
 
-		int GetTotalVirtualSpeakers(int ambisonicOrder)
+		/*int GetTotalVirtualSpeakers(int ambisonicOrder)
 		{
 			if (ambisonicOrder == 1) { return 6; }
 			else if (ambisonicOrder == 2) { return 12; }
 			else { return 20; }
-		}
+		}*/
 
 	private:
 		
-
+		CVirtualSpeakers virtualSpeakers;
 		TDataOrigin dataOrigin;					// To know the origin of the data 
 		bool setupDone;							// To know if the setup has been done
 		int bufferSize;							// Input source length		
@@ -571,87 +607,8 @@ namespace BRTServices
 		//	}
 		//	return new_DataFFT_Partitioned;
 		//}
-
-
-
-
 	};
 }
-
-//////////////////////////////////////////////////////
-// INSTANCES: 
-//////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////
-// ABIR //////////////////////////////////////////////
-
-//namespace std
-//{
-//	template<>
-//	struct hash<Common::T_ear>
-//	{
-//		size_t operator()(const Common::T_ear & key) const
-//		{
-//			return std::hash<int>()(static_cast<int>(key));
-//		}
-//	};
-//}
-
-//namespace BRTServices
-//{
-//	/**
-//	 * @brief Class storing Ambisonics Binaural Impulse Response data, for Binaural spatialization
-//	 * @details This is an instance of CAmbisonicIR template
-//	*/
-//	//using CAmbisonicBIR = BRTServices::CAmbisonicIR<2, Common::T_ear>;
-//	using CAmbisonicBIR = BRTServices::CAmbisonicIR<2>;
-//
-//	/**
-//	 * @brief Instance of TBFormatChannelData for use with ABIR
-//	*/
-//	//using TAmbisonicBIRChannelData = TBFormatChannelData<Common::T_ear>;
-//}
-
-
-
-//////////////////////////////////////////////////////
-// ARIR //////////////////////////////////////////////
-
-///** \brief ID of binaural virtual speakers, for use with ARIR
-//*/
-//struct TLoudspeakersSpeakerID
-//{
-//	int azimuth;		///< Azimuth position of virtual speaker
-//	int elevation;		///< Elevation position of virtual speaker
-//	bool operator==(const TLoudspeakersSpeakerID& rhs) const
-//	{
-//		return ((azimuth == rhs.azimuth) && (elevation == rhs.elevation));
-//	}	
-//};
-//
-//namespace std
-//{
-//	template<>
-//	struct hash<TLoudspeakersSpeakerID>
-//	{
-//		size_t operator()(const TLoudspeakersSpeakerID & key) const
-//		{
-//			//return std::hash<int>()(static_cast<int>(key.azimuth*1000 + key.elevation));
-//			return std::hash<int>()(static_cast<int>(key.azimuth)) ^ std::hash<int>()(static_cast<int>(key.elevation));
-//		}
-//	};
-//}
-
-///** \brief
-//* Class storing Ambisonics Room Impulse Response data, for Loudspeakers spatialization reverb
-//*	\details This is an instance of CAIR template
-//*/
-//using CAmbisonicRIR = BRTServices::CAmbisonicIR<8, TLoudspeakersSpeakerID>;
-//
-///** \brief
-//* Instance of TBFormatChannelData for use with ARIR
-//*/
-//using TAmbisonicRIRChannelData = TBFormatChannelData<TLoudspeakersSpeakerID>;
 
 #endif
 
