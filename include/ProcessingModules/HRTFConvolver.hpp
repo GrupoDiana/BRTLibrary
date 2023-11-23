@@ -94,6 +94,7 @@ namespace BRTProcessing {
 			float distanceToListener = Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerDistance(sourceTransform, listenerTransform);
 			if (distanceToListener <= _listenerHRTF->GetHeadRadius())
 			{
+				SET_RESULT(RESULT_WARNING, "The source is inside the listener's head.");
 				outLeftBuffer = _inBuffer;
 				outRightBuffer = _inBuffer;
 				return;
