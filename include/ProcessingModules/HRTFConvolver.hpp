@@ -89,15 +89,15 @@ namespace BRTProcessing {
 				outRightBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 				return;
 			}
-
-			// TODO 
+			
 			//Check if the source is in the same position as the listener head. If yes, do not apply spatialization
-			/*if (distanceToListener <= ownerCore->GetListener()->GetHeadRadius())
+			float distanceToListener = Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerDistance(sourceTransform, listenerTransform);
+			if (distanceToListener <= _listenerHRTF->GetHeadRadius())
 			{
-				outLeftBuffer = inBuffer;
-				outRightBuffer = inBuffer;
+				outLeftBuffer = _inBuffer;
+				outRightBuffer = _inBuffer;
 				return;
-			}*/
+			}
 
 			// First time - Initialize convolution buffers
 			if (!convolutionBuffersInitialized) { InitializedSourceConvolutionBuffers(_listenerHRTF); }

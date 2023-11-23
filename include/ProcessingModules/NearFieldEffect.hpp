@@ -60,7 +60,7 @@ namespace BRTProcessing {
 			// Check process flag
 			if (!IsNearFieldEffectEnabled()) { return;	}
 			
-			float distance = CalculateDistance(sourceTransform, listenerTransform);
+			float distance = Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerDistance(sourceTransform, listenerTransform);
 			if (distance > DISTANCE_MODEL_THRESHOLD_NEAR) {	return; }
 			
 			//ASSERT(_inLeftBuffer.size() > 0 || _inRightBuffer.size() > 0, RESULT_ERROR_BADSIZE, "Input buffer is empty when processing ILD", "");
@@ -97,13 +97,13 @@ namespace BRTProcessing {
 		///////////////////////
 		// Private Methods
 		///////////////////////
-		float CalculateDistance(Common::CTransform _sourceTransform, Common::CTransform _listenerTransform) {
+		//float CalculateDistance(Common::CTransform _sourceTransform, Common::CTransform _listenerTransform) {
 
-			//Get azimuth and elevation between listener and source
-			Common::CVector3 _vectorToListener = _listenerTransform.GetVectorTo(_sourceTransform);
-			float _distanceToListener = _vectorToListener.GetDistance();
-			return _distanceToListener;
-		}
+		//	//Get azimuth and elevation between listener and source
+		//	Common::CVector3 _vectorToListener = _listenerTransform.GetVectorTo(_sourceTransform);
+		//	float _distanceToListener = _vectorToListener.GetDistance();
+		//	return _distanceToListener;
+		//}
 
 		/// Calculates the parameters derived from the source and listener position
 		float CalculateInterauralAzimuth(Common::CTransform& _sourceTransform, Common::CTransform& _listenerTransform)
