@@ -37,12 +37,17 @@ namespace BRTServices
 	class COfflineInterpolation {
 	public:
 
-		COfflineInterpolation()
-			:resamplingStep{DEFAULT_RESAMPLING_STEP}, gapThreshold{DEFAULT_GAP_THRESHOLD}, HRTFLoaded{ false }, setupInProgress{ false },
-			epsilon_sewing{ EPSILON_SEWING }
-		{}
-
-		//	Fill out the HRTF for every azimuth and two specific elevations: 90 and 270 degrees	
+		COfflineInterpolation(){}		
+		/**
+		 * @brief Fill out the TFs or IRs tables for every azimuth and two specific elevations: 90 and 270 degrees	
+		 * @tparam T type of table
+		 * @tparam U type of data contained in the tables
+		 * @tparam Functor function used to get the new TF
+		 * @param _t_TF_DataBase table to get the data used in the calculation and to emplace the calculated data
+		 * @param _TFlength lenght of the calculated data
+		 * @param _resamplingStep configured resampling step
+		 * @param f function used to get the new TF
+		*/
 		template<typename T, typename U, typename Functor>
 		void CalculateTF_InPoles(T& _t_TF_DataBase, int _TFlength, int _resamplingStep, Functor f)
 		{
@@ -53,7 +58,6 @@ namespace BRTServices
 			int iAzimuthPoles = DEFAULT_MIN_AZIMUTH;
 			int iElevationNorthPole = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
 			int iElevationSouthPole = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
-
 
 			//	NORTHERN HEMOSPHERE POLES (90 degrees elevation ) ____________________________________________________________________________
 			auto it90 = _t_TF_DataBase.find(orientation(iAzimuthPoles, iElevationNorthPole));
@@ -113,12 +117,21 @@ namespace BRTServices
 			}
 		}
 
-		//	Calculate the HRIR in the pole of one of the hemispheres
-		//param hemisphereParts	vector of the HRTF t_HRTF_DataBase_ListOfOrientations of the hemisphere		
+		/**
+		 * @brief Calculate the IR of TF in the pole of one of the hemispheres
+		 * @tparam T type of table
+		 * @tparam U type of data contained in the tables
+		 * @tparam Functor function used to get the new TF
+		 * @param _t_TF_DataBase table to get the data used in the calculation and to emplace the calculated data
+		 * @param _TFlength lenght of the calculated data
+		 * @param keys_hemisphere vector with the orientations of one of the hemispheres
+		 * @param f function used to get the new TF
+		 * @return the calculated IR or TF for one of the hemispheres
+		*/
 		template<typename T, typename U, typename Functor>
 		U CalculateTF_InOneHemispherePole(T& _t_TF_DataBase, int _TFlength, std::vector<orientation> keys_hemisphere, Functor f)
 		{
-			U calculatedHRIR;
+			U calculatedTF;
 			std::vector < std::vector <orientation>> hemisphereParts;
 			hemisphereParts.resize(NUMBER_OF_PARTS);
 			int border = std::ceil(SPHERE_BORDER / NUMBER_OF_PARTS);
@@ -168,22 +181,22 @@ namespace BRTServices
 								}
 							}
 						}
-					} //END else 'if(everyPartWithValues)'
-				}// END else of 'if(it.elevation == currentElevation)'
-			}//END loop keys_hemisphere
+					} 
+				}
+			}
 
-			//calculatedHRIR = CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts(_t_TF_DataBase, _TFlength, hemisphereParts);
-			calculatedHRIR = f(_t_TF_DataBase, _TFlength, hemisphereParts);
-
-
-			return calculatedHRIR;
+			//Calculate the interpolated IR or TF
+			calculatedTF = f(_t_TF_DataBase, _TFlength, hemisphereParts);
+			return calculatedTF;
 		}
 
 
-		/// <summary>
-		/// Get HRIR of azimith 0 and emplace again with azimuth 360 in the HRTF database table for an specific elevation
-		/// </summary>
-		/// <param name="_elevation"></param>
+		/**
+		 * @brief Get IR or TF of azimith 0 and emplace again with azimuth 360 in the database table for an specific elevation
+		 * @tparam T type of used table
+		 * @param _t_TF_DataBase table to get the data in azimuth 0 and emplace in azimuth 360
+		 * @param _elevation 
+		*/
 		template <typename T>
 		void GetAndEmplaceTF_inAzimuth360(T& _t_TF_DataBase, float _elevation) {
 			auto it = _t_TF_DataBase.find(orientation(DEFAULT_MIN_AZIMUTH, _elevation));
@@ -192,11 +205,17 @@ namespace BRTServices
 			}
 		}
 
-		/// <summary>
-		/// Fill Spherical Cap Gap of an HRTF making Interpolation between pole and the 2 nearest points.
-		/// </summary>
-		/// <param name="_gapThreshold"></param>
-		/// <param name="_resamplingStep"></param>
+		/**
+		 * @brief Fill Spherical Cap Gap of an IR os TFs table, making interpolation between pole and the 2 nearest points.
+		 * @tparam T type of table
+		 * @tparam U type of data contained in the tables
+		 * @tparam Functor function used to get the new IR or TF
+		 * @param _t_TF_DataBase table to get the data used in the calculation and to emplace the calculated data
+		 * @param _TFlength lenght of the calculated data
+		 * @param _gapThreshold maximum size of the gap
+		 * @param _resamplingStep resampling step used to fill the gap
+		 * @param f_CalculateHRIR_Offline function used to get the new IR or TF
+		*/
 		template <typename T, typename U, typename Functor>
 		void CalculateTF_SphericalCaps(T& _t_TF_DataBase, int _TFlength, int _gapThreshold, int _resamplingStep, Functor f_CalculateHRIR_Offline)
 		{
@@ -231,7 +250,7 @@ namespace BRTServices
 
 			if (max_dist_elev > _gapThreshold)
 			{
-				Calculate_and_EmplaceTF<T, U, Functor>(_t_TF_DataBase, _TFlength, iElevationSouthPole, south_hemisphere, elev_south, elev_Step, f_CalculateHRIR_Offline);
+				Calculate_and_EmplaceTF_InCaps<T, U, Functor>(_t_TF_DataBase, _TFlength, iElevationSouthPole, south_hemisphere, elev_south, elev_Step, f_CalculateHRIR_Offline);
 			}
 			// Reset var to use it in north hemisphere
 			max_dist_elev = 0;
@@ -241,37 +260,45 @@ namespace BRTServices
 
 			if (max_dist_elev > _gapThreshold)
 			{
-				Calculate_and_EmplaceTF<T, U, Functor>(_t_TF_DataBase,_TFlength, iElevationNorthPole, north_hemisphere, elev_north, elev_Step, f_CalculateHRIR_Offline);
+				Calculate_and_EmplaceTF_InCaps<T, U, Functor>(_t_TF_DataBase,_TFlength, iElevationNorthPole, north_hemisphere, elev_north, elev_Step, f_CalculateHRIR_Offline);
 			}
 		}
-
-		/// <summary>
-		/// Calculate the max distance between pole and the nearest ring, to know if there is a gap in any spherical cap
-		/// </summary>
-		/// <param name="_hemisphere"></param>
-		/// <param name="_max_dist_elev"></param>
-		/// <param name="elevationLastRing"></param>
-		void CalculateDistanceBetweenPoleandLastRing(std::vector<orientation>& _hemisphere, float& _max_dist_elev, float& elevationLastRing)
+		
+		/**
+		 * @brief Calculate the max distance between pole and the nearest ring, to know if there is a gap in any spherical cap
+		 * @param [in] _hemisphere vector that contains all the oritations of the hemisphere
+		 * @param [out] max_dist_elev maximum elevation distance between rings
+		 * @param [out] elevationLastRing elevation in degrees of the last ring
+		*/
+		void CalculateDistanceBetweenPoleandLastRing(std::vector<orientation>& _hemisphere, float& max_dist_elev, float& elevationLastRing)
 		{
 			for (int jj = 1; jj < _hemisphere.size(); jj++)
 			{
 				// distance between 2 t_HRTF_DataBase_ListOfOrientations, always positive
 				if (_hemisphere[jj].elevation != _hemisphere[0].elevation)
 				{
-					_max_dist_elev = abs(_hemisphere[jj].elevation - _hemisphere[0].elevation); // Distance positive for all poles
+					max_dist_elev = abs(_hemisphere[jj].elevation - _hemisphere[0].elevation); // Distance positive for all poles
 					elevationLastRing = _hemisphere[jj].elevation;
 					break;
 				}
 			}
 		}
-		/// <summary>
-		/// Calculate the HRIR we need by interpolation and emplace it in the database
-		/// </summary>
-		/// <param name="_hemisphere"></param>
-		/// <param name="elevationLastRing"></param>
-		/// <param name="_fillStep"></param>
+		
+		/**
+		 * @brief Off-line calculation of the IR or TF in the spherical caps, by distance-based and emplace it in the original table
+		 * @tparam T type of table
+		 * @tparam U type of data contained in the tables
+		 * @tparam Functor function used to get the new IR or TF
+		 * @param _t_TF_DataBase table to get the data used in the calculation and to emplace the calculated data
+		 * @param _TFlength lenght of the calculated data
+		 * @param _pole elevation (ELEVATION_SOUTH_POLE or ELEVATION_NORTH_POLE) of the pole of the corresponding cap
+		 * @param _hemisphere hemishere of the cap (north or south)
+		 * @param _elevationLastRing elevation in degrees of the last ring of the original table
+		 * @param _fillStep azimuth step used to fill the spherial cap
+		 * @param f_CalculateHRIR_Offline function used to get the new IR or TF
+		*/
 		template <typename T, typename U, typename Functor>
-		void Calculate_and_EmplaceTF(T& _t_Table,int _TFLength, int _pole, std::vector<orientation> _hemisphere, float _elevationLastRing, int _fillStep, Functor f_CalculateHRIR_Offline)
+		void Calculate_and_EmplaceTF_InCaps(T& _t_Table,int _TFLength, int _pole, std::vector<orientation> _hemisphere, float _elevationLastRing, int _fillStep, Functor f_CalculateHRIR_Offline)
 		{
 			std::vector<orientation> lastRingOrientationList;
 			std::vector<T_PairDistanceOrientation> sortedList;
@@ -293,19 +320,18 @@ namespace BRTServices
 				{
 					for (float azim = DEFAULT_MIN_AZIMUTH; azim < DEFAULT_MAX_AZIMUTH; azim = azim + azimuth_Step)
 					{
-						//sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
 						TF_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod<T,U, Functor>(_t_Table, f_CalculateHRIR_Offline, lastRingOrientationList, azim, elevat, _TFLength, _pole);
 						_t_Table.emplace(orientation(azim, elevat), TF_interpolated);
 					}
 				}
-			}	// NORTH HEMISPHERE
+			}	
+			// NORTH HEMISPHERE
 			else if (_pole == ELEVATION_NORTH_POLE)
 			{
 				for (float elevat = _elevationLastRing + _fillStep; elevat < _pole; elevat = elevat + _fillStep)
 				{
 					for (float azim = DEFAULT_MIN_AZIMUTH; azim < DEFAULT_MAX_AZIMUTH; azim = azim + azimuth_Step)
 					{
-						//sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
 						TF_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod<T, U, Functor>(_t_Table, f_CalculateHRIR_Offline, lastRingOrientationList, azim, elevat, _TFLength, _pole);
 						_t_Table.emplace(orientation(azim, elevat), TF_interpolated);
 					}
@@ -315,10 +341,10 @@ namespace BRTServices
 
 
 		/**
-		 * @brief Fill vector with the list of orientations of the T_HRTF_DataBase table
-		 * @tparam T Type of the table 
-		 * @param table Table of data 
-		 * @return List of orientations
+		 * @brief Fill vector with the list of orientations of the original database table
+		 * @tparam T type of table
+		 * @param table type of data contained in the table
+		 * @return vector with a list of orientations of the original table
 		*/
 		template <typename T>
 		std::vector<orientation> CalculateListOfOrientations(T& table) {
@@ -331,7 +357,22 @@ namespace BRTServices
 			return table_ListOfOrientations;
 		}
 
-		
+		/**
+		 * @brief 
+		 * @tparam T 
+		 * @tparam U 
+		 * @tparam W_TFStruct 
+		 * @tparam X_TFPartitionedStruct 
+		 * @tparam Functor 
+		 * @tparam Functor2 
+		 * @param table_dataBase 
+		 * @param t_HRTF_Resampled_partitioned 
+		 * @param _bufferSize 
+		 * @param _HRIRLength 
+		 * @param _HRIRPartitioned_NumberOfSubfilters 
+		 * @param f 
+		 * @param f2 
+		*/
 		template <typename T, typename U, typename W_TFStruct, typename X_TFPartitionedStruct, typename Functor, typename Functor2>
 		void FillResampledTable(T& table_dataBase, U& t_HRTF_Resampled_partitioned, int _bufferSize, int _HRIRLength, int _HRIRPartitioned_NumberOfSubfilters, Functor f, Functor2 f2) {
 			int numOfInterpolatedHRIRs = 0;
@@ -342,6 +383,25 @@ namespace BRTServices
 			SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
 		}
 
+		/**
+		 * @brief 
+		 * @tparam T 
+		 * @tparam U 
+		 * @tparam W_TFStruct 
+		 * @tparam X_TFPartitionedStruct 
+		 * @tparam Functor 
+		 * @tparam Functor2 
+		 * @param table 
+		 * @param resampledTable 
+		 * @param _azimuth 
+		 * @param _elevation 
+		 * @param _bufferSize 
+		 * @param _TFLength 
+		 * @param _TFPartitioned_NumberOfSubfilters 
+		 * @param f 
+		 * @param f2 
+		 * @return 
+		*/
 		template <typename T, typename U, typename W_TFStruct, typename X_TFPartitionedStruct, typename Functor, typename Functor2>
 		bool CalculateAndEmplace_NewPartitionedTF(T& table, U& resampledTable, double _azimuth, double _elevation, int _bufferSize, int _TFLength, int _TFPartitioned_NumberOfSubfilters, Functor f, Functor2 f2) {
 			W_TFStruct newTF;
@@ -366,14 +426,6 @@ namespace BRTServices
 
 
 	private:
-
-		float epsilon_sewing;
-		int gapThreshold;							// Max distance between pole and next elevation to be consider as a gap
-
-		bool setupInProgress;						// Variable that indicates the HRTF add and resample algorithm are in process
-		bool HRTFLoaded;							// Variable that indicates if the HRTF has been loaded correctly
-		bool bInterpolatedResampleTable;			// If true: calculate the HRTF resample matrix with interpolation
-		int resamplingStep; 						// HRTF Resample table step (azimuth and elevation)
 
 		CDistanceBased_OfflineInterpolator distanceBasedInterpolator;
 		CQuadrantBased_OfflineInterpolator quadrantBasedInterpolator;
