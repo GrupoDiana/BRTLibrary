@@ -42,10 +42,11 @@
 namespace BRTProcessing {
 	class CBilateralAmbisonicEncoder {
 	public:
-		CBilateralAmbisonicEncoder() : ambisonicOrder{ 1 }, ambisonicNormalization { Common::TAmbisonicNormalization::N3D}, enableInterpolation{true}, convolutionBuffersInitialized{false} {
+		CBilateralAmbisonicEncoder() : ambisonicOrder{ 1 }, ambisonicNormalization { Common::TAmbisonicNormalization::N3D}, enableInterpolation{true} {
 		
-			leftAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
-			rightAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
+			//leftAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
+			//rightAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
+			ambisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
 		}
 
 
@@ -57,23 +58,28 @@ namespace BRTProcessing {
 		bool IsSpatializationEnabled() { return enableSpatialization; }*/
 		
 		///Enable HRTF interpolation method	
-		void EnableInterpolation() { enableInterpolation = true; }
+		/*void EnableInterpolation() { enableInterpolation = true; }
 		///Disable HRTF interpolation method
 		void DisableInterpolation() { enableInterpolation = false; }
 		///Get the flag for HRTF interpolation method
-		bool IsInterpolationEnabled() { return enableInterpolation; }
+		bool IsInterpolationEnabled() { return enableInterpolation; }*/
 
 		void SetAmbisonicOrder(int _ambisonicOrder) { 
+			std::lock_guard<std::mutex> l(mutex);
 			ambisonicOrder = _ambisonicOrder; 
-			leftAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
-			rightAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
+			//leftAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
+			//rightAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
+			ambisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
 		}
+
 		int GetAmbisonicOrder() {	return ambisonicOrder; }
 		
 		void SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) {
+			std::lock_guard<std::mutex> l(mutex);
 			ambisonicNormalization = _ambisonicNormalization;
-			leftAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
-			rightAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
+			//leftAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
+			//rightAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
+			ambisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
 		}
 
 
@@ -84,23 +90,28 @@ namespace BRTProcessing {
 		///Get the flag for near field effect enabling
 		bool IsNearFieldEffectEnabled() { return nearFieldEffectProcess.IsNearFieldEffectEnabled(); };
 
-		
-		/** \brief Process data from input buffer to generate spatialization by convolution
-		*	\param [in] inBuffer input buffer with anechoic audio
-		* *	\param [in] sourceTransform transform of the source
-		* *	\param [in] listenerPosition transform of the listener
-		* *	\param [in] listenerHRTFWeak weak smart pointer to the listener HRTF
-		*	\param [out] outLeftBuffer output mono buffer with spatialized audio for the left channel
-		*	\param [out] outRightBuffer output mono buffer with spatialized audio for the right channel
-		*   \eh The error handler is informed if the size of the input buffer differs from that stored in the global
-		*       parameters and if the HRTF of the listener is null.		   
+				
+		/**
+		 * @brief Process the input buffer data to generate the bilaterar ambisonic channels for spatialisation using the virtual ambisonic method.
+		 * @param _inBuffer Input buffer with audio samples
+		 * @param leftChannelsBuffers Left ear ambisonic channels
+		 * @param rightChannelsBuffers Right ear ambisonic channels
+		 * @param sourceTransform Transform of the source
+		 * @param listenerTransform Transform of the listener
+		 * @param _listenerHRTFWeak Weak smart pointer to the listener HRTF
+		 * @param _listenerILDWeak Weak smart pointer to the listener ILD
 		*/
 		void Process(CMonoBuffer<float>& _inBuffer, std::vector<CMonoBuffer<float>>& leftChannelsBuffers, std::vector<CMonoBuffer<float>>& rightChannelsBuffers, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CHRTF>& _listenerHRTFWeak, std::weak_ptr<BRTServices::CILD>& _listenerILDWeak) {
 
+			std::lock_guard<std::mutex> l(mutex);
+
+			//if (!enableSpatialization) { return; }
 			ASSERT(_inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");
 		
-			leftAmbisonicEncoder.InitAmbisonicChannels(leftChannelsBuffers, globalParameters.GetBufferSize());
-			rightAmbisonicEncoder.InitAmbisonicChannels(rightChannelsBuffers, globalParameters.GetBufferSize());
+			//leftAmbisonicEncoder.InitAmbisonicChannels(leftChannelsBuffers, globalParameters.GetBufferSize());
+			//rightAmbisonicEncoder.InitAmbisonicChannels(rightChannelsBuffers, globalParameters.GetBufferSize());
+			ambisonicEncoder.InitAmbisonicChannels(leftChannelsBuffers, globalParameters.GetBufferSize());
+			ambisonicEncoder.InitAmbisonicChannels(rightChannelsBuffers, globalParameters.GetBufferSize());
 
 			//// Check process flag
 			//if (!enableSpatialization)
@@ -121,12 +132,22 @@ namespace BRTProcessing {
 			
 			// TODO 
 			//Check if the source is in the same position as the listener head. If yes, do not apply spatialization
-			/*if (distanceToListener <= ownerCore->GetListener()->GetHeadRadius())
+			float distanceToListener = Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerDistance(sourceTransform, listenerTransform);
+			if (distanceToListener <= _listenerHRTF->GetHeadRadius())
 			{
-				outLeftBuffer = inBuffer;
-				outRightBuffer = inBuffer;
+				SET_RESULT(RESULT_WARNING, "The source is inside the listener's head.");
+				// Ambisonic enoder just in front
+				//leftAmbisonicEncoder.EncodedIR(CMonoBuffer<float>(globalParameters.GetBufferSize(), 0.0f), leftChannelsBuffers, 0, 0);
+				//rightAmbisonicEncoder.EncodedIR(CMonoBuffer<float>(globalParameters.GetBufferSize(), 0.0f), rightChannelsBuffers, 0, 0);
+
+				ambisonicEncoder.EncodedIR(CMonoBuffer<float>(globalParameters.GetBufferSize(), 0.0f), leftChannelsBuffers, 0, 0);
+				ambisonicEncoder.EncodedIR(CMonoBuffer<float>(globalParameters.GetBufferSize(), 0.0f), rightChannelsBuffers, 0, 0);
+
+				//leftAmbisonicEncoder.EncodedIR(_inBuffer, leftChannelsBuffers, 90, 0);
+				//rightAmbisonicEncoder.EncodedIR(_inBuffer, rightChannelsBuffers, -90, 0);
+
 				return;
-			}*/
+			}
 
 			// First time - Initialize convolution buffers
 			//if (!convolutionBuffersInitialized) { InitializedSourceConvolutionBuffers(_listenerHRTF); }
@@ -163,225 +184,43 @@ namespace BRTProcessing {
 			nearFieldEffectProcess.Process(delayedLeftEarBuffer, delayedRightEarBuffer, nearFilteredLeftEarBuffer, nearFilteredRightEarBuffer, sourceTransform, listenerTransform, _listenerILDWeak);
 
 			// Ambisonic Encoder			
-			leftAmbisonicEncoder.EncodedIR(nearFilteredLeftEarBuffer, leftChannelsBuffers, leftAzimuth, leftElevation);
-			rightAmbisonicEncoder.EncodedIR(nearFilteredRightEarBuffer, rightChannelsBuffers, rightAzimuth, rightElevation);
+			//leftAmbisonicEncoder.EncodedIR(nearFilteredLeftEarBuffer, leftChannelsBuffers, leftAzimuth, leftElevation);
+			//rightAmbisonicEncoder.EncodedIR(nearFilteredRightEarBuffer, rightChannelsBuffers, rightAzimuth, rightElevation);
+			ambisonicEncoder.EncodedIR(nearFilteredLeftEarBuffer, leftChannelsBuffers, leftAzimuth, leftElevation);
+			ambisonicEncoder.EncodedIR(nearFilteredRightEarBuffer, rightChannelsBuffers, rightAzimuth, rightElevation);
 		}
 
 		/// Reset convolvers and convolution buffers
-		void ResetSourceConvolutionBuffers() {
-			convolutionBuffersInitialized = false;
-			// Reset convolver classes
-			outputLeftUPConvolution.Reset();
-			outputRightUPConvolution.Reset();
+		void ResetBuffers() {
+			std::lock_guard<std::mutex> l(mutex);
 			//Init buffer to store delay to be used in the ProcessAddDelay_ExpansionMethod method
 			leftChannelDelayBuffer.clear();
 			rightChannelDelayBuffer.clear();
 		}
 	private:
+		/// Atributes
+		mutable std::mutex mutex;								// Thread management
+		Common::CGlobalParameters globalParameters;				// Get access to global render parameters
+		CNearFieldEffect nearFieldEffectProcess;				// NearField effect processor instance
+		//Common::CAmbisonicEncoder leftAmbisonicEncoder;			// Left ear encoder
+		//Common::CAmbisonicEncoder rightAmbisonicEncoder;		// Right ear enconder
+		Common::CAmbisonicEncoder ambisonicEncoder;				// Ambisonic encoder
 
-		// Atributes
-		Common::CGlobalParameters globalParameters;
-
-		Common::CUPCAnechoic outputLeftUPConvolution;		// Object to make the inverse fft of the left channel with the UPC method
-		Common::CUPCAnechoic outputRightUPConvolution;		// Object to make the inverse fft of the rigth channel with the UPC method
-
-		CMonoBuffer<float> leftChannelDelayBuffer;			// To store the delay of the left channel of the expansion method
-		CMonoBuffer<float> rightChannelDelayBuffer;			// To store the delay of the right channel of the expansion method
-
+		CMonoBuffer<float> leftChannelDelayBuffer;				// To store the delay of the left channel of the expansion method
+		CMonoBuffer<float> rightChannelDelayBuffer;				// To store the delay of the right channel of the expansion method
 		int ambisonicOrder;
 		Common::TAmbisonicNormalization ambisonicNormalization;
-		Common::CAmbisonicEncoder leftAmbisonicEncoder;
-		Common::CAmbisonicEncoder rightAmbisonicEncoder;
-		//bool enableSpatialization;								// Flags for independent control of processes
-		bool enableInterpolation;							// Enables/Disables the interpolation on run time
-		bool convolutionBuffersInitialized;
 		
-		CNearFieldEffect nearFieldEffectProcess;
-
-		/////////////////////
-		/// PRIVATE Methods        
-		/////////////////////
-
-		// Apply doppler effect simulation
-		//void ProcessAddDelay_ExpansionMethod(CMonoBuffer<float>& input, CMonoBuffer<float>& output, CMonoBuffer<float>& delayBuffer, int newDelay)
-		//{
-		//	//Prepare the outbuffer		
-		//	if (output.size() != input.size()) { output.resize(input.size()); }
-
-		//	//Prepare algorithm variables
-		//	float position = 0;
-		//	float numerator = input.size() - 1;
-		//	float denominator = input.size() - 1 + newDelay - delayBuffer.size();
-		//	float compressionFactor = numerator / denominator;
-
-		//	//Add samples to the output from buffer
-		//	for (int i = 0; i < delayBuffer.size(); i++)
-		//	{
-		//		output[i] = delayBuffer[i];
-		//	}
-
-		//	//Fill the others buffers
-		//	//if the delay is the same one as the previous frame use a simplification of the algorithm
-		//	if (newDelay == delayBuffer.size())
-		//	{
-		//		//Copy input to output
-		//		int j = 0;
-		//		for (int i = delayBuffer.size(); i < input.size(); i++)
-		//		{
-		//			output[i] = input[j++];
-		//		}
-		//		//Fill delay buffer
-		//		for (int i = 0; i < newDelay; i++)
-		//		{
-		//			delayBuffer[i] = input[j++];
-		//		}
-		//	}
-		//	//else, apply the expansion/compression algorihtm
-		//	else
-		//	{
-		//		int j;
-		//		float rest;
-		//		int forLoop_end;
-		//		//The last loop iteration must be addressed in a special way if newDelay = 0 (part 1)
-		//		if (newDelay == 0) { forLoop_end = input.size() - 1; }
-		//		else { forLoop_end = input.size(); }
-
-		//		//Fill the output buffer with the new values 
-		//		for (int i = delayBuffer.size(); i < forLoop_end; i++)
-		//		{
-		//			j = static_cast<int>(position);
-		//			rest = position - j;
-		//			output[i] = input[j] * (1 - rest) + input[j + 1] * rest;
-		//			position += compressionFactor;
-		//		}
-
-		//		//The last loop iteration must be addressed in a special way if newDelay = 0 (part 2)
-		//		if (newDelay == 0)
-		//		{
-		//			output[input.size() - 1] = input[input.size() - 1];
-		//			delayBuffer.clear();
-		//		}
-
-		//		//if newDelay!=0 fill out the delay buffer
-		//		else
-		//		{
-		//			//Fill delay buffer 			
-		//			CMonoBuffer<float> temp;
-		//			temp.reserve(newDelay);
-		//			for (int i = 0; i < newDelay - 1; i++)
-		//			{
-		//				int j = int(position);
-		//				float rest = position - j;
-		//				temp.push_back(input[j] * (1 - rest) + input[j + 1] * rest);
-		//				position += compressionFactor;
-		//			}
-		//			//Last element of the delay buffer that must be addressed in a special way
-		//			temp.push_back(input[input.size() - 1]);
-		//			//delayBuffer.swap(temp);				//To use in C++03
-		//			delayBuffer = std::move(temp);			//To use in C++11
-		//		}
-		//	}
-		//}//End ProcessAddDelay_ExpansionMethod
-
-
+		bool enableInterpolation;								// Enables/Disables the interpolation
+		
+				
+		
+		/// PRIVATE Methods        				
 		/// Initialize convolvers and convolition buffers		
-		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF) {
-
-			int numOfSubfilters = _listenerHRTF->GetHRIRNumberOfSubfilters();
-			int subfilterLength = _listenerHRTF->GetHRIRSubfilterLength();
-
-			//Common::CGlobalParameters globalParameters;
-			outputLeftUPConvolution.Setup(globalParameters.GetBufferSize(), subfilterLength, numOfSubfilters, true);
-			outputRightUPConvolution.Setup(globalParameters.GetBufferSize(), subfilterLength, numOfSubfilters, true);
-			//Init buffer to store delay to be used in the ProcessAddDelay_ExpansionMethod method
+		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF) {		
 			leftChannelDelayBuffer.clear();
 			rightChannelDelayBuffer.clear();
-
-			// Declare variable
-			convolutionBuffersInitialized = true;
-		}
-
-
-		///// Calculates the parameters derived from the source and listener position
-		//void CalculateSourceCoordinates(Common::CTransform& _sourceTransform, Common::CTransform& _listenerTransform, std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF, float& leftElevation, float& leftAzimuth, float& rightElevation, float& rightAzimuth, float& centerElevation, float& centerAzimuth, float& interauralAzimuth)
-		//{
-
-		//	//Get azimuth and elevation between listener and source
-		//	Common::CVector3 _vectorToListener = _listenerTransform.GetVectorTo(_sourceTransform);
-		//	float _distanceToListener = _vectorToListener.GetDistance();
-
-		//	//Check listener and source are in the same position
-		//	if (_distanceToListener <= MINIMUM_DISTANCE_SOURCE_LISTENER) {				
-		//		SET_RESULT(RESULT_WARNING, "The sound source is too close to the centre of the listener's head in BRTProcessing::CHRTFConvolver");
-		//		_distanceToListener = MINIMUM_DISTANCE_SOURCE_LISTENER;
-		//	}
-
-		//	Common::CVector3 leftEarLocalPosition = _listenerHRTF->GetEarLocalPosition(Common::T_ear::LEFT);
-		//	Common::CVector3 rightEarLocalPosition = _listenerHRTF->GetEarLocalPosition(Common::T_ear::RIGHT);
-		//	Common::CTransform leftEarTransform = _listenerTransform.GetLocalTranslation(leftEarLocalPosition);
-		//	Common::CTransform rightEarTransform = _listenerTransform.GetLocalTranslation(rightEarLocalPosition);
-
-		//	Common::CVector3 leftVectorTo = leftEarTransform.GetVectorTo(_sourceTransform);
-		//	Common::CVector3 rightVectorTo = rightEarTransform.GetVectorTo(_sourceTransform);
-		//	Common::CVector3 leftVectorTo_sphereProjection = GetSphereProjectionPosition(leftVectorTo, leftEarLocalPosition, _listenerHRTF->GetHRTFDistanceOfMeasurement());
-		//	Common::CVector3 rightVectorTo_sphereProjection = GetSphereProjectionPosition(rightVectorTo, rightEarLocalPosition, _listenerHRTF->GetHRTFDistanceOfMeasurement());
-
-		//	leftElevation = leftVectorTo_sphereProjection.GetElevationDegrees();	//Get left elevation
-		//	if (!Common::AreSame(ELEVATION_SINGULAR_POINT_UP, leftElevation, EPSILON) && !Common::AreSame(ELEVATION_SINGULAR_POINT_DOWN, leftElevation, EPSILON))
-		//	{
-		//		leftAzimuth = leftVectorTo_sphereProjection.GetAzimuthDegrees();	//Get left azimuth
-		//	}
-
-		//	rightElevation = rightVectorTo_sphereProjection.GetElevationDegrees();	//Get right elevation	
-		//	if (!Common::AreSame(ELEVATION_SINGULAR_POINT_UP, rightElevation, EPSILON) && !Common::AreSame(ELEVATION_SINGULAR_POINT_DOWN, rightElevation, EPSILON))
-		//	{
-		//		rightAzimuth = rightVectorTo_sphereProjection.GetAzimuthDegrees();		//Get right azimuth
-		//	}
-
-
-		//	centerElevation = _vectorToListener.GetElevationDegrees();		//Get elevation from the head center
-		//	if (!Common::AreSame(ELEVATION_SINGULAR_POINT_UP, centerElevation, EPSILON) && !Common::AreSame(ELEVATION_SINGULAR_POINT_DOWN, centerElevation, EPSILON))
-		//	{
-		//		centerAzimuth = _vectorToListener.GetAzimuthDegrees();		//Get azimuth from the head center
-		//	}
-
-		//	interauralAzimuth = _vectorToListener.GetInterauralAzimuthDegrees();	//Get Interaural Azimuth
-
-		//}
-
-
-		//// In orther to obtain the position where the HRIR is needed, this method calculate the projection of each ear in the sphere where the HRTF has been measured
-		//const Common::CVector3 GetSphereProjectionPosition(Common::CVector3 vectorToEar, Common::CVector3 earLocalPosition, float distance) const
-		//{
-		//	//get axis according to the defined convention
-		//	float rightAxis = vectorToEar.GetAxis(RIGHT_AXIS);
-		//	float forwardAxis = vectorToEar.GetAxis(FORWARD_AXIS);
-		//	float upAxis = vectorToEar.GetAxis(UP_AXIS);
-		//	// Error handler:
-		//	if ((rightAxis == 0.0f) && (forwardAxis == 0.0f) && (upAxis == 0.0f)) {
-		//		ASSERT(false, RESULT_ERROR_DIVBYZERO, "Axes are not correctly set. Please, check axis conventions", "Azimuth computed from vector succesfully");
-		//	}
-		//	//get ear position in right axis
-		//	float earRightAxis = earLocalPosition.GetAxis(RIGHT_AXIS);
-
-		//	//Resolve a quadratic equation to get lambda, which is the parameter that define the line between the ear and the sphere, passing by the source
-		//	// (x_sphere, y_sphere, z_sphere) = earLocalPosition + lambda * vectorToEar 
-		//	// x_sphere^2 + y_sphere^2 + z_sphere^2 = distance^2
-
-
-		//	float a = forwardAxis * forwardAxis + rightAxis * rightAxis + upAxis * upAxis;
-		//	float b = 2.0f * earRightAxis * rightAxis;
-		//	float c = earRightAxis * earRightAxis - distance * distance;
-		//	float lambda = (-b + sqrt(b * b - 4.0f * a * c)) * 0.5f * (1 / a);
-
-		//	Common::CVector3 cartesianposition;
-
-		//	cartesianposition.SetAxis(FORWARD_AXIS, lambda * forwardAxis);
-		//	cartesianposition.SetAxis(RIGHT_AXIS, (earRightAxis + lambda * rightAxis));
-		//	cartesianposition.SetAxis(UP_AXIS, lambda * upAxis);
-
-		//	return cartesianposition;
-		//}		
+		}		
 	};
 }
 #endif

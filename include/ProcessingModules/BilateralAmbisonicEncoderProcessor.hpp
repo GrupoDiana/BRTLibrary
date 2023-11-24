@@ -55,7 +55,7 @@ namespace BRTProcessing {
 		*/
         void AllEntryPointsAllDataReady() {
 			
-			std::lock_guard<std::mutex> l(mutex);
+			//std::lock_guard<std::mutex> l(mutex);
 
 			std::vector<CMonoBuffer<float>> leftAmbisonicChannelsBuffers;
 			std::vector<CMonoBuffer<float>> rightAmbisonicChannelsBuffers;
@@ -76,49 +76,55 @@ namespace BRTProcessing {
 			//}            
         }
 
+		/**
+		 * @brief Implementation of CProcessorBase virtual method
+		*/
 		void UpdateCommand() {					
 			
-			std::lock_guard<std::mutex> l(mutex);
+			//std::lock_guard<std::mutex> l(mutex);
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
 															
 			//if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
-				/*if (command.GetCommand() == "/listener/enableSpatialization") {					
-					if (command.GetBoolParameter("enable")) { EnableSpatialization(); }
-					else { DisableSpatialization(); }
+				if (command.GetCommand() == "/listener/resetBuffers") {
+					ResetBuffers();					
 				}
-				else if (command.GetCommand() == "/listener/enableInterpolation") {					
-					if (command.GetBoolParameter("enable")) { EnableInterpolation(); }
-					else { DisableInterpolation(); }
-				}
-				else if (command.GetCommand() == "/listener/resetBuffers") {
-					ResetSourceConvolutionBuffers();					
-				}*/
 			//}
 			if (command.GetCommand() == "/listener/enableNearFieldEffect") {
 				if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
 				else { DisableNearFieldEffect(); }
 			}
-			/*if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
-				if (command.GetCommand() == "/source/HRTFConvolver/resetBuffers") {
-					ResetSourceConvolutionBuffers();
+			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
+				if (command.GetCommand() == "/source/resetBuffers") {
+					ResetBuffers();
 				}
-			}*/
+			}
 		} 
       		
-
-		void SetAmbisonicOrder(int _ambisonicOrder) { CBilateralAmbisonicEncoder::SetAmbisonicOrder(_ambisonicOrder); }
-		void SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) { CBilateralAmbisonicEncoder::SetAmbisonicNormalization(_ambisonicNormalization); }
+		/**
+		 * @brief Set the ambisonic order for the spatialization process
+		 * @param _ambisonicOrder 
+		*/
+		void SetAmbisonicOrder(int _ambisonicOrder) { 			
+			CBilateralAmbisonicEncoder::SetAmbisonicOrder(_ambisonicOrder); 
+		}
+		/**
+		 * @brief Set the ambisonic order for the spatialization process
+		 * @param _ambisonicNormalization 
+		*/
+		void SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) { 			
+			CBilateralAmbisonicEncoder::SetAmbisonicNormalization(_ambisonicNormalization); 
+		}
 
 
     private:
-       
-		mutable std::mutex mutex;
-
+       		
+		/// Check Source ID
 		bool IsToMySoundSource(std::string _sourceID) {
 			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
 			return mySourceID == _sourceID;
 		}
 		
+		/// Check Listener ID
 		bool IsToMyListener(std::string _listenerID) {
 			std::string myListenerID = GetIDEntryPoint("listenerID")->GetData();
 			return myListenerID == _listenerID;
