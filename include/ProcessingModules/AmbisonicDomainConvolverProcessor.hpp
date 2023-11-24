@@ -35,7 +35,7 @@ namespace BRTProcessing {
     class CAmbisonicDomainConvolverProcessor : public BRTBase::CProcessorBase, CAmbisonicDomainConvolver {
 		
     public:
-		CAmbisonicDomainConvolverProcessor() {
+		CAmbisonicDomainConvolverProcessor(Common::T_ear _earToProcess) : CAmbisonicDomainConvolver(_earToProcess) {
 			CreateMultipleChannelsEntryPoint("inputChannels", 1);            
 			CreateABIRPtrEntryPoint("listenerAmbisonicBIR");
 			CreateIDEntryPoint("sourceID");
@@ -95,13 +95,13 @@ namespace BRTProcessing {
 			//}
 
 			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
-				if (command.GetCommand() == "/source/AmbisonicDomainConvolver/resetBuffers") {
-					ResetSourceConvolutionBuffers();
+				if (command.GetCommand() == "/source/resetBuffers") {
+					ResetChannelsConvolutionBuffers();
 				}
 			}
 		} 
 
-		void SetEar(Common::T_ear _ear) { CAmbisonicDomainConvolver::SetEar(_ear);	}
+		//void SetEar(Common::T_ear _ear) { CAmbisonicDomainConvolver::SetEar(_ear);	}
 		void SetAmbisonicOrder(int _ambisonicOrder) { CAmbisonicDomainConvolver::SetAmbisonicOrder(_ambisonicOrder); }		
 
     private:
