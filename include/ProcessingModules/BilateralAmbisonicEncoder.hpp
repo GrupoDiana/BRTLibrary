@@ -42,7 +42,7 @@
 namespace BRTProcessing {
 	class CBilateralAmbisonicEncoder {
 	public:
-		CBilateralAmbisonicEncoder() : ambisonicOrder{ 1 }, ambisonicNormalization { Common::TAmbisonicNormalization::N3D}, enableInterpolation{true} {
+		CBilateralAmbisonicEncoder() : ambisonicOrder{ 1 }, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }, enableInterpolation{ true }, enableBilateral{ true } {
 		
 			//leftAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
 			//rightAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
@@ -82,6 +82,13 @@ namespace BRTProcessing {
 			ambisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
 		}
 
+
+		///Enable near field effect for this source
+		void EnableBilateral() { enableBilateral = true; };
+		///Disable near field effect for this source
+		void DisableBilateral() { enableBilateral = false; };
+		///Get the flag for near field effect enabling
+		bool IsBilateralEnabled() { return enableBilateral; };
 
 		///Enable near field effect for this source
 		void EnableNearFieldEffect() { nearFieldEffectProcess.EnableNearFieldEffect(); };
@@ -174,10 +181,14 @@ namespace BRTProcessing {
 			// ADD Delay
 			CMonoBuffer<float> delayedLeftEarBuffer;
 			CMonoBuffer<float> delayedRightEarBuffer;
-						
-			Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(_inBuffer, delayedLeftEarBuffer, leftChannelDelayBuffer, leftDelay);
-			Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(_inBuffer, delayedRightEarBuffer, rightChannelDelayBuffer, rightDelay);
-
+			if (enableBilateral) {
+				Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(_inBuffer, delayedLeftEarBuffer, leftChannelDelayBuffer, leftDelay);
+				Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(_inBuffer, delayedRightEarBuffer, rightChannelDelayBuffer, rightDelay);
+			}
+			else {
+				delayedLeftEarBuffer = _inBuffer;
+				delayedRightEarBuffer = _inBuffer;
+			}
 			// Near Field Proccess
 			CMonoBuffer<float> nearFilteredLeftEarBuffer;
 			CMonoBuffer<float> nearFilteredRightEarBuffer;			
@@ -212,7 +223,7 @@ namespace BRTProcessing {
 		Common::TAmbisonicNormalization ambisonicNormalization;
 		
 		bool enableInterpolation;								// Enables/Disables the interpolation
-		
+		bool enableBilateral;
 				
 		
 		/// PRIVATE Methods        				
