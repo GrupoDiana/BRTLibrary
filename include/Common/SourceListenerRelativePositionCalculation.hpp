@@ -93,6 +93,12 @@ namespace Common {
 
 		}
 	
+
+		static float CalculateSourceListenerDistance(Common::CTransform _sourceTransform, Common::CTransform _listenerTransform) {			
+			Common::CVector3 _vectorToListener = _listenerTransform.GetVectorTo(_sourceTransform);
+			float _distanceToListener = _vectorToListener.GetDistance();
+			return _distanceToListener;
+		}
 	
 	private:
 
