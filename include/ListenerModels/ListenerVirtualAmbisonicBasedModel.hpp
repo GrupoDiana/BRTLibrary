@@ -69,11 +69,11 @@ namespace BRTListenerModel {
 			CreateILDExitPoint();
 			CreateABIRExitPoint();
 
-			leftAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>();
-			leftAmbisonicDomainConvolverProcessor->SetEar(Common::T_ear::LEFT);			
+			leftAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>(Common::T_ear::LEFT);
+			//leftAmbisonicDomainConvolverProcessor->SetEar(Common::T_ear::LEFT);			
 			brtManager->ConnectModuleABIR(this, leftAmbisonicDomainConvolverProcessor, "listenerAmbisonicBIR");
-			rightAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>();
-			rightAmbisonicDomainConvolverProcessor->SetEar(Common::T_ear::RIGHT);
+			rightAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>(Common::T_ear::RIGHT);
+			//rightAmbisonicDomainConvolverProcessor->SetEar(Common::T_ear::RIGHT);
 			brtManager->ConnectModuleABIR(this, rightAmbisonicDomainConvolverProcessor, "listenerAmbisonicBIR");
 		}
 
@@ -90,8 +90,9 @@ namespace BRTListenerModel {
 			}
 			listenerHRTF = _listenerHRTF;			
 			
-			listenerAmbisonicIR->Setup(globalParameters.GetBufferSize(), listenerHRTF->GetHRIRLength(), listenerHRTF->GetHRIRNumberOfSubfilters(), listenerHRTF->GetHRIRSubfilterLength(), ambisonicOrder, ambisonicNormalization);
-			listenerAmbisonicIR->AddImpulseResponsesFromHRTF(listenerHRTF);
+			//listenerAmbisonicIR->BeginSetup(/*listenerHRTF->GetHRIRLength(), listenerHRTF->GetHRIRNumberOfSubfilters(), listenerHRTF->GetHRIRSubfilterLength(),*/ ambisonicOrder, ambisonicNormalization);
+			//listenerAmbisonicIR->AddImpulseResponsesFromHRTF(listenerHRTF);
+			InitListenerAmbisonicIR();
 
 			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
 			GetABIRExitPoint()->sendDataPtr(listenerAmbisonicIR);
@@ -145,11 +146,7 @@ namespace BRTListenerModel {
 
 		void SetAmbisonicOrder(int _ambisonicOrder) {
 			ambisonicOrder = _ambisonicOrder;
-			if (listenerHRTF->IsHRTFLoaded()) {
-				listenerAmbisonicIR->Reset();
-				listenerAmbisonicIR->Setup(globalParameters.GetBufferSize(), listenerHRTF->GetHRIRLength(), listenerHRTF->GetHRIRNumberOfSubfilters(), listenerHRTF->GetHRIRSubfilterLength(), ambisonicOrder, ambisonicNormalization);
-				listenerAmbisonicIR->AddImpulseResponsesFromHRTF(listenerHRTF);
-			}
+			if (listenerHRTF->IsHRTFLoaded()) {	InitListenerAmbisonicIR();		}
 			for (int nSource = 0; nSource < sourcesConnectedProcessors.size(); nSource++) {
 				sourcesConnectedProcessors[nSource].bilateralAmbisonicEncoderProcessor->SetAmbisonicOrder(_ambisonicOrder);
 			}
@@ -164,10 +161,8 @@ namespace BRTListenerModel {
 
 		void SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) {
 			ambisonicNormalization = _ambisonicNormalization;
-			if (listenerHRTF->IsHRTFLoaded()) {
-				listenerAmbisonicIR->Reset();
-				listenerAmbisonicIR->Setup(globalParameters.GetBufferSize(), listenerHRTF->GetHRIRLength(), listenerHRTF->GetHRIRNumberOfSubfilters(), listenerHRTF->GetHRIRSubfilterLength(), ambisonicOrder, ambisonicNormalization);
-				listenerAmbisonicIR->AddImpulseResponsesFromHRTF(listenerHRTF);
+			if (listenerHRTF->IsHRTFLoaded()) {				
+				InitListenerAmbisonicIR();
 			}			
 			for (int nSource = 0; nSource < sourcesConnectedProcessors.size(); nSource++) {
 				sourcesConnectedProcessors[nSource].bilateralAmbisonicEncoderProcessor->SetAmbisonicNormalization(_ambisonicNormalization);
@@ -249,24 +244,24 @@ namespace BRTListenerModel {
 		/** \brief Enable binaural spatialization based in HRTF convolution
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableSpatialization() {
+		/*void EnableSpatialization() {
 			nlohmann::json j;
 			j["command"] = "/listener/enableSpatialization";
 			j["listenerID"] = listenerID;
 			j["enable"] = true;
 			brtManager->ExecuteCommand(j.dump());
-		}
+		}*/
 
 		/** \brief Disable binaural spatialization based in HRTF convolution
 		*/
-		void DisableSpatialization()
+		/*void DisableSpatialization()
 		{
 			nlohmann::json j;
 			j["command"] = "/listener/enableSpatialization";
 			j["listenerID"] = listenerID;
 			j["enable"] = false;
 			brtManager->ExecuteCommand(j.dump());
-		}
+		}*/
 
 		///** \brief Get the flag for run-time HRTF interpolation
 		//*	\retval IsInterpolationEnabled if true, run-time HRTF interpolation is enabled for this source
@@ -277,23 +272,23 @@ namespace BRTListenerModel {
 		/** \brief Enable run-time HRTF interpolation
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableInterpolation() {
+		/*void EnableInterpolation() {
 			nlohmann::json j;
 			j["command"] = "/listener/enableInterpolation";
 			j["listenerID"] = listenerID;
 			j["enable"] = true;
 			brtManager->ExecuteCommand(j.dump());
-		}
+		}*/
 
 		/** \brief Disable run-time HRTF interpolation
 		*/
-		void DisableInterpolation() {
+		/*void DisableInterpolation() {
 			nlohmann::json j;
 			j["command"] = "/listener/enableInterpolation";
 			j["listenerID"] = listenerID;
 			j["enable"] = false;
 			brtManager->ExecuteCommand(j.dump());
-		}
+		}*/
 
 		/** \brief Get the flag for run-time HRTF interpolation
 		*	\retval IsInterpolationEnabled if true, run-time HRTF interpolation is enabled for this source
@@ -368,7 +363,18 @@ namespace BRTListenerModel {
 		/////////////////
 		// Methods
 		/////////////////
-					
+		
+		void InitListenerAmbisonicIR(){
+			//listenerAmbisonicIR->Reset();
+			listenerAmbisonicIR->BeginSetup(/*listenerHRTF->GetHRIRLength(), listenerHRTF->GetHRIRNumberOfSubfilters(), listenerHRTF->GetHRIRSubfilterLength(),*/ ambisonicOrder, ambisonicNormalization);
+			bool control = listenerAmbisonicIR->AddImpulseResponsesFromHRTF(listenerHRTF);
+			if (control) {
+				listenerAmbisonicIR->EndSetup();
+			}
+			else {
+				ASSERT(false, RESULT_ERROR_UNKNOWN, "It has not been possible to initialise the ambisonic IR of the associated listener.", "");
+			}
+		}
 	};
 }
 #endif
