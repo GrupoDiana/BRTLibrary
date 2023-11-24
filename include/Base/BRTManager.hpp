@@ -149,6 +149,29 @@ namespace BRTBase {
 			}
 		}
 		
+
+		/**
+		 * @brief Creates a new processor and returns a pointer to it. The brtmanager does NOT save the pointer.
+		 * @tparam T It must be a procesor module, i.e. a class that inherits from the CProcessorBase class.
+		 * @return Returns the pointer to the procesor if it could be created, otherwise returns a null pointer.
+		*/
+		template <typename T, typename U>
+		std::shared_ptr<T> CreateProcessor(U data) {
+			if (!setupModeActivated) { return nullptr; }
+			try
+			{
+				std::shared_ptr<T> newProcessor = std::make_shared<T>(data);
+				ConnectModulesCommand(newProcessor);
+				SET_RESULT(RESULT_OK, "Processor created succesfully");
+				return newProcessor;
+			}
+			catch (std::bad_alloc& ba)
+			{
+				ASSERT(false, RESULT_ERROR_BADALLOC, ba.what(), "");
+				return nullptr;
+			}
+		}
+
 		/**
 		 * @brief Delete a source
 		 * @param _sourceID Identifier of the source to be deleted
