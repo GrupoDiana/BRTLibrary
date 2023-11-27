@@ -40,6 +40,6 @@
 #include "ServiceModules/DirectivityTF.hpp"
 #include "Readers/SofaReader.hpp"
 #include "third_party_libraries/nlohmann/json.hpp"
-
+#include "EnvelopeDetector.hpp"
 
 #endif
