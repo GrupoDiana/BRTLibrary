@@ -296,7 +296,7 @@ namespace BRTListenerModel {
 		*/
 		//bool IsInterpolationEnabled();
 
-		/** \brief Enable near field effect for this source
+		/** \brief Enable near field effect for all source connected to this listener
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void EnableNearFieldEffect() {
@@ -307,7 +307,7 @@ namespace BRTListenerModel {
 			brtManager->ExecuteCommand(j.dump());
 		}
 
-		/** \brief Disable near field effect for this source
+		/** \brief Disable near field effect for all source connected to this listener
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void DisableNearFieldEffect() {
@@ -318,19 +318,39 @@ namespace BRTListenerModel {
 			brtManager->ExecuteCommand(j.dump());
 		}
 
-		/** \brief Get the flag for near field effect enabling
-		*	\retval nearFieldEffectEnabled if true, near field effect is enabled for this source
+
+		/** \brief Enable bilaterality for all source connected to this listener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		//bool IsNearFieldEffectEnabled();
+		void EnableBilateral() {
+			nlohmann::json j;
+			j["command"] = "/listener/enableBilateral";
+			j["listenerID"] = listenerID;
+			j["enable"] = true;
+			brtManager->ExecuteCommand(j.dump());
+		}
 
+		/** \brief Disable bilaterality for all source connected to this listener
+		*   \eh Nothing is reported to the error handler.
+		*/
+		void DisableBilateral() {
+			nlohmann::json j;
+			j["command"] = "/listener/enableBilateral";
+			j["listenerID"] = listenerID;
+			j["enable"] = false;
+			brtManager->ExecuteCommand(j.dump());
+		}
+
+		/**
+		 * @brief Reset convolution buffers
+		*/
 		void ResetConvolutionsBuffers() {
 			nlohmann::json j;
 			j["command"] = "/listener/resetBuffers";
 			j["listenerID"] = listenerID;
 			brtManager->ExecuteCommand(j.dump());
 		}
-
+		
 		void Update(std::string entryPointID) {
 			// Nothing to do
 		}

@@ -84,15 +84,19 @@ namespace BRTProcessing {
 			//std::lock_guard<std::mutex> l(mutex);
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
 															
-			//if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
+			//if (IsToMyListener(command.GetStringParameter("listenerID"))) {
 				if (command.GetCommand() == "/listener/resetBuffers") {
-					ResetBuffers();					
+					ResetBuffers();
+				}
+				else if (command.GetCommand() == "/listener/enableNearFieldEffect") {
+					if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
+					else { DisableNearFieldEffect(); }
+				}
+				else if (command.GetCommand() == "/listener/enableBilateral") {
+					if (command.GetBoolParameter("enable")) { EnableBilateral(); }
+					else { DisableBilateral(); }
 				}
 			//}
-			if (command.GetCommand() == "/listener/enableNearFieldEffect") {
-				if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
-				else { DisableNearFieldEffect(); }
-			}
 			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
 				if (command.GetCommand() == "/source/resetBuffers") {
 					ResetBuffers();
