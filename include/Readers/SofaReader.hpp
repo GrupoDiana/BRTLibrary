@@ -265,13 +265,18 @@ namespace BRTReaders {
 			for (std::size_t i = 0; i < numberOfMeasurements; i++)
 			{
 				BRTServices::THRIRStruct hrir_value;
-				double azimuth = sourcePositionsVector[array2DIndex(i, 0, numberOfMeasurements, numberOfCoordinates)];
-				//double elevation = GetPositiveElevation(sourcePositionsVector[array2DIndex(i, 1, numberOfMeasurements, numberOfCoordinates)]);
+				double azimuth = sourcePositionsVector[array2DIndex(i, 0, numberOfMeasurements, numberOfCoordinates)];				
 				double elevation = sourcePositionsVector[array2DIndex(i, 1, numberOfMeasurements, numberOfCoordinates)];
-				//double distance = sourcePositionsVector[array2DIndex(i, 2, numberOfMeasurements, numberOfCoordinates)];
+												
+				double leftDelay = dataDelays[specifiedDelays ? array2DIndex(i, left_ear, numberOfMeasurements, 2) : 0];
+				double rightDelay = dataDelays[specifiedDelays ? array2DIndex(i, right_ear, numberOfMeasurements, 2) : 1];
+				if (leftDelay < 0 || rightDelay <0) { 
+					SET_RESULT(RESULT_WARNING, "Error reading HRIR from SOFA file, one of the delay fields is negative. This data is rejected. [" + std::to_string(azimuth) + ", " + std::to_string(elevation) + "]");			
+					continue; 
+				}
+				hrir_value.leftDelay = leftDelay;
+				hrir_value.rightDelay = rightDelay;
 
-				hrir_value.leftDelay = dataDelays[specifiedDelays ? array2DIndex(i, left_ear, numberOfMeasurements, 2) : 0];
-				hrir_value.rightDelay = dataDelays[specifiedDelays ? array2DIndex(i, right_ear, numberOfMeasurements, 2) : 1];
 				GetData(dataMeasurements, hrir_value.leftHRIR, numberOfMeasurements, 2,  numberOfSamples, left_ear, i);
 				GetData(dataMeasurements, hrir_value.rightHRIR, numberOfMeasurements, 2, numberOfSamples, right_ear, i);
 
@@ -351,7 +356,7 @@ namespace BRTReaders {
 			int numberOfReceivers = loader.getHRTF()->R;
 
 			// Get and save TFs			
-			dataDirectivityTF->BeginSetup(numberOfFrequencySamples);
+			dataDirectivityTF->BeginSetup(numberOfFrequencySamples, extrapolationMethod);
 
 			// This outtermost loop iterates over TFs
 			for (std::size_t i = 0; i < numberOfReceivers; i++)
@@ -360,7 +365,7 @@ namespace BRTReaders {
 				CMonoBuffer<float> dataRealPartPI;
 				CMonoBuffer <float> dataImagPartPI;
 				double azimuth = receiverPositionsVector[array2DIndex(i, 0, 0, numberOfCoordinates)];
-				double elevation = GetPositiveElevation(receiverPositionsVector[array2DIndex(i, 1, 0, numberOfCoordinates)]);				
+				double elevation = receiverPositionsVector[array2DIndex(i, 1, 0, numberOfCoordinates)];				
 				
 				GetDirectivityData(dataMeasurementsRealPart, dataRealPartPI, numberOfFrequencySamples, i);
 				GetDirectivityData(dataMeasurementsImagPart, dataImagPartPI, numberOfFrequencySamples, i);
@@ -375,12 +380,12 @@ namespace BRTReaders {
 		
 		/////////////////////////
 		// AUXILAR METHODS
-		/////////////////////////
-		double GetPositiveElevation(double _elevation) {
+		///////////////////////////
+		//double GetPositiveElevation(double _elevation) {
 
-			while (_elevation < 0) _elevation += 360;
-			return _elevation;
-		}
+		//	while (_elevation < 0) _elevation += 360;
+		//	return _elevation;
+		//}
 
 		void GetData(const std::vector<double>& dataIR, std::vector<float>& outIR, int numberOfMeasurements,int numberOfReceivers, int numberOfSamples, int ear, int i) {
 			std::vector<float> IR(numberOfSamples, 0);

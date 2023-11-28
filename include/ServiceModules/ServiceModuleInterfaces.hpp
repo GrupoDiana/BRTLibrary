@@ -24,8 +24,6 @@
 #define _SERVICE_INTERFACES_H_
 
 #include <cstdint>
-//#include <ServiceModules/HRTF.h>
-//#include <ServiceModules/ILD.hpp>
 
 #define MAX_DISTANCE_BETWEEN_ELEVATIONS 5
 #define NUMBER_OF_PARTS 4 
@@ -147,7 +145,7 @@ namespace BRTServices {
 		virtual ~CServicesBase() {}		
 		
 		virtual void BeginSetup() {}
-		virtual void BeginSetup(int32_t _DirectivityTFLength) {}
+		virtual void BeginSetup(int32_t _DirectivityTFLength, std::string extrapolationMethod) {}
 		virtual void BeginSetup(int32_t _HRIRLength, float _distance, std::string extrapolationMethod) {}
 		virtual bool EndSetup() { return false; }
 

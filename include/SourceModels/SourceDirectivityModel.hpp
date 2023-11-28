@@ -37,6 +37,10 @@ namespace BRTSourceModel {
 			CreatePositionEntryPoint("listenerPosition");
 		}
 
+		/**
+		 * @brief Update method of the Source directivity model
+		 * @param _entryPointID ID of the entry ponint to do the update
+		*/
 		void Update(std::string _entryPointID) {
 			std::lock_guard<std::mutex> l(mutex);
 
@@ -52,7 +56,10 @@ namespace BRTSourceModel {
 				}
 			}			
 		}
-				
+		
+		/**
+		 * @brief Update to check to internal OSC commands
+		*/
 		void UpdateCommand() {
 			std::lock_guard<std::mutex> l(mutex);
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
@@ -98,19 +105,34 @@ namespace BRTSourceModel {
 			return true;
 		}
 
+		/**
+		 * @brief Get the source directivity transfer function
+		 * @return shered pointer to the directivity of the source model
+		*/
 		std::shared_ptr< BRTServices::CDirectivityTF > GetDirectivityTF() {
 			return sourceDirectivityTF;
 		}
 
+		/**
+		 * @brief Remove the shared pointer of the directivity TF
+		*/
 		void RemoveDirectivityTF() {
-			sourceDirectivityTF = std::make_shared<BRTServices::CDirectivityTF>();	// empty HRTF		
+			sourceDirectivityTF = std::make_shared<BRTServices::CDirectivityTF>();			
 		}
 
-		// TODO Move to command
+		/**
+		 * @brief Enable or disable directivity for the source model
+		 * @param _enabled boolean true if you want to enable the directivity, false if disable
+		*/
+		// TODO: Move to command
 		void SetDirectivityEnable(bool _enabled) {
 			if (_enabled) { EnableSourceDirectionality(); }
 			else { DisableSourceDirectionality(); }
 		}
+		
+		/**
+		 * @brief Reset the buffers used in the convolution of the directivity
+		*/
 		// TODO Move to command
 		void ResetBuffers() {
 			ResetSourceConvolutionBuffers();
@@ -118,7 +140,7 @@ namespace BRTSourceModel {
 
 	private:		
 		mutable std::mutex mutex;
-		std::shared_ptr<BRTServices::CDirectivityTF> sourceDirectivityTF;			// SHRTF of source
+		std::shared_ptr<BRTServices::CDirectivityTF> sourceDirectivityTF;			// Directivity of the source
 		Common::CGlobalParameters globalParameters;
 		
 	};

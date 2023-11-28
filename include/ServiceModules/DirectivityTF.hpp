@@ -30,6 +30,14 @@
 #include <Common/GlobalParameters.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/DirectivityTFDefinitions.hpp>
+#include <ServiceModules/DirectivityTFAuxiliarMethods.hpp>
+#include <ServiceModules/Extrapolation.hpp>
+#include <ServiceModules/GridsManager.hpp>
+#include <ServiceModules/OfflineInterpolation.hpp>
+#include <ServiceModules/InterpolationAuxiliarMethods.hpp>
+#include <ServiceModules/OnlineInterpolation.hpp>
+
 
 #ifndef DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP
 #define DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP 5
@@ -39,27 +47,17 @@
 namespace BRTServices
 {
 	
-	struct TDirectivityInterlacedTFStruct {
-		CMonoBuffer<float> data;
-	};
-
-	/** \brief Type definition for the DirectivityTF table */
-	typedef std::unordered_map<orientation, BRTServices::TDirectivityTFStruct> T_DirectivityTFTable;
-	typedef std::unordered_map<orientation, BRTServices::TDirectivityInterlacedTFStruct> T_DirectivityTFInterlacedDataTable;
-
-
 	/** \details This class gets impulse response data to compose HRTFs and implements different algorithms to interpolate the HRIR functions.
 	*/
 	class CDirectivityTF : public CServicesBase
 	{
 	public:
 		/** \brief Default Constructor
-		*	\details By default, customized ITD is switched off, resampling step is set to 5 degrees and listener is a null pointer
+		*	\details By default, customized ITD is switched off, resampling step is set to DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP degrees 
 		*   \eh Nothing is reported to the error handler.
 		*/
 		CDirectivityTF()
-			:resamplingStep{ DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP }, directivityTFloaded{ false }, setupDirectivityTFInProgress{ false }, aziMin{ DEFAULT_MIN_AZIMUTH }, aziMax{ DEFAULT_MAX_AZIMUTH },
-			eleMin{ DEFAULT_MIN_ELEVATION }, eleMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER }, epsilon_sewing{ EPSILON_SEWING }, samplingRate{ -1 }
+			:resamplingStep{ DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP }, directivityTFloaded{ false }, setupDirectivityTFInProgress{ false }
 		{}
 
 		/** \brief Set the title of the SOFA file
@@ -69,21 +67,21 @@ namespace BRTServices
 			title = _title;
 		}
 
-		/** \brief Set the title of the SOFA file
+		/** \brief Set the name of the database of the SOFA file
 		*    \param [in]	_title		string contains title
 		*/
 		void SetDatabaseName(std::string _databaseName) {
 			databaseName = _databaseName;
 		}
 
-		/** \brief Set the name of the SOFA file
+		/** \brief Set the file name of the SOFA file
 		*    \param [in]	_fileName		string contains filename
 		*/
 		void SetFilename(std::string _fileName) {
 			fileName = _fileName;
 		}
 
-		/** \brief Get the name of the SOFA file
+		/** \brief Get the file name of the SOFA file
 		*   \return string contains filename
 		*/
 		std::string GetFilename() {
@@ -91,22 +89,26 @@ namespace BRTServices
 		}
 		
 		/** \Start a new DirectivityTF configuration
-		*	\param [in] directivityTFPartLength number of samples in the frequency domain (size of the real part or the imaginary part)
+		* *	\param [in] directivityTFPartLength number of samples in the frequency domain (size of the real part or the imaginary part)
+		* *	\param [in] _extrapolationMethod indicate which kind of extrapolation methor use
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
-		void BeginSetup(int32_t directivityTFPartLength){
+		void BeginSetup(int32_t _directivityTFPartLength, std::string _extrapolationMethod){
 			//Update parameters			
-			eleNorth = GetPoleElevation(TPole::north);
-			eleSouth = GetPoleElevation(TPole::south);
+			elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
+			elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
 
-			if (directivityTFPartLength != globalParameters.GetBufferSize()) //
+			if (_directivityTFPartLength != globalParameters.GetBufferSize()) //
 			{
 				SET_RESULT(RESULT_ERROR_BADSIZE, "Number of frequency samples (N) in SOFA file is different from Buffer Size");
 			}
 
-			directivityTF_length = 4.0 * directivityTFPartLength; //directivityTF will store the Real and Img parts interlaced
+			bufferSize = globalParameters.GetBufferSize();
+			directivityTFPart_length = _directivityTFPartLength;
+			directivityTF_length = 4.0 * _directivityTFPartLength; //directivityTF will store the Real and Img parts interlaced
 			directivityTF_numberOfSubfilters = 1;
+			SetExtrapolationMethod(_extrapolationMethod);
 
 			//Clear every table			
 			t_DirectivityTF_DataBase.clear();
@@ -128,14 +130,21 @@ namespace BRTServices
 			if (setupDirectivityTFInProgress) {
 				if (!t_DirectivityTF_DataBase.empty())
 				{
-					//DirectivityTF Resampling methdos
-					//CalculateHRIR_InPoles(resamplingStep);
-					//FillOutTableOfAzimuth360(resamplingStep);
-					//FillSphericalCap_HRTF(gapThreshold, resamplingStep);
-					CalculateResampled_DirectivityTFTable(resamplingStep);
-					auto stepVector = CalculateStep();
-					//CalculateExtendUpTo2PI();
-
+					// Preparation of table read from sofa file
+					t_DirectivityTF_DataBase_ListOfOrientations = offlineInterpolation.CalculateListOfOrientations(t_DirectivityTF_DataBase);
+					CalculateExtrapolation();							// Make the extrapolation if it's needed
+					offlineInterpolation.CalculateTF_InPoles<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, directivityTFPart_length, resamplingStep, CDirectivityTFAuxiliarMethods::CalculateDirectivityTFFromHemisphereParts());
+					offlineInterpolation.CalculateTF_SphericalCaps<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, directivityTFPart_length, DEFAULT_GAP_THRESHOLD, resamplingStep, CDirectivityTFAuxiliarMethods::CalculateDirectivityTF_FromBarycentrics_OfflineInterpolation());
+					//Creation and filling of resampling HRTF table
+					t_DirectivityTF_DataBase_ListOfOrientations = offlineInterpolation.CalculateListOfOrientations(t_DirectivityTF_DataBase);
+					quasiUniformSphereDistribution.CreateGrid<T_DirectivityTFInterlacedDataTable, TDirectivityInterlacedTFStruct>(t_DirectivityTF_Resampled, gridResamplingStepsVector, resamplingStep);
+					offlineInterpolation.FillResampledTable<T_DirectivityTFTable, T_DirectivityTFInterlacedDataTable, BRTServices::TDirectivityTFStruct, BRTServices::TDirectivityInterlacedTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_Resampled, bufferSize, directivityTFPart_length, directivityTF_numberOfSubfilters, CalculateInterlacedTFTo2PI(), CDirectivityTFAuxiliarMethods::CalculateDirectivityTF_FromBarycentrics_OfflineInterpolation());		
+					//FOR TESTING:
+					for (auto it = t_DirectivityTF_Resampled.begin(); it != t_DirectivityTF_Resampled.end(); it++) {
+						if (it->second.data.size() == 0) {
+							SET_RESULT(RESULT_ERROR_NOTSET, "The t_DirectivityTF_Resampled table has an empty DirectivityTF in position [" + std::to_string(it->first.azimuth) + ", " + std::to_string(it->first.elevation) + "]");
+						}
+					}
 					//Setup values
 					setupDirectivityTFInProgress = false;
 					directivityTFloaded = true;
@@ -167,20 +176,6 @@ namespace BRTServices
 			return resamplingStep;
 		}
 
-		/** \brief Set the sampling rate for the DirectivityTF
-		*	\param [in] sampling rate
-		*/
-		void SetSamplingRate(int _samplingRate) {
-			samplingRate = _samplingRate;
-		}
-
-		/** \brief Ask for the sampling rate 
-		*	\retval sampling step
-		*/
-		int GetSamplingRate() {
-			return samplingRate;
-		}
-
 		/** \brief Get the number of samples of the Directivity TF
 		*	\retval Length of the TF with the Real and Img parts interlaced
 		*/
@@ -192,95 +187,28 @@ namespace BRTServices
 		int GetDirectivityTFNumOfSubfilters() { return directivityTF_numberOfSubfilters; }
 
 		/** \brief Add a new TF to the DirectivityTF table
-		*	\param [in] azimuth azimuth angle in degrees
-		*	\param [in] elevation elevation angle in degrees
-		*	\param [in] newDirectivityTF DirectivityTF data for both ears
+		*	\param [in] _azimuth azimuth angle in degrees
+		*	\param [in] _elevation elevation angle in degrees
+		*	\param [in] directivityTF DirectivityTF data for both ears
 		*   \eh Warnings may be reported to the error handler.
 		*/
 		void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& directivityTF)
 		{
 			if (setupDirectivityTFInProgress) {
+				_azimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
+				_elevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
 				auto returnValue = t_DirectivityTF_DataBase.emplace(orientation(_azimuth, _elevation), std::forward<TDirectivityTFStruct>(directivityTF));
 				//Error handler
 				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing DirectivityTF in t_DirectivityTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
 			}
 		}
+				
 
-		/** \brief Calculate the regular resampled-table using an interpolation method
-		*	\param [in] _resamplingStep step for both azimuth and elevation
-		*   \eh Warnings may be reported to the error handler.
-		*/
-		void CalculateResampled_DirectivityTFTable(int _resamplingStep)
-		{
-			// COPY the loaded table:
-			for (auto& it : t_DirectivityTF_DataBase){
-				TDirectivityInterlacedTFStruct interlacedData;
-				// Extend to 2PI real part
-				CMonoBuffer<float> dataRealPart2PI;				
-				CalculateTFRealPartTo2PI(it.second.realPart , dataRealPart2PI);								
-				// Extend to 2PI imag part
-				CMonoBuffer<float> dataImagPart2PI;				
-				CalculateTFImagPartTo2PI(it.second.imagPart, dataImagPart2PI);				 				
-				// Invert sign of imag part
-				CalculateTFImagPartToBeCompatibleWithOouraFFTLibrary(dataImagPart2PI);
-				// Interlaced real and imag part
-				interlacedData.data.Interlace(dataRealPart2PI, dataImagPart2PI);
-				//Add data to the Resampled Table
-				t_DirectivityTF_Resampled.emplace(it.first, interlacedData);
-			}
-			//
-			//int numOfInterpolatedHRIRs = 0;
-
-			////Resample Interpolation Algorithm
-			//for (int newAzimuth = azimuthMin; newAzimuth < azimuthMax; newAzimuth = newAzimuth + _resamplingStep)
-			//{
-			//	for (int newElevation = elevationMin; newElevation <= elevationNorth; newElevation = newElevation + _resamplingStep)
-			//	{
-			//		if (CalculateAndEmplaceNewDirectivityTF(newAzimuth, newElevation)) { numOfInterpolatedHRIRs++; }
-			//	}
-
-			//	for (int newElevation = elevationSouth; newElevation < elevationMax; newElevation = newElevation + _resamplingStep)
-			//	{
-			//		if (CalculateAndEmplaceNewDirectivityTF(newAzimuth, newElevation)) { numOfInterpolatedHRIRs++; }
-			//	}
-			//}
-			//SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
-		}
-
-
-		/// <returns></returns>
-		
-		
-		/** \brief  Calculate the DirectivityTF using the an interpolation Method 
-		*	\param [in] _azimuth orientation of the sound source (relative to the listener)
-		*	\param [in] _elevation orientation of the sound source (relative to the listener)
-		*	\retval interpolatedDTFs: true if the Directivity TF has been calculated using the interpolation
-		*   \eh Warnings may be reported to the error handler.
-		*/
-		bool CalculateAndEmplaceNewDirectivityTF(float _azimuth, float _elevation) {
-			TDirectivityInterlacedTFStruct interpolatedHRIR;
-			bool bDirectivityTFInterpolated = false;
-			auto it = t_DirectivityTF_DataBase.find(orientation(_azimuth, _elevation));
-			if (it != t_DirectivityTF_DataBase.end()){				
-				interpolatedHRIR.data.Interlace(it->second.realPart, it->second.imagPart);	// Interlaced
-				//Fill out Directivity TF from the original Database	
-				auto returnValue =  t_DirectivityTF_Resampled.emplace(orientation(_azimuth, _elevation), std::forward<TDirectivityInterlacedTFStruct>(interpolatedHRIR));
-				//Error handler
-				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing DirectivityTF into t_DirectivityTF_Resampled map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
-			}
-			else
-			{
-				SET_RESULT(RESULT_WARNING, "Resampling DirectivityTF Table: cannot find Directivity TF in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "], in the database table");
-			}
-			return bDirectivityTFInterpolated;
-		}
-
-		
 		/** \brief  Calculate the azimuth step for each orientation
 		*	\retval unordered map with all the orientations of the resampled table 
 		*   \eh Warnings may be reported to the error handler.
 		*/
-		std::unordered_map<orientation, float> CalculateStep()
+		std::unordered_map<orientation, float> CalculateStep() const
 		{
 			std::unordered_map<orientation, float> stepVector;
 			float elevation, aziStep, diff = 360, actual_ele = -1.0f;
@@ -300,8 +228,7 @@ namespace BRTServices
 			for (int ori = 0; ori< orientations.size(); ori++)
 			{
 				// Maybe stop in each different elevation and make the difference between the start azimuth, 0, and the next azimuth in this elevation
-				// with this form, we could save a vector like this [aziStep elevation]
-
+				// with this form, we could save a vector like this [aziStep elevation] 
 				elevation = orientations[ori].elevation;
 
 				if (actual_ele != elevation)
@@ -327,86 +254,57 @@ namespace BRTServices
 		}
 
 	
-		/** \brief  Get the Directivity TF of the nearest point to  the given one
-		*	\param [in] _azimuth orientation of the sound source (relative to the listener)
-		*	\param [in] _elevation orientation of the sound source (relative to the listener)
-		* *	\param [in] _stepsMap map that contains orientations of the grid
-		*	\retval  Directivity TF with the Real and Imag part interlaced
+
+		/** \brief Get interpolated and interlaced directivity buffer 
+		*	\param [in] _azimuth azimuth angle in degrees
+		*	\param [in] _elevation elevation angle in degrees
+		*	\param [in] runTimeInterpolation switch run-time interpolation
+		*	\retval HRIR interpolated buffer with delay for specified ear
+		*   \eh On error, an error code is reported to the error handler.
+		*       Warnings may be reported to the error handler.
 		*/
-		const TDirectivityInterlacedTFStruct GetDirectivityTF(float _azimuth, float _elevation, std::unordered_map<orientation, float> _stepsMap) const {
+		const std::vector<CMonoBuffer<float>> GetDirectivityTF(float _azimuth, float _elevation, bool runTimeInterpolation) const
+		{
+			std::vector<CMonoBuffer<float>> newDirectivityTF;
+						
+			if (setupDirectivityTFInProgress) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetDirectivityTF: Directivity setup in progress, return empty");
+				return newDirectivityTF;
 
-			TDirectivityInterlacedTFStruct newSRIR;
-			auto it0 = t_DirectivityTF_Resampled.find(orientation(_azimuth, _elevation));
-			if (it0 != t_DirectivityTF_Resampled.end()) {
-				newSRIR.data = it0->second.data;
 			}
-			else {
-
-				// HARCODE ELEVATION STEP TO 10
-				int eleStep = 10;
-
-				float aziCeilBack, aziCeilFront, aziFloorBack, aziFloorFront;
-				int idxEle = ceil(_elevation / eleStep);
-				float eleCeil = eleStep * idxEle;
-				float eleFloor = eleStep * (idxEle - 1);
-
-				eleCeil = CheckLimitsElevation_and_Transform(eleCeil);										//			   Back	  Front
-				eleFloor = CheckLimitsElevation_and_Transform(eleFloor);									//	Ceil		A		B
-
-				auto stepItr = _stepsMap.find(orientation(0, eleCeil));										//	Floor		D		C
-				float aziStepCeil = stepItr->second;
-																										
-				CalculateAzimuth_BackandFront(aziCeilBack, aziCeilFront, aziStepCeil, _azimuth);
-				// azimuth values passed by reference
-
-				auto stepIt = _stepsMap.find(orientation(0, eleFloor));
-				float aziStepFloor = stepIt->second;							
-
-				CalculateAzimuth_BackandFront(aziFloorBack, aziFloorFront, aziStepFloor, _azimuth); 
-
-				// Mid Point of a trapezoid can be compute by averaging all azimuths
-				float pntMid_azimuth = (aziCeilBack + aziCeilFront + aziFloorBack + aziFloorFront) / 4;
-				float pntMid_elevation = (eleCeil - eleStep * 0.5f);
-
-				// compute eleCeil being 360 to find triangles at border
-				//eleCeil = eleStep * idxEle;
-
-				if (_azimuth >= pntMid_azimuth)
-				{
-					if (_elevation >= pntMid_elevation)
-					{
-						//Second quadrant
-						auto it = t_DirectivityTF_Resampled.find(orientation(aziCeilFront, eleCeil));
-						newSRIR.data = it->second.data;
-
-					}
-					else if (_elevation < pntMid_elevation)
-					{
-						//Forth quadrant
-						auto it = t_DirectivityTF_Resampled.find(orientation(aziFloorFront, eleFloor));
-						newSRIR.data = it->second.data;
-					}
-				}
-				else if (_azimuth < pntMid_azimuth)
-				{
-					if (_elevation >= pntMid_elevation)
-					{
-						//First quadrant
-						auto it = t_DirectivityTF_Resampled.find(orientation(aziCeilBack, eleCeil));
-						newSRIR.data = it->second.data;
-					}
-					else if (_elevation < pntMid_elevation) {
-						//Third quadrant
-						auto it = t_DirectivityTF_Resampled.find(orientation(aziFloorFront, eleFloor));
-						newSRIR.data = it->second.data;
-					}
-				}
-				else { return newSRIR = {}; }
+			if (!runTimeInterpolation) {
+				TDirectivityInterlacedTFStruct temp = quasiUniformSphereDistribution.FindNearest<T_DirectivityTFInterlacedDataTable, TDirectivityInterlacedTFStruct>(t_DirectivityTF_Resampled, gridResamplingStepsVector, _azimuth, _elevation);
+				return temp.data;
+				
 			}
 
-			//SET_RESULT(RESULT_OK, "CalculateHRIR_InterpolationMethod completed succesfully");
-			return newSRIR;
+			//  We have to do the run time interpolation -- (runTimeInterpolation = true)
+			// Check if we are close to 360 azimuth or elevation and change to 0
+			if (Common::AreSame(_azimuth, SPHERE_BORDER, EPSILON_SEWING)) { _azimuth = DEFAULT_MIN_AZIMUTH; }
+			if (Common::AreSame(_elevation, SPHERE_BORDER, EPSILON_SEWING)) { _elevation = DEFAULT_MIN_ELEVATION; }
+
+			// Check if we are at a pole
+			int ielevation = static_cast<int>(round(_elevation));
+			if ((ielevation == elevationNorth) || (ielevation == elevationSouth)) {
+				_elevation = ielevation;
+				_azimuth = DEFAULT_MIN_AZIMUTH;
+			}
+
+			// We search if the point already exists
+			auto it = t_DirectivityTF_Resampled.find(orientation(_azimuth, _elevation));
+			if (it != t_DirectivityTF_Resampled.end())
+			{
+				return it->second.data;
+			}
+			else
+			{
+				// ONLINE Interpolation 
+				const  BRTServices::TDirectivityInterlacedTFStruct temp = slopesMethodOnlineInterpolator2.CalculateTF_OnlineMethod<T_DirectivityTFInterlacedDataTable, BRTServices::TDirectivityInterlacedTFStruct>
+					(t_DirectivityTF_Resampled, directivityTF_numberOfSubfilters, directivityTF_length, _azimuth, _elevation, gridResamplingStepsVector, CDirectivityTFAuxiliarMethods::CalculateDirectivityTF_FromBarycentric_OnlineInterpolation());
+				return temp.data;
+			}
 		}
+	
 
 		/** \brief  Check limit values for elevation and transform to the desired intervals
 		*	\retval elevation value within the desired intervals
@@ -418,7 +316,7 @@ namespace BRTServices
 			return elevation;
 		}
 
-		/** \brief  Check limit values for elevation and transform to the desired intervals
+		/** \brief  Check limit values for azimuth and transform to the desired intervals
 		*	\retval azimuth value within the desired intervals
 		*/
 		float CheckLimitsAzimuth_and_Transform(float azimuth)const
@@ -428,6 +326,12 @@ namespace BRTServices
 			return azimuth;
 		}
 
+		/** \brief  Calculate azimuth back and front of an specific azimuth considering the azimuth step value
+		* *	\param [out] aziBack azimuth value placed back to the _azimuth data
+		* *	\param [out] aziFront azimuth value placed in front of the _azimuth data
+		* *	\param [in] aziStep step between two adjacent azimuths
+		* *	\param [in] _azimuth value of reference
+		*/
 		void CalculateAzimuth_BackandFront(float& aziBack, float& aziFront, float aziStep, float _azimuth)const
 		{
 
@@ -440,50 +344,76 @@ namespace BRTServices
 			aziBack = CheckLimitsAzimuth_and_Transform(aziBack);
 		}
 
+		/** \brief Interlace real and imaginary part and extend to 2PI
+		*	\param [in] _newData data to be interlaced and extended
+		* 	\param [in] _bufferSize configired buffer size
+		* 	\param [in] _TF_NumberOfSubfilters number of partitions of the directivity TF
+		*   \eh Warnings may be reported to the error handler.
+		*/
+		struct CalculateInterlacedTFTo2PI {
+			TDirectivityInterlacedTFStruct operator()(const TDirectivityTFStruct& _newData, int _bufferSize, int _TF_NumberOfSubfilters)
+			{
+				TDirectivityInterlacedTFStruct interlacedData;
+
+				if (_newData.realPart.size() == 0 || _newData.imagPart.size() == 0) {
+					SET_RESULT(RESULT_ERROR_NOTSET, "CalculateInterlacedTFTo2PI() get an empty data");
+				}
+				// Extend to 2PI real part
+				CMonoBuffer<float> dataRealPart2PI;
+				CalculateTFRealPartTo2PI(_newData.realPart, dataRealPart2PI);
+				// Extend to 2PI imag part
+				CMonoBuffer<float> dataImagPart2PI;
+				CalculateTFImagPartTo2PI(_newData.imagPart, dataImagPart2PI);
+				// Invert sign of imag part
+				CalculateTFImagPartToBeCompatibleWithOouraFFTLibrary(dataImagPart2PI);
+				// Interlaced real and imag part of the first subfilter 
+				interlacedData.data.resize(_TF_NumberOfSubfilters);
+				interlacedData.data.front().Interlace(dataRealPart2PI, dataImagPart2PI); //IMPORTANT: We only have one partition in the Directivity
+
+				return interlacedData;
+			}
+		};
+
 	private:
+
+		enum TExtrapolationMethod { zeroInsertion, nearestPoint };
+
 		std::string title;
 		std::string databaseName;
 		std::string fileName;
-		int samplingRate;
+		int bufferSize;
 		int resamplingStep;
 		bool directivityTFloaded;
 		bool setupDirectivityTFInProgress;
 		int32_t directivityTF_length;	
+		int32_t directivityTFPart_length;
 		int32_t directivityTF_numberOfSubfilters;	
+		TExtrapolationMethod extrapolationMethod;						// Methods that is going to be used to extrapolate
 		
 		T_DirectivityTFTable					t_DirectivityTF_DataBase;
-		T_DirectivityTFInterlacedDataTable	t_DirectivityTF_Resampled;
+		std::vector<orientation>				t_DirectivityTF_DataBase_ListOfOrientations;
+		T_DirectivityTFInterlacedDataTable		t_DirectivityTF_Resampled;
+		
+		std::unordered_map<orientation, float>  gridResamplingStepsVector;		// Store hrtf interpolated grids steps
 
 		Common::CGlobalParameters globalParameters;
+		
+		float  elevationNorth, elevationSouth;	
 
-		float aziMin, aziMax, eleMin, eleMax, eleNorth, eleSouth;	// Variables that define limits of work area
-		float sphereBorder;
-		float epsilon_sewing;
-		enum class TPole { north, south };
+		CQuasiUniformSphereDistribution quasiUniformSphereDistribution;
+		CSlopesMethodOnlineInterpolator slopesMethodOnlineInterpolator2;
+		COfflineInterpolation offlineInterpolation;
+		CExtrapolation extrapolation;
 		
 		///////////////////
 		///// METHODS
 		///////////////////
 
-		/** \brief Get Pole Elevation
-		*	\param [in] Tpole var that indicates of which pole we need elevation
-		*   \eh  On error, an error code is reported to the error handler.
-		*/
-		int GetPoleElevation(TPole _pole)const
-		{
-			if (_pole == TPole::north) { return ELEVATION_NORTH_POLE; }
-			else if (_pole == TPole::south) { return ELEVATION_SOUTH_POLE; }
-			else {
-				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get a non-existent pole");
-				return 0;
-			}
-		}
-
 		/** \brief Transform Real part of the Directivity TF to 2PI
 		*	\param [in] inBuffer Samples with the original Real part
 		* *	\param [in] outBuffer Samples transformed to 2PI
 		*/
-		void CalculateTFRealPartTo2PI(const CMonoBuffer<float>& inBuffer, CMonoBuffer<float>& outBuffer) {
+		static void CalculateTFRealPartTo2PI(const CMonoBuffer<float>& inBuffer, CMonoBuffer<float>& outBuffer) {
 			outBuffer.reserve(inBuffer.size() * 2);
 			outBuffer.insert(outBuffer.begin(), inBuffer.begin(), inBuffer.end());
 			outBuffer.insert(outBuffer.end(), 0);
@@ -494,7 +424,7 @@ namespace BRTServices
 		*	\param [in] inBuffer Samples with the original IMAG part
 		* *	\param [in] outBuffer Samples transformed to 2PI
 		*/		
-		void CalculateTFImagPartTo2PI(const CMonoBuffer<float>& inBuffer, CMonoBuffer<float>& outBuffer) {
+		static void CalculateTFImagPartTo2PI(const CMonoBuffer<float>& inBuffer, CMonoBuffer<float>& outBuffer) {
 			outBuffer.reserve(inBuffer.size() * 2);
 			outBuffer.insert(outBuffer.begin(), inBuffer.begin(), inBuffer.end());
 			outBuffer.insert(outBuffer.end(), 0);
@@ -510,12 +440,49 @@ namespace BRTServices
 		/** \brief Invert the Imag part to prepare the data in the way that the Ooura Library is expecting to do the complex multiplication
 		*	\param [in] buffer with the samples to be inverted (multiplied by -1)
 		*/
-		void CalculateTFImagPartToBeCompatibleWithOouraFFTLibrary(CMonoBuffer<float>& buffer) {
+		static void CalculateTFImagPartToBeCompatibleWithOouraFFTLibrary(CMonoBuffer<float>& buffer) {
 			for (int i = 0; i < buffer.size(); i++) {
 				buffer[i] = buffer[i] * -1;
 			}
 		}
 
+		/**
+		 * @brief Set the extrapolation method that is going to be used
+		 * @param _extrapolationMethod
+		*/
+		void SetExtrapolationMethod(std::string _extrapolationMethod) {
+
+			if (_extrapolationMethod == EXTRAPOLATION_METHOD_ZEROINSERTION_STRING) {
+				extrapolationMethod = TExtrapolationMethod::zeroInsertion;
+			}
+			else if (_extrapolationMethod == EXTRAPOLATION_METHOD_NEARESTPOINT_STRING) {
+				extrapolationMethod = TExtrapolationMethod::nearestPoint;
+			}
+			else {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Extrapolation Method not identified.");
+				extrapolationMethod = TExtrapolationMethod::nearestPoint;
+			}
+
+		}
+		/**
+		 * @brief Call the extrapolation method
+		*/
+		void CalculateExtrapolation() {
+			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.
+
+			if (extrapolationMethod == TExtrapolationMethod::zeroInsertion) {
+				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded DirectivityTF sofa file, an extrapolation with zeros will be performed to fill it.");
+				extrapolation.Process<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_DataBase_ListOfOrientations, directivityTFPart_length, DEFAULT_EXTRAPOLATION_STEP, CDirectivityTFAuxiliarMethods::GetZerosDirectivityTF());			
+			}
+			else if (extrapolationMethod == TExtrapolationMethod::nearestPoint) {
+				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded DirectivityTF sofa file, an extrapolation will be made to the nearest point to fill it.");
+				extrapolation.Process<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_DataBase_ListOfOrientations, directivityTFPart_length, DEFAULT_EXTRAPOLATION_STEP, CDirectivityTFAuxiliarMethods::GetNearestPointDirectivityTF());
+			}
+			else {
+				SET_RESULT(RESULT_ERROR_NOTSET, "Extrapolation Method not set up.");
+				// Do nothing
+			}
+		}
 	};
 }
 #endif

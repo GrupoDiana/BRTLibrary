@@ -36,10 +36,13 @@
 #include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
 #include <ServiceModules/HRTFDefinitions.hpp>
-#include <ServiceModules/OfflineInterpolation.hpp>
+#include <ServiceModules/HRTFAuxiliarMethods.hpp>
 #include <ServiceModules/OnlineInterpolation.hpp>
 #include <ServiceModules/GridsManager.hpp>
 #include <ServiceModules/Extrapolation.hpp>
+#include <ServiceModules/OfflineInterpolation.hpp>
+#include <ServiceModules/OfflineInterpolationAuxiliarMethods.hpp>
+#include <ServiceModules/InterpolationAuxiliarMethods.hpp>
 
 
 namespace BRTBase { class CListener; }
@@ -98,8 +101,8 @@ namespace BRTServices
 				float partitions = (float)HRIRLength / (float)bufferSize;
 				HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
 
-				elevationNorth = CHRTFAuxiliarMethods::GetPoleElevation(TPole::north);
-				elevationSouth = CHRTFAuxiliarMethods::GetPoleElevation(TPole::south);
+				elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
+				elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
 
 				//Clear every table			
 				t_HRTF_DataBase.clear();
@@ -150,11 +153,11 @@ namespace BRTServices
 		void AddHRIR(double _azimuth, double _elevation, THRIRStruct&& newHRIR)
 		{			
 			if (setupInProgress) {				
-				_azimuth = CHRTFAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
-				_elevation = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);				
-				Common::CVector3 cartessianPos;
+				_azimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
+				_elevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
+				//Common::CVector3 cartessianPos;
 				//cartessianPos.SetFromAED(_azimuth, _elevation, GetHRTFDistanceOfMeasurement());
-				//auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), std::forward<THRIRStruct>(newHRIR));
+				//auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), std::forward<THRIRStruct>(newHRIR));				
 				auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation), std::forward<THRIRStruct>(newHRIR));
 				//Error handler
 				if (!returnValue.second) { 
@@ -172,20 +175,24 @@ namespace BRTServices
 			if (setupInProgress) {
 				if (!t_HRTF_DataBase.empty())
 				{
-					
-					RemoveCommonDelay_HRTFDataBaseTable();				// Delete the common delay of every HRIR functions of the DataBase Table					
-					CalculateListOfOrientations_T_HRTF_DataBase();		// Extract the list of orientations
-					CalculateExtrapolation();							// Make the extrapolation if it's needed
 					// Preparation of table read from sofa file
-					CalculateHRIR_InPoles(resamplingStep);
-					FillOutTableOfAzimuth360(resamplingStep); 
-					FillSphericalCap_HRTF(gapThreshold, resamplingStep);
-					CalculateListOfOrientations_T_HRTF_DataBase();		// The table has changed so we re-extract the list of orientations.
-
-
+					RemoveCommonDelay_HRTFDataBaseTable();				// Delete the common delay of every HRIR functions of the DataBase Table					
+					t_HRTF_DataBase_ListOfOrientations = offlineInterpolation.CalculateListOfOrientations(t_HRTF_DataBase);
+					CalculateExtrapolation();							// Make the extrapolation if it's needed
+					offlineInterpolation.CalculateTF_InPoles<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, HRIRLength, resamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts());
+					offlineInterpolation.CalculateTF_SphericalCaps<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, HRIRLength, gapThreshold, resamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
 					//Creation and filling of resampling HRTF table
-					quasiUniformSphereDistribution.CreateGrid(t_HRTF_Resampled_partitioned, stepVector, resamplingStep);					
-					FillResampledTable();
+					t_HRTF_DataBase_ListOfOrientations = offlineInterpolation.CalculateListOfOrientations(t_HRTF_DataBase);
+					quasiUniformSphereDistribution.CreateGrid<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, resamplingStep);
+					offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct> (t_HRTF_DataBase, t_HRTF_Resampled_partitioned, bufferSize, HRIRLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
+
+					//TESTING:
+					for (auto it = t_HRTF_Resampled_partitioned.begin(); it != t_HRTF_Resampled_partitioned.end(); it++) {
+						if (it->second.leftHRIR_Partitioned.size() == 0 || it->second.rightHRIR_Partitioned.size() == 0) {
+							SET_RESULT(RESULT_ERROR_NOTSET, "The t_HRTF_Resampled_partitioned has an empty HRIR in position [" + std::to_string(it->first.azimuth) + ", " + std::to_string(it->first.elevation) + "]");
+						}
+					
+					}
 
 					//Setup values
 					auto it = t_HRTF_Resampled_partitioned.begin();
@@ -205,17 +212,6 @@ namespace BRTServices
 			return false;
 		}
 
-		/**
-		 * @brief Fill vector with the list of orientations of the T_HRTF_DataBase table
-		*/
-		void CalculateListOfOrientations_T_HRTF_DataBase() {
-			t_HRTF_DataBase_ListOfOrientations.clear();
-			t_HRTF_DataBase_ListOfOrientations.reserve(t_HRTF_DataBase.size());
-			for (auto& kv : t_HRTF_DataBase)
-			{
-				t_HRTF_DataBase_ListOfOrientations.push_back(kv.first);
-			}
-		}
 
 		/** \brief Switch on ITD customization in accordance with the listener head radius
 		*   \eh Nothing is reported to the error handler.
@@ -265,9 +261,13 @@ namespace BRTServices
 				return newHRIR;
 
 			}
-			if (!runTimeInterpolation) {
-				//FindNearestHRIR_NewGrid(newHRIR, _azimuth, _elevation, ear, stepVector);
-				quasiUniformSphereDistribution.FindNearestHRIR(t_HRTF_Resampled_partitioned, newHRIR, stepVector, ear, _azimuth, _elevation);
+			if (!runTimeInterpolation) {				
+				THRIRPartitionedStruct temp = quasiUniformSphereDistribution.FindNearest<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, _azimuth, _elevation);
+				
+				if (ear == Common::T_ear::LEFT)			{ newHRIR = temp.leftHRIR_Partitioned; }
+				else if (ear == Common::T_ear::RIGHT)	{ newHRIR = temp.rightHRIR_Partitioned;}
+				else { SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get HRIR for a wrong ear (BOTH or NONE)"); }
+
 				return newHRIR;
 			}
 
@@ -299,14 +299,16 @@ namespace BRTServices
 				return newHRIR;
 			} 
 
-			// ONLINE Interpolation 
-			//const THRIRPartitionedStruct data = midPointOnlineInterpolator.CalculateHRIRPartitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);
-			const THRIRPartitionedStruct data = slopesMethodOnlineInterpolator.CalculateHRIRPartitioned_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuth, _elevation, stepVector);
+			// ONLINE Interpolation 	
 			if (ear == Common::T_ear::LEFT) {
+				//const THRIRPartitionedStruct data = midPointOnlineInterpolator.CalculateTF_OnlineMethod<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_LeftEar());
+				const THRIRPartitionedStruct data = slopesMethodOnlineInterpolator.CalculateTF_OnlineMethod<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_LeftEar());
 				return data.leftHRIR_Partitioned;
 			}
 			else
 			{
+				//const THRIRPartitionedStruct data = midPointOnlineInterpolator.CalculateTF_OnlineMethod<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_RightEar());
+				const THRIRPartitionedStruct data = slopesMethodOnlineInterpolator.CalculateTF_OnlineMethod<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_RightEar());
 				return data.rightHRIR_Partitioned;
 			}									
 		}
@@ -367,13 +369,14 @@ namespace BRTServices
 	
 			if (!runTimeInterpolation)
 			{
-				float leftDelay;
-				float rightDelay;
-				quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, leftDelay, stepVector, Common::T_ear::LEFT, _azimuthCenter, _elevationCenter);
-				quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, rightDelay, stepVector, Common::T_ear::RIGHT, _azimuthCenter, _elevationCenter);
+				//float leftDelay;
+				//float rightDelay;				
+				//quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, leftDelay, stepVector, Common::T_ear::LEFT, _azimuthCenter, _elevationCenter);
+				//quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, rightDelay, stepVector, Common::T_ear::RIGHT, _azimuthCenter, _elevationCenter);
+				data = quasiUniformSphereDistribution.FindNearest<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, _azimuthCenter, _elevationCenter);							
 
-				data.leftDelay	= static_cast<uint64_t>(leftDelay);
-				data.rightDelay = static_cast<uint64_t>(rightDelay);
+				//data.leftDelay	= static_cast<uint64_t>(temp.leftDelay);
+				//data.rightDelay = static_cast<uint64_t>(temp.rightDelay);
 				return data;				
 			}
 		
@@ -406,7 +409,7 @@ namespace BRTServices
 
 			// ONLINE Interpolation 
 			//return GetHRIRDelayInterpolationMethod(ear, _azimuthCenter, _elevationCenter, resamplingStep, stepVector);	
-			const THRIRPartitionedStruct temp = slopesMethodOnlineInterpolator.CalculateDelay_onlineMethod(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, ear, _azimuthCenter, _elevationCenter, stepVector);
+			const THRIRPartitionedStruct temp = slopesMethodOnlineInterpolator.CalculateTF_OnlineMethod<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, _azimuthCenter, _elevationCenter, stepVector, CHRTFAuxiliarMethods::CalculateDelay_FromBarycentricCoordinates());
 			return temp;
 		}
 
@@ -618,8 +621,7 @@ namespace BRTServices
 
 	private:
 		
-		enum TExtrapolationMethod { zeroInsertion, nearestPoint};		
-
+		enum TExtrapolationMethod { zeroInsertion, nearestPoint };
 		///////////////
 		// ATTRIBUTES
 		///////////////		
@@ -645,7 +647,7 @@ namespace BRTServices
 		bool enableCustomizedITD;					// Indicate the use of a customized delay
 		int gapThreshold;							// Max distance between pole and next elevation to be consider as a gap
 
-		std::unordered_map<orientation, float> stepVector;
+		std::unordered_map<orientation, float> stepVector;		// Store hrtf interpolated grids steps
 
 		std::string title;
 		std::string databaseName;
@@ -671,460 +673,17 @@ namespace BRTServices
 
 		// Processors
 		CQuasiUniformSphereDistribution quasiUniformSphereDistribution;
-		CDistanceBasedInterpolator distanceBasedInterpolator;
-		CQuadrantBasedInterpolator quadrantBasedInterpolator;
-		//CMidPointOnlineInterpolator midPointOnlineInterpolator;
+		CMidPointOnlineInterpolator midPointOnlineInterpolator;
 		CSlopesMethodOnlineInterpolator slopesMethodOnlineInterpolator;
+		COfflineInterpolation offlineInterpolation;
 		CExtrapolation extrapolation;		
 
 		friend class CHRTFTester;
-		
-		
+				
 		
 		/////////////
 		// METHODS
 		/////////////
-
-		//	Fill out the HRTF for every azimuth and two specific elevations: 90 and 270 degrees		
-		void CalculateHRIR_InPoles(int _resamplingStep)
-		{
-			THRIRStruct precalculatedHRIR_270, precalculatedHRIR_90;
-			bool found = false;
-			//Clasify every HRIR of the HRTF into the two hemispheres by their t_HRTF_DataBase_ListOfOrientations
-			std::vector<orientation> keys_southernHemisphere, keys_northenHemisphere;
-			int iAzimuthPoles = azimuthMin;
-			int iElevationNorthPole = elevationNorth;
-			int iElevationSouthPole = elevationSouth;
-
-			//	NORTHERN HEMOSPHERE POLES (90 degrees elevation ) ____________________________________________________________________________
-			auto it90 = t_HRTF_DataBase.find(orientation(iAzimuthPoles, iElevationNorthPole)); 
-
-			if (it90 != t_HRTF_DataBase.end())
-			{ 
-				precalculatedHRIR_90 = it90->second; 
-			}
-			else
-			{
-				keys_northenHemisphere.reserve(t_HRTF_DataBase.size());
-				
-				for (auto& it : t_HRTF_DataBase)
-				{
-					if (it.first.elevation < iElevationNorthPole) { keys_northenHemisphere.push_back(it.first); }
-				}
-				// sort using a custom function object
-				struct { bool operator()(orientation a, orientation b) const { return a.elevation > b.elevation;}	} customLess;
-				std::sort(keys_northenHemisphere.begin(), keys_northenHemisphere.end(), customLess);
-
-				precalculatedHRIR_90 = CalculateHRIR_InOneHemispherePole(keys_northenHemisphere);
-
-				SET_RESULT(RESULT_WARNING, "HRIR interpolated in the pole [ " + std::to_string(iAzimuthPoles) + ", " + std::to_string(iElevationNorthPole) + "]");
-			}
-
-			//	SOURTHERN HEMOSPHERE POLES (270 degrees elevation) ____________________________________________________________________________
-			auto it270 = t_HRTF_DataBase.find(orientation(iAzimuthPoles, iElevationSouthPole));
-
-			if (it270 != t_HRTF_DataBase.end())
-			{
-				precalculatedHRIR_270 = it270->second;
-			}
-			else
-			{
-				keys_southernHemisphere.reserve(t_HRTF_DataBase.size());
-				for (auto& it : t_HRTF_DataBase)
-				{
-					if (it.first.elevation > iElevationSouthPole) { keys_southernHemisphere.push_back(it.first);}
-				}
-				//Get a vector of iterators ordered from highest to lowest elevation.		
-				struct {
-					bool operator()(orientation a, orientation b) const	{ return a.elevation < b.elevation; }
-				} customLess;
-				std::sort(keys_southernHemisphere.begin(), keys_southernHemisphere.end(), customLess);
-
-				precalculatedHRIR_270 = CalculateHRIR_InOneHemispherePole(keys_southernHemisphere);
-				
-				SET_RESULT(RESULT_WARNING, "HRIR interpolated in the pole [ " + std::to_string(iAzimuthPoles) + ", " + std::to_string(iElevationSouthPole) + "]");
-			}
-			// Fill out the table for "every azimuth in the pole" ____________________________________________________________________________
-			for (int az = azimuthMin; az < azimuthMax; az = az + _resamplingStep)
-			{
-				//Elevation 90 degrees
-				t_HRTF_DataBase.emplace(orientation(az, iElevationNorthPole), precalculatedHRIR_90);
-				//Elevation 270 degrees
-				t_HRTF_DataBase.emplace(orientation(az, iElevationSouthPole), precalculatedHRIR_270);
-			}
-		}
-
-		//	Calculate the HRIR in the pole of one of the hemispheres
-		//param hemisphereParts	vector of the HRTF t_HRTF_DataBase_ListOfOrientations of the hemisphere		
-		THRIRStruct CalculateHRIR_InOneHemispherePole(std::vector<orientation> keys_hemisphere)
-		{
-			THRIRStruct calculatedHRIR;
-			std::vector < std::vector <orientation>> hemisphereParts;
-			hemisphereParts.resize(NUMBER_OF_PARTS); 
-			int border = std::ceil(sphereBorder / NUMBER_OF_PARTS);
-			auto currentElevation = keys_hemisphere.begin()->elevation;
-			for (auto& it : keys_hemisphere)
-			{
-				if (it.elevation == currentElevation)
-				{
-					//Clasify each orientation in its corresponding hemisphere part group (by the azimuth value). The number of the parts and the size depend on the NUMBER_OF_PARTS value
-					int32_t currentAzimuth = it.azimuth;
-					for (int j = 0; j < NUMBER_OF_PARTS; j++)
-					{
-						if (currentAzimuth >= (border * j) && currentAzimuth < (border * (j + 1))) {
-							hemisphereParts[j].push_back(it);
-							break;
-						}
-					}
-				}
-				else
-				{
-					//Check if there are values in every hemisphere part
-					bool everyPartWithValues = true;
-					for (int j = 0; j < NUMBER_OF_PARTS; j++)
-					{
-						everyPartWithValues = everyPartWithValues && (hemisphereParts[j].size() > 0);
-					}
-
-					//If hemisphere every part has at list a value, the algorithm of select the interpolated HRIR finish
-					if (everyPartWithValues) { break; }
-					//else, the algorithm continue, unless the elevation is MAX_DISTANCE_BETWEEN_ELEVATIONS bigger than the first selected elevation
-					else
-					{
-						currentElevation = it.elevation;
-						if (currentElevation > (keys_hemisphere.begin()->elevation + MAX_DISTANCE_BETWEEN_ELEVATIONS))
-						{
-							break;
-						}
-						else 
-						{
-							int32_t currentAzimuth = it.azimuth;
-							for (int j = 0; j < NUMBER_OF_PARTS; j++)
-							{
-								//The iterator (it) has moved fordward, so this orientation must be clasified a hemispehere part group
-								if (currentAzimuth >= (border * j) && currentAzimuth < (border * (j + 1))) {
-									hemisphereParts[j].push_back(it);
-									break;
-								}
-							}
-						}
-					} //END else 'if(everyPartWithValues)'
-				}// END else of 'if(it.elevation == currentElevation)'
-			}//END loop keys_hemisphere
-
-			 //Calculate the delay and the HRIR of each hemisphere part
-			float totalDelay_left = 0.0f;
-			float totalDelay_right = 0.0f;
-
-			std::vector< THRIRStruct> newHRIR;
-			newHRIR.resize(hemisphereParts.size());
-
-			for (int q = 0; q < hemisphereParts.size(); q++)
-			{
-				newHRIR[q].leftHRIR.resize(HRIRLength, 0.0f);
-				newHRIR[q].rightHRIR.resize(HRIRLength, 0.0f);
-
-				float scaleFactor;
-				if (hemisphereParts[q].size())
-				{
-					scaleFactor = 1.0f / hemisphereParts[q].size(); 
-				}
-				else
-				{
-					scaleFactor = 0.0f;
-				}
-
-				for (auto it = hemisphereParts[q].begin(); it != hemisphereParts[q].end(); it++)
-				{
-					auto itHRIR = t_HRTF_DataBase.find(orientation(it->azimuth, it->elevation));
-
-					//Get the delay
-					newHRIR[q].leftDelay = (newHRIR[q].leftDelay + itHRIR->second.leftDelay);
-					newHRIR[q].rightDelay = (newHRIR[q].rightDelay + itHRIR->second.rightDelay);
-
-					//Get the HRIR
-					for (int i = 0; i < HRIRLength; i++) {
-						newHRIR[q].leftHRIR[i] = (newHRIR[q].leftHRIR[i] + itHRIR->second.leftHRIR[i]);
-						newHRIR[q].rightHRIR[i] = (newHRIR[q].rightHRIR[i] + itHRIR->second.rightHRIR[i]);
-					}
-
-
-				}//END loop hemisphere part
-
-				 //Multiply by the factor (weighted sum)
-				 //Delay 
-				totalDelay_left = totalDelay_left + (scaleFactor * newHRIR[q].leftDelay);
-				totalDelay_right = totalDelay_right + (scaleFactor * newHRIR[q].rightDelay);
-				//HRIR
-				for (int i = 0; i < HRIRLength; i++)
-				{
-					newHRIR[q].leftHRIR[i] = newHRIR[q].leftHRIR[i] * scaleFactor;
-					newHRIR[q].rightHRIR[i] = newHRIR[q].rightHRIR[i] * scaleFactor;
-				}
-			}
-
-			//Get the FINAL values
-			float scaleFactor_final = 1.0f / hemisphereParts.size();
-
-			//Calculate Final delay
-			calculatedHRIR.leftDelay = static_cast <unsigned long> (round(scaleFactor_final * totalDelay_left));
-			calculatedHRIR.rightDelay = static_cast <unsigned long> (round(scaleFactor_final * totalDelay_right));
-
-			//calculate Final HRIR
-			calculatedHRIR.leftHRIR.resize(HRIRLength, 0.0f);
-			calculatedHRIR.rightHRIR.resize(HRIRLength, 0.0f);
-
-			for (int i = 0; i < HRIRLength; i++)
-			{
-				for (int q = 0; q < hemisphereParts.size(); q++)
-				{
-					calculatedHRIR.leftHRIR[i] = calculatedHRIR.leftHRIR[i] + newHRIR[q].leftHRIR[i];
-					calculatedHRIR.rightHRIR[i] = calculatedHRIR.rightHRIR[i] + newHRIR[q].rightHRIR[i];
-				}
-			}
-			for (int i = 0; i < HRIRLength; i++)
-			{
-				calculatedHRIR.leftHRIR[i] = calculatedHRIR.leftHRIR[i] * scaleFactor_final;
-				calculatedHRIR.rightHRIR[i] = calculatedHRIR.rightHRIR[i] * scaleFactor_final;
-			}
-
-			return calculatedHRIR;
-		}
-
-		/// <summary>
-		/// Get HRIR of azimith 0 and emplace again with azimuth 360 in the HRTF database table for every elevations
-		/// </summary>
-		/// <param name="_resamplingStep"></param>
-		void FillOutTableOfAzimuth360(int _resamplingStep) {
-			for (int el = elevationMin; el <= elevationNorth; el = el + _resamplingStep)
-			{
-				GetAndEmplaceHRIRinAzimuth360(el);
-			}
-			for (int el = elevationSouth; el < elevationMax; el = el + _resamplingStep)
-			{
-				GetAndEmplaceHRIRinAzimuth360(el);
-			}
-		}
-
-		/// <summary>
-		/// Get HRIR of azimith 0 and emplace again with azimuth 360 in the HRTF database table for an specific elevation
-		/// </summary>
-		/// <param name="_elevation"></param>
-		void GetAndEmplaceHRIRinAzimuth360(float _elevation) {
-			auto it = t_HRTF_DataBase.find(orientation(azimuthMin, _elevation));
-			if (it != t_HRTF_DataBase.end()) {
-				t_HRTF_DataBase.emplace(orientation(azimuthMax, _elevation), it->second);
-			}
-		}
-
-		/// <summary>
-		/// Fill Spherical Cap Gap of an HRTF making Interpolation between pole and the 2 nearest points.
-		/// </summary>
-		/// <param name="_gapThreshold"></param>
-		/// <param name="_resamplingStep"></param>
-		void FillSphericalCap_HRTF(int _gapThreshold, int _resamplingStep)
-		{
-			// Initialize some variables
-			float max_dist_elev = 0;
-			int elev_Step = _resamplingStep;
-			int pole;
-			float elev_south, elev_north, distance;
-			std::vector<orientation> orientations, north_hemisphere, south_hemisphere;
-			orientation bufferOrientation;
-
-			// Create a vector with all the t_HRTF_DataBase_ListOfOrientations of the Database
-			orientations.reserve(t_HRTF_DataBase.size());
-			for (auto& itr : t_HRTF_DataBase)
-			{
-				orientations.push_back(itr.first);
-			}
-
-			//  Sort t_HRTF_DataBase_ListOfOrientations of the DataBase with a lambda function in sort.
-			std::sort(orientations.begin(), orientations.end(), [](orientation a, orientation b) {return a.elevation < b.elevation; });
-
-			//	Separating t_HRTF_DataBase_ListOfOrientations of both hemispheres
-			std::copy_if(orientations.begin(), orientations.end(), back_inserter(south_hemisphere), [](orientation n) {return n.elevation > 180; }); //SOUTH
-			std::copy_if(orientations.begin(), orientations.end(), back_inserter(north_hemisphere), [](orientation n) {return n.elevation < 180; }); //NORTH
-
-
-			reverse(north_hemisphere.begin(), north_hemisphere.end());
-
-			// SOUTH HEMISPHERE
-			CalculateDistanceBetweenPoleandLastRing(south_hemisphere, max_dist_elev, elev_south);
-
-			if (max_dist_elev > _gapThreshold)
-			{
-				//pole = ELEVATION_SOUTH_POLE; // 270
-				Calculate_and_EmplaceHRIR(elevationSouth, south_hemisphere, elev_south, elev_Step);
-			}
-			// Reset var to use it in north hemisphere
-			max_dist_elev = 0;
-
-			// NORTH HEMISPHERE
-			CalculateDistanceBetweenPoleandLastRing(north_hemisphere, max_dist_elev, elev_north);
-
-			if (max_dist_elev > _gapThreshold)
-			{
-				//pole = ELEVATION_NORTH_POLE; //90
-				Calculate_and_EmplaceHRIR(elevationNorth, north_hemisphere, elev_north, elev_Step);
-			}
-		}
-
-		/// <summary>
-		/// Calculate the max distance between pole and the nearest ring, to know if there is a gap in any spherical cap
-		/// </summary>
-		/// <param name="_hemisphere"></param>
-		/// <param name="_max_dist_elev"></param>
-		/// <param name="elevationLastRing"></param>
-		void CalculateDistanceBetweenPoleandLastRing(std::vector<orientation>& _hemisphere, float& _max_dist_elev, float& elevationLastRing)
-		{
-			for (int jj = 1; jj < _hemisphere.size(); jj++)
-			{
-				// distance between 2 t_HRTF_DataBase_ListOfOrientations, always positive
-				if (_hemisphere[jj].elevation != _hemisphere[0].elevation)
-				{
-					_max_dist_elev = abs(_hemisphere[jj].elevation - _hemisphere[0].elevation); // Distance positive for all poles
-					elevationLastRing = _hemisphere[jj].elevation;
-					break;
-				}
-			}
-		}
-
-		/// <summary>
-		/// Calculate the HRIR we need by interpolation and emplace it in the database
-		/// </summary>
-		/// <param name="_hemisphere"></param>
-		/// <param name="elevationLastRing"></param>
-		/// <param name="_fillStep"></param>
-		void Calculate_and_EmplaceHRIR(int _pole, std::vector<orientation> _hemisphere, float _elevationLastRing, int _fillStep)
-		{
-			std::vector<orientation> lastRingOrientationList;
-			std::vector<T_PairDistanceOrientation> sortedList;
-			int azimuth_Step = _fillStep;
-			THRIRStruct HRIR_interpolated;
-
-			// Get a list with only the points of the nearest known ring
-			for (auto& itr : _hemisphere)
-			{
-				if (itr.elevation == _elevationLastRing)
-				{
-					lastRingOrientationList.push_back(itr);
-				}
-			}
-			// SOUTH HEMISPHERE
-			if (_pole == ELEVATION_SOUTH_POLE)
-			{
-				for (float elevat = _pole + _fillStep; elevat < _elevationLastRing; elevat = elevat + _fillStep)
-				{
-					for (float azim = azimuthMin; azim < azimuthMax; azim = azim + azimuth_Step)
-					{
-						//sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
-						HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, lastRingOrientationList, azim, elevat, HRIRLength, _pole);
-						t_HRTF_DataBase.emplace(orientation(azim, elevat), HRIR_interpolated);
-					}
-				}
-			}	// NORTH HEMISPHERE
-			else if (_pole == ELEVATION_NORTH_POLE)
-			{
-				for (float elevat = _elevationLastRing + _fillStep; elevat < _pole; elevat = elevat + _fillStep)
-				{
-					for (float azim = azimuthMin; azim < azimuthMax; azim = azim + azimuth_Step)
-					{
-						//sortedList = distanceBasedInterpolator.GetSortedDistancesList(lastRingOrientationList, azim, elevat);
-						HRIR_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, lastRingOrientationList, azim, elevat, HRIRLength, _pole);
-						t_HRTF_DataBase.emplace(orientation(azim, elevat), HRIR_interpolated);
-					}
-				}
-			}
-		}	
-
-		void FillResampledTable() {
-			int numOfInterpolatedHRIRs = 0;
-			for (auto& it : t_HRTF_Resampled_partitioned)
-			{
-				if (CalculateAndEmplaceNewPartitionedHRIR(it.first.azimuth, it.first.elevation)) { numOfInterpolatedHRIRs++; }
-			}
-			SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
-		}
-
-		/// <summary>
-		/// Calculate the resample HRIR using the Barycentric interpolation Method 
-		/// </summary>
-		/// <param name="newAzimuth"></param>
-		/// <param name="newElevation"></param>
-		/// <returns>interpolatedHRIRs: true if the HRIR has been calculated using the interpolation</returns>
-		bool CalculateAndEmplaceNewPartitionedHRIR(double _azimuth, double _elevation) {
-			THRIRStruct interpolatedHRIR;
-			bool bHRIRInterpolated = false;
-
-			auto it = t_HRTF_DataBase.find(orientation(_azimuth, _elevation));
-			if (it != t_HRTF_DataBase.end())
-			{
-				//Fill out HRTF partitioned table.IR in frequency domain
-				THRIRPartitionedStruct newHRIR_partitioned;
-				newHRIR_partitioned = SplitAndGetFFT_HRTFData(it->second);
-				t_HRTF_Resampled_partitioned[orientation(_azimuth, _elevation)] = std::forward<THRIRPartitionedStruct>(newHRIR_partitioned);				
-			}
-			else
-			{				
-				// Get a list sorted by distances to the orientation of interest
-				//std::vector<T_PairDistanceOrientation> sortedList = distanceBasedInterpolator.GetSortedDistancesList(t_HRTF_DataBase_ListOfOrientations, _azimuth, _elevation);
-				//Get the interpolated HRIR 
-				//interpolatedHRIR = distanceBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, _azimuth, _elevation, HRIRLength);
-				interpolatedHRIR = quadrantBasedInterpolator.CalculateHRIR_offlineMethod(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, _azimuth, _elevation, HRIRLength);				
-				bHRIRInterpolated = true;
-
-				//Fill out HRTF partitioned table.IR in frequency domain
-				THRIRPartitionedStruct newHRIR_partitioned;
-				newHRIR_partitioned = SplitAndGetFFT_HRTFData(interpolatedHRIR);
-				t_HRTF_Resampled_partitioned[orientation(_azimuth, _elevation)] =  std::forward<THRIRPartitionedStruct>(newHRIR_partitioned);				
-			}
-			return bHRIRInterpolated;
-		
-		}
-
-		//	Split the input HRIR data in subfilters and get the FFT to apply the UPC algorithm
-		//param	newData_time	HRIR value in time domain		
-		THRIRPartitionedStruct SplitAndGetFFT_HRTFData(const THRIRStruct& newData_time)
-		{
-			int blockSize = bufferSize;
-			int numberOfBlocks = HRIR_partitioned_NumberOfSubfilters;
-			int data_time_size = newData_time.leftHRIR.size();
-
-			THRIRPartitionedStruct new_DataFFT_Partitioned;
-			new_DataFFT_Partitioned.leftHRIR_Partitioned.reserve(numberOfBlocks);
-			new_DataFFT_Partitioned.rightHRIR_Partitioned.reserve(numberOfBlocks);
-			//Index to go throught the AIR values in time domain
-			int index;
-			for (int i = 0; i < data_time_size; i = i + blockSize)
-			{
-				CMonoBuffer<float> left_data_FFT_doubleSize, right_data_FFT_doubleSize;
-				//Resize with double size and zeros to make the zero-padded demanded by the algorithm
-				left_data_FFT_doubleSize.resize(blockSize * 2, 0.0f);
-				right_data_FFT_doubleSize.resize(blockSize * 2, 0.0f);
-				//Fill each AIR block (question about this comment: AIR???)
-				for (int j = 0; j < blockSize; j++) {
-					index = i + j;
-					if (index < data_time_size) {
-						left_data_FFT_doubleSize[j] = newData_time.leftHRIR[index];
-						right_data_FFT_doubleSize[j] = newData_time.rightHRIR[index];
-					}
-				}
-				//FFT
-				CMonoBuffer<float> left_data_FFT, right_data_FFT;
-				Common::CFprocessor::CalculateFFT(left_data_FFT_doubleSize, left_data_FFT);
-				Common::CFprocessor::CalculateFFT(right_data_FFT_doubleSize, right_data_FFT);
-				//Prepare struct to return the value
-				new_DataFFT_Partitioned.leftHRIR_Partitioned.push_back(left_data_FFT);
-				new_DataFFT_Partitioned.rightHRIR_Partitioned.push_back(right_data_FFT);
-			}
-			//Store the delays
-			new_DataFFT_Partitioned.leftDelay = newData_time.leftDelay;
-			new_DataFFT_Partitioned.rightDelay = newData_time.rightDelay;
-
-			return new_DataFFT_Partitioned;
-		}
-					
 
 		// Calculate and remove the common delay of every HRIR functions of the DataBase Table. Off line Method, called from EndSetUp()		
 		void RemoveCommonDelay_HRTFDataBaseTable()
@@ -1173,8 +732,10 @@ namespace BRTServices
 		}
 				
 		
-		// ETRAPOLATION
-
+		/**
+		 * @brief Set the extrapolation method that is going to be used
+		 * @param _extrapolationMethod 
+		*/
 		void SetExtrapolationMethod(std::string _extrapolationMethod) {
 		
 			if (_extrapolationMethod == EXTRAPOLATION_METHOD_ZEROINSERTION_STRING) {
@@ -1189,24 +750,24 @@ namespace BRTServices
 			}
 
 		}
-
+		/**
+		 * @brief Call the extrapolation method
+		*/
 		void CalculateExtrapolation() {
-			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.
-			
+			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.			
 			if (extrapolationMethod == TExtrapolationMethod::zeroInsertion) {
-				extrapolation.ProcessZeroInsertionBasedExtrapolation(t_HRTF_DataBase, DEFAULT_EXTRAPOLATION_STEP);
+				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded HRTF sofa file, an extrapolation with zeros will be performed to fill it.");
+				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, HRIRLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetZerosHRIR());
 			}
 			else if (extrapolationMethod == TExtrapolationMethod::nearestPoint) {
-				extrapolation.ProcessNearestPointBasedExtrapolation(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, DEFAULT_EXTRAPOLATION_STEP);
+				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded HRTF sofa file, an extrapolation will be made to the nearest point to fill it.");
+				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, HRIRLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetNearestPointHRIR());
 			}
 			else {
 				SET_RESULT(RESULT_ERROR_NOTSET, "Extrapolation Method not set up.");
 				// Do nothing
 			}									
 		}
-
-				
-		
 
 		// Reset HRTF		
 		void Reset() {
