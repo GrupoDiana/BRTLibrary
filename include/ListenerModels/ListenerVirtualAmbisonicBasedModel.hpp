@@ -145,6 +145,8 @@ namespace BRTListenerModel {
 
 
 		void SetAmbisonicOrder(int _ambisonicOrder) {
+			
+			if (_ambisonicOrder < 1 || _ambisonicOrder > 3) { return; }
 			ambisonicOrder = _ambisonicOrder;
 			if (listenerHRTF->IsHRTFLoaded()) {	InitListenerAmbisonicIR();		}
 			for (int nSource = 0; nSource < sourcesConnectedProcessors.size(); nSource++) {
@@ -169,6 +171,16 @@ namespace BRTListenerModel {
 			}
 		}
 		
+		void SetAmbisonicNormalization(std::string _ambisonicNormalization) {
+			
+			Common::TAmbisonicNormalization temp;
+			if (_ambisonicNormalization == "N3D") {			temp = Common::TAmbisonicNormalization::N3D; }
+			else if (_ambisonicNormalization == "SN3D") {	temp = Common::TAmbisonicNormalization::SN3D; }
+			else if (_ambisonicNormalization == "maxN") {	temp = Common::TAmbisonicNormalization::maxN; }
+			else { return; }
+			SetAmbisonicNormalization(temp);			
+		}
+
 		Common::TAmbisonicNormalization GetAmbisonincNormalization() {
 			return ambisonicNormalization;
 		}
