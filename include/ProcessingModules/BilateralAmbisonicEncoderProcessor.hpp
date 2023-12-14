@@ -92,7 +92,7 @@ namespace BRTProcessing {
 					if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
 					else { DisableNearFieldEffect(); }
 				}
-				else if (command.GetCommand() == "/listener/enableBilateral") {
+				else if (command.GetCommand() == "/listener/enableBilateralAmbisonic") {
 					if (command.GetBoolParameter("enable")) { EnableBilateral(); }
 					else { DisableBilateral(); }
 				}
