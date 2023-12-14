@@ -94,6 +94,7 @@ namespace BRTBase {
 			}
 		}
 				
+
 		/**
 		 * @brief Creates a new listener and returns a pointer to it. This listener pointer is also saved in a vector.
 		 * @tparam T It must be a listener model, i.e. a class that inherits from the CListenerModelBase class.
@@ -101,7 +102,7 @@ namespace BRTBase {
 		 * @return Returns the pointer to the listener if it could be created, otherwise returns a null pointer.
 		*/
 		template <typename T>
-		std::shared_ptr<T> CreateListener(std::string _listenerID) {			
+		std::shared_ptr<T> CreateListener(const std::string& _listenerID) {			
 			try
 			{
 				if (!setupModeActivated) {
@@ -126,6 +127,23 @@ namespace BRTBase {
 				return nullptr;
 			}
 		}
+
+		/**
+		 * @brief Returns pointer to a listener found by its ID
+		 * @tparam T Listener class model
+		 * @param _listenerID listenerID
+		 * @return Pointer to listener if exist, if not returns nullptr
+		*/
+		template <typename T>
+		std::shared_ptr<T> GetListener(const std::string& _listenerID) { 		
+			for (auto& it : listeners) {
+				if (it->GetID() == _listenerID) {
+					return it;
+				}
+			}
+			return nullptr;
+		}
+
 
 		/**
 		 * @brief Creates a new processor and returns a pointer to it. The brtmanager does NOT save the pointer.
