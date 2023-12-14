@@ -127,72 +127,39 @@ namespace BRTListenerModel {
 
 		/**
 		 * @brief Connect a new source to this listener
-		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
 		 * @param _source Pointer to the source
 		 * @return True if the connection success
 		*/
-		template <typename T>
-		bool ConnectSoundSource(std::shared_ptr<T> _source) {						
-			CSourceProcessors _newSourceProcessors(_source->GetID(), brtManager);
-			
-			bool control = brtManager->ConnectModuleTransform(_source, _newSourceProcessors.binauralConvolverProcessor, "sourcePosition");
-			control = control && brtManager->ConnectModuleTransform(_source, _newSourceProcessors.nearFieldEffectProcessor, "sourcePosition");
-			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.binauralConvolverProcessor, "sourceID");
-			control = control && brtManager->ConnectModuleTransform(this, _source, "listenerPosition");
-							  
-			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.binauralConvolverProcessor, "listenerPosition");
-			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerPosition");
-			control = control && brtManager->ConnectModuleHRTF(this, _newSourceProcessors.binauralConvolverProcessor, "listenerHRTF");
-			control = control && brtManager->ConnectModuleILD(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerILD");
-			control = control && brtManager->ConnectModuleID(this, _newSourceProcessors.binauralConvolverProcessor, "listenerID");
-							  
-			control = control && brtManager->ConnectModulesSamples(_source, "samples", _newSourceProcessors.binauralConvolverProcessor, "inputSamples");
-			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.binauralConvolverProcessor, "leftEar", _newSourceProcessors.nearFieldEffectProcessor, "leftEar");
-			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.binauralConvolverProcessor, "rightEar", _newSourceProcessors.nearFieldEffectProcessor, "rightEar");
-			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.nearFieldEffectProcessor, "leftEar", this, "leftEar");
-			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.nearFieldEffectProcessor, "rightEar", this, "rightEar");
-
-			if (control) {
-				sourcesConnectedProcessors.push_back(std::move(_newSourceProcessors));
-				return true;
-			}			
-			return false;
-		}
+		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel > _source) { 
+			return ConnectAnySoundSource(_source, false);
+		};
+		/**
+		 * @brief Connect a new source to this listener
+		 * @param _source Pointer to the source
+		 * @return True if the connection success
+		*/
+		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel > _source) { 			
+			return ConnectAnySoundSource(_source, true);
+		};
 
 		/**
 		 * @brief Disconnect a new source to this listener
-		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
 		 * @param _source Pointer to the source
-		*  @return True if the disconnection success
+		 * @return True if the disconnection success
 		*/
-		template <typename T>
-		bool DisconnectSoundSource(std::shared_ptr<T> _source) {
-			std::string _sourceID = _source->GetID();
-			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSourceProcessors& sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
-			if (it != sourcesConnectedProcessors.end()) {							
-				bool control = brtManager->DisconnectModulesSamples(it->nearFieldEffectProcessor, "leftEar", this, "leftEar");
-				control = control && brtManager->DisconnectModulesSamples(it->nearFieldEffectProcessor, "rightEar", this, "rightEar");
-				control = control && brtManager->DisconnectModulesSamples(it->binauralConvolverProcessor, "leftEar", it->nearFieldEffectProcessor, "leftEar");
-				control = control && brtManager->DisconnectModulesSamples(it->binauralConvolverProcessor, "rightEar", it->nearFieldEffectProcessor, "rightEar");
-				control = control && brtManager->DisconnectModulesSamples(_source, "samples", it->binauralConvolverProcessor, "inputSamples");
-				
-				control = control && brtManager->DisconnectModuleID(this, it->binauralConvolverProcessor, "listenerID");
-				control = control && brtManager->DisconnectModuleILD(this, it->nearFieldEffectProcessor, "listenerILD");
-				control = control && brtManager->DisconnectModuleHRTF(this, it->binauralConvolverProcessor, "listenerHRTF");
-				control = control && brtManager->DisconnectModuleTransform(this, it->nearFieldEffectProcessor, "listenerPosition");
-				control = control && brtManager->DisconnectModuleTransform(this, it->binauralConvolverProcessor, "listenerPosition");
-				
-				control = control && brtManager->DisconnectModuleTransform(this, _source, "listenerPosition");
-				control = control && brtManager->DisconnectModuleID(_source, it->binauralConvolverProcessor, "sourceID");
-				control = control && brtManager->DisconnectModuleTransform(_source, it->nearFieldEffectProcessor, "sourcePosition");
-				control = control && brtManager->DisconnectModuleTransform(_source, it->binauralConvolverProcessor, "sourcePosition");
+		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) { 
+			return DisconnectAnySoundSource(_source, false);
+		};
+		/**
+		 * @brief Disconnect a new source to this listener
+		 * @param _source Pointer to the source
+		 * @return True if the disconnection success
+		*/
+		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) { 
+			return DisconnectAnySoundSource(_source, true);
+		};
 
-				it->Clear(brtManager);
-				sourcesConnectedProcessors.erase(it); 	
-				return true;
-			}			
-			return false;
-		}
+		
 
 		/** \brief Enable binaural spatialization based in HRTF convolution
 		*   \eh Nothing is reported to the error handler.
@@ -294,6 +261,81 @@ namespace BRTListenerModel {
 
 	private:
 
+					
+		/**
+		 * @brief Connect a new source to this listener
+		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
+		 * @param _source Pointer to the source
+		 * @return True if the connection success
+		*/
+		template <typename T>
+		bool ConnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
+			CSourceProcessors _newSourceProcessors(_source->GetID(), brtManager);
+
+			bool control = brtManager->ConnectModuleTransform(_source, _newSourceProcessors.binauralConvolverProcessor, "sourcePosition");
+			control = control && brtManager->ConnectModuleTransform(_source, _newSourceProcessors.nearFieldEffectProcessor, "sourcePosition");
+			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.binauralConvolverProcessor, "sourceID");
+			
+			if (sourceNeedsListenerPosition) {
+				control = control && brtManager->ConnectModuleTransform(this, _source, "listenerPosition");
+			}
+
+			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.binauralConvolverProcessor, "listenerPosition");
+			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerPosition");
+			control = control && brtManager->ConnectModuleHRTF(this, _newSourceProcessors.binauralConvolverProcessor, "listenerHRTF");
+			control = control && brtManager->ConnectModuleILD(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerILD");
+			control = control && brtManager->ConnectModuleID(this, _newSourceProcessors.binauralConvolverProcessor, "listenerID");
+
+			control = control && brtManager->ConnectModulesSamples(_source, "samples", _newSourceProcessors.binauralConvolverProcessor, "inputSamples");
+			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.binauralConvolverProcessor, "leftEar", _newSourceProcessors.nearFieldEffectProcessor, "leftEar");
+			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.binauralConvolverProcessor, "rightEar", _newSourceProcessors.nearFieldEffectProcessor, "rightEar");
+			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.nearFieldEffectProcessor, "leftEar", this, "leftEar");
+			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.nearFieldEffectProcessor, "rightEar", this, "rightEar");
+
+			if (control) {
+				sourcesConnectedProcessors.push_back(std::move(_newSourceProcessors));
+				return true;
+			}
+			return false;
+		}
+
+		/**
+		 * @brief Disconnect a new source to this listener
+		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
+		 * @param _source Pointer to the source
+		*  @return True if the disconnection success
+		*/
+		template <typename T>
+		bool DisconnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
+			std::string _sourceID = _source->GetID();
+			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSourceProcessors& sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
+			if (it != sourcesConnectedProcessors.end()) {
+				bool control = brtManager->DisconnectModulesSamples(it->nearFieldEffectProcessor, "leftEar", this, "leftEar");
+				control = control && brtManager->DisconnectModulesSamples(it->nearFieldEffectProcessor, "rightEar", this, "rightEar");
+				control = control && brtManager->DisconnectModulesSamples(it->binauralConvolverProcessor, "leftEar", it->nearFieldEffectProcessor, "leftEar");
+				control = control && brtManager->DisconnectModulesSamples(it->binauralConvolverProcessor, "rightEar", it->nearFieldEffectProcessor, "rightEar");
+				control = control && brtManager->DisconnectModulesSamples(_source, "samples", it->binauralConvolverProcessor, "inputSamples");
+
+				control = control && brtManager->DisconnectModuleID(this, it->binauralConvolverProcessor, "listenerID");
+				control = control && brtManager->DisconnectModuleILD(this, it->nearFieldEffectProcessor, "listenerILD");
+				control = control && brtManager->DisconnectModuleHRTF(this, it->binauralConvolverProcessor, "listenerHRTF");
+				control = control && brtManager->DisconnectModuleTransform(this, it->nearFieldEffectProcessor, "listenerPosition");
+				control = control && brtManager->DisconnectModuleTransform(this, it->binauralConvolverProcessor, "listenerPosition");
+
+				if (sourceNeedsListenerPosition) {
+					control = control && brtManager->DisconnectModuleTransform(this, _source, "listenerPosition");								
+				}
+				control = control && brtManager->DisconnectModuleID(_source, it->binauralConvolverProcessor, "sourceID");
+				control = control && brtManager->DisconnectModuleTransform(_source, it->nearFieldEffectProcessor, "sourcePosition");
+				control = control && brtManager->DisconnectModuleTransform(_source, it->binauralConvolverProcessor, "sourcePosition");
+
+				it->Clear(brtManager);
+				sourcesConnectedProcessors.erase(it);
+				return true;
+			}
+			return false;
+		}
+
 		/////////////////
 		// Attributes
 		/////////////////
@@ -301,8 +343,9 @@ namespace BRTListenerModel {
 		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;	// HRTF of listener														
 		std::shared_ptr<BRTServices::CILD> listenerILD;		// ILD of listener						
 		std::vector< CSourceProcessors> sourcesConnectedProcessors;
-		BRTBase::CBRTManager* brtManager;		
+		BRTBase::CBRTManager* brtManager;
 		Common::CGlobalParameters globalParameters;
+
 	};
 }
 #endif
