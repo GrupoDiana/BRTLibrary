@@ -26,7 +26,7 @@
 #include "Common/GlobalParameters.hpp"
 #include "Common/ErrorHandler.hpp"
 #include "Base/BRTManager.hpp"
-#include "Base/ListenerModelBase.hpp"
+//#include "Base/ListenerModelBase.hpp"
 #include "ListenerModels/ListenerHRTFbasedModel.hpp"
 #include "ListenerModels/ListenerVirtualAmbisonicBasedModel.hpp"
 #include "SourceModels/SourceSimpleModel.hpp"
