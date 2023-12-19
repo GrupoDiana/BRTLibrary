@@ -306,7 +306,7 @@ namespace BRTListenerModel {
 		*/
 		void EnableBilateral() {
 			nlohmann::json j;
-			j["command"] = "/listener/enableBilateral";
+			j["command"] = "/listener/enableBilateralAmbisonics";
 			j["listenerID"] = listenerID;
 			j["enable"] = true;
 			brtManager->ExecuteCommand(j.dump());
@@ -317,7 +317,7 @@ namespace BRTListenerModel {
 		*/
 		void DisableBilateral() {
 			nlohmann::json j;
-			j["command"] = "/listener/enableBilateral";
+			j["command"] = "/listener/enableBilateralAmbisonics";
 			j["listenerID"] = listenerID;
 			j["enable"] = false;
 			brtManager->ExecuteCommand(j.dump());
