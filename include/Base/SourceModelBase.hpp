@@ -49,7 +49,7 @@ namespace BRTBase {
 			CreateCommandEntryPoint();
 		}
 
-		void SetBuffer(CMonoBuffer<float>& _buffer) { 
+		void SetBuffer(const CMonoBuffer<float>& _buffer) { 
 			samplesBuffer = _buffer; 
 			dataReady = true;
 		}

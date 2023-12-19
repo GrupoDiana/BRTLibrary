@@ -559,7 +559,7 @@ namespace Common {
 		{
 			// Get size of all sourceBuffers and check they are the same
 			size_t bufferSize = 0;
-			for (std::vector<CBuffer>::iterator it = sourceBuffers.begin(); it != sourceBuffers.end(); ++it)
+			for (typename std::vector<CBuffer>::iterator it = sourceBuffers.begin(); it != sourceBuffers.end(); ++it)
 			{
 				if (bufferSize == 0)
 					bufferSize = (*it).size();

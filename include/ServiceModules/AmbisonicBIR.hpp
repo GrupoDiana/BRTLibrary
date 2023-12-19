@@ -99,7 +99,7 @@ namespace BRTServices
 			
 			std::lock_guard<std::mutex> l(mutex);
 
-			Reset(),
+            Reset();
 					
 			//impulseResponseLength = _irLength;
 			
@@ -269,7 +269,7 @@ namespace BRTServices
 			else
 			{
 				SET_RESULT(RESULT_ERROR_OUTOFRANGE, "Error trying to get Ambisonic IR data from a ambisonicIRPartitioned Table, channel not found.");				
-				return THRIRPartitionedStruct(); 
+				return THRIRPartitionedStruct(); // FIXME: returning ref to temporary object
 			}
 		}
 
@@ -278,7 +278,7 @@ namespace BRTServices
 			std::lock_guard<std::mutex> l(mutex);
 			if (!AmbisonicBIRLoaded) { 
 				SET_RESULT(RESULT_ERROR_NOTSET, "Error trying to get Ambisonic IR data from a ambisonicIRPartitioned Table. The necessary setup of the class has not been carried out.");
-				return std::vector<CMonoBuffer<float>>();
+				return std::vector<CMonoBuffer<float>>(); // FIXME: returning ref to temporary object
 			}
 			
 			auto it = ambisonicIRPartitionedTable.find(channel);
@@ -293,7 +293,7 @@ namespace BRTServices
 				}
 			}
 			SET_RESULT(RESULT_ERROR_OUTOFRANGE, "Error trying to get Ambisonic IR data from a ambisonicIRPartitioned Table. Either the channel is not found or the requested ear did not have a valid parameter.");
-			return std::vector<CMonoBuffer<float>>();
+			return std::vector<CMonoBuffer<float>>(); // FIXME: returning ref to temporary object
 			
 		}
 				

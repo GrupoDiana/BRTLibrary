@@ -160,7 +160,7 @@ namespace BRTServices
 		}
 
 		template <typename T, typename U>
-		U FindNearest(const T& table, /*U/*std::vector<CMonoBuffer<float>>& _outData,*/ const std::unordered_map<orientation, float>& stepMap, /*Common::T_ear ear,*/ float _azimuth, float _elevation) const
+		U FindNearest(const T& table, /*std::vector<CMonoBuffer<float>>& _outData,*/ const std::unordered_map<orientation, float>& stepMap, /*Common::T_ear ear,*/ float _azimuth, float _elevation) const
 		{
 			U emptyData;
 			float eleStep = stepMap.find(orientation(-1, -1))->second;
