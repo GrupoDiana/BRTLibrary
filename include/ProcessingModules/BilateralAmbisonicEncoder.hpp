@@ -42,7 +42,7 @@
 namespace BRTProcessing {
 	class CBilateralAmbisonicEncoder {
 	public:
-		CBilateralAmbisonicEncoder() : ambisonicOrder{ 1 }, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }, enableInterpolation{ true }, enableBilateral{ true } {
+		CBilateralAmbisonicEncoder() : ambisonicOrder{ 1 }, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }, enableInterpolation{ true }, enableBilateral{ false } {
 		
 			//leftAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
 			//rightAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
