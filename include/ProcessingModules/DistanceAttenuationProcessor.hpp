@@ -68,6 +68,7 @@ namespace BRTProcessing {
 
 
     private:        
+        mutable std::mutex mutex;
         //bool enabled;
         //Common::CGlobalParameters globalParameters;
         //float referenceDistance;                        // Distance at which the attenuation is 0 dB, in meters.

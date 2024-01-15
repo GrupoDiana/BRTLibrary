@@ -35,6 +35,11 @@ namespace BRTServices {
 	class CHRTF;
 }
 
+namespace BRTSourceModel {
+	class CSourceSimpleModel;
+	class CSourceDirectivityModel;
+}
+
 namespace BRTBase {
 
 	class CListenerModelBase: public CCommandEntryPointManager, public CExitPointManager, public CEntryPointManager {
