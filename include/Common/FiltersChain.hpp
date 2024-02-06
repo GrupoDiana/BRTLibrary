@@ -136,14 +136,14 @@ namespace Common {
 		*	\param [in] coefficients vector of ordered coefficients for all biquads in the chain				
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void SetFromCoefficientsVector(TFiltersChainCoefficients& coefficients)
+		void SetFromCoefficientsVector(TFiltersChainCoefficients& coefficients, bool _crossfadingEnabled = true)
 		{
 			if (coefficients.size() == filters.size())
 			{
 				// Set existing filters
 				for (int i = 0; i < coefficients.size(); i++)
 				{
-					filters[i]->SetCoefficients(coefficients[i]);
+					filters[i]->Setup(coefficients[i], _crossfadingEnabled);
 				}
 			}
 			else
@@ -153,8 +153,16 @@ namespace Common {
 				for (int i = 0; i < coefficients.size(); i++)
 				{
 					std::shared_ptr<Common::CBiquadFilter> newBiquad = AddFilter();
-					newBiquad->SetCoefficients(coefficients[i]);
+					newBiquad->Setup(coefficients[i]);
 				}
+			}
+		}
+		
+
+		void ResetBuffers() {			
+			for (int i = 0; i < filters.size(); i++)
+			{
+				filters[i]->ResetBuffers();
 			}
 		}
 
@@ -162,8 +170,8 @@ namespace Common {
 		////////////////////////
 		// PRIVATE ATTRIBUTES
 		////////////////////////
-		std::vector<std::shared_ptr<CBiquadFilter>> filters;                      // Hold the filters in the chain. 
-																		// Indexes indicate the order within the chain.
+		std::vector<std::shared_ptr<CBiquadFilter>> filters;                    // Hold the filters in the chain. 
+																				// Indexes indicate the order within the chain.
 	};
 }//end namespace Common
 #endif

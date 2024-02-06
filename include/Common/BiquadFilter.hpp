@@ -25,12 +25,13 @@
 
 #include <Common/Buffer.hpp>
 #include "CommonDefinitions.hpp"
+#include <Common/GlobalParameters.hpp>
 
 #include <cmath>
 #include <iomanip>
 
 #define _USE_MATH_DEFINES // TODO: Test in windows! Might also be problematic for other platforms??
-#define DEFAULT_SAMPLING_RATE 44100
+//#define DEFAULT_SAMPLING_RATE 44100
 
 
 namespace Common {
@@ -65,8 +66,7 @@ namespace Common {
 		CBiquadFilter()		
 		{
 			// error handler: Trust in SetSamplingFreq for result
-
-			z1_l = 0;
+			/*z1_l = 0;
 			z2_l = 0;
 			z1_r = 0;
 			z2_r = 0;
@@ -82,17 +82,16 @@ namespace Common {
 			new_b2 = 0;
 			new_a1 = 0;
 			new_a2 = 0;
-			crossfadingNeeded = false;
+
 			new_z1_l = 0;
 			new_z2_l = 0;
 			new_z1_r = 0;
 			new_z2_r = 0;
 
-			SetCoefficients(1, 0, 0, 0, 0);
-
+			SetCoefficients(1, 0, 0, 0, 0);*/
+			InitFilterCoefficients();
 			generalGain = 1.0f;
-
-			SetSamplingFreq(DEFAULT_SAMPLING_RATE);
+			crossfadingEnabled = false;
 		}
 
 
@@ -105,12 +104,17 @@ namespace Common {
 		*	\param [in] a2 coefficient a2
 		*   \eh On error, an error code is reported to the error handler.
 		*/		
-		void Setup(float samplingRate, float b0, float b1, float b2, float a1, float a2)
-		{
-			samplingFreq = samplingRate;
+		void Setup(float b0, float b1, float b2, float a1, float a2, bool _crossfadingEnabled = true)
+		{		
+			crossfadingEnabled = _crossfadingEnabled;
 			SetCoefficients(b0, b1, b2, a1, a2);
 		}
 
+		void Setup(const TBiquadCoefficients& coefficients, bool _crossfadingEnabled = true)
+		{
+			crossfadingEnabled = _crossfadingEnabled;
+			SetCoefficients(coefficients);
+		}
 
 		/** \brief Set up the filter
 		*	\param [in] samplingRate sampling frequency, in Hertzs
@@ -119,87 +123,19 @@ namespace Common {
 		*	\param [in] filterType type of filter
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		void Setup(float samplingRate, float frequency, float Q, T_filterType filterType)		
-		{
-			samplingFreq = samplingRate;
+		void Setup(float frequency, float Q, T_filterType filterType, bool _crossfadingEnabled = true)
+		{			
+			crossfadingEnabled = _crossfadingEnabled;
 			SetCoefficients(frequency, Q, filterType);
 		}
-
-		/** \brief Set up coefficients of the filter
-		*	\param [in] b0 coefficient b0
-		*	\param [in] b1 coefficient b1
-		*	\param [in] b2 coefficient b2
-		*	\param [in] a1 coefficient a1
-		*	\param [in] a2 coefficient a2
-		*   \eh Nothing is reported to the error handler.
-		*/
-		void SetCoefficients(float b0, float b1, float b2, float a1, float a2)		
-		{
-			crossfadingNeeded = true;
-
-			new_b0 = b0;
-			new_b1 = b1;
-			new_b2 = b2;
-			new_a1 = a1;
-			new_a2 = a2;
-
-			new_z1_l = 0;
-			new_z2_l = 0;
-			new_z1_r = 0;
-			new_z2_r = 0;
-		}
-
-		/** \brief Set up coefficients of the filter
-		*	\param [in] coefficients coefficients array. Order: b0, b1, a1, a2  
-		*   \eh Nothing is reported to the error handler. */
-		void SetCoefficients(float *coefficients)		
-		{
-			//SET_RESULT(RESULT_OK, "");
-			SetCoefficients(coefficients[0], coefficients[1], coefficients[2], coefficients[3], coefficients[4]);
-		}
-
-		/** \brief Set up coefficients of the filter
-		*	\param [in] coefficients coefficients vector. Order: b0, b1, a1, a2  
-		*   \eh Nothing is reported to the error handler. */		
-		void SetCoefficients(TBiquadCoefficients& coefficients)
-		{			
-			if (coefficients.size() == 6) {				
-				float a0 = coefficients[3];
-				SetCoefficients(coefficients[0] / a0, coefficients[1] / a0, coefficients[2] / a0, coefficients[4] / a0, coefficients[5] / a0);
-			}
-			else if (coefficients.size() == 5) {
-				SetCoefficients(coefficients[0], coefficients[1], coefficients[2], coefficients[3], coefficients[4]);
-			}
-			else {
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "A vector with 5 or 6 coefficients was expected in BiquadFilter definition.");
-			}
-		}
-
-		/** \brief Set up coefficients of the filter
-		*	\details Lowpass, Highpass and Bandpass filters are Butterworth design
-		*	\param [in] frequency relevant frequency (cutoff or band center)
-		*	\param [in] Q Q factor
-		*	\param [in] filterType type of filter
-		*   \eh On error, an error code is reported to the error handler.
-		*/
-		void SetCoefficients(float frequency, float Q, T_filterType filterType)		
-		{
-			if (filterType == LOWPASS)
-				SetCoefsFor_LPF(frequency, Q);
-
-			else if (filterType == HIGHPASS)
-				SetCoefsFor_HPF(frequency, Q);
-
-			else if (filterType == BANDPASS)
-				SetCoefsFor_BandPassFilter(frequency, Q);
-		}
+		
 
 		/** \brief Set the sampling frequency at which audio samples were acquired
 		*	\param [in] _samplingFreq sampling frequency, in Hertzs
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
-		void SetSamplingFreq(float _samplingFreq)		
+		/*void SetSamplingFreq(float _samplingFreq)		
 		{
 			if (_samplingFreq < 0.1)
 			{
@@ -209,7 +145,7 @@ namespace Common {
 
 			SET_RESULT(RESULT_OK, "Sampling frequency for biquad filter succesfully set");
 			samplingFreq = _samplingFreq;
-		}
+		}*/
 
 		/** \brief Filter the input data according to the filter setup.
 		*	\param [in] inBuffer input buffer
@@ -242,15 +178,15 @@ namespace Common {
 			//   See schemes in: https://en.wikipedia.org/wiki/Digital_biquad_filter
 			//   y(n) = b0.x(n) + b1.x(n-1) + b2.x(n-2) + a1.y(n-1) + a2.y(n-2) 	
 
-			if (crossfadingNeeded && size > 0)  // size > 1 to avoid division by zero if size were 1 while calculating alpha
+			if (crossfadingEnabled && size > 0)  // size > 1 to avoid division by zero if size were 1 while calculating alpha
 			{
 				for (int c = 0; c < size; c++)
 				{
 					// To ensure alpha is in [0,1] we use -2 because the buffer is stereo
 					double alpha = ((double)c) / ((double)(size - 1));
 
-					double     sample = ProcessSample(inBuffer[c], a1, a2, b0, b1, b2, z1_l, z2_l);
-					double new_sample = ProcessSample(inBuffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1_l, new_z2_l);
+					double     sample = ProcessSample(inBuffer[c], a1, a2, b0, b1, b2, z1, z2);
+					double new_sample = ProcessSample(inBuffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1, new_z2);
 
 					double res = sample * (1.0 - alpha) + new_sample * alpha;
 
@@ -263,7 +199,7 @@ namespace Common {
 			{
 				for (int c = 0; c < size; c++)
 				{
-					double res = ProcessSample(inBuffer[c], a1, a2, b0, b1, b2, z1_l, z2_l);
+					double res = ProcessSample(inBuffer[c], a1, a2, b0, b1, b2, z1, z2);
 					outBuffer[c] = addResult ? outBuffer[c] + res : res;
 				}
 			}
@@ -286,14 +222,14 @@ namespace Common {
 
 			//SET_RESULT(RESULT_OK, "Biquad filter process succesfull");
 
-			if (crossfadingNeeded)
+			if (crossfadingEnabled)
 			{
 				for (int c = 0; c < size; c++)
 				{
 					double alpha = ((double)c) / ((double)(size - 1));
 
-					double     sample = ProcessSample(buffer[c], a1, a2, b0, b1, b2, z1_l, z2_l);
-					double new_sample = ProcessSample(buffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1_l, new_z2_l);
+					double     sample = ProcessSample(buffer[c], a1, a2, b0, b1, b2, z1, z2);
+					double new_sample = ProcessSample(buffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1, new_z2);
 
 					buffer[c] = sample * (1.0 - alpha) + new_sample * alpha;
 				}
@@ -303,7 +239,7 @@ namespace Common {
 			else
 			{
 				for (int c = 0; c < size; c++)
-					buffer[c] = ProcessSample(buffer[c], a1, a2, b0, b1, b2, z1_l, z2_l);
+					buffer[c] = ProcessSample(buffer[c], a1, a2, b0, b1, b2, z1, z2);
 			}
 
 			AvoidNanValues();
@@ -327,12 +263,120 @@ namespace Common {
 			return generalGain;
 		}
 
+		
+		void ResetBuffers() {
+			z1 = 0;
+			z2 = 0;			
+		}
+
+		void ResetFilter() {
+			InitFilterCoefficients();
+			generalGain = 1.0f;
+			crossfadingEnabled = false;
+		}
 
 	private:
 		////////////////////
 		// PRIVATE METHODS
 		///////////////////
 		
+		void InitFilterCoefficients() {
+			z1 = 0;
+			z2 = 0;			
+
+			b0 = 1;
+			b1 = 0;
+			b2 = 0;
+			a1 = 0;
+			a2 = 0;
+
+			new_b0 = 1;
+			new_b1 = 0;
+			new_b2 = 0;
+			new_a1 = 0;
+			new_a2 = 0;
+
+			new_z1 = 0;
+			new_z2 = 0;		
+			SetCoefficients(1, 0, 0, 0, 0);
+		}
+
+		/** \brief Set up coefficients of the filter
+		*	\param [in] b0 coefficient b0
+		*	\param [in] b1 coefficient b1
+		*	\param [in] b2 coefficient b2
+		*	\param [in] a1 coefficient a1
+		*	\param [in] a2 coefficient a2
+		*   \eh Nothing is reported to the error handler.
+		*/
+		void SetCoefficients(float _b0, float _b1, float _b2, float _a1, float _a2)
+		{
+			if (crossfadingEnabled) {			
+				new_b0 = _b0;
+				new_b1 = _b1;
+				new_b2 = _b2;
+				new_a1 = _a1;
+				new_a2 = _a2;
+
+				new_z1 = 0;
+				new_z2 = 0;				
+			}
+			else {
+				b0 = _b0;
+				b1 = _b1;
+				b2 = _b2;
+				a1 = _a1;
+				a2 = _a2;
+			}
+		}
+
+		/** \brief Set up coefficients of the filter
+		*	\param [in] coefficients coefficients array. Order: b0, b1, a1, a2
+		*   \eh Nothing is reported to the error handler. */
+		void SetCoefficients(float* coefficients)
+		{
+			//SET_RESULT(RESULT_OK, "");
+			SetCoefficients(coefficients[0], coefficients[1], coefficients[2], coefficients[3], coefficients[4]);
+		}
+
+		/** \brief Set up coefficients of the filter
+		*	\param [in] coefficients coefficients vector. Order: b0, b1, a1, a2
+		*   \eh Nothing is reported to the error handler. */
+		void SetCoefficients(const TBiquadCoefficients& coefficients)
+		{
+			if (coefficients.size() == 6) {
+				float a0 = coefficients[3];
+				SetCoefficients(coefficients[0] / a0, coefficients[1] / a0, coefficients[2] / a0, coefficients[4] / a0, coefficients[5] / a0);
+			}
+			else if (coefficients.size() == 5) {
+				SetCoefficients(coefficients[0], coefficients[1], coefficients[2], coefficients[3], coefficients[4]);
+			}
+			else {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "A vector with 5 or 6 coefficients was expected in BiquadFilter definition.");
+			}
+		}
+
+		/** \brief Set up coefficients of the filter
+		*	\details Lowpass, Highpass and Bandpass filters are Butterworth design
+		*	\param [in] frequency relevant frequency (cutoff or band center)
+		*	\param [in] Q Q factor
+		*	\param [in] filterType type of filter
+		*   \eh On error, an error code is reported to the error handler.
+		*/
+		void SetCoefficients(float frequency, float Q, T_filterType filterType)
+		{
+			if (filterType == LOWPASS)
+				SetCoefsFor_LPF(frequency, Q);
+
+			else if (filterType == HIGHPASS)
+				SetCoefsFor_HPF(frequency, Q);
+
+			else if (filterType == BANDPASS)
+				SetCoefsFor_BandPassFilter(frequency, Q);
+		}
+
+
+
 		/// Prevent the filter from ending up in unstable states
 		void AvoidNanValues()		
 		{
@@ -342,20 +386,17 @@ namespace Common {
 			//   are played at the same time using anechoic an reverb and one of the sourcers is moved beyond the 
 			//   far distances threshold, the LPF of the distances can end up with this unstable state.
 
-			if (std::isnan(z1_l)) z1_l = 0;
-			if (std::isnan(z2_l)) z2_l = 0;
-			if (std::isnan(z1_r)) z1_r = 0;
-			if (std::isnan(z2_r)) z2_r = 0;
+			if (std::isnan(z1)) z1 = 0;
+			if (std::isnan(z2)) z2 = 0;			
 
-			if (std::isnan(new_z1_l)) new_z1_l = 0;
-			if (std::isnan(new_z2_l)) new_z2_l = 0;
-			if (std::isnan(new_z1_r)) new_z1_r = 0;
-			if (std::isnan(new_z2_r)) new_z2_r = 0;
+			if (std::isnan(new_z1)) new_z1 = 0;
+			if (std::isnan(new_z2)) new_z2 = 0;			
 		}
 
 		/// Calculates the coefficients of a biquad band-pass filter.
 		bool SetCoefsFor_BandPassFilter(double centerFreqHz, double Q)		
 		{
+			float samplingFreq = globalParameters.GetSampleRate();
 			if (samplingFreq < 0.1 || Q < 0.0000001 || centerFreqHz > samplingFreq / 2.0) // To prevent aliasing problems
 			{
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Cutoff frequency of biquad (bandpass) filter is higher than Nyquist frequency");
@@ -390,6 +431,8 @@ namespace Common {
 		/// Calculate the coefficients of a biquad low-pass filter.
 		bool SetCoefsFor_LPF(double cutoffFreq, double Q)		
 		{
+			float samplingFreq = globalParameters.GetSampleRate();
+
 			if (samplingFreq < 0.1 || cutoffFreq > samplingFreq / 2.0) // To prevent aliasing problems
 			{
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Cutoff frequency of biquad (LPF) filter is higher than Nyquist frequency");
@@ -424,6 +467,7 @@ namespace Common {
 		/// Calculates the coefficients of a biquad high-pass filter.     		
 		bool SetCoefsFor_HPF(double cutoffFreq, double Q)
 		{
+			float samplingFreq = globalParameters.GetSampleRate();
 			if (samplingFreq < 0.1 || cutoffFreq > samplingFreq / 2.0) // To prevent aliasing problems
 			{
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Cutoff frequency of biquad (HPF) filter is higher than Nyquist frequency");
@@ -474,33 +518,31 @@ namespace Common {
 		/// Set current coefficients to new cofficients and updates the delay cells and the crossfadingNeeded attribute.
 		void UpdateAttributesAfterCrossfading()
 		{
-			crossfadingNeeded = false;
-
-			z1_l = new_z1_l;
-			z2_l = new_z2_l;
-			z1_r = new_z1_r;
-			z2_r = new_z2_r;
+			crossfadingEnabled = false;
+			z1 = new_z1;
+			z2 = new_z2;			
 
 			b0 = new_b0;
 			b1 = new_b1;
 			b2 = new_b2;
 			a1 = new_a1;
 			a2 = new_a2;
-
 		}
 
 		////////////////
 		// ATTRIBUTES
 		////////////////
-		float generalGain;                                              // Gain applied to every sample obtained with Process
 
-		double samplingFreq;                                            // Keep the sampling rate at which audio samples were taken
-		double z1_l, z2_l, z1_r, z2_r;                                  // Keep last values to implement the delays of the filter (left and right channels)
-		double b0, b1, b2, a1, a2;                                      // Coeficients of the Butterworth filter
+		Common::CGlobalParameters globalParameters;
+		float generalGain;									// Gain applied to every sample obtained with Process
 
-		double new_b0, new_b1, new_b2, new_a1, new_a2;                  // New coefficients to implement cross fading
-		double new_z1_l, new_z2_l, new_z1_r, new_z2_r;                  // Keep last values to implement the delays of the filter (left and right channels)
-		bool   crossfadingNeeded;                                       // True when cross fading must be applied in the next frame
+		//double samplingFreq;                                // Keep the sampling rate at which audio samples were taken
+		double z1, z2;                                  // Keep last values to implement the delays of the filter (left and right channels)
+		double b0, b1, b2, a1, a2;                          // Coeficients of the Butterworth filter
+
+		double new_b0, new_b1, new_b2, new_a1, new_a2;      // New coefficients to implement cross fading
+		double new_z1, new_z2;							// Keep last values to implement the delays of the filter (left and right channels)
+		bool   crossfadingEnabled;                          // True when cross fading must be applied in the next frame
 	};
 }
 #endif
