@@ -85,13 +85,20 @@ namespace BRTProcessing {
 				SET_RESULT(RESULT_ERROR_BADSIZE, "Twelve coefficients were expected in order to be able to set up the filters in BRTProcessing::CNearFieldEffect");
 				return;
 			}						
-			//Set LEFT coefficients into the filters and process the signal									
-			SetCoefficients(nearFieldEffectFilters.left, coefficientsLeft);
+			
+			SetCoefficients(nearFieldEffectFilters.left, coefficientsLeft);		//Set LEFT coefficients 			 
+			SetCoefficients(nearFieldEffectFilters.right, coefficientsRight);	//Set RIGHT coefficients
+
+			// Process the signal
 			nearFieldEffectFilters.left.Process(outLeftBuffer);
-			//Set RIGHT coefficients into the filters and process the signal						
-			SetCoefficients(nearFieldEffectFilters.right, coefficientsRight);
 			nearFieldEffectFilters.right.Process(outRightBuffer);									
 		}
+
+		void ResetProcessBuffers() {
+			nearFieldEffectFilters.left.ResetBuffers();
+			nearFieldEffectFilters.right.ResetBuffers();			
+		}
+
 	
 	private:
 		///////////////////////
@@ -122,11 +129,20 @@ namespace BRTProcessing {
 		}
 
 		void SetCoefficients(Common::CFiltersChain& _filter, std::vector<float>& cofficients) {
+			Common::TFiltersChainCoefficients filterCoeficientsVector;
 			std::vector<float> temp(cofficients.begin(), cofficients.begin() + 6);
-			_filter.GetFilter(0)->SetCoefficients(temp);
+			std::vector<float> temp2(cofficients.begin() + 6, cofficients.end());
+
+			filterCoeficientsVector.push_back(temp);
+			filterCoeficientsVector.push_back(temp2);
+
+			_filter.SetFromCoefficientsVector(filterCoeficientsVector);
+
+			/*std::vector<float> temp(cofficients.begin(), cofficients.begin() + 6);
+			_filter.GetFilter(0)->Setup(temp, false);
 
 			std::vector<float> temp2(cofficients.begin() + 6, cofficients.end());
-			_filter.GetFilter(1)->SetCoefficients(temp2);
+			_filter.GetFilter(1)->Setup(temp2, false);*/			
 		}
 
 
