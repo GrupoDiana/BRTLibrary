@@ -275,6 +275,7 @@ namespace BRTListenerModel {
 			bool control = brtManager->ConnectModuleTransform(_source, _newSourceProcessors.binauralConvolverProcessor, "sourcePosition");
 			control = control && brtManager->ConnectModuleTransform(_source, _newSourceProcessors.nearFieldEffectProcessor, "sourcePosition");
 			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.binauralConvolverProcessor, "sourceID");
+			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.nearFieldEffectProcessor, "sourceID");
 			
 			if (sourceNeedsListenerPosition) {
 				control = control && brtManager->ConnectModuleTransform(this, _source, "listenerPosition");
@@ -325,6 +326,7 @@ namespace BRTListenerModel {
 				if (sourceNeedsListenerPosition) {
 					control = control && brtManager->DisconnectModuleTransform(this, _source, "listenerPosition");								
 				}
+				control = control && brtManager->DisconnectModuleID(_source, it->nearFieldEffectProcessor, "sourceID");
 				control = control && brtManager->DisconnectModuleID(_source, it->binauralConvolverProcessor, "sourceID");
 				control = control && brtManager->DisconnectModuleTransform(_source, it->nearFieldEffectProcessor, "sourcePosition");
 				control = control && brtManager->DisconnectModuleTransform(_source, it->binauralConvolverProcessor, "sourcePosition");

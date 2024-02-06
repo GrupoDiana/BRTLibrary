@@ -41,6 +41,8 @@ namespace BRTProcessing {
 
             CreatePositionEntryPoint("sourcePosition");
 			CreatePositionEntryPoint("listenerPosition");           			
+			
+			CreateIDEntryPoint("sourceID");
 			CreateILDPtrEntryPoint("listenerILD");
 
             CreateSamplesExitPoint("leftEar");
@@ -78,12 +80,28 @@ namespace BRTProcessing {
 					if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
 					else { DisableNearFieldEffect(); }
 				}
+				else if (command.GetCommand() == "/listener/resetBuffers") {
+					ResetProcessBuffers();
+				}
 			//}
+
+				if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
+					if (command.GetCommand() == "/source/HRTFConvolver/resetBuffers") {
+						ResetProcessBuffers();
+					}
+				}
 		} 
       
     private:
 		mutable std::mutex mutex;
-		
+		bool IsToMySoundSource(std::string _sourceID) {
+			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
+			return mySourceID == _sourceID;
+		}
+		bool IsToMyListener(std::string _listenerID) {
+			std::string myListenerID = GetIDEntryPoint("listenerID")->GetData();
+			return myListenerID == _listenerID;
+		}
 		
     };
 }
