@@ -42,9 +42,13 @@ namespace BRTProcessing {
 
 
 		///Enable near field effect for this source
-		void EnableNearFieldEffect() { enableNearFieldEffect = true; };
+		void EnableNearFieldEffect() { 
+			enableNearFieldEffect = true; 
+		};
 		///Disable near field effect for this source
-		void DisableNearFieldEffect() { enableNearFieldEffect = false; };
+		void DisableNearFieldEffect() { 
+			enableNearFieldEffect = false; 
+		};
 		///Get the flag for near field effect enabling
 		bool IsNearFieldEffectEnabled() { return enableNearFieldEffect; };
 
@@ -136,7 +140,7 @@ namespace BRTProcessing {
 			filterCoeficientsVector.push_back(temp);
 			filterCoeficientsVector.push_back(temp2);
 
-			_filter.SetFromCoefficientsVector(filterCoeficientsVector);
+			_filter.SetFromCoefficientsVector(filterCoeficientsVector, false);
 
 			/*std::vector<float> temp(cofficients.begin(), cofficients.begin() + 6);
 			_filter.GetFilter(0)->Setup(temp, false);
