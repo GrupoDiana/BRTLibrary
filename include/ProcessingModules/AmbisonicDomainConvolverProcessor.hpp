@@ -32,7 +32,7 @@
 #include <algorithm>
 
 namespace BRTProcessing {
-    class CAmbisonicDomainConvolverProcessor : public BRTBase::CProcessorBase, CAmbisonicDomainConvolver {
+    class CAmbisonicDomainConvolverProcessor : public BRTBase::CProcessorBase, public CAmbisonicDomainConvolver {
 		
     public:
 		CAmbisonicDomainConvolverProcessor(Common::T_ear _earToProcess) : CAmbisonicDomainConvolver(_earToProcess) {
@@ -79,20 +79,13 @@ namespace BRTProcessing {
 			
 			std::lock_guard<std::mutex> l(mutex);
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
-															
-			//if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
-				/*if (command.GetCommand() == "/listener/enableSpatialization") {					
-					if (command.GetBoolParameter("enable")) { EnableSpatialization(); }
-					else { DisableSpatialization(); }
+			if (command.isNull() || command.GetAddress() == "") { return; }
+
+			if (IsToMyListener(command.GetStringParameter("listenerID"))) { 				
+				if (command.GetCommand() == "/ambisonicsDomianConvoler/resetBuffers") {
+					ResetChannelsConvolutionBuffers();
 				}
-				else if (command.GetCommand() == "/listener/enableInterpolation") {					
-					if (command.GetBoolParameter("enable")) { EnableInterpolation(); }
-					else { DisableInterpolation(); }
-				}
-				else if (command.GetCommand() == "/listener/resetBuffers") {
-					ResetSourceConvolutionBuffers();					
-				}*/
-			//}
+			}
 
 			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
 				if (command.GetCommand() == "/source/resetBuffers") {
@@ -101,8 +94,8 @@ namespace BRTProcessing {
 			}
 		} 
 
-		//void SetEar(Common::T_ear _ear) { CAmbisonicDomainConvolver::SetEar(_ear);	}
-		void SetAmbisonicOrder(int _ambisonicOrder) { CAmbisonicDomainConvolver::SetAmbisonicOrder(_ambisonicOrder); }		
+		////void SetEar(Common::T_ear _ear) { CAmbisonicDomainConvolver::SetEar(_ear);	}
+		//void SetAmbisonicOrder(int _ambisonicOrder) { CAmbisonicDomainConvolver::SetAmbisonicOrder(_ambisonicOrder); }		
 
     private:
        

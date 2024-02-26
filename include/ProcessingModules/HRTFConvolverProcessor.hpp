@@ -32,7 +32,7 @@
 #include <algorithm>
 
 namespace BRTProcessing {
-    class CHRTFConvolverProcessor : public BRTBase::CProcessorBase, CHRTFConvolver {
+    class CHRTFConvolverProcessor : public BRTBase::CProcessorBase, public CHRTFConvolver {
 		
     public:
 		CHRTFConvolverProcessor() {
@@ -77,23 +77,24 @@ namespace BRTProcessing {
 			
 			std::lock_guard<std::mutex> l(mutex);
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
-															
-			//if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
-				if (command.GetCommand() == "/listener/enableSpatialization") {					
+			if (command.isNull() || command.GetAddress() == "") { return; }
+
+			if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
+				if (command.GetCommand() == "/HRTFConvolver/enableSpatialization") {					
 					if (command.GetBoolParameter("enable")) { EnableSpatialization(); }
 					else { DisableSpatialization(); }
 				}
-				else if (command.GetCommand() == "/listener/enableInterpolation") {					
+				else if (command.GetCommand() == "/HRTFConvolver/enableInterpolation") {					
 					if (command.GetBoolParameter("enable")) { EnableInterpolation(); }
 					else { DisableInterpolation(); }
 				}
-				else if (command.GetCommand() == "/listener/resetBuffers") {
+				else if (command.GetCommand() == "/HRTFConvolver/resetBuffers") {
 					ResetSourceConvolutionBuffers();					
 				}
-			//}
+			}
 
 			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
-				if (command.GetCommand() == "/source/HRTFConvolver/resetBuffers") {
+				if (command.GetCommand() == "/source/resetBuffers") {
 					ResetSourceConvolutionBuffers();
 				}
 			}

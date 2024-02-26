@@ -32,7 +32,7 @@
 #include <algorithm>
 
 namespace BRTProcessing {
-    class CNearFieldEffectProcessor : public BRTBase::CProcessorBase, CNearFieldEffect {
+    class CNearFieldEffectProcessor : public BRTBase::CProcessorBase, public CNearFieldEffect {
 		
     public:
 		CNearFieldEffectProcessor() {
@@ -73,23 +73,24 @@ namespace BRTProcessing {
 
 		void UpdateCommand() {
 			std::lock_guard<std::mutex> l(mutex);
-			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
 			
-			//if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
-				if (command.GetCommand() == "/listener/enableNearFieldEffect") {
+			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
+			if (command.isNull() || command.GetAddress() == "") { return; }			
+			
+			if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
+				if (command.GetCommand() == "/nearFieldProcessor/enable") {
 					if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
 					else { DisableNearFieldEffect(); }
 				}
-				else if (command.GetCommand() == "/listener/resetBuffers") {
+				else if (command.GetCommand() == "/nearFieldProcessor/resetBuffers") {
 					ResetProcessBuffers();
 				}
-			//}
-
-				if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
-					if (command.GetCommand() == "/source/HRTFConvolver/resetBuffers") {
-						ResetProcessBuffers();
-					}
+			}
+			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
+				if (command.GetCommand() == "/source/resetBuffers") {
+					ResetProcessBuffers();
 				}
+			}
 		} 
       
     private:

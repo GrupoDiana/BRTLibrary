@@ -66,6 +66,8 @@ namespace BRTProcessing {
 
 		void SetAmbisonicOrder(int _ambisonicOrder) { 
 			std::lock_guard<std::mutex> l(mutex);
+
+			if (ambisonicOrder == _ambisonicOrder) { return; }
 			ambisonicOrder = _ambisonicOrder; 
 			//leftAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
 			//rightAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
@@ -76,6 +78,8 @@ namespace BRTProcessing {
 		
 		void SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) {
 			std::lock_guard<std::mutex> l(mutex);
+			
+			if (ambisonicNormalization == _ambisonicNormalization) { return; }
 			ambisonicNormalization = _ambisonicNormalization;
 			//leftAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
 			//rightAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
@@ -207,7 +211,9 @@ namespace BRTProcessing {
 			//Init buffer to store delay to be used in the ProcessAddDelay_ExpansionMethod method
 			leftChannelDelayBuffer.clear();
 			rightChannelDelayBuffer.clear();
+			nearFieldEffectProcess.ResetProcessBuffers();
 		}
+
 	private:
 		/// Atributes
 		mutable std::mutex mutex;								// Thread management

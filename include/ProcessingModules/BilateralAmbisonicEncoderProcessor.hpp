@@ -32,7 +32,7 @@
 #include <algorithm>
 
 namespace BRTProcessing {
-    class CBilateralAmbisonicEncoderProcessor : public BRTBase::CProcessorBase, CBilateralAmbisonicEncoder {
+    class CBilateralAmbisonicEncoderProcessor : public BRTBase::CProcessorBase, public CBilateralAmbisonicEncoder {
 		
     public:
 		CBilateralAmbisonicEncoderProcessor() {
@@ -80,23 +80,24 @@ namespace BRTProcessing {
 		 * @brief Implementation of CProcessorBase virtual method
 		*/
 		void UpdateCommand() {					
-			
-			//std::lock_guard<std::mutex> l(mutex);
+						
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
-															
-			//if (IsToMyListener(command.GetStringParameter("listenerID"))) {
-				if (command.GetCommand() == "/listener/resetBuffers") {
-					ResetBuffers();
-				}
-				else if (command.GetCommand() == "/listener/enableNearFieldEffect") {
+			if (command.isNull() || command.GetAddress() == "") { return; }
+
+			if (IsToMyListener(command.GetStringParameter("listenerID"))) {
+				
+				if (command.GetCommand() == "/bilateralAmbisonicsEncoder/enableNearFieldEffect") {
 					if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
 					else { DisableNearFieldEffect(); }
 				}
-				else if (command.GetCommand() == "/listener/enableBilateralAmbisonics") {
+				else if (command.GetCommand() == "/bilateralAmbisonicsEncoder/enableBilateralAmbisonics") {
 					if (command.GetBoolParameter("enable")) { EnableBilateral(); }
 					else { DisableBilateral(); }
 				}
-			//}
+				else if (command.GetCommand() == "/bilateralAmbisonicsEncoder/resetBuffers") {
+					ResetBuffers();
+				}
+			}
 			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
 				if (command.GetCommand() == "/source/resetBuffers") {
 					ResetBuffers();
@@ -104,24 +105,23 @@ namespace BRTProcessing {
 			}
 		} 
       		
-		/**
-		 * @brief Set the ambisonic order for the spatialization process
-		 * @param _ambisonicOrder 
-		*/
-		void SetAmbisonicOrder(int _ambisonicOrder) { 			
-			CBilateralAmbisonicEncoder::SetAmbisonicOrder(_ambisonicOrder); 
-		}
-		/**
-		 * @brief Set the ambisonic order for the spatialization process
-		 * @param _ambisonicNormalization 
-		*/
-		void SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) { 			
-			CBilateralAmbisonicEncoder::SetAmbisonicNormalization(_ambisonicNormalization); 
-		}
+		///**
+		// * @brief Set the ambisonic order for the spatialization process
+		// * @param _ambisonicOrder 
+		//*/
+		//void SetAmbisonicOrder(int _ambisonicOrder) { 			
+		//	CBilateralAmbisonicEncoder::SetAmbisonicOrder(_ambisonicOrder); 
+		//}
+		///**
+		// * @brief Set the ambisonic order for the spatialization process
+		// * @param _ambisonicNormalization 
+		//*/
+		//void SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) { 			
+		//	CBilateralAmbisonicEncoder::SetAmbisonicNormalization(_ambisonicNormalization); 
+		//}
 
 
-    private:
-       		
+    private:       				
 		/// Check Source ID
 		bool IsToMySoundSource(std::string _sourceID) {
 			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();

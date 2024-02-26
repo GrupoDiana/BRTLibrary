@@ -48,19 +48,51 @@ namespace BRTListenerModel {
 				binauralConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CHRTFConvolverProcessor>();
 				nearFieldEffectProcessor = brtManager->CreateProcessor<BRTProcessing::CNearFieldEffectProcessor>();
 			}	
-			
+
+			/**
+			 * @brief Remove processor from BRT
+			 * @param brtManager brtManager pointer
+			*/
 			void Clear(BRTBase::CBRTManager* brtManager) {
 				sourceID = "";
 				brtManager->RemoveProcessor(nearFieldEffectProcessor);
 				brtManager->RemoveProcessor(binauralConvolverProcessor);
 			}
+
+			/**
+			 * @brief Set proccesor configuration
+			 * @param enableSpatialization Spatialization state
+			 * @param enableInterpolation Interpolation state
+			 * @param enableNearFieldEffect Nearfield state
+			*/
+			void SetConfiguration(bool enableSpatialization, bool enableInterpolation, bool enableNearFieldEffect) {
+				if (enableSpatialization) { binauralConvolverProcessor->EnableSpatialization(); }
+				else { binauralConvolverProcessor->DisableSpatialization(); }
+
+				if (enableInterpolation) { binauralConvolverProcessor->EnableInterpolation(); }
+				else { binauralConvolverProcessor->DisableInterpolation(); }
+
+				if (enableNearFieldEffect) { nearFieldEffectProcessor->EnableNearFieldEffect(); }
+				else { nearFieldEffectProcessor->DisableNearFieldEffect(); }			
+			}
+
+			/**
+			 * @brief Reset processor buffers
+			*/
+			void ResetBuffers() {
+				binauralConvolverProcessor->ResetSourceConvolutionBuffers();
+				nearFieldEffectProcessor->ResetProcessBuffers();
+			}
+
 			std::string sourceID;
 			std::shared_ptr <BRTProcessing::CHRTFConvolverProcessor> binauralConvolverProcessor;
 			std::shared_ptr <BRTProcessing::CNearFieldEffectProcessor> nearFieldEffectProcessor;
 		};
 
 	public:
-		CListenerHRTFbasedModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) : brtManager{_brtManager}, BRTBase::CListenerModelBase(_listenerID) {						
+		CListenerHRTFbasedModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) : brtManager{ _brtManager }, BRTBase::CListenerModelBase(_listenerID), 
+			enableSpatialization{ true }, enableInterpolation{ true }, enableNearFieldEffect{ false } {
+			
 			listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// Create a empty HRTF									
 			CreateHRTFExitPoint();
 			CreateILDExitPoint();									
@@ -79,7 +111,7 @@ namespace BRTListenerModel {
 			}
 			listenerHRTF = _listenerHRTF;			
 			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);	
-			ResetConvolutionsBuffers();
+			ResetProcessorBuffers();
 			return true;
 		}
 
@@ -164,104 +196,140 @@ namespace BRTListenerModel {
 		/** \brief Enable binaural spatialization based in HRTF convolution
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableSpatialization() {
-			nlohmann::json j;
+		void EnableSpatialization() { 
+			enableSpatialization = true;	
+			SetConfigurationInALLSourcesProcessors();
+		}
+		/*	nlohmann::json j;
 			j["command"] = "/listener/enableSpatialization";
 			j["listenerID"] = listenerID;
 			j["enable"] = true;
-			brtManager->ExecuteCommand(j.dump());			
-		}
+			brtManager->ExecuteCommand(j.dump());	*/		
+		//}//
 
 		/** \brief Disable binaural spatialization based in HRTF convolution
 		*/
 		void DisableSpatialization()
 		{
-			nlohmann::json j;
-			j["command"] = "/listener/enableSpatialization";
-			j["listenerID"] = listenerID;
-			j["enable"] = false;
-			brtManager->ExecuteCommand(j.dump());
+			enableSpatialization = false;
+			SetConfigurationInALLSourcesProcessors();			
 		}
 
 		///** \brief Get the flag for run-time HRTF interpolation
 		//*	\retval IsInterpolationEnabled if true, run-time HRTF interpolation is enabled for this source
 		//*   \eh Nothing is reported to the error handler.
 		//*/
-		//bool IsSpatializationEnabled();
+		bool IsSpatializationEnabled() { return enableSpatialization; }
 
 		/** \brief Enable run-time HRTF interpolation
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void EnableInterpolation() {
-			nlohmann::json j;
-			j["command"] = "/listener/enableInterpolation";
-			j["listenerID"] = listenerID;
-			j["enable"] = true;
-			brtManager->ExecuteCommand(j.dump());
+			enableInterpolation = true;
+			SetConfigurationInALLSourcesProcessors();			
 		}
 
 		/** \brief Disable run-time HRTF interpolation
 		*/
 		void DisableInterpolation() {
-			nlohmann::json j;
-			j["command"] = "/listener/enableInterpolation";
-			j["listenerID"] = listenerID;
-			j["enable"] = false;
-			brtManager->ExecuteCommand(j.dump());
+			enableInterpolation = false;
+			SetConfigurationInALLSourcesProcessors();			
 		}
 
 		/** \brief Get the flag for run-time HRTF interpolation
 		*	\retval IsInterpolationEnabled if true, run-time HRTF interpolation is enabled for this source
 		*   \eh Nothing is reported to the error handler.
 		*/
-		//bool IsInterpolationEnabled();
+		bool IsInterpolationEnabled() { return enableInterpolation; }
 
 		/** \brief Enable near field effect for this source
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void EnableNearFieldEffect() {
-			nlohmann::json j;
-			j["command"] = "/listener/enableNearFiedlEffect";
-			j["listenerID"] = listenerID;
-			j["enable"] = true;
-			brtManager->ExecuteCommand(j.dump());
+			enableNearFieldEffect = true;
+			SetConfigurationInALLSourcesProcessors();			
 		}
 
 		/** \brief Disable near field effect for this source
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void DisableNearFieldEffect() {
-			nlohmann::json j;
-			j["command"] = "/listener/enableNearFiedlEffect";
-			j["listenerID"] = listenerID;
-			j["enable"] = false;
-			brtManager->ExecuteCommand(j.dump());
+			enableNearFieldEffect = false;
+			SetConfigurationInALLSourcesProcessors();		
 		}
 
 		/** \brief Get the flag for near field effect enabling
 		*	\retval nearFieldEffectEnabled if true, near field effect is enabled for this source
 		*   \eh Nothing is reported to the error handler.
 		*/
-		//bool IsNearFieldEffectEnabled();
+		bool IsNearFieldEffectEnabled() { return enableNearFieldEffect; }
 
-		void ResetConvolutionsBuffers() {
-			nlohmann::json j;
-			j["command"] = "/listener/resetBuffers";
-			j["listenerID"] = listenerID;			
-			brtManager->ExecuteCommand(j.dump());
+
+		/**
+		 * @brief Reset all processor buffers
+		*/
+		void ResetProcessorBuffers() {
+			std::lock_guard<std::mutex> l(mutex);
+			for (auto& it : sourcesConnectedProcessors) {
+				it.ResetBuffers();
+			}
 		}
 
+		/**
+		 * @brief Implementation of the virtual method to process the data received by the entry points.
+		 * @param entryPointID ID of the entry point
+		*/
 		void Update(std::string entryPointID) {
 			// Nothing to do
 		}
+
+		/**
+		 * @brief Implementation of the virtual method for processing the received commands
+		*/
 		void UpdateCommand() {
-			// Nothing to do
+			std::lock_guard<std::mutex> l(mutex);
+			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();						
+			if (command.isNull() || command.GetAddress() == "") { return; }
+
+			if (listenerID == command.GetStringParameter("listenerID")) {				
+				if (command.GetCommand() == "/listener/enableSpatialization") {
+						if (command.GetBoolParameter("enable")) { EnableSpatialization(); }
+						else { DisableSpatialization(); }
+				}
+				else if (command.GetCommand() == "/listener/enableInterpolation") {
+					if (command.GetBoolParameter("enable")) { EnableInterpolation(); }
+					else { DisableInterpolation(); }
+				}
+				else if (command.GetCommand() == "/listener/enableNearFieldEffect") {
+					if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
+					else { DisableNearFieldEffect(); }
+				}
+				else if (command.GetCommand() == "/listener/resetBuffers") {
+					ResetProcessorBuffers();
+				}
+			}		
 		}
 
 
 	private:
 
-					
+		/**
+		 * @brief Update Configuration in all source processor
+		*/
+		void SetConfigurationInALLSourcesProcessors() {
+			std::lock_guard<std::mutex> l(mutex);
+			for (auto& it : sourcesConnectedProcessors) {								
+				SetSourceProcessorsConfiguration(it);				
+			}			
+		}
+		/**
+		 * @brief Update configuration just in one source processor
+		 * @param sourceProcessor 
+		*/
+		void SetSourceProcessorsConfiguration(CSourceProcessors& sourceProcessor) {			
+			sourceProcessor.SetConfiguration(enableSpatialization, enableInterpolation, enableNearFieldEffect);
+		}
+
 		/**
 		 * @brief Connect a new source to this listener
 		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
@@ -270,6 +338,8 @@ namespace BRTListenerModel {
 		*/
 		template <typename T>
 		bool ConnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
+			std::lock_guard<std::mutex> l(mutex);
+
 			CSourceProcessors _newSourceProcessors(_source->GetID(), brtManager);
 
 			bool control = brtManager->ConnectModuleTransform(_source, _newSourceProcessors.binauralConvolverProcessor, "sourcePosition");
@@ -293,7 +363,8 @@ namespace BRTListenerModel {
 			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.nearFieldEffectProcessor, "leftEar", this, "leftEar");
 			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.nearFieldEffectProcessor, "rightEar", this, "rightEar");
 
-			if (control) {
+			if (control) {				
+				SetSourceProcessorsConfiguration(_newSourceProcessors);
 				sourcesConnectedProcessors.push_back(std::move(_newSourceProcessors));
 				return true;
 			}
@@ -308,6 +379,7 @@ namespace BRTListenerModel {
 		*/
 		template <typename T>
 		bool DisconnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
+			std::lock_guard<std::mutex> l(mutex);
 			std::string _sourceID = _source->GetID();
 			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSourceProcessors& sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
 			if (it != sourcesConnectedProcessors.end()) {
@@ -341,12 +413,17 @@ namespace BRTListenerModel {
 		/////////////////
 		// Attributes
 		/////////////////
+		mutable std::mutex mutex;							// To avoid access collisions
 		std::string listenerID;								// Store unique listener ID
 		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;	// HRTF of listener														
 		std::shared_ptr<BRTServices::CILD> listenerILD;		// ILD of listener						
 		std::vector< CSourceProcessors> sourcesConnectedProcessors;
 		BRTBase::CBRTManager* brtManager;
 		Common::CGlobalParameters globalParameters;
+
+		bool enableSpatialization;		// Flags for independent control of processes
+		bool enableInterpolation;		// Enables/Disables the interpolation on run time
+		bool enableNearFieldEffect;     // Enables/Disables the Near Field Effect
 
 	};
 }
