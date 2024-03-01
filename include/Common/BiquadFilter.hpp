@@ -63,35 +63,10 @@ namespace Common {
 		*	\details By default, sets sampling frequency to 44100Hz.
 		*   \eh Nothing is reported to the error handler.
 		*/
-		CBiquadFilter()		
+		CBiquadFilter() : generalGain {1.0f}, crossfadingEnabled {false}, firstBuffer{true}
 		{
-			// error handler: Trust in SetSamplingFreq for result
-			/*z1_l = 0;
-			z2_l = 0;
-			z1_r = 0;
-			z2_r = 0;
-
-			b0 = 1;
-			b1 = 0;
-			b2 = 0;
-			a1 = 0;
-			a2 = 0;
-
-			new_b0 = 1;
-			new_b1 = 0;
-			new_b2 = 0;
-			new_a1 = 0;
-			new_a2 = 0;
-
-			new_z1_l = 0;
-			new_z2_l = 0;
-			new_z1_r = 0;
-			new_z2_r = 0;
-
-			SetCoefficients(1, 0, 0, 0, 0);*/
-			InitFilterCoefficients();
-			generalGain = 1.0f;
-			crossfadingEnabled = false;
+			// error handler: Trust in SetSamplingFreq for result			
+			InitFilterCoefficients();			
 		}
 
 
@@ -180,19 +155,27 @@ namespace Common {
 
 			if (crossfadingEnabled && size > 0)  // size > 1 to avoid division by zero if size were 1 while calculating alpha
 			{
-				for (int c = 0; c < size; c++)
-				{
-					// To ensure alpha is in [0,1] we use -2 because the buffer is stereo
-					double alpha = ((double)c) / ((double)(size - 1));
-
-					double     sample = ProcessSample(inBuffer[c], a1, a2, b0, b1, b2, z1, z2);
-					double new_sample = ProcessSample(inBuffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1, new_z2);
-
-					double res = sample * (1.0 - alpha) + new_sample * alpha;
-
-					outBuffer[c] = addResult ? outBuffer[c] + res : res;
+				if (firstBuffer) {
+					for (int c = 0; c < size; c++) {
+						double res = ProcessSample(inBuffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1, new_z2);
+						outBuffer[c] = addResult ? outBuffer[c] + res : res;
+					}
+					firstBuffer = false;
 				}
+				else {
+					for (int c = 0; c < size; c++)
+					{
+						// To ensure alpha is in [0,1] we use -2 because the buffer is stereo
+						double alpha = ((double)c) / ((double)(size - 1));
 
+						double     sample = ProcessSample(inBuffer[c], a1, a2, b0, b1, b2, z1, z2);
+						double new_sample = ProcessSample(inBuffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1, new_z2);
+
+						double res = sample * (1.0 - alpha) + new_sample * alpha;
+
+						outBuffer[c] = addResult ? outBuffer[c] + res : res;
+					}
+				}
 				UpdateAttributesAfterCrossfading();
 			}
 			else
@@ -203,7 +186,7 @@ namespace Common {
 					outBuffer[c] = addResult ? outBuffer[c] + res : res;
 				}
 			}
-			AvoidNanValues();
+			CheckCoeficientsNanValues();
 		}
 
 
@@ -221,19 +204,26 @@ namespace Common {
 			}
 
 			//SET_RESULT(RESULT_OK, "Biquad filter process succesfull");
-
+			
 			if (crossfadingEnabled)
 			{
-				for (int c = 0; c < size; c++)
-				{
-					double alpha = ((double)c) / ((double)(size - 1));
-
-					double     sample = ProcessSample(buffer[c], a1, a2, b0, b1, b2, z1, z2);
-					double new_sample = ProcessSample(buffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1, new_z2);
-
-					buffer[c] = sample * (1.0 - alpha) + new_sample * alpha;
+				if (firstBuffer) {
+					for (int c = 0; c < size; c++) {
+						buffer[c] = ProcessSample(buffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1, new_z2);
+					}
+					firstBuffer = false;
 				}
+				else {
+					for (int c = 0; c < size; c++)
+					{
+						double alpha = ((double)c) / ((double)(size - 1));
 
+						double     sample = ProcessSample(buffer[c], a1, a2, b0, b1, b2, z1, z2);
+						double new_sample = ProcessSample(buffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1, new_z2);
+
+						buffer[c] = sample * (1.0 - alpha) + new_sample * alpha;
+					}
+				}
 				UpdateAttributesAfterCrossfading();
 			}
 			else
@@ -242,7 +232,7 @@ namespace Common {
 					buffer[c] = ProcessSample(buffer[c], a1, a2, b0, b1, b2, z1, z2);
 			}
 
-			AvoidNanValues();
+			CheckCoeficientsNanValues();
 		}
 
 		/** \brief Set the gain of the filter 
@@ -262,17 +252,20 @@ namespace Common {
 		{
 			return generalGain;
 		}
-
 		
 		void ResetBuffers() {
 			z1 = 0;
-			z2 = 0;			
+			z2 = 0;
+			new_z1 = 0;
+			new_z2 = 0;
+			firstBuffer = true;
 		}
 
 		void ResetFilter() {
 			InitFilterCoefficients();
 			generalGain = 1.0f;
-			crossfadingEnabled = false;
+			crossfadingEnabled = false; 
+			firstBuffer = true;
 		}
 
 	private:
@@ -373,12 +366,12 @@ namespace Common {
 
 			else if (filterType == BANDPASS)
 				SetCoefsFor_BandPassFilter(frequency, Q);
-		}
+		}		
 
-
-
-		/// Prevent the filter from ending up in unstable states
-		void AvoidNanValues()		
+		/**
+		 * @brief Prevent the filter from ending up in unstable states
+		*/
+		void CheckCoeficientsNanValues()		
 		{
 			// FIXME: IIRs filters can eventually end up in a non stable state that can lead the filter output
 			//      to +/-Inf. To prevent this situation we reset the delay cells of the filter when this happens.
@@ -391,9 +384,14 @@ namespace Common {
 
 			if (std::isnan(new_z1)) new_z1 = 0;
 			if (std::isnan(new_z2)) new_z2 = 0;			
-		}
+		}				
 
-		/// Calculates the coefficients of a biquad band-pass filter.
+		/**
+		 * @brief Calculates the coefficients of a biquad band-pass filter.
+		 * @param centerFreqHz 
+		 * @param Q 
+		 * @return 
+		*/
 		bool SetCoefsFor_BandPassFilter(double centerFreqHz, double Q)		
 		{
 			float samplingFreq = globalParameters.GetSampleRate();
@@ -533,16 +531,17 @@ namespace Common {
 		// ATTRIBUTES
 		////////////////
 
-		Common::CGlobalParameters globalParameters;
+		Common::CGlobalParameters globalParameters;			// Get access to BRT global audio parameters
 		float generalGain;									// Gain applied to every sample obtained with Process
 
-		//double samplingFreq;                                // Keep the sampling rate at which audio samples were taken
-		double z1, z2;                                  // Keep last values to implement the delays of the filter (left and right channels)
+		//double samplingFreq;                              // Keep the sampling rate at which audio samples were taken
+		double z1, z2;										// Keep last values to implement the delays of the filter (left and right channels)
 		double b0, b1, b2, a1, a2;                          // Coeficients of the Butterworth filter
 
 		double new_b0, new_b1, new_b2, new_a1, new_a2;      // New coefficients to implement cross fading
-		double new_z1, new_z2;							// Keep last values to implement the delays of the filter (left and right channels)
+		double new_z1, new_z2;								// Keep last values to implement the delays of the filter (left and right channels)
 		bool   crossfadingEnabled;                          // True when cross fading must be applied in the next frame
+		bool   firstBuffer;									// Controls when the first buffer is to be processed 
 	};
 }
 #endif

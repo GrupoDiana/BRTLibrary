@@ -122,11 +122,18 @@ namespace Common {
 		void Process(CMonoBuffer <float> & buffer)
 		{
 			//SET_RESULT(RESULT_OK, "");
-			for (std::size_t c = 0; c < filters.size(); c++)
+			/*for (std::size_t c = 0; c < filters.size(); c++)
 			{
 				std::shared_ptr<CBiquadFilter> f = filters[c];
 				if (f != NULL)
 					f->Process(buffer);
+			}*/
+
+			for (std::shared_ptr<CBiquadFilter> itFilter : filters) {
+				if (itFilter != nullptr)
+				{
+					itFilter->Process(buffer);
+				}
 			}
 		}
 

@@ -134,19 +134,13 @@ namespace BRTProcessing {
 
 		void SetCoefficients(Common::CFiltersChain& _filter, std::vector<float>& cofficients) {
 			Common::TFiltersChainCoefficients filterCoeficientsVector;
-			std::vector<float> temp(cofficients.begin(), cofficients.begin() + 6);
-			std::vector<float> temp2(cofficients.begin() + 6, cofficients.end());
+			std::vector<float> firstStage(cofficients.begin(), cofficients.begin() + 6);
+			std::vector<float> secondStage(cofficients.begin() + 6, cofficients.end());
 
-			filterCoeficientsVector.push_back(temp);
-			filterCoeficientsVector.push_back(temp2);
+			filterCoeficientsVector.push_back(firstStage);
+			filterCoeficientsVector.push_back(secondStage);
 
-			_filter.SetFromCoefficientsVector(filterCoeficientsVector, false);
-
-			/*std::vector<float> temp(cofficients.begin(), cofficients.begin() + 6);
-			_filter.GetFilter(0)->Setup(temp, false);
-
-			std::vector<float> temp2(cofficients.begin() + 6, cofficients.end());
-			_filter.GetFilter(1)->Setup(temp2, false);*/			
+			_filter.SetFromCoefficientsVector(filterCoeficientsVector);		
 		}
 
 
