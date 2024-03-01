@@ -82,7 +82,7 @@ namespace BRTProcessing {
 		void UpdateCommand() {					
 						
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
-			if (command.isNull() || command.GetAddress() == "") { return; }
+			if (command.isNull() || command.GetCommand() == "") { return; }
 
 			if (IsToMyListener(command.GetStringParameter("listenerID"))) {
 				

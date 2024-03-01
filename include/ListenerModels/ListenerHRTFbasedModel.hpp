@@ -289,7 +289,7 @@ namespace BRTListenerModel {
 		void UpdateCommand() {
 			std::lock_guard<std::mutex> l(mutex);
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();						
-			if (command.isNull() || command.GetAddress() == "") { return; }
+			if (command.isNull() || command.GetCommand() == "") { return; }
 
 			if (listenerID == command.GetStringParameter("listenerID")) {				
 				if (command.GetCommand() == "/listener/enableSpatialization") {

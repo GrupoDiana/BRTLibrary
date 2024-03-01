@@ -79,7 +79,7 @@ namespace BRTProcessing {
 			
 			std::lock_guard<std::mutex> l(mutex);
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
-			if (command.isNull() || command.GetAddress() == "") { return; }
+			if (command.isNull() || command.GetCommand() == "") { return; }
 
 			if (IsToMyListener(command.GetStringParameter("listenerID"))) { 				
 				if (command.GetCommand() == "/ambisonicsDomianConvoler/resetBuffers") {
@@ -131,9 +131,15 @@ namespace BRTProcessing {
 		 * @param _listenerID Listener ID
 		 * @return true if yes
 		*/
-		bool IsToMyListener(std::string _listenerID) {
-			std::string myListenerID = GetIDEntryPoint("listenerID")->GetData();
-			return myListenerID == _listenerID;
+		bool IsToMyListener(std::string _listenerID) {						
+			std::shared_ptr<BRTBase::CEntryPointID> _listenerIDEntryPoint= GetIDEntryPoint("listenerID");
+			if (_listenerIDEntryPoint != nullptr) {
+				std::string myListenerID = _listenerIDEntryPoint->GetData();
+				return myListenerID == _listenerID;
+			}
+			else {
+				return false;
+			}			
 		}
     };
 }

@@ -77,7 +77,7 @@ namespace BRTProcessing {
 			
 			std::lock_guard<std::mutex> l(mutex);
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
-			if (command.isNull() || command.GetAddress() == "") { return; }
+			if (command.isNull() || command.GetCommand() == "") { return; }
 
 			if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
 				if (command.GetCommand() == "/HRTFConvolver/enableSpatialization") {					

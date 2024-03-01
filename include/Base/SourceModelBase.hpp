@@ -59,8 +59,7 @@ namespace BRTBase {
 			
 		}
 		void SetDataReady() {
-			if (!dataReady) { 
-				//return; 
+			if (!dataReady) { 				
 				SetBuffer(CMonoBuffer<float>(globalParameters.GetBufferSize()));			// set and empty buffer to continue
 			}			
 			//Update(GetSamplesExitPoint("samples")->GetID());
