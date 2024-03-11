@@ -16,7 +16,7 @@ In addition to this main repository, there are other repositories with associate
 
 This software is being developed by a team coordinated by 
 - [Arcadio Reyes-Lecuona](https://github.com/areyesl) ([Diana Research Group, University of Malaga](https://www.diana.uma.es/?page_id=53)). Contact: areyes@uma.es
-- [Lorenzo Picinali](https://github.com/lpicinali) ([Audio Experience Design Team, Imperial College London](https://www.axdesign.co.uk). Contact: l.picinali@imperial.ac.uk  
+- [Lorenzo Picinali](https://github.com/lpicinali) ([Audio Experience Design Team, Imperial College London](https://www.axdesign.co.uk)). Contact: l.picinali@imperial.ac.uk  
 
 The current members of the development team are (in alphabetical order):
 - [Maria Cuevas-Rodriguez](https://github.com/mariacuevas) ([University of Malaga](https://www.uma.es/))
