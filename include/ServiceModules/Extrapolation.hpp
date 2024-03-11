@@ -155,24 +155,24 @@ namespace BRTServices
 			int cont = 0;			
 
 			if (gapsFound.gapMaxElevation) {
+				bool gapMaxElevationFilled = false;
 				for (double _elevation = 90; _elevation >= (borders.maxElevation + extrapolationStep); _elevation -= extrapolationStep) {
-					double _elevationInRage = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
-					int cont=0;
-					for (double _azimuth = 0; _azimuth < 360; _azimuth += extrapolationStep) {
-						U newTF = f(originalTable, orientationsList, _TFSize, _azimuth, _elevationInRage);
-						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
-						cont++;
-					}
+					double _elevationInRage = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);										
+					cont += FillAllAzimuths<T, U, Functor>(originalTable, table, orientationsList, _TFSize, extrapolationStep, f, _elevation);
+					gapMaxElevationFilled = true;
+				}
+				if (!gapMaxElevationFilled) {															
+					cont += FillAllAzimuths<T, U, Functor>(originalTable, table, orientationsList, _TFSize, extrapolationStep, f, 90);
 				}
 			}
 			if (gapsFound.gapMinElevation) {
-				for (double _elevation = 270; _elevation <= (borders.minElevation - extrapolationStep); _elevation += extrapolationStep) {
-					double _elevationInRage = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
-					for (double _azimuth = 0; _azimuth < 360; _azimuth += extrapolationStep) {						
-						U newTF = f(originalTable, orientationsList, _TFSize, _azimuth, _elevationInRage);
-						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
-						cont++;
-					}
+				bool gapMinElevationFilled = false;
+				for (double _elevation = 270; _elevation <= (borders.minElevation - extrapolationStep); _elevation += extrapolationStep) {					
+					cont += FillAllAzimuths<T, U, Functor>(originalTable, table, orientationsList, _TFSize, extrapolationStep, f, _elevation);
+					gapMinElevationFilled = true;
+				}				
+				if (!gapMinElevationFilled) {										
+					cont += FillAllAzimuths<T, U, Functor>(originalTable, table, orientationsList, _TFSize, extrapolationStep, f, 270);
 				}
 			}
 
@@ -210,6 +210,32 @@ namespace BRTServices
 			SET_RESULT(RESULT_WARNING, "Number of extrapolated points: " + std::to_string(cont));
 		}
 
+		/**
+		 * @brief Given an elevation add all azimuths to the table.
+		 * @tparam T 
+		 * @tparam U 
+		 * @tparam Functor 
+		 * @param originalTable 
+		 * @param table 
+		 * @param orientationsList 
+		 * @param _TFSize 
+		 * @param extrapolationStep 
+		 * @param f 
+		 * @param _elevation 
+		 * @return Returns the number of elements inserted in the table.
+		*/
+		template <typename T, typename U, typename Functor>				
+		int FillAllAzimuths(T& originalTable, T& table, const std::vector<orientation>& orientationsList, int _TFSize, int extrapolationStep, Functor f, double _elevation) {
+			
+			int cont = 0;			
+			double _elevationInRage = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
+			for (double _azimuth = 0; _azimuth < 360; _azimuth += extrapolationStep) {
+				U newTF = f(originalTable, orientationsList, _TFSize, _azimuth, _elevationInRage);
+				table.emplace(orientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
+				cont++;
+			}
+			return cont;
+		}
 	};
 }
 #endif
