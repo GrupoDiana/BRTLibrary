@@ -52,6 +52,8 @@ namespace BRTBase {
 		virtual void SetILD(std::shared_ptr< BRTServices::CILD > _listenerILD) = 0;
 		virtual std::shared_ptr < BRTServices::CHRTF> GetHRTF() const = 0;
 		virtual void RemoveHRTF() = 0;
+		virtual std::shared_ptr < BRTServices::CILD> GetILD() const = 0;
+		virtual void RemoveILD() = 0;
 
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel > _source) = 0;
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel > _source) = 0;
