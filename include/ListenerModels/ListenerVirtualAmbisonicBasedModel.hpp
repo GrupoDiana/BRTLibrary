@@ -27,7 +27,7 @@
 #include <Base/ListenerModelBase.hpp>
 #include <ServiceModules/HRTFDefinitions.hpp>
 #include <ServiceModules/HRTF.hpp>
-#include <ServiceModules/ILD.hpp>
+//#include <ServiceModules/NFCFilters.hpp>
 #include <ServiceModules/AmbisonicBIR.hpp>
 #include <ProcessingModules/BilateralAmbisonicEncoderProcessor.hpp>
 #include <ProcessingModules/AmbisonicDomainConvolverProcessor.hpp>
@@ -157,7 +157,7 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		void SetILD(std::shared_ptr< BRTServices::CILD > _listenerILD) {
+		void SetILD(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerILD) {
 			listenerILD = _listenerILD;
 			GetILDExitPoint()->sendDataPtr(listenerILD);
 		}
@@ -166,7 +166,7 @@ namespace BRTListenerModel {
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr <BRTServices::CILD> GetILD() const
+		std::shared_ptr <BRTServices::CNearFieldCompensationFilters> GetILD() const
 		{
 			return listenerILD;
 		}
@@ -175,7 +175,7 @@ namespace BRTListenerModel {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void RemoveILD() {
-			listenerILD = std::make_shared<BRTServices::CILD>();	// empty HRTF			
+			listenerILD = std::make_shared<BRTServices::CNearFieldCompensationFilters>();	// empty HRTF			
 		}
 
 		/**
@@ -386,7 +386,7 @@ namespace BRTListenerModel {
 		mutable std::mutex mutex;													// To avoid access collisions
 		std::string listenerID;														// Store unique listener ID
 		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;							// HRTF of listener														
-		std::shared_ptr<BRTServices::CILD> listenerILD;								// ILD of listener				
+		std::shared_ptr<BRTServices::CNearFieldCompensationFilters> listenerILD;								// ILD of listener				
 		std::shared_ptr<BRTServices::CAmbisonicBIR> listenerAmbisonicIR;			// AmbisonicIR related to the listener				
 		
 		int ambisonicOrder;															// Store the Ambisonic order

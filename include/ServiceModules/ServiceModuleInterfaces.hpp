@@ -128,7 +128,7 @@ namespace BRTServices {
 		THRIRPartitionedStruct() : leftDelay{ 0 }, rightDelay{ 0 } {}
 	};
 
-	struct TILDStruct {
+	struct TNFCFilterStruct {
 		CMonoBuffer<float> leftCoefs;	///< Left filters coefs
 		CMonoBuffer<float> rightCoefs;	///< Right filters coefs
 	};
@@ -161,7 +161,7 @@ namespace BRTServices {
 
 		virtual void AddHRIR(float _azimuth, float _elevation, THRIRStruct&& newHRIR) {}
 		virtual void AddHRIR(double _azimuth, double _elevation, THRIRStruct&& newHRIR) {}
-		virtual void AddCoefficients(float azimuth, float distance, TILDStruct&& newCoefs) {}
+		virtual void AddCoefficients(float azimuth, float distance, TNFCFilterStruct&& newCoefs) {}
 		virtual void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF) {}
 		
 		virtual void AddImpulseResponse(int channel, const THRIRStruct&& newIR) {}		

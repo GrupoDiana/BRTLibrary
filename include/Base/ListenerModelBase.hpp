@@ -29,7 +29,7 @@
 #include <Base/ExitPointManager.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/HRTF.hpp>
-#include <ServiceModules/ILD.hpp>
+#include <ServiceModules/NFCFilters.hpp>
 
 namespace BRTServices {
 	class CHRTF;
@@ -49,10 +49,10 @@ namespace BRTBase {
 		virtual void Update(std::string entryPointID) = 0;
 		virtual void UpdateCommand() = 0;		
 		virtual bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) = 0;
-		virtual void SetILD(std::shared_ptr< BRTServices::CILD > _listenerILD) = 0;
+		virtual void SetILD(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerILD) = 0;
 		virtual std::shared_ptr < BRTServices::CHRTF> GetHRTF() const = 0;
 		virtual void RemoveHRTF() = 0;
-		virtual std::shared_ptr < BRTServices::CILD> GetILD() const = 0;
+		virtual std::shared_ptr < BRTServices::CNearFieldCompensationFilters> GetILD() const = 0;
 		virtual void RemoveILD() = 0;
 
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel > _source) = 0;

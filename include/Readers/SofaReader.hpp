@@ -73,7 +73,7 @@ namespace BRTReaders {
 		*	\param [out] listener affected by the hrtf
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		bool ReadILDFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CILD>& listenerILD)
+		bool ReadILDFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CNearFieldCompensationFilters>& listenerILD)
 		{
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerILD;
 			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS, -1, "");
@@ -319,7 +319,7 @@ namespace BRTReaders {
 			// This outtermost loop iterates over HRIRs
 			for (std::size_t i = 0; i < numberOfMeasurements; i++)
 			{
-				BRTServices::TILDStruct coefficients;
+				BRTServices::TNFCFilterStruct coefficients;
 				coefficients.leftCoefs.resize(numberOfSamples);
 				double azimuth = sourcePositionsVector[array2DIndex(i, 0, numberOfMeasurements, numberOfCoordinates)];
 				//double elevation = GetPositiveElevation(sourcePositionsVector[array2DIndex(i, 1, numberOfMeasurements, numberOfCoordinates)]);

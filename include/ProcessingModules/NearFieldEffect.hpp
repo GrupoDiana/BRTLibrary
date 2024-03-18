@@ -24,7 +24,7 @@
 
 
 #include <Common/Buffer.hpp>
-#include <ServiceModules/ILD.hpp>
+#include <ServiceModules/NFCFilters.hpp>
 #include <Common/GlobalParameters.hpp>
 //#define EPSILON 0.0001f
 
@@ -55,7 +55,7 @@ namespace BRTProcessing {
 
 		// Apply Near field effects (ILD)	
 		
-		void Process(CMonoBuffer<float>& _inLeftBuffer, CMonoBuffer<float>& _inRightBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CILD>& _listenerILDWeak)
+		void Process(CMonoBuffer<float>& _inLeftBuffer, CMonoBuffer<float>& _inRightBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CNearFieldCompensationFilters>& _listenerILDWeak)
 		//void Process(CMonoBuffer<float>& leftBuffer, CMonoBuffer<float>& rightBuffer, float distance, float interauralAzimuth, std::weak_ptr<BRTServices::CILD>& _listenerHRTFWeak)
 		{
 			outLeftBuffer = _inLeftBuffer;
@@ -71,7 +71,7 @@ namespace BRTProcessing {
 			ASSERT(_inLeftBuffer.size() == globalParameters.GetBufferSize() || _inRightBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");			
 			
 			// Check listener ILD
-			std::shared_ptr<BRTServices::CILD> _listenerILD = _listenerILDWeak.lock();
+			std::shared_ptr<BRTServices::CNearFieldCompensationFilters> _listenerILD = _listenerILDWeak.lock();
 			if (!_listenerILD) {
 				SET_RESULT(RESULT_ERROR_NULLPOINTER, "ILD listener pointer is null when trying to use in BRTProcessing::CNearFieldEffect");
 				outLeftBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);

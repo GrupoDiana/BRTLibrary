@@ -112,7 +112,7 @@ namespace BRTProcessing {
 		 * @param _listenerHRTFWeak Weak smart pointer to the listener HRTF
 		 * @param _listenerILDWeak Weak smart pointer to the listener ILD
 		*/
-		void Process(CMonoBuffer<float>& _inBuffer, std::vector<CMonoBuffer<float>>& leftChannelsBuffers, std::vector<CMonoBuffer<float>>& rightChannelsBuffers, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CHRTF>& _listenerHRTFWeak, std::weak_ptr<BRTServices::CILD>& _listenerILDWeak) {
+		void Process(CMonoBuffer<float>& _inBuffer, std::vector<CMonoBuffer<float>>& leftChannelsBuffers, std::vector<CMonoBuffer<float>>& rightChannelsBuffers, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CHRTF>& _listenerHRTFWeak, std::weak_ptr<BRTServices::CNearFieldCompensationFilters>& _listenerILDWeak) {
 
 			std::lock_guard<std::mutex> l(mutex);
 

@@ -31,7 +31,7 @@
 #include <Base/Command.hpp>
 #include <ServiceModules/AmbisonicBIR.hpp>
 
-namespace BRTServices { class CHRTF; class CILD; class CDirectivityTF; }
+namespace BRTServices { class CHRTF; class CNearFieldCompensationFilters; class CDirectivityTF; }
 
 namespace BRTBase {          
     template <class T>
@@ -66,7 +66,7 @@ namespace BRTBase {
     using CExitPointID = CExitPointBase<std::string>;
 
     using CExitPointHRTFPtr = CExitPointBase< std::weak_ptr<BRTServices::CHRTF> >;
-    using CExitPointILDPtr = CExitPointBase< std::weak_ptr<BRTServices::CILD> >;
+    using CExitPointILDPtr = CExitPointBase< std::weak_ptr<BRTServices::CNearFieldCompensationFilters> >;
     using CExitPointDirectivityTFPtr = CExitPointBase< std::weak_ptr<BRTServices::CDirectivityTF> >;
     using CExitPointABIRPtr = CExitPointBase< std::weak_ptr<BRTServices::CAmbisonicBIR> >;
 }

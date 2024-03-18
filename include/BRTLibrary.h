@@ -37,7 +37,7 @@
 #include "ProcessingModules//HRTFConvolverProcessor.hpp"
 #include "ProcessingModules/DirectivityTFConvolver.hpp"
 #include "ServiceModules/HRTF.hpp"
-#include "ServiceModules/ILD.hpp"
+#include "ServiceModules/NFCFilters.hpp"
 #include "ServiceModules/DirectivityTF.hpp"
 #include "Readers/SofaReader.hpp"
 #include "third_party_libraries/nlohmann/json.hpp"
