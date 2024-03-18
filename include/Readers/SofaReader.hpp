@@ -256,6 +256,12 @@ namespace BRTReaders {
 
 			// Get and save HRIRs
 			double distance = sourcePositionsVector[array2DIndex(0, 2, numberOfMeasurements, numberOfCoordinates)];		//We consider that every HRIR are meased at the same distance, so we get the firts one									
+			
+			if (distance <= 0) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "SOFA gives incoherent number of HRIRs distance");
+				return false;
+			}
+
 			dataHRTF->BeginSetup(numberOfSamples, distance, extrapolationMethod);
 			
 			dataHRTF->SetSamplingRate(loader.GetSamplingRate());
