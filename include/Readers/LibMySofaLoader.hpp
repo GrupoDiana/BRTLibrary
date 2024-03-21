@@ -34,7 +34,7 @@ namespace BRTReaders {
 
 	public:
 
-		enum class TSofaConvention { SimpleFreeFieldHRIR, SimpleFreeFieldHRSOS, FreeFieldDirectivityTF};
+		enum class TSofaConvention { SimpleFreeFieldHRIR, SimpleFreeFieldHRSOS, FreeFieldDirectivityTF, SingleRoomMIMOSRIR};
 		const char* SofaConventioToString(TSofaConvention e) noexcept
 		{
 			switch (e)
@@ -42,7 +42,7 @@ namespace BRTReaders {
 			case TSofaConvention::SimpleFreeFieldHRIR: return "SimpleFreeFieldHRIR";
 			case TSofaConvention::SimpleFreeFieldHRSOS: return "SimpleFreeFieldHRSOS";
 			case TSofaConvention::FreeFieldDirectivityTF: return "FreeFieldDirectivityTF";
-
+			case TSofaConvention::SingleRoomMIMOSRIR: return "SingleRoomMIMOSRIR";
 			}
 		}
 

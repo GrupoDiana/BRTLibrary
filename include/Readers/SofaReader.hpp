@@ -90,6 +90,18 @@ namespace BRTReaders {
 			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::FreeFieldDirectivityTF, _resamplingStep, extrapolationMethod);
 		}
 				
+
+		/** \brief Loads an HRTF from a sofa file
+		*	\param [in] path of the sofa file
+		*	\param [out] listener affected by the hrtf
+		*   \eh On error, an error code is reported to the error handler.
+		*/
+		bool ReadBRIRFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CHRTF> listenerHRTF) {
+
+			std::shared_ptr<BRTServices::CServicesBase> data = listenerHRTF;
+			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR, -1, "");
+		}
+
 	private:
 				
 		// Methods
