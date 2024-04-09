@@ -308,7 +308,7 @@ namespace BRTServices
 			// Get a list with only the points of the nearest known ring
 			for (auto& itr : _hemisphere)
 			{
-				if (itr.elevation == _elevationLastRing)
+				if (Common::AreSame(itr.elevation, _elevationLastRing, 0.0001f) )
 				{
 					lastRingOrientationList.push_back(itr);
 				}
