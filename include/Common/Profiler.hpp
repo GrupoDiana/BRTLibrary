@@ -17,7 +17,7 @@
 *
 * \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 *
-* \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
+* \b Acknowledgement: This project has received funding from the European Unionï¿½s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 #ifndef _CPROFILER_H_
 #define _CPROFILER_H_
@@ -635,7 +635,7 @@ namespace Common {
 		*	\details Sets default resolution and clear all samples, and Setup other platform-dependent stuff.
 		*	\n In windows: get QPF (from Vista and newer, this can be read only once)
 		*/		
-		void CProfiler::InitProfiler()
+		void InitProfiler()
 		{
 			//SetResolution(UNITS_MICROSECONDS);				
 			SetResolution(UNITS_NANOSECONDS);

@@ -25,11 +25,11 @@
 
 #include <vector>
 #include <Base/SourceModelBase.hpp>
-#include <ProcessingModules/SRTFConvolver.hpp>
-#include <ServiceModules/SRTF.hpp>
+#include <ProcessingModules/DirectivityTFConvolver.hpp>
+#include <ServiceModules/DirectivityTF.hpp>
 
 namespace BRTSourceModel {
-	class CSourceDirectivityModel : public BRTBase::CSourceModelBase, BRTProcessing::CSRTFConvolver {
+	class CSourceDirectivityModel : public BRTBase::CSourceModelBase, BRTProcessing::CDirectivityTFConvolver {
 
 	public:			
 		CSourceDirectivityModel(std::string _sourceID) : BRTBase::CSourceModelBase(_sourceID) {
@@ -37,6 +37,10 @@ namespace BRTSourceModel {
 			CreatePositionEntryPoint("listenerPosition");
 		}
 
+		/**
+		 * @brief Update method of the Source directivity model
+		 * @param _entryPointID ID of the entry ponint to do the update
+		*/
 		void Update(std::string _entryPointID) {
 			std::lock_guard<std::mutex> l(mutex);
 
@@ -47,12 +51,15 @@ namespace BRTSourceModel {
 				Common::CTransform sourcePosition = GetCurrentSourceTransform();
 				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
 				if (inBuffer.size() != 0) {
-					Process(inBuffer, outBuffer, sourcePosition, listenerPosition, sourceSRTF);
+					Process(inBuffer, outBuffer, sourcePosition, listenerPosition, sourceDirectivityTF);
 					SendData(outBuffer);
 				}
 			}			
 		}
-				
+		
+		/**
+		 * @brief Update to check to internal OSC commands
+		*/
 		void UpdateCommand() {
 			std::lock_guard<std::mutex> l(mutex);
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
@@ -88,32 +95,44 @@ namespace BRTSourceModel {
 			}
 		}
 
-		/** \brief SET SRTF of source
-		*	\param[in] pointer to SRTF to be stored
+		/** \brief SET DirectivityTF of source
+		*	\param[in] pointer to DirectivityTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetSRTF(std::shared_ptr< BRTServices::CSRTF > _sourceSRTF) {			
-			if (_sourceSRTF->GetSamplingRate() != globalParameters.GetSampleRate()) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "This SRTF has not been assigned to the source. The sample rate of the SRTF does not match the one set in the library Global Parameters.");
-				return false;
-			}			
-			sourceSRTF = _sourceSRTF;						
+		bool SetDirectivityTF(std::shared_ptr< BRTServices::CDirectivityTF > _sourceDirectivityTF) {			
+			sourceDirectivityTF = _sourceDirectivityTF;						
 			ResetSourceConvolutionBuffers();
+			return true;
 		}
 
-		std::shared_ptr< BRTServices::CSRTF > GetSRFT() {
-			return sourceSRTF;
+		/**
+		 * @brief Get the source directivity transfer function
+		 * @return shered pointer to the directivity of the source model
+		*/
+		std::shared_ptr< BRTServices::CDirectivityTF > GetDirectivityTF() {
+			return sourceDirectivityTF;
 		}
 
-		void RemoveSRTF() {
-			sourceSRTF = std::make_shared<BRTServices::CSRTF>();	// empty HRTF		
+		/**
+		 * @brief Remove the shared pointer of the directivity TF
+		*/
+		void RemoveDirectivityTF() {
+			sourceDirectivityTF = std::make_shared<BRTServices::CDirectivityTF>();			
 		}
 
-		// TODO Move to command
+		/**
+		 * @brief Enable or disable directivity for the source model
+		 * @param _enabled boolean true if you want to enable the directivity, false if disable
+		*/
+		// TODO: Move to command
 		void SetDirectivityEnable(bool _enabled) {
 			if (_enabled) { EnableSourceDirectionality(); }
 			else { DisableSourceDirectionality(); }
 		}
+		
+		/**
+		 * @brief Reset the buffers used in the convolution of the directivity
+		*/
 		// TODO Move to command
 		void ResetBuffers() {
 			ResetSourceConvolutionBuffers();
@@ -121,7 +140,7 @@ namespace BRTSourceModel {
 
 	private:		
 		mutable std::mutex mutex;
-		std::shared_ptr<BRTServices::CSRTF> sourceSRTF;			// SHRTF of source
+		std::shared_ptr<BRTServices::CDirectivityTF> sourceDirectivityTF;			// Directivity of the source
 		Common::CGlobalParameters globalParameters;
 		
 	};

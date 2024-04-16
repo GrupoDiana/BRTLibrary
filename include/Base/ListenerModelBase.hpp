@@ -29,10 +29,15 @@
 #include <Base/ExitPointManager.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/HRTF.hpp>
-#include <ServiceModules/ILD.hpp>
+#include <ServiceModules/NFCFilters.hpp>
 
 namespace BRTServices {
 	class CHRTF;
+}
+
+namespace BRTSourceModel {
+	class CSourceSimpleModel;
+	class CSourceDirectivityModel;
 }
 
 namespace BRTBase {
@@ -43,7 +48,17 @@ namespace BRTBase {
 		virtual ~CListenerModelBase() {}
 		virtual void Update(std::string entryPointID) = 0;
 		virtual void UpdateCommand() = 0;		
+		virtual bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) = 0;
+		virtual void SetILD(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerILD) = 0;
+		virtual std::shared_ptr < BRTServices::CHRTF> GetHRTF() const = 0;
+		virtual void RemoveHRTF() = 0;
+		virtual std::shared_ptr < BRTServices::CNearFieldCompensationFilters> GetILD() const = 0;
+		virtual void RemoveILD() = 0;
 
+		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel > _source) = 0;
+		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel > _source) = 0;
+		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) = 0;
+		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) = 0;
 
 		CListenerModelBase(std::string _listenerID) : listenerID{ _listenerID }, listenerHeadRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }, leftDataReady{ false }, rightDataReady{false} {
 												
@@ -93,9 +108,7 @@ namespace BRTBase {
 		 * @brief Get listener ID
 		 * @return Return listener identificator
 		*/
-		std::string GetID() { return listenerID; }
-
-	
+		std::string GetID() { return listenerID; }		
 		
 		/**
 		 * @brief Get output sample buffers from the listener
@@ -124,7 +137,7 @@ namespace BRTBase {
 		/////////////////////		
 		// Update Callbacks
 		/////////////////////
-		void updateFromEntryPoint(std::string id) {
+		void UpdateEntryPointData(std::string id) {
 			if (id == "leftEar") {
 				UpdateLeftBuffer();
 			}

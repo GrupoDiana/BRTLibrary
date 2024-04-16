@@ -97,7 +97,7 @@ namespace Common {
 
 		}
 		// Get buffer size
-		int GetBufferSize()	{ return bufferSize; }				
+		int GetBufferSize()	const { return bufferSize; }				
 
 		void SetSampleRate(int _sampleRate) {
 			sampleRate = _sampleRate;

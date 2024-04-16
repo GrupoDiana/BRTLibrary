@@ -24,8 +24,6 @@
 #define _SERVICE_INTERFACES_H_
 
 #include <cstdint>
-//#include <ServiceModules/HRTF.h>
-//#include <ServiceModules/ILD.hpp>
 
 #define MAX_DISTANCE_BETWEEN_ELEVATIONS 5
 #define NUMBER_OF_PARTS 4 
@@ -55,9 +53,9 @@ struct orientation
 {
 	double azimuth;					///< Azimuth angle in degrees
 	double elevation;				///< Elevation angle in degrees	
-	Common::CVector3 cartessianPos; ///< Position in X, Y and Z
+	//Common::CVector3 cartessianPos; ///< Position in X, Y and Z
 	orientation(double _azimuth, double _elevation) :azimuth{ _azimuth }, elevation{ _elevation } {}
-	orientation(double _azimuth, double _elevation, Common::CVector3 _cartessianPos) :azimuth{ _azimuth }, elevation{ _elevation }, cartessianPos{ _cartessianPos } {}
+	//orientation(double _azimuth, double _elevation, Common::CVector3 _cartessianPos) :azimuth{ _azimuth }, elevation{ _elevation }, cartessianPos{ _cartessianPos } {}
 	//orientation(float _azimuth, float _elevation) :azimuth{ static_cast<double>(_azimuth) }, elevation{ static_cast<double>(_elevation) } {}
 	//orientation(float _azimuth, float _elevation, Common::CVector3 _cartessianPos) :azimuth{ static_cast<double>(_azimuth) }, elevation{ static_cast<double>(_elevation) }, cartessianPos{ _cartessianPos } {}
 	orientation() :orientation{ 0.0, 0.0 } {}
@@ -105,8 +103,11 @@ namespace std
 
 namespace BRTServices {
 
+	const char EXTRAPOLATION_METHOD_NEARESTPOINT_STRING[]	= "NearestPoint";
+	const char EXTRAPOLATION_METHOD_ZEROINSERTION_STRING[] = "ZeroInsertion";
+
 	/** \brief Type definition for a left-right pair of impulse response with the ITD removed and stored in a specific struct field
-*/
+	*/
 	struct THRIRStruct {
 		uint64_t leftDelay;				///< Left delay, in number of samples
 		uint64_t rightDelay;			///< Right delay, in number of samples
@@ -116,7 +117,18 @@ namespace BRTServices {
 		THRIRStruct() : leftDelay{0}, rightDelay{0} {}
 	};
 
-	struct TILDStruct {
+	/** \brief Type definition for a left-right pair of impulse response subfilter set with the ITD removed and stored in a specific struct field
+	*/
+	struct THRIRPartitionedStruct {
+		uint64_t leftDelay;				///< Left delay, in number of samples
+		uint64_t rightDelay;			///< Right delay, in number of samples
+		std::vector<CMonoBuffer<float>> leftHRIR_Partitioned;	///< Left partitioned impulse response data
+		std::vector<CMonoBuffer<float>> rightHRIR_Partitioned;	///< Right partitioned impulse response data
+
+		THRIRPartitionedStruct() : leftDelay{ 0 }, rightDelay{ 0 } {}
+	};
+
+	struct TNFCFilterStruct {
 		CMonoBuffer<float> leftCoefs;	///< Left filters coefs
 		CMonoBuffer<float> rightCoefs;	///< Right filters coefs
 	};
@@ -133,24 +145,27 @@ namespace BRTServices {
 		virtual ~CServicesBase() {}		
 		
 		virtual void BeginSetup() {}
-		virtual void BeginSetup(int32_t _SRTFLength) {}
-		virtual void BeginSetup(int32_t _HRIRLength, float _distance) {}
-		virtual bool EndSetup() = 0;
+		virtual void BeginSetup(int32_t _DirectivityTFLength, std::string extrapolationMethod) {}
+		virtual void BeginSetup(int32_t _HRIRLength, float _distance, std::string extrapolationMethod) {}
+		virtual bool EndSetup() { return false; }
 
 		virtual void SetResamplingStep(int _resamplingStep) {};
-		virtual void SetTitle(std::string _title) = 0;
-		virtual void SetDatabaseName(std::string _databaseName) =0;
+		virtual void SetTitle(std::string _title) {}
+		virtual void SetDatabaseName(std::string _databaseName) {}
 		virtual void SetListenerShortName(std::string _listenerShortName) {};
-		virtual void SetFilename(std::string _fileName) = 0;
+		virtual void SetFilename(std::string _fileName) {}
 		
 		virtual void SetSamplingRate(int samplingRate) {};
 		virtual void SetNumberOfEars(int _numberOfEars) {}
 		virtual void SetEarPosition(Common::T_ear _ear, Common::CVector3 _earPosition) {};
 
 		virtual void AddHRIR(float _azimuth, float _elevation, THRIRStruct&& newHRIR) {}
-		virtual void AddCoefficients(float azimuth, float distance, TILDStruct&& newCoefs) {}
+		virtual void AddHRIR(double _azimuth, double _elevation, THRIRStruct&& newHRIR) {}
+		virtual void AddCoefficients(float azimuth, float distance, TNFCFilterStruct&& newCoefs) {}
 		virtual void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF) {}
 		
+		virtual void AddImpulseResponse(int channel, const THRIRStruct&& newIR) {}		
+		virtual void AddImpulseResponse(int channel, const THRIRPartitionedStruct&& newPartitionedIR) {}
 	};}
 
 #endif
