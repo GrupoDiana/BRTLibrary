@@ -4,7 +4,7 @@ project(libbrt)
 
 # The library depends on a fork of libmysofa, install from
 # https://github.com/GrupoDiana/libmysofa.git 
-# branch origin/FreeFieldDirectivityTF_workaround 
+# branch origin/cmake
 find_package(mysofa CONFIG 1.3 REQUIRED)
 
 #The library also depends on nlohmann_json, see
