@@ -56,17 +56,17 @@ namespace BRTReaders {
 		*	\param [out] listener affected by the hrtf
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		bool ReadHRTFFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CHRTF> listenerHRTF, int _resamplingStep, std::string extrapolationMethod) {
+		bool ReadHRTFFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CHRTF> listenerHRTF, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
 						
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerHRTF;
-			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR, _resamplingStep, extrapolationMethod);
+			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR, _resamplingStep, _extrapolationMethod);
 		}
 		
-		bool ReadHRTFFromSofaWithoutProcess(const std::string& sofafile, std::shared_ptr<BRTServices::CHRTF> listenerHRTF, int _resamplingStep, std::string extrapolationMethod) {
+		/*bool ReadHRTFFromSofaWithoutProcess(const std::string& sofafile, std::shared_ptr<BRTServices::CHRTF> listenerHRTF, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
 
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerHRTF;
-			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR, _resamplingStep, extrapolationMethod, false);
-		}
+			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR, _resamplingStep, _extrapolationMethod, false);
+		}*/
 
 		/** \brief Loads an ILD from a sofa file
 		*	\param [in] path of the sofa file
@@ -76,7 +76,7 @@ namespace BRTReaders {
 		bool ReadNFCFiltersFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CNearFieldCompensationFilters>& listenerILD)
 		{
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerILD;
-			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS, -1, "");
+			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS, -1, BRTServices::TEXTRAPOLATION_METHOD::none);
 		}
 
 		/** \brief Loads an DirectivityTF from a sofa file
@@ -84,10 +84,10 @@ namespace BRTReaders {
 		*	\param [out] source affected by the directivityTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		bool ReadDirectivityTFFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CDirectivityTF> sourceDirectivityTF, int _resamplingStep, std::string extrapolationMethod) {
+		bool ReadDirectivityTFFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CDirectivityTF> sourceDirectivityTF, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
 
 			std::shared_ptr<BRTServices::CServicesBase> data = sourceDirectivityTF;
-			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::FreeFieldDirectivityTF, _resamplingStep, extrapolationMethod);
+			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::FreeFieldDirectivityTF, _resamplingStep, _extrapolationMethod);
 		}
 				
 
@@ -96,16 +96,17 @@ namespace BRTReaders {
 		*	\param [out] listener affected by the hrtf
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		bool ReadBRIRFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CHRTF> listenerHRTF) {
+		bool ReadBRIRFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CHRBRIR> listenerHRTF) {
 
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerHRTF;
-			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR, -1, "");
+			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR, -1, BRTServices::TEXTRAPOLATION_METHOD::none);
 		}
-
+		
 	private:
 				
 		// Methods
-		bool ReadFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, CLibMySOFALoader::TSofaConvention _SOFAConvention, int _resamplingStep, std::string _extrapolationMethod, bool process = true) {
+		bool ReadFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, CLibMySOFALoader::TSofaConvention _SOFAConvention, 
+			int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, bool process = true) {
 
 			// Open file
 			BRTReaders::CLibMySOFALoader loader(sofafile);
@@ -128,7 +129,9 @@ namespace BRTReaders {
 			if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR) {		result = GetHRIRs(loader, data, _extrapolationMethod); }
 			else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS) {	result = GetCoefficients(loader, data);	}
 			else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::FreeFieldDirectivityTF) { result = GetDirectivityTF(loader, data, _extrapolationMethod); }
-						
+			else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR) { result = GetBRIRs(loader, data, _extrapolationMethod); }
+			else { SET_RESULT(RESULT_ERROR_CASENOTDEFINED, "SOFA Convention not defined"); return false; }
+
 			if (!result) {
 				SET_RESULT(RESULT_ERROR_UNKNOWN, "An error occurred creating the data structure from the SOFA file, please consider previous messages.");
 				return false;
@@ -236,7 +239,7 @@ namespace BRTReaders {
 		}
 
 
-		bool GetHRIRs(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& dataHRTF, std::string extrapolationMethod) {
+		bool GetHRIRs(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& dataHRTF, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
 			//Get source positions									
 			std::vector< double > sourcePositionsVector(loader.getHRTF()->SourcePosition.values, loader.getHRTF()->SourcePosition.values + loader.getHRTF()->SourcePosition.elements);
 
@@ -274,7 +277,7 @@ namespace BRTReaders {
 				return false;
 			}
 
-			dataHRTF->BeginSetup(numberOfSamples, distance, extrapolationMethod);
+			dataHRTF->BeginSetup(numberOfSamples, distance, _extrapolationMethod);
 			
 			dataHRTF->SetSamplingRate(loader.GetSamplingRate());
 			const int left_ear = 0;
@@ -355,7 +358,7 @@ namespace BRTReaders {
 
 		}
 
-		bool GetDirectivityTF(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& dataDirectivityTF, std::string extrapolationMethod) {
+		bool GetDirectivityTF(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& dataDirectivityTF, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
 			//Get source positions									
 			std::vector< double > receiverPositionsVector(loader.getHRTF()->ReceiverPosition.values, loader.getHRTF()->ReceiverPosition.values + loader.getHRTF()->ReceiverPosition.elements);
 
@@ -374,7 +377,7 @@ namespace BRTReaders {
 			int numberOfReceivers = loader.getHRTF()->R;
 
 			// Get and save TFs			
-			dataDirectivityTF->BeginSetup(numberOfFrequencySamples, extrapolationMethod);
+			dataDirectivityTF->BeginSetup(numberOfFrequencySamples, _extrapolationMethod);
 
 			// This outtermost loop iterates over TFs
 			for (std::size_t i = 0; i < numberOfReceivers; i++)
@@ -394,6 +397,74 @@ namespace BRTReaders {
 				dataDirectivityTF->AddDirectivityTF(azimuth, elevation, std::move(directivityTF_data));
 			}
 			return true;		
+		}
+
+		bool GetBRIRs(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& dataHRTF, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
+			//Get source positions									
+			std::vector< double > sourcePositionsVector(loader.getHRTF()->SourcePosition.values, loader.getHRTF()->SourcePosition.values + loader.getHRTF()->SourcePosition.elements);
+
+			// GET delays and IRs
+			std::vector< double > dataDelays(loader.getHRTF()->DataDelay.values, loader.getHRTF()->DataDelay.values + loader.getHRTF()->DataDelay.elements);
+			std::vector< double > dataMeasurements(loader.getHRTF()->DataIR.values, loader.getHRTF()->DataIR.values + loader.getHRTF()->DataIR.elements);
+
+			// Constants
+			int numberOfMeasurements = loader.getHRTF()->M;
+			int numberOfCoordinates = loader.getHRTF()->C;
+			const unsigned int numberOfSamples = loader.getHRTF()->N;
+
+			// Check number of delays			
+			bool specifiedDelays = true;
+			if (dataDelays.size() == dataMeasurements.size() / loader.getHRTF()->N) {
+				specifiedDelays = true;
+			}
+			else {
+				if (dataDelays.size() == 2)
+				{
+					specifiedDelays = false;
+					SET_RESULT(RESULT_WARNING, "This HRTF file does not contain individual delays for each HRIR. Therefore, some comb filter effect can be perceived due to interpolations and custom head radius should not be used");
+				}
+				else {
+					SET_RESULT(RESULT_ERROR_BADSIZE, "SOFA gives incoherent number of HRIRs and delays");
+					return false;
+				}
+			}
+
+			// Get and save HRIRs
+			double distance = sourcePositionsVector[array2DIndex(0, 2, numberOfMeasurements, numberOfCoordinates)];		//We consider that every HRIR are meased at the same distance, so we get the firts one									
+
+			if (distance <= 0) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "SOFA gives incoherent number of HRIRs distance");
+				return false;
+			}
+
+			dataHRTF->BeginSetup(numberOfSamples, distance, _extrapolationMethod);
+
+			dataHRTF->SetSamplingRate(loader.GetSamplingRate());
+			const int left_ear = 0;
+			const int right_ear = 1;
+			// This outtermost loop iterates over HRIRs
+			for (std::size_t i = 0; i < numberOfMeasurements; i++)
+			{
+				BRTServices::THRIRStruct hrir_value;
+				double azimuth = sourcePositionsVector[array2DIndex(i, 0, numberOfMeasurements, numberOfCoordinates)];
+				double elevation = sourcePositionsVector[array2DIndex(i, 1, numberOfMeasurements, numberOfCoordinates)];
+
+				double leftDelay = dataDelays[specifiedDelays ? array2DIndex(i, left_ear, numberOfMeasurements, 2) : 0];
+				double rightDelay = dataDelays[specifiedDelays ? array2DIndex(i, right_ear, numberOfMeasurements, 2) : 1];
+				if (leftDelay < 0 || rightDelay < 0) {
+					SET_RESULT(RESULT_WARNING, "Error reading HRIR from SOFA file, one of the delay fields is negative. This data is rejected. [" + std::to_string(azimuth) + ", " + std::to_string(elevation) + "]");
+					continue;
+				}
+				hrir_value.leftDelay = leftDelay;
+				hrir_value.rightDelay = rightDelay;
+
+				GetData(dataMeasurements, hrir_value.leftHRIR, numberOfMeasurements, 2, numberOfSamples, left_ear, i);
+				GetData(dataMeasurements, hrir_value.rightHRIR, numberOfMeasurements, 2, numberOfSamples, right_ear, i);
+
+				dataHRTF->AddHRIR(azimuth, elevation, std::move(hrir_value));
+			}
+			return true;
+
 		}
 		
 		/////////////////////////

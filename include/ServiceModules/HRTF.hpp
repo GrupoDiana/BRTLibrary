@@ -63,7 +63,7 @@ namespace BRTServices
 			:enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, gapThreshold{ DEFAULT_GAP_THRESHOLD }, HRIRLength{ 0 }, fileName{ "" },
 			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, headRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }, leftEarLocalPosition{ Common::CVector3() }, rightEarLocalPosition{ Common::CVector3() },
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER },
-			epsilon_sewing{ EPSILON_SEWING }, samplingRate{ -1 }, elevationNorth{ 0 }, elevationSouth{ 0 }, bufferSize{ 0 }, extrapolationMethod{ TExtrapolationMethod::nearestPoint }
+			epsilon_sewing{ EPSILON_SEWING }, samplingRate{ -1 }, elevationNorth{ 0 }, elevationSouth{ 0 }, bufferSize{ 0 }, extrapolationMethod{ TEXTRAPOLATION_METHOD::nearest_point }
 		{ }
 
 		/** \brief Get size of each HRIR buffer
@@ -88,7 +88,7 @@ namespace BRTServices
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
-		void BeginSetup(int32_t _HRIRLength, float _distance, std::string _extrapolationMethod)
+		void BeginSetup(int32_t _HRIRLength, float _distance, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod)
 		{
 			//if ((ownerListener != nullptr) && ownerListener->ownerCore!=nullptr)
 			{
@@ -621,7 +621,7 @@ namespace BRTServices
 
 	private:
 		
-		enum TExtrapolationMethod { zeroInsertion, nearestPoint };
+		//enum TExtrapolationMethod { zeroInsertion, nearestPoint };
 		///////////////
 		// ATTRIBUTES
 		///////////////		
@@ -633,7 +633,8 @@ namespace BRTServices
 		float headRadius;								// Head radius of listener 
 		Common::CVector3 leftEarLocalPosition;			// Listener left ear relative position
 		Common::CVector3 rightEarLocalPosition;			// Listener right ear relative position
-		TExtrapolationMethod extrapolationMethod;		// Methods that is going to be used to extrapolate
+		TEXTRAPOLATION_METHOD extrapolationMethod;		// Methods that is going to be used to extrapolate
+		
 
 		float sphereBorder;								// Define spheere "sewing"
 		float epsilon_sewing;
@@ -736,9 +737,10 @@ namespace BRTServices
 		 * @brief Set the extrapolation method that is going to be used
 		 * @param _extrapolationMethod 
 		*/
-		void SetExtrapolationMethod(std::string _extrapolationMethod) {
+		void SetExtrapolationMethod(BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
 		
-			if (_extrapolationMethod == EXTRAPOLATION_METHOD_ZEROINSERTION_STRING) {
+			extrapolationMethod = _extrapolationMethod;
+			/*if (_extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::ZERO_INSERTION EXTRAPOLATION_METHOD_ZEROINSERTION_STRING) {
 				extrapolationMethod = TExtrapolationMethod::zeroInsertion;
 			}
 			else if (_extrapolationMethod == EXTRAPOLATION_METHOD_NEARESTPOINT_STRING) {
@@ -747,7 +749,7 @@ namespace BRTServices
 			else {
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Extrapolation Method not identified.");
 				extrapolationMethod = TExtrapolationMethod::nearestPoint;
-			}
+			}*/
 
 		}
 		/**
@@ -755,11 +757,11 @@ namespace BRTServices
 		*/
 		void CalculateExtrapolation() {
 			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.			
-			if (extrapolationMethod == TExtrapolationMethod::zeroInsertion) {
+			if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::zero_insertion) {
 				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded HRTF sofa file, an extrapolation with zeros will be performed to fill it.");
 				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, HRIRLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetZerosHRIR());
 			}
-			else if (extrapolationMethod == TExtrapolationMethod::nearestPoint) {
+			else if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::nearest_point) {
 				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded HRTF sofa file, an extrapolation will be made to the nearest point to fill it.");
 				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, t_HRTF_DataBase_ListOfOrientations, HRIRLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetNearestPointHRIR());
 			}

@@ -103,8 +103,13 @@ namespace std
 
 namespace BRTServices {
 
-	const char EXTRAPOLATION_METHOD_NEARESTPOINT_STRING[]	= "NearestPoint";
-	const char EXTRAPOLATION_METHOD_ZEROINSERTION_STRING[] = "ZeroInsertion";
+	enum class TEXTRAPOLATION_METHOD {
+		none,
+		nearest_point,
+		zero_insertion
+	};
+	/*const char EXTRAPOLATION_METHOD_NEARESTPOINT_STRING[]	= "NearestPoint";
+	const char EXTRAPOLATION_METHOD_ZEROINSERTION_STRING[] = "ZeroInsertion";*/
 
 	/** \brief Type definition for a left-right pair of impulse response with the ITD removed and stored in a specific struct field
 	*/
@@ -145,8 +150,8 @@ namespace BRTServices {
 		virtual ~CServicesBase() {}		
 		
 		virtual void BeginSetup() {}
-		virtual void BeginSetup(int32_t _DirectivityTFLength, std::string extrapolationMethod) {}
-		virtual void BeginSetup(int32_t _HRIRLength, float _distance, std::string extrapolationMethod) {}
+		virtual void BeginSetup(int32_t _DirectivityTFLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {}
+		virtual void BeginSetup(int32_t _HRIRLength, float _distance, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {}
 		virtual bool EndSetup() { return false; }
 
 		virtual void SetResamplingStep(int _resamplingStep) {};
