@@ -61,7 +61,7 @@ namespace BRTServices
 		*/
 		CHRTF()
 			:enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, gapThreshold{ DEFAULT_GAP_THRESHOLD }, HRIRLength{ 0 }, fileName{ "" },
-			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, headRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }, leftEarLocalPosition{ Common::CVector3() }, rightEarLocalPosition{ Common::CVector3() },
+			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, headRadius{ DEFAULT_LISTENER_HEAD_RADIUS }, leftEarLocalPosition{ Common::CVector3() }, rightEarLocalPosition{ Common::CVector3() },
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER },
 			epsilon_sewing{ EPSILON_SEWING }, samplingRate{ -1 }, elevationNorth{ 0 }, elevationSouth{ 0 }, bufferSize{ 0 }, extrapolationMethod{ TExtrapolationMethod::nearestPoint }
 		{ }
@@ -216,14 +216,14 @@ namespace BRTServices
 		/** \brief Switch on ITD customization in accordance with the listener head radius
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableHRTFCustomizedITD() {
+		void EnableCustomizedITD() {
 			enableCustomizedITD = true;
 		}
 
 		/** \brief Switch off ITD customization in accordance with the listener head radius
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void DisableHRTFCustomizedITD() {
+		void DisableCustomizedITD() {
 			enableCustomizedITD = false;
 		}
 
@@ -231,7 +231,7 @@ namespace BRTServices
 		*	\retval HRTFCustomizedITD if true, the HRTF ITD customization process based on the head circumference is enabled
 		*   \eh Nothing is reported to the error handler.
 		*/
-		bool IsHRTFCustomizedITDEnabled()
+		bool IsCustomizedITDEnabled()
 		{
 			return enableCustomizedITD;
 		}
@@ -538,6 +538,17 @@ namespace BRTServices
 		*/
 		std::string GetFilename() { 
 			return fileName;
+		}
+
+		/** \brief	Set the radius of the listener head
+		*   \eh Nothing is reported to the error handler.
+		*/
+		void SetHeadRadius(float _headRadius) 
+		{
+			if (_headRadius > 0.0f)
+				headRadius = _headRadius;
+			else
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Head Radius must be  greater than 0.");
 		}
 
 		/** \brief	Get the radius of the listener head

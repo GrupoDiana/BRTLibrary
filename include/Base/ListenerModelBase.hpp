@@ -60,7 +60,7 @@ namespace BRTBase {
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) = 0;
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) = 0;
 
-		CListenerModelBase(std::string _listenerID) : listenerID{ _listenerID }, listenerHeadRadius{ DEFAULT_LISTENER_HEAD_RADIOUS }, leftDataReady{ false }, rightDataReady{false} {
+		CListenerModelBase(std::string _listenerID) : listenerID{ _listenerID }, listenerHeadRadius{ DEFAULT_LISTENER_HEAD_RADIUS }, leftDataReady{ false }, rightDataReady{false} {
 												
 			CreateSamplesEntryPoint("leftEar");
 			CreateSamplesEntryPoint("rightEar");									
@@ -87,14 +87,14 @@ namespace BRTBase {
 		*/
 		Common::CTransform GetListenerTransform() { return listenerTransform; }
 
-		/** \brief Set head radius of listener
-		*	\param [in] _listenerHeadRadius new listener head radius, in meters
-		*   \eh Nothing is reported to the error handler.
-		*/
-		void SetHeadRadius(float _listenerHeadRadius)
-		{
-			listenerHeadRadius = _listenerHeadRadius;
-		}
+		///** \brief Set head radius of listener
+		//*	\param [in] _listenerHeadRadius new listener head radius, in meters
+		//*   \eh Nothing is reported to the error handler.
+		//*/
+		//void SetHeadRadius(float _listenerHeadRadius)
+		//{
+		//	listenerHeadRadius = _listenerHeadRadius;
+		//}
 
 		/** \brief Get head radius of listener
 		*	\retval radius current listener head radius, in meters

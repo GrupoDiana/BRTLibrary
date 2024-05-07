@@ -158,6 +158,42 @@ namespace BRTListenerModel {
 		}
 
 		/**
+		 * @brief Set Head Radious 
+		 * @param _headRadius 
+		 */
+		void SetHeadRadius(float _headRadius)
+		{
+
+			listenerHRTF->SetHeadRadius(_headRadius); // Set the head radius
+		}
+
+		/**
+		 * @brief Enable the use of Customized head radius for ITD
+		 */
+		void EnableCustomizedITD()
+		{
+			listenerHRTF->EnableCustomizedITD();
+		}
+
+		/**
+		 * @brief Disable the use of Customized head radius for ITD
+		 */
+		void DisableCustomizedITD()
+		{
+			listenerHRTF->DisableCustomizedITD();
+		}
+
+		/**
+		 * @brief Get the flag for HRTF cutomized ITD process
+		*	\retval HRTFCustomizedITD if true, the HRTF ITD customization process based on the head circumference is enabled
+		*   \eh Nothing is reported to the error handler.
+		*/
+		bool IsCustomizedITDEnabled()
+		{
+			return listenerHRTF->IsCustomizedITDEnabled();
+		}
+
+		/**
 		 * @brief Connect a new source to this listener
 		 * @param _source Pointer to the source
 		 * @return True if the connection success
