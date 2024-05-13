@@ -47,7 +47,7 @@ namespace Common {
 		 * @param centerAzimuth center head azimuth
 		 * @param interauralAzimuth interaural azimuth
 		*/
-		static void CalculateSourceListenerRelativePositions(Common::CTransform& _sourceTransform, Common::CTransform& _listenerTransform, std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF, float& leftElevation, float& leftAzimuth, float& rightElevation, float& rightAzimuth, float& centerElevation, float& centerAzimuth, float& interauralAzimuth)
+		static void CalculateSourceListenerRelativePositions(Common::CTransform& _sourceTransform, Common::CTransform& _listenerTransform, std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF, bool parallaxCorrection,float& leftElevation, float& leftAzimuth, float& rightElevation, float& rightAzimuth, float& centerElevation, float& centerAzimuth, float& interauralAzimuth)
 		{
 
 			//Get azimuth and elevation between listener and source
@@ -59,30 +59,8 @@ namespace Common {
 				SET_RESULT(RESULT_WARNING, "The sound source is too close to the centre of the listener's head in BRTProcessing::CHRTFConvolver");
 				_distanceToListener = MINIMUM_DISTANCE_SOURCE_LISTENER;
 			}
-
-			Common::CVector3 leftEarLocalPosition = _listenerHRTF->GetEarLocalPosition(Common::T_ear::LEFT);
-			Common::CVector3 rightEarLocalPosition = _listenerHRTF->GetEarLocalPosition(Common::T_ear::RIGHT);
-			Common::CTransform leftEarTransform = _listenerTransform.GetLocalTranslation(leftEarLocalPosition);
-			Common::CTransform rightEarTransform = _listenerTransform.GetLocalTranslation(rightEarLocalPosition);
-
-			Common::CVector3 leftVectorTo = leftEarTransform.GetVectorTo(_sourceTransform);
-			Common::CVector3 rightVectorTo = rightEarTransform.GetVectorTo(_sourceTransform);
-			Common::CVector3 leftVectorTo_sphereProjection = GetSphereProjectionPosition(leftVectorTo, leftEarLocalPosition, _listenerHRTF->GetHRTFDistanceOfMeasurement());
-			Common::CVector3 rightVectorTo_sphereProjection = GetSphereProjectionPosition(rightVectorTo, rightEarLocalPosition, _listenerHRTF->GetHRTFDistanceOfMeasurement());
-
-			leftElevation = leftVectorTo_sphereProjection.GetElevationDegrees();	//Get left elevation
-			if (!Common::AreSame(ELEVATION_SINGULAR_POINT_UP, leftElevation, EPSILON) && !Common::AreSame(ELEVATION_SINGULAR_POINT_DOWN, leftElevation, EPSILON))
-			{
-				leftAzimuth = leftVectorTo_sphereProjection.GetAzimuthDegrees();	//Get left azimuth
-			}
-
-			rightElevation = rightVectorTo_sphereProjection.GetElevationDegrees();	//Get right elevation	
-			if (!Common::AreSame(ELEVATION_SINGULAR_POINT_UP, rightElevation, EPSILON) && !Common::AreSame(ELEVATION_SINGULAR_POINT_DOWN, rightElevation, EPSILON))
-			{
-				rightAzimuth = rightVectorTo_sphereProjection.GetAzimuthDegrees();		//Get right azimuth
-			}
-
-
+			
+			// Calculate center head location			
 			centerElevation = _vectorToListener.GetElevationDegrees();		//Get elevation from the head center
 			if (!Common::AreSame(ELEVATION_SINGULAR_POINT_UP, centerElevation, EPSILON) && !Common::AreSame(ELEVATION_SINGULAR_POINT_DOWN, centerElevation, EPSILON))
 			{
@@ -90,6 +68,37 @@ namespace Common {
 			}
 
 			interauralAzimuth = _vectorToListener.GetInterauralAzimuthDegrees();	//Get Interaural Azimuth
+
+			// Calculate ears location
+			if (parallaxCorrection) {
+				Common::CVector3 leftEarLocalPosition = _listenerHRTF->GetEarLocalPosition(Common::T_ear::LEFT);
+				Common::CVector3 rightEarLocalPosition = _listenerHRTF->GetEarLocalPosition(Common::T_ear::RIGHT);
+				Common::CTransform leftEarTransform = _listenerTransform.GetLocalTranslation(leftEarLocalPosition);
+				Common::CTransform rightEarTransform = _listenerTransform.GetLocalTranslation(rightEarLocalPosition);
+
+				Common::CVector3 leftVectorTo = leftEarTransform.GetVectorTo(_sourceTransform);
+				Common::CVector3 rightVectorTo = rightEarTransform.GetVectorTo(_sourceTransform);
+				Common::CVector3 leftVectorTo_sphereProjection = GetSphereProjectionPosition(leftVectorTo, leftEarLocalPosition, _listenerHRTF->GetHRTFDistanceOfMeasurement());
+				Common::CVector3 rightVectorTo_sphereProjection = GetSphereProjectionPosition(rightVectorTo, rightEarLocalPosition, _listenerHRTF->GetHRTFDistanceOfMeasurement());
+
+				leftElevation = leftVectorTo_sphereProjection.GetElevationDegrees();	//Get left elevation
+				if (!Common::AreSame(ELEVATION_SINGULAR_POINT_UP, leftElevation, EPSILON) && !Common::AreSame(ELEVATION_SINGULAR_POINT_DOWN, leftElevation, EPSILON))
+				{
+					leftAzimuth = leftVectorTo_sphereProjection.GetAzimuthDegrees();	//Get left azimuth
+				}
+
+				rightElevation = rightVectorTo_sphereProjection.GetElevationDegrees();	//Get right elevation	
+				if (!Common::AreSame(ELEVATION_SINGULAR_POINT_UP, rightElevation, EPSILON) && !Common::AreSame(ELEVATION_SINGULAR_POINT_DOWN, rightElevation, EPSILON))
+				{
+					rightAzimuth = rightVectorTo_sphereProjection.GetAzimuthDegrees();		//Get right azimuth
+				}
+			}
+			else {
+				leftAzimuth = centerAzimuth;
+				rightAzimuth = centerAzimuth;
+				leftElevation = centerElevation;
+				rightElevation = centerElevation;
+			}
 
 		}
 	

@@ -91,8 +91,8 @@ namespace BRTProcessing {
 					else { DisableNearFieldEffect(); }
 				}
 				else if (command.GetCommand() == "/bilateralAmbisonicsEncoder/enableBilateralAmbisonics") {
-					if (command.GetBoolParameter("enable")) { EnableBilateral(); }
-					else { DisableBilateral(); }
+					if (command.GetBoolParameter("enable")) { EnableITDSimulation(); }
+					else { DisableITDSimulation(); }
 				}
 				else if (command.GetCommand() == "/bilateralAmbisonicsEncoder/resetBuffers") {
 					ResetBuffers();

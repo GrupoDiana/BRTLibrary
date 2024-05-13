@@ -66,16 +66,19 @@ namespace BRTListenerModel {
 			 * @param enableBilateral 
 			 * @param enableNearFieldEffect 
 			*/
-			void SetConfiguration(int _ambisonicOrder, Common::TAmbisonicNormalization _ambisonicNormalization, bool enableBilateral, bool enableNearFieldEffect) {
+			void SetConfiguration(int _ambisonicOrder, Common::TAmbisonicNormalization _ambisonicNormalization, bool enableNearFieldEffect, bool enableITDSimulation, bool enableParallaxCorrection) {
 
 				bilateralAmbisonicEncoderProcessor->SetAmbisonicOrder(_ambisonicOrder);
 				bilateralAmbisonicEncoderProcessor->SetAmbisonicNormalization(_ambisonicNormalization);
 								
-				if (enableBilateral) { bilateralAmbisonicEncoderProcessor->EnableBilateral(); }
-				else { bilateralAmbisonicEncoderProcessor->DisableBilateral(); }
+				if (enableITDSimulation) { bilateralAmbisonicEncoderProcessor->EnableITDSimulation(); }
+				else { bilateralAmbisonicEncoderProcessor->DisableITDSimulation(); }
 
 				if (enableNearFieldEffect) { bilateralAmbisonicEncoderProcessor->EnableNearFieldEffect(); }
-				else { bilateralAmbisonicEncoderProcessor->DisableNearFieldEffect(); }					
+				else { bilateralAmbisonicEncoderProcessor->DisableNearFieldEffect(); }		
+
+				if (enableParallaxCorrection) { bilateralAmbisonicEncoderProcessor->EnableParallaxCorrection(); }
+				else { bilateralAmbisonicEncoderProcessor->DisableParallaxCorrection(); }
 			}
 
 			/**		
@@ -272,24 +275,35 @@ namespace BRTListenerModel {
 		/** \brief Enable bilaterality for all source connected to this listener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableBilateralAmbisonic() {
-			enableBilateralAmbisonic = true;
+		void EnableITDSimulation() {
+			enableITDSimulation = true;
 			SetConfigurationInALLSourcesProcessors();
 		}
 
 		/** \brief Disable bilaterality for all source connected to this listener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void DisableBilateralAmbisonic() {
-			enableBilateralAmbisonic = false;
+		void DisableITDSimulation() {
+			enableITDSimulation = false;
+			SetConfigurationInALLSourcesProcessors();
+		}
+		
+		/**
+		 * @brief Enable Parallax Correction
+		*/
+		void EnableParallaxCorrection() { 
+			enableParallaxCorrection = true; 
 			SetConfigurationInALLSourcesProcessors();
 		}
 
-		/** 
-		 * @brief Get flag for ambisonic bilaterality
-		 * @return if true, bilaterality is enabled
+		/**
+		 * @brief Disable Parallax Correction
 		*/
-		bool IsBilateralAmbisonicEnabled() { return enableBilateralAmbisonic; }
+		void DisableParallaxCorrection() { 
+			enableParallaxCorrection = false; 
+			SetConfigurationInALLSourcesProcessors();
+		}
+
 
 		/**
 		 * @brief Connect a new source to this listener
@@ -367,9 +381,9 @@ namespace BRTListenerModel {
 					if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
 					else { DisableNearFieldEffect(); }
 				}
-				else if (command.GetCommand() == "/listener/enableBilateralAmbisonics") {
-					if (command.GetBoolParameter("enable")) { EnableBilateralAmbisonic(); }
-					else { DisableBilateralAmbisonic(); }
+				else if (command.GetCommand() == "/listener/enableITD") {
+					if (command.GetBoolParameter("enable")) { EnableITDSimulation(); }
+					else { DisableITDSimulation(); }
 				}			
 				else if (command.GetCommand() == "/listener/resetBuffers") {
 					ResetProcessorBuffers();
@@ -392,7 +406,7 @@ namespace BRTListenerModel {
 		int ambisonicOrder;															// Store the Ambisonic order
 		Common::TAmbisonicNormalization ambisonicNormalization;						// Store the Ambisonic normalization
 		bool enableNearFieldEffect;													// Enables/Disables the Near Field Effect
-		bool enableBilateralAmbisonic;												// 
+		//bool enableBilateralAmbisonic;												// 
 
 		std::vector< CSourceToBeProcessed> sourcesConnectedProcessors;				// List of sources connected to this listener model
 		
@@ -434,7 +448,7 @@ namespace BRTListenerModel {
 		 * @param sourceProcessor
 		*/
 		void SetSourceProcessorsConfiguration(CSourceToBeProcessed& sourceProcessor) {
-			sourceProcessor.SetConfiguration(ambisonicOrder, ambisonicNormalization, enableBilateralAmbisonic, enableNearFieldEffect);
+			sourceProcessor.SetConfiguration(ambisonicOrder, ambisonicNormalization, enableNearFieldEffect, enableITDSimulation, enableParallaxCorrection);
 		}
 
 

@@ -42,7 +42,7 @@
 namespace BRTProcessing {
 	class CBilateralAmbisonicEncoder {
 	public:
-		CBilateralAmbisonicEncoder() : ambisonicOrder{ 1 }, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }, enableInterpolation{ true }, enableBilateral{ false } {
+		CBilateralAmbisonicEncoder() : ambisonicOrder{ 1 }, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }, enableInterpolation{ true }, enableITDSimulation{ false }, enableParallaxCorrection {true} {
 		
 			//leftAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
 			//rightAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
@@ -87,12 +87,12 @@ namespace BRTProcessing {
 		}
 
 
-		///Enable near field effect for this source
-		void EnableBilateral() { enableBilateral = true; };
-		///Disable near field effect for this source
-		void DisableBilateral() { enableBilateral = false; };
-		///Get the flag for near field effect enabling
-		bool IsBilateralEnabled() { return enableBilateral; };
+		///Enable ITD simulation for this source
+		void EnableITDSimulation() { enableITDSimulation = true; };
+		///Disable ITD simulation for this source
+		void DisableITDSimulation() { enableITDSimulation = false; };
+		///Get the flag for ITD simulation enabling
+		bool IsITDSimulationEnabled() { return enableITDSimulation; };
 
 		///Enable near field effect for this source
 		void EnableNearFieldEffect() { nearFieldEffectProcess.EnableNearFieldEffect(); };
@@ -101,6 +101,9 @@ namespace BRTProcessing {
 		///Get the flag for near field effect enabling
 		bool IsNearFieldEffectEnabled() { return nearFieldEffectProcess.IsNearFieldEffectEnabled(); };
 
+		void EnableParallaxCorrection() { enableParallaxCorrection = true; };
+		void DisableParallaxCorrection() { enableParallaxCorrection = false; };
+		bool IsParallaxCorrectionEnabled() { return enableParallaxCorrection; };
 				
 		/**
 		 * @brief Process the input buffer data to generate the bilaterar ambisonic channels for spatialisation using the virtual ambisonic method.
@@ -172,27 +175,26 @@ namespace BRTProcessing {
 			float centerElevation;
 			float interauralAzimuth;
 
-			Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerRelativePositions(sourceTransform, listenerTransform, _listenerHRTF, leftElevation, leftAzimuth, rightElevation, rightAzimuth, centerElevation, centerAzimuth, interauralAzimuth);
+			Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerRelativePositions(sourceTransform, listenerTransform, _listenerHRTF, enableParallaxCorrection, leftElevation, leftAzimuth, rightElevation, rightAzimuth, centerElevation, centerAzimuth, interauralAzimuth);
 			
 			// GET DELAY
 			uint64_t leftDelay; 				///< Delay, in number of samples
 			uint64_t rightDelay;				///< Delay, in number of samples
-
-			BRTServices::THRIRPartitionedStruct delays = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, centerAzimuth, centerElevation, enableInterpolation);
-			leftDelay	= delays.leftDelay;
-			rightDelay	= delays.rightDelay;
-			
-			// ADD Delay
-			CMonoBuffer<float> delayedLeftEarBuffer;
-			CMonoBuffer<float> delayedRightEarBuffer;
-			if (enableBilateral) {
-				Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(_inBuffer, delayedLeftEarBuffer, leftChannelDelayBuffer, leftDelay);
-				Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(_inBuffer, delayedRightEarBuffer, rightChannelDelayBuffer, rightDelay);
+			if (enableITDSimulation) {
+				BRTServices::THRIRPartitionedStruct delays = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, centerAzimuth, centerElevation, enableInterpolation);
+				leftDelay = delays.leftDelay;
+				rightDelay = delays.rightDelay;
 			}
 			else {
-				delayedLeftEarBuffer = _inBuffer;
-				delayedRightEarBuffer = _inBuffer;
+				leftDelay = 0;
+				rightDelay = 0;
 			}
+			// ADD Delay
+			CMonoBuffer<float> delayedLeftEarBuffer;
+			CMonoBuffer<float> delayedRightEarBuffer;			
+			Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(_inBuffer, delayedLeftEarBuffer, leftChannelDelayBuffer, leftDelay);
+			Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(_inBuffer, delayedRightEarBuffer, rightChannelDelayBuffer, rightDelay);
+			
 			// Near Field Proccess
 			CMonoBuffer<float> nearFilteredLeftEarBuffer;
 			CMonoBuffer<float> nearFilteredRightEarBuffer;			
@@ -229,8 +231,8 @@ namespace BRTProcessing {
 		Common::TAmbisonicNormalization ambisonicNormalization;
 		
 		bool enableInterpolation;								// Enables/Disables the interpolation
-		bool enableBilateral;
-				
+		bool enableITDSimulation;
+		bool enableParallaxCorrection;
 		
 		/// PRIVATE Methods        				
 		/// Initialize convolvers and convolition buffers		
