@@ -49,19 +49,79 @@ namespace BRTBase { class CListener; }
 
 namespace BRTServices
 {
-	
+
+	class CCranialGeometry {
+	public:
+		CCranialGeometry() : headRadius{ -1 }, leftEarLocalPosition{ Common::CVector3() }, rightEarLocalPosition{ Common::CVector3() } { }
+		CCranialGeometry(float _headRadius) : headRadius{ _headRadius }, leftEarLocalPosition{ Common::CVector3() }, rightEarLocalPosition{ Common::CVector3() } { }
+		CCranialGeometry(float _headRadius, Common::CVector3 _leftEarLocalPosition, Common::CVector3 _rightEarLocalPosition) : headRadius{ _headRadius }, leftEarLocalPosition{ _leftEarLocalPosition }, rightEarLocalPosition{ _rightEarLocalPosition } { }
+
+		float GetHeadRadius() { return headRadius; }
+		Common::CVector3 GetLeftEarLocalPosition() { return leftEarLocalPosition; }
+		Common::CVector3 GetRightEarLocalPosition() { return rightEarLocalPosition; }
+
+		/**
+		 * @brief Set the radius of the listener head. A new ear position is calculated
+		 * @param _headRadius head radius in meters
+		 */
+		void SetHeadRadius(float _headRadius) {
+			headRadius = _headRadius;
+			CalculateEarLocalPositionFromHeadRadius();
+		}
+		/**
+		 * @brief Set the relative position of one ear (to the listener head center). A new head radius is calculated
+		 * @param _earPosition ear local position
+		 */
+		void SetLeftEarPosition(Common::CVector3 _earPosition) {
+			leftEarLocalPosition = _earPosition;
+			CalculateHeadRadiusFromEarPosition();	// Update the head radius			
+		}
+
+		/**
+		 * @brief Set the relative position of one ear (to the listener head center). A new head radius is calculated
+		 * @param _earPosition ear local position
+		 */
+		void SetRightEarPosition(Common::CVector3 _earPosition) {
+			rightEarLocalPosition = _earPosition;
+			CalculateHeadRadiusFromEarPosition();	// Update the head radius			
+		}
+
+	private:
+		float headRadius;								// Head radius of listener 
+		Common::CVector3 leftEarLocalPosition;			// Listener left ear relative position
+		Common::CVector3 rightEarLocalPosition;			// Listener right ear relative position
+
+		/**
+		* @brief Calculate head radius from the listener ear positions
+		* @return new head radius
+		*/
+		void CalculateHeadRadiusFromEarPosition() {
+			headRadius = (0.5f * (leftEarLocalPosition.GetDistance() + rightEarLocalPosition.GetDistance()));
+		}
+
+		/** \brief	Calculate the relative position of one ear taking into account the listener head radius
+		*	\param [in]	_ear			ear type
+		*   \return  Ear local position in meters
+		*   \eh <<Error not allowed>> is reported to error handler
+		*/
+		void CalculateEarLocalPositionFromHeadRadius() {
+			leftEarLocalPosition.SetAxis(RIGHT_AXIS, -headRadius);
+			rightEarLocalPosition.SetAxis(RIGHT_AXIS, headRadius);
+		}
+	};
+
 	/** \details This class gets impulse response data to compose HRTFs and implements different algorithms to interpolate the HRIR functions.
 	*/
 	class CHRTF : public CServicesBase
-	{
+	{		
 	public:
 		/** \brief Default Constructor
 		*	\details By default, customized ITD is switched off, resampling step is set to 5 degrees and listener is a null pointer
 		*   \eh Nothing is reported to the error handler.
 		*/
 		CHRTF()
-			:enableCustomizedITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, gapThreshold{ DEFAULT_GAP_THRESHOLD }, HRIRLength{ 0 }, fileName{ "" },
-			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, headRadius{ DEFAULT_LISTENER_HEAD_RADIUS }, leftEarLocalPosition{ Common::CVector3() }, rightEarLocalPosition{ Common::CVector3() },
+			:enableWoodworthITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, gapThreshold{ DEFAULT_GAP_THRESHOLD }, HRIRLength{ 0 }, fileName{ "" },
+			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, /*headRadius{ DEFAULT_LISTENER_HEAD_RADIUS }, leftEarLocalPosition{ Common::CVector3() }, rightEarLocalPosition{ Common::CVector3() },*/
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER },
 			epsilon_sewing{ EPSILON_SEWING }, samplingRate{ -1 }, elevationNorth{ 0 }, elevationSouth{ 0 }, bufferSize{ 0 }, extrapolationMethod{ TExtrapolationMethod::nearestPoint }
 		{ }
@@ -132,24 +192,13 @@ namespace BRTServices
 				t_HRTF_DataBase = newTable;
 			}
 		}
-
-		/** \brief Add a new HRIR to the HRTF table
-		*	\param [in] azimuth azimuth angle in degrees
-		*	\param [in] elevation elevation angle in degrees
-		*	\param [in] newHRIR HRIR data for both ears
-		*   \eh Warnings may be reported to the error handler.
-		*/
-		//void AddHRIR(float _azimuth, float _elevation, THRIRStruct&& newHRIR)
-		//{
-		//	if (setupInProgress) {
-		//		Common::CVector3 cartessianPos;
-		//		cartessianPos.SetFromAED(_azimuth, _elevation, GetHRTFDistanceOfMeasurement());
-		//		auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), std::forward<THRIRStruct>(newHRIR));
-		//		//Error handler
-		//		if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
-		//	}
-		//}
-
+	
+		/**
+		 * @brief Add a new HRIR to the HRTF table
+		 * @param _azimuth azimuth angle in degrees
+		 * @param _elevation elevation elevation angle in degrees
+		 * @param newHRIR HRIR data for both ears
+		 */
 		void AddHRIR(double _azimuth, double _elevation, THRIRStruct&& newHRIR)
 		{			
 			if (setupInProgress) {				
@@ -216,25 +265,18 @@ namespace BRTServices
 		/** \brief Switch on ITD customization in accordance with the listener head radius
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableCustomizedITD() {
-			enableCustomizedITD = true;
-		}
+		void EnableWoodworthITD() {	enableWoodworthITD = true;	}
 
 		/** \brief Switch off ITD customization in accordance with the listener head radius
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void DisableCustomizedITD() {
-			enableCustomizedITD = false;
-		}
+		void DisableWoodworthITD() { enableWoodworthITD = false; }
 
 		/** \brief Get the flag for HRTF cutomized ITD process
 		*	\retval HRTFCustomizedITD if true, the HRTF ITD customization process based on the head circumference is enabled
 		*   \eh Nothing is reported to the error handler.
 		*/
-		bool IsCustomizedITDEnabled()
-		{
-			return enableCustomizedITD;
-		}
+		bool IsWoodworthITDEnabled() {	return enableWoodworthITD;	}
 		
 
 		/** \brief Get interpolated and partitioned HRIR buffer with Delay, for one ear
@@ -342,16 +384,9 @@ namespace BRTServices
 		*       Warnings may be reported to the error handler.
 		*/
 		THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation)
-		{
-			//float HRIR_delay = 0.0f;
+		{			
 			THRIRPartitionedStruct data;
-
-			/*if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
-			{
-				SET_RESULT(RESULT_ERROR_NOTALLOWED, "GetHRIRDelay: Attempt to get the delay of the HRIR for a wrong ear (BOTH or NONE)");
-				return HRIR_delay;
-			}*/
-
+			
 			if (setupInProgress)
 			{
 				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIRDelay: HRTF Setup in progress return empty");
@@ -359,27 +394,21 @@ namespace BRTServices
 			}
 
 			//Modify delay if customized delay is activate
-			if (enableCustomizedITD)
-			{
-				//HRIR_delay = GetCustomizedDelay(_azimuthCenter, _elevationCenter, ear);
+			if (enableWoodworthITD)
+			{			
 				data.leftDelay = GetCustomizedDelay(_azimuthCenter, _elevationCenter, Common::T_ear::LEFT);
 				data.rightDelay = GetCustomizedDelay(_azimuthCenter, _elevationCenter, Common::T_ear::RIGHT);
 				return data;
 			}
 	
 			if (!runTimeInterpolation)
-			{
-				//float leftDelay;
-				//float rightDelay;				
-				//quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, leftDelay, stepVector, Common::T_ear::LEFT, _azimuthCenter, _elevationCenter);
-				//quasiUniformSphereDistribution.FindNearestDelay(t_HRTF_Resampled_partitioned, rightDelay, stepVector, Common::T_ear::RIGHT, _azimuthCenter, _elevationCenter);
-				data = quasiUniformSphereDistribution.FindNearest<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, _azimuthCenter, _elevationCenter);							
-
-				//data.leftDelay	= static_cast<uint64_t>(temp.leftDelay);
-				//data.rightDelay = static_cast<uint64_t>(temp.rightDelay);
+			{				
+				data = quasiUniformSphereDistribution.FindNearest<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, _azimuthCenter, _elevationCenter);										
 				return data;				
 			}
-		
+			
+			// Calculate Delay using ONLINE Interpolation 			
+			
 			// Check if we are close to 360 azimuth or elevation and change to 0
 			if (Common::AreSame(_azimuthCenter, sphereBorder, epsilon_sewing)) { _azimuthCenter = 0.0f; }
 			if (Common::AreSame(_elevationCenter, sphereBorder, epsilon_sewing)) { _elevationCenter = 0.0f; }
@@ -406,9 +435,7 @@ namespace BRTServices
 				temp.rightDelay = it->second.rightDelay;			
 				return temp;
 			}
-
-			// ONLINE Interpolation 
-			//return GetHRIRDelayInterpolationMethod(ear, _azimuthCenter, _elevationCenter, resamplingStep, stepVector);	
+			
 			const THRIRPartitionedStruct temp = slopesMethodOnlineInterpolator.CalculateTF_OnlineMethod<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, _azimuthCenter, _elevationCenter, stepVector, CHRTFAuxiliarMethods::CalculateDelay_FromBarycentricCoordinates());
 			return temp;
 		}
@@ -476,8 +503,7 @@ namespace BRTServices
 		*   \return ITD ITD calculated with the current listener head circunference
 		*   \eh Nothing is reported to the error handler.
 		*/
-		const unsigned long GetCustomizedDelay(float _azimuth, float _elevation, Common::T_ear ear)const
-		//const unsigned long CHRTF::GetCustomizedDelay(float _azimuth, float _elevation, Common::T_ear ear)  const
+		unsigned long GetCustomizedDelay(float _azimuth, float _elevation, Common::T_ear ear)		
 		{
 
 			float rAzimuth = _azimuth * PI / 180;
@@ -485,9 +511,8 @@ namespace BRTServices
 
 			//Calculate the customized delay
 			unsigned long customizedDelay = 0;
-			float interauralAzimuth = std::asin(std::sin(rAzimuth) * std::cos(rElevation));
-
-			float ITD = CalculateITDFromHeadRadius(headRadius /*ownerListener->GetHeadRadius()*/, interauralAzimuth);
+			float interauralAzimuth = std::asin(std::sin(rAzimuth) * std::cos(rElevation));			
+			float ITD = CalculateITDFromHeadRadius(cranialGeometry.GetHeadRadius(), interauralAzimuth);
 
 			if ((ITD > 0 && ear == Common::T_ear::RIGHT) || (ITD < 0 && ear == Common::T_ear::LEFT)) {
 				customizedDelay = static_cast <unsigned long> (round(std::abs(globalParameters.GetSampleRate() * ITD)));
@@ -545,10 +570,15 @@ namespace BRTServices
 		*/
 		void SetHeadRadius(float _headRadius) 
 		{
-			if (_headRadius > 0.0f)
-				headRadius = _headRadius;
-			else
+			if (_headRadius >= 0.0f) {
+				// First time this is called we save the original cranial geometry. A bit ugly but it works.
+				if (originalCranialGeometry.GetHeadRadius() == -1) { originalCranialGeometry = cranialGeometry; }				
+				cranialGeometry.SetHeadRadius(_headRadius);
+			}
+			else{
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Head Radius must be  greater than 0.");
+			}
+				
 		}
 
 		/** \brief	Get the radius of the listener head
@@ -556,7 +586,14 @@ namespace BRTServices
 		*   \eh Nothing is reported to the error handler.
 		*/
 		float GetHeadRadius() {
-			return headRadius;
+			return cranialGeometry.GetHeadRadius();
+		}
+
+		/**
+		 * @brief Return to original ear positions and head radius.
+		 */
+		void RestoreHeadRadius() {
+			cranialGeometry = originalCranialGeometry;
 		}
 
 		/** \brief	Set the relative position of one ear (to the listener head center)
@@ -565,12 +602,16 @@ namespace BRTServices
 		*   \eh <<Error not allowed>> is reported to error handler
 		*/
 		void SetEarPosition( Common::T_ear _ear, Common::CVector3 _earPosition) {
-			if (_ear == Common::T_ear::LEFT)		{ leftEarLocalPosition = _earPosition; }
-			else if (_ear == Common::T_ear::RIGHT)	{ rightEarLocalPosition = _earPosition; }
-			else if (_ear == Common::T_ear::BOTH || _ear == Common::T_ear::NONE)
-			{
+			if (_ear == Common::T_ear::LEFT){
+				cranialGeometry.SetLeftEarPosition(_earPosition);
+			}
+			else if (_ear == Common::T_ear::RIGHT) {
+				cranialGeometry.SetRightEarPosition(_earPosition);
+			}			
+			else {
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to set listener ear transform for BOTH or NONE ears");
 			}
+				
 		}
 
 		/** \brief	Get the relative position of one ear (to the listener head center)
@@ -578,18 +619,13 @@ namespace BRTServices
 		*   \return  Ear local position in meters
 		*   \eh <<Error not allowed>> is reported to error handler
 		*/
-		Common::CVector3 GetEarLocalPosition(Common::T_ear _ear) {
-			if (enableCustomizedITD) {
-				return CalculateEarLocalPositionFromHeadRadius(_ear);
-			}
-			else {
-				if (_ear == Common::T_ear::LEFT)		{ return leftEarLocalPosition; }
-				else if (_ear == Common::T_ear::RIGHT)	{ return rightEarLocalPosition; }
-				else // either _ear == Common::T_ear::BOTH || _ear == Common::T_ear::NONE
-				{
-					SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to set listener ear transform for BOTH or NONE ears");
-					return Common::CVector3();
-				}
+		Common::CVector3 GetEarLocalPosition(Common::T_ear _ear) {			
+			if (_ear == Common::T_ear::LEFT)		{ return cranialGeometry.GetLeftEarLocalPosition(); }
+			else if (_ear == Common::T_ear::RIGHT) { return cranialGeometry.GetRightEarLocalPosition(); }
+			else 
+			{
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to set listener ear transform for BOTH or NONE ears");
+				return Common::CVector3();
 			}
 		}
 
@@ -598,7 +634,7 @@ namespace BRTServices
 		*   \return  Ear local position in meters
 		*   \eh <<Error not allowed>> is reported to error handler
 		*/
-		Common::CVector3 CalculateEarLocalPositionFromHeadRadius(Common::T_ear ear) {
+		/*Common::CVector3 CalculateEarLocalPositionFromHeadRadius(Common::T_ear ear) {
 			if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
 			{
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get listener ear transform for BOTH or NONE ears");
@@ -613,7 +649,7 @@ namespace BRTServices
 				earLocalPosition.SetAxis(RIGHT_AXIS, headRadius);
 
 			return earLocalPosition;
-		}
+		}*/
 
 		/** \brief Set the sampling rate for the HRTF
 		*	\param [in] sampling rate
@@ -640,10 +676,12 @@ namespace BRTServices
 		int32_t bufferSize;								// Input signal buffer size		
 		int32_t HRIR_partitioned_NumberOfSubfilters;	// Number of subfilters (blocks) for the UPC algorithm
 		int32_t HRIR_partitioned_SubfilterLength;		// Size of one HRIR subfilter
-		float distanceOfMeasurement;					//Distance where the HRIR have been measurement
-		float headRadius;								// Head radius of listener 
-		Common::CVector3 leftEarLocalPosition;			// Listener left ear relative position
-		Common::CVector3 rightEarLocalPosition;			// Listener right ear relative position
+		float distanceOfMeasurement;					// Distance where the HRIR have been measurement
+		//float headRadius;								// Head radius of listener 
+		//Common::CVector3 leftEarLocalPosition;		// Listener left ear relative position
+		//Common::CVector3 rightEarLocalPosition;			// Listener right ear relative position
+		CCranialGeometry cranialGeometry;					// Cranial geometry of the listener
+		CCranialGeometry originalCranialGeometry;		// Cranial geometry of the listener
 		TExtrapolationMethod extrapolationMethod;		// Methods that is going to be used to extrapolate
 
 		float sphereBorder;								// Define spheere "sewing"
@@ -655,7 +693,7 @@ namespace BRTServices
 		bool HRTFLoaded;							// Variable that indicates if the HRTF has been loaded correctly
 		bool bInterpolatedResampleTable;			// If true: calculate the HRTF resample matrix with interpolation
 		int resamplingStep; 						// HRTF Resample table step (azimuth and elevation)
-		bool enableCustomizedITD;					// Indicate the use of a customized delay
+		bool enableWoodworthITD;					// Indicate the use of a customized delay
 		int gapThreshold;							// Max distance between pole and next elevation to be consider as a gap
 
 		std::unordered_map<orientation, float> stepVector;		// Store hrtf interpolated grids steps
@@ -732,14 +770,22 @@ namespace BRTServices
 			//SET_RESULT(RESULT_OK, "Common delay deleted from HRTF table succesfully");
 		}
 
-		//Calculate the ITD using the Lord Rayleight formula which depend on the interaural azimuth and the listener head radious
+		/**
+		 * @brief Calculate head radius from the listener ear positions
+		 * @return new head radius
+		 */
+		/*float CalculateHeadRadius() {
+			return (0.5f* (leftEarLocalPosition.GetDistance() + rightEarLocalPosition.GetDistance()));
+		}*/
+
+		//Calculate the ITD using the Woodworth formula which depend on the interaural azimuth and the listener head radious
 		//param		_headRadious		listener head radius, set by the App
 		//param		_interauralAzimuth	source interaural azimuth
 		//return	float				customizated ITD
-		const  float CalculateITDFromHeadRadius(float _headRadius, float _interauralAzimuth)const{
+		float CalculateITDFromHeadRadius(float _headRadius, float _interauralAzimuth) {
 			//Calculate the ITD (from https://www.lpi.tel.uva.es/~nacho/docencia/ing_ond_1/trabajos_05_06/io5/public_html/ & http://interface.cipic.ucdavis.edu/sound/tutorial/psych.html)
 			float ITD = _headRadius * (_interauralAzimuth + std::sin(_interauralAzimuth)) / globalParameters.GetSoundSpeed(); //_azimuth in radians!
-			return 0;// ITD;
+			return ITD;
 		}
 				
 		
