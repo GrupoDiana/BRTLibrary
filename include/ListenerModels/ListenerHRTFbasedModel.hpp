@@ -65,7 +65,7 @@ namespace BRTListenerModel {
 			 * @param enableInterpolation Interpolation state
 			 * @param enableNearFieldEffect Nearfield state
 			*/
-			void SetConfiguration(bool enableSpatialization, bool enableInterpolation, bool enableNearFieldEffect) {
+			void SetConfiguration(bool enableSpatialization, bool enableInterpolation, bool enableNearFieldEffect, bool enableITD, bool enableParallaxCorrection) {
 				if (enableSpatialization) { binauralConvolverProcessor->EnableSpatialization(); }
 				else { binauralConvolverProcessor->DisableSpatialization(); }
 
@@ -73,7 +73,13 @@ namespace BRTListenerModel {
 				else { binauralConvolverProcessor->DisableInterpolation(); }
 
 				if (enableNearFieldEffect) { nearFieldEffectProcessor->EnableNearFieldEffect(); }
-				else { nearFieldEffectProcessor->DisableNearFieldEffect(); }			
+				else { nearFieldEffectProcessor->DisableNearFieldEffect(); }	
+
+				if (enableITD) {binauralConvolverProcessor->EnableITDSimulation();}
+				else {binauralConvolverProcessor->DisableITDSimulation();}
+
+				if (enableParallaxCorrection) {binauralConvolverProcessor->EnableParallaxCorrection();}
+				else {binauralConvolverProcessor->DisableParallaxCorrection();}
 			}
 
 			/**
@@ -264,6 +270,37 @@ namespace BRTListenerModel {
 		*/
 		bool IsNearFieldEffectEnabled() { return enableNearFieldEffect; }
 
+		/**
+		 * @brief Enable ITD simulation
+		*/
+		void EnableITDSimulation() { 
+			enableITDSimulation = true; 
+			SetConfigurationInALLSourcesProcessors();
+		}
+
+		/**
+		 * @brief Disable ITD simulation
+		*/
+		void DisableITDSimulation() { 
+			enableITDSimulation = false; 
+			SetConfigurationInALLSourcesProcessors();
+		}
+
+		/**
+		 * @brief Enable Parallax Correction
+		*/
+		void EnableParallaxCorrection() { 
+			enableParallaxCorrection = true; 
+			SetConfigurationInALLSourcesProcessors();
+		}
+
+		/**
+		 * @brief Disable Parallax Correction
+		*/
+		void DisableParallaxCorrection() { 
+			enableParallaxCorrection = false; 
+			SetConfigurationInALLSourcesProcessors();
+		}
 
 		/**
 		 * @brief Reset all processor buffers
@@ -304,6 +341,14 @@ namespace BRTListenerModel {
 					if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
 					else { DisableNearFieldEffect(); }
 				}
+				else if (command.GetCommand() == "/listener/enableITD") {
+					if (command.GetBoolParameter("enable")) { EnableITDSimulation(); }
+					else { DisableITDSimulation(); }
+				}
+				else if (command.GetCommand() == "/listener/enableParallaxCorrection") {
+					if (command.GetBoolParameter("enable")) { EnableParallaxCorrection(); }
+					else { DisableParallaxCorrection(); }
+				}
 				else if (command.GetCommand() == "/listener/resetBuffers") {
 					ResetProcessorBuffers();
 				}
@@ -327,7 +372,7 @@ namespace BRTListenerModel {
 		 * @param sourceProcessor 
 		*/
 		void SetSourceProcessorsConfiguration(CSourceProcessors& sourceProcessor) {			
-			sourceProcessor.SetConfiguration(enableSpatialization, enableInterpolation, enableNearFieldEffect);
+			sourceProcessor.SetConfiguration(enableSpatialization, enableInterpolation, enableNearFieldEffect, enableITDSimulation, enableParallaxCorrection);
 		}
 
 		/**

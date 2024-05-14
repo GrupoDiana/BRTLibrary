@@ -40,7 +40,7 @@
 namespace BRTProcessing {
 	class CHRTFConvolver  {
 	public:
-		CHRTFConvolver() : enableInterpolation{ true }, enableSpatialization{ true }, convolutionBuffersInitialized{false} { }
+		CHRTFConvolver() : enableInterpolation{ true }, enableSpatialization{ true }, enableITDSimulation{ true }, enableParallaxCorrection { true }, convolutionBuffersInitialized{false} { }
 
 
 		///Enable spatialization process for this source	
@@ -56,8 +56,36 @@ namespace BRTProcessing {
 		void DisableInterpolation() { enableInterpolation = false; }
 		///Get the flag for HRTF interpolation method
 		bool IsInterpolationEnabled() { return enableInterpolation; }
-
 		
+		/**
+		 * @brief Enable ITD method
+		 */
+		void EnableITDSimulation() { enableITDSimulation = true; }
+		/**
+		 * @brief Disable ITD method
+		 */
+		void DisableITDSimulation() { enableITDSimulation = false; }		
+		/**
+		 * @brief Get the flag to know if ITD simulation is enabled.
+		 * @return true if ITD is enabled, false otherwise
+		 */
+		bool IsITDEnabledSimulation() { return enableITDSimulation; }
+
+		/**
+		 * @brief Enable Parallax Correction method
+		 */
+		void EnableParallaxCorrection() { enableParallaxCorrection = true; }
+		
+		/**
+		 * @brief Disable Parallax Correction method
+		 */
+		void DisableParallaxCorrection() { enableParallaxCorrection = false; }
+		
+		/**
+		 * @brief Get the flag to know if Parallax Correction is enabled.
+		 * @return true if Parallax Correction is enabled, false otherwise
+		 */
+		bool IsParallaxCorrectionEnabled() { return enableParallaxCorrection; }
 		
 		/** \brief Process data from input buffer to generate spatialization by convolution
 		*	\param [in] inBuffer input buffer with anechoic audio
@@ -112,7 +140,7 @@ namespace BRTProcessing {
 			float centerElevation;
 			float interauralAzimuth;
 
-			Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerRelativePositions(sourceTransform, listenerTransform, _listenerHRTF, leftElevation, leftAzimuth, rightElevation, rightAzimuth, centerElevation, centerAzimuth, interauralAzimuth);
+			Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerRelativePositions(sourceTransform, listenerTransform, _listenerHRTF, enableParallaxCorrection,leftElevation, leftAzimuth, rightElevation, rightAzimuth, centerElevation, centerAzimuth, interauralAzimuth);
 
 			// GET HRTF
 			std::vector<CMonoBuffer<float>>  leftHRIR_partitioned;
@@ -120,15 +148,7 @@ namespace BRTProcessing {
 
 			leftHRIR_partitioned = _listenerHRTF->GetHRIR_partitioned(Common::T_ear::LEFT, leftAzimuth, leftElevation, enableInterpolation);
 			rightHRIR_partitioned = _listenerHRTF->GetHRIR_partitioned(Common::T_ear::RIGHT, rightAzimuth, rightElevation, enableInterpolation);
-
-			// GET DELAY
-			uint64_t leftDelay; 				///< Delay, in number of samples
-			uint64_t rightDelay;				///< Delay, in number of samples
-
-			BRTServices::THRIRPartitionedStruct delays = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, centerAzimuth, centerElevation, enableInterpolation);
-			leftDelay	= delays.leftDelay;
-			rightDelay	= delays.rightDelay;
-			
+						
 			// DO CONVOLUTION			
 			CMonoBuffer<float> leftChannel_withoutDelay;
 			CMonoBuffer<float> rightChannel_withoutDelay;
@@ -136,16 +156,22 @@ namespace BRTProcessing {
 			outputLeftUPConvolution.ProcessUPConvolutionWithMemory(_inBuffer, leftHRIR_partitioned, leftChannel_withoutDelay);
 			outputRightUPConvolution.ProcessUPConvolutionWithMemory(_inBuffer, rightHRIR_partitioned, rightChannel_withoutDelay);
 
+			// GET DELAY
+			uint64_t leftDelay; 				///< Delay, in number of samples
+			uint64_t rightDelay;				///< Delay, in number of samples
+
+			if (enableITDSimulation){
+				BRTServices::THRIRPartitionedStruct delays = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, centerAzimuth, centerElevation, enableInterpolation);
+				leftDelay = delays.leftDelay;
+				rightDelay = delays.rightDelay;
+			}
+			else {
+				leftDelay = 0;
+				rightDelay = 0;
+			}
 			// ADD Delay
-			//CMonoBuffer<float> outLeftBuffer;
-			//CMonoBuffer<float> outRightBuffer;
-
 			Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(leftChannel_withoutDelay, outLeftBuffer, leftChannelDelayBuffer, leftDelay);
-			Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(rightChannel_withoutDelay, outRightBuffer, rightChannelDelayBuffer, rightDelay);
-
-			// Propagate Result            
-			//GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
-			//GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);
+			Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(rightChannel_withoutDelay, outRightBuffer, rightChannelDelayBuffer, rightDelay);			
 		}
 
 		/// Reset convolvers and convolution buffers
@@ -169,10 +195,12 @@ namespace BRTProcessing {
 		CMonoBuffer<float> leftChannelDelayBuffer;			// To store the delay of the left channel of the expansion method
 		CMonoBuffer<float> rightChannelDelayBuffer;			// To store the delay of the right channel of the expansion method
 
-		bool enableSpatialization;								// Flags for independent control of processes
+		bool enableSpatialization;							// Flags for independent control of processes
 		bool enableInterpolation;							// Enables/Disables the interpolation on run time
-		bool convolutionBuffersInitialized;
-		
+		bool enableITDSimulation;							// Enables/Disables the ITD on run time
+		bool enableParallaxCorrection;						// Enables/Disables the parallax correction on run time
+		bool convolutionBuffersInitialized;					// Flag to check if the convolution buffers have been initialized		
+
 		/////////////////////
 		/// PRIVATE Methods        
 		/////////////////////

@@ -54,9 +54,6 @@
 #ifndef ATTACK_TIME_DISTANCE_ATTENUATION
 #define ATTACK_TIME_DISTANCE_ATTENUATION 100			///< Attack time for gradual attenuation in simple attenuation distance (used in ApplyGainExponentially method)
 #endif
-#ifndef DEFAULT_LISTENER_HEAD_RADIOUS
-#define DEFAULT_LISTENER_HEAD_RADIOUS  0.0875f
-#endif 
 #ifndef MINIMUM_DISTANCE_SOURCE_LISTENER
 #define MINIMUM_DISTANCE_SOURCE_LISTENER 0.0001f		///< Minimun distance allowed betwwen source and listener in metres. It only serves to solve the numerical problem
 #endif 
