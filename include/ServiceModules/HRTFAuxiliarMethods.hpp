@@ -418,6 +418,27 @@ namespace BRTServices {
 			}
 		};
 
+		/** \brief	Calculate the relative position of one ear taking into account the listener head radius
+		*	\param [in]	_ear			ear type
+		*   \return  Ear local position in meters
+		*   \eh <<Error not allowed>> is reported to error handler
+		*/
+		static Common::CVector3 CalculateEarLocalPositionFromHeadRadius(Common::T_ear ear, float headRadius) {
+			if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
+			{
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get listener ear transform for BOTH or NONE ears");
+				return Common::CVector3();
+			}
+
+			Common::CVector3 earLocalPosition = Common::CVector3::ZERO();
+			if (ear == Common::T_ear::LEFT) {
+				earLocalPosition.SetAxis(RIGHT_AXIS, -headRadius);
+			}
+			else
+				earLocalPosition.SetAxis(RIGHT_AXIS, headRadius);
+
+			return earLocalPosition;
+		}
 	};
 }
 #endif

@@ -148,13 +148,13 @@ namespace BRTServices
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
-		void BeginSetup(int32_t _HRIRLength, float _distance, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod)
+		void BeginSetup(int32_t _HRIRLength, /*float _distance,*/ BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod)
 		{
 			//if ((ownerListener != nullptr) && ownerListener->ownerCore!=nullptr)
 			{
 				//Update parameters			
 				HRIRLength = _HRIRLength;
-				distanceOfMeasurement = _distance;
+				//distanceOfMeasurement = _distance;
 				bufferSize = globalParameters.GetBufferSize();
 				SetExtrapolationMethod(_extrapolationMethod);
 
@@ -192,14 +192,25 @@ namespace BRTServices
 				t_HRTF_DataBase = newTable;
 			}
 		}
-	
-		/**
-		 * @brief Add a new HRIR to the HRTF table
-		 * @param _azimuth azimuth angle in degrees
-		 * @param _elevation elevation elevation angle in degrees
-		 * @param newHRIR HRIR data for both ears
-		 */
-		void AddHRIR(double _azimuth, double _elevation, THRIRStruct&& newHRIR)
+
+		/** \brief Add a new HRIR to the HRTF table
+		*	\param [in] azimuth azimuth angle in degrees
+		*	\param [in] elevation elevation angle in degrees
+		*	\param [in] newHRIR HRIR data for both ears
+		*   \eh Warnings may be reported to the error handler.
+		*/
+		//void AddHRIR(float _azimuth, float _elevation, THRIRStruct&& newHRIR)
+		//{
+		//	if (setupInProgress) {
+		//		Common::CVector3 cartessianPos;
+		//		cartessianPos.SetFromAED(_azimuth, _elevation, GetHRTFDistanceOfMeasurement());
+		//		auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), std::forward<THRIRStruct>(newHRIR));
+		//		//Error handler
+		//		if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
+		//	}
+		//}
+
+		void AddHRIR(double _azimuth, double _elevation, double _distance, THRIRStruct&& newHRIR)
 		{			
 			if (setupInProgress) {				
 				_azimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
@@ -207,7 +218,7 @@ namespace BRTServices
 				//Common::CVector3 cartessianPos;
 				//cartessianPos.SetFromAED(_azimuth, _elevation, GetHRTFDistanceOfMeasurement());
 				//auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), std::forward<THRIRStruct>(newHRIR));				
-				auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation), std::forward<THRIRStruct>(newHRIR));
+				auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, _distance), std::forward<THRIRStruct>(newHRIR));
 				//Error handler
 				if (!returnValue.second) { 
 					SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
@@ -223,7 +234,9 @@ namespace BRTServices
 		{
 			if (setupInProgress) {
 				if (!t_HRTF_DataBase.empty())
-				{
+				{					
+					distanceOfMeasurement = t_HRTF_DataBase.begin()->first.distance;	// Get first Distance as the distance of measurement //TODO Change
+					
 					// Preparation of table read from sofa file
 					RemoveCommonDelay_HRTFDataBaseTable();				// Delete the common delay of every HRIR functions of the DataBase Table					
 					t_HRTF_DataBase_ListOfOrientations = offlineInterpolation.CalculateListOfOrientations(t_HRTF_DataBase);
@@ -235,13 +248,13 @@ namespace BRTServices
 					quasiUniformSphereDistribution.CreateGrid<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, resamplingStep);
 					offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct> (t_HRTF_DataBase, t_HRTF_Resampled_partitioned, bufferSize, HRIRLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
 
-					//TESTING:
-					for (auto it = t_HRTF_Resampled_partitioned.begin(); it != t_HRTF_Resampled_partitioned.end(); it++) {
-						if (it->second.leftHRIR_Partitioned.size() == 0 || it->second.rightHRIR_Partitioned.size() == 0) {
-							SET_RESULT(RESULT_ERROR_NOTSET, "The t_HRTF_Resampled_partitioned has an empty HRIR in position [" + std::to_string(it->first.azimuth) + ", " + std::to_string(it->first.elevation) + "]");
-						}
-					
-					}
+					////TESTING:
+					//for (auto it = t_HRTF_Resampled_partitioned.begin(); it != t_HRTF_Resampled_partitioned.end(); it++) {
+					//	if (it->second.leftHRIR_Partitioned.size() == 0 || it->second.rightHRIR_Partitioned.size() == 0) {
+					//		SET_RESULT(RESULT_ERROR_NOTSET, "The t_HRTF_Resampled_partitioned has an empty HRIR in position [" + std::to_string(it->first.azimuth) + ", " + std::to_string(it->first.elevation) + "]");
+					//	}
+					//
+					//}
 
 					//Setup values
 					auto it = t_HRTF_Resampled_partitioned.begin();
@@ -640,16 +653,44 @@ namespace BRTServices
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get listener ear transform for BOTH or NONE ears");
 				return Common::CVector3();
 			}
-
-			Common::CVector3 earLocalPosition = Common::CVector3::ZERO();
-			if (ear == Common::T_ear::LEFT) {
-				earLocalPosition.SetAxis(RIGHT_AXIS, -headRadius);
+=======
+		Common::CVector3 GetEarLocalPosition(Common::T_ear _ear) {
+			if (enableCustomizedITD) {
+				return CHRTFAuxiliarMethods::CalculateEarLocalPositionFromHeadRadius(_ear, headRadius);
 			}
-			else
-				earLocalPosition.SetAxis(RIGHT_AXIS, headRadius);
+			else {
+				if (_ear == Common::T_ear::LEFT)		{ return leftEarLocalPosition; }
+				else if (_ear == Common::T_ear::RIGHT)	{ return rightEarLocalPosition; }
+				else // either _ear == Common::T_ear::BOTH || _ear == Common::T_ear::NONE
+				{
+					SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to set listener ear transform for BOTH or NONE ears");
+					return Common::CVector3();
+				}
+			}
+		}
 
-			return earLocalPosition;
-		}*/
+		///** \brief	Calculate the relative position of one ear taking into account the listener head radius
+		//*	\param [in]	_ear			ear type
+		//*   \return  Ear local position in meters
+		//*   \eh <<Error not allowed>> is reported to error handler
+		//*/
+		//Common::CVector3 CalculateEarLocalPositionFromHeadRadius(Common::T_ear ear) {
+		//	if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
+		//	{
+		//		SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get listener ear transform for BOTH or NONE ears");
+		//		return Common::CVector3();
+		//	}
+
+
+		//	Common::CVector3 earLocalPosition = Common::CVector3::ZERO();
+		//	if (ear == Common::T_ear::LEFT) {
+		//		earLocalPosition.SetAxis(RIGHT_AXIS, -headRadius);
+		//	}
+		//	else
+		//		earLocalPosition.SetAxis(RIGHT_AXIS, headRadius);
+
+		//	return earLocalPosition;
+		//}
 
 		/** \brief Set the sampling rate for the HRTF
 		*	\param [in] sampling rate
@@ -667,8 +708,7 @@ namespace BRTServices
 
 
 	private:
-		
-		//enum TExtrapolationMethod { zeroInsertion, nearestPoint };
+				
 		///////////////
 		// ATTRIBUTES
 		///////////////		

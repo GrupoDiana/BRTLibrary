@@ -53,12 +53,12 @@ struct orientation
 {
 	double azimuth;					///< Azimuth angle in degrees
 	double elevation;				///< Elevation angle in degrees	
-	//Common::CVector3 cartessianPos; ///< Position in X, Y and Z
-	orientation(double _azimuth, double _elevation) :azimuth{ _azimuth }, elevation{ _elevation } {}
-	//orientation(double _azimuth, double _elevation, Common::CVector3 _cartessianPos) :azimuth{ _azimuth }, elevation{ _elevation }, cartessianPos{ _cartessianPos } {}
-	//orientation(float _azimuth, float _elevation) :azimuth{ static_cast<double>(_azimuth) }, elevation{ static_cast<double>(_elevation) } {}
-	//orientation(float _azimuth, float _elevation, Common::CVector3 _cartessianPos) :azimuth{ static_cast<double>(_azimuth) }, elevation{ static_cast<double>(_elevation) }, cartessianPos{ _cartessianPos } {}
-	orientation() :orientation{ 0.0, 0.0 } {}
+	double distance;				///< Distance in meters	
+	
+	orientation(double _azimuth, double _elevation) :azimuth{ _azimuth }, elevation{ _elevation }, distance{ 0.0 } {}
+	orientation(double _azimuth, double _elevation, double _distance) :azimuth{ _azimuth }, elevation{ _elevation }, distance{_distance} {}
+	
+	orientation() :orientation{ 0.0, 0.0, 0.0} {}
 	bool operator==(const orientation& other) const
 	{		
 		return ((Common::AreSameDouble(this->azimuth, other.azimuth, ORIENTATION_RESOLUTION)) && (Common::AreSameDouble(this->elevation, other.elevation, ORIENTATION_RESOLUTION)));
@@ -150,8 +150,9 @@ namespace BRTServices {
 		virtual ~CServicesBase() {}		
 		
 		virtual void BeginSetup() {}
-		virtual void BeginSetup(int32_t _DirectivityTFLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {}
-		virtual void BeginSetup(int32_t _HRIRLength, float _distance, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {}
+		//virtual void BeginSetup(int32_t _DirectivityTFLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {}
+		virtual void BeginSetup(int32_t _IRLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {}
+		virtual void BeginSetup(int32_t _HRIRLength) {}
 		virtual bool EndSetup() { return false; }
 
 		virtual void SetResamplingStep(int _resamplingStep) {};
@@ -164,8 +165,8 @@ namespace BRTServices {
 		virtual void SetNumberOfEars(int _numberOfEars) {}
 		virtual void SetEarPosition(Common::T_ear _ear, Common::CVector3 _earPosition) {};
 
-		virtual void AddHRIR(float _azimuth, float _elevation, THRIRStruct&& newHRIR) {}
-		virtual void AddHRIR(double _azimuth, double _elevation, THRIRStruct&& newHRIR) {}
+		virtual void AddHRIR(double _azimuth, double _elevation, double _distance, THRIRStruct&& newHRIR) {};
+		virtual void AddHRBRIR(Common::CVector3 sourcePosition, Common::CVector3 sourceView, Common::CVector3 sourceUp, THRIRStruct&& newHRBRIR) {}
 		virtual void AddCoefficients(float azimuth, float distance, TNFCFilterStruct&& newCoefs) {}
 		virtual void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF) {}
 		
