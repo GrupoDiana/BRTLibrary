@@ -105,6 +105,23 @@ namespace Common {
 			z = _z;
 		}
 
+		/**
+		 * @brief Constructor from vector of size 3.
+		 * @param _inVector Input vector, must be exactly size 3.
+		 */
+		CVector3(std::vector<double> _vector)
+		{
+			if (_vector.size() != 3)
+			{
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Vector size is not 3");
+				return;
+			}
+			x = _vector[0];
+			y = _vector[1];
+			z = _vector[2];
+		}
+
+
 		//
 		// Get methods
 		//
@@ -132,6 +149,20 @@ namespace Common {
 
 			//return (x*x + y*y + z*z);
 			return (x * x + y * y + z * z);
+		}
+		
+		/**
+		 * @brief Normalize the vector
+		 * @return return the vector normalized
+		 */
+		CVector3 Normalize() {
+			float distance = GetDistance();
+			if (distance == 0.0f)
+			{
+				SET_RESULT(RESULT_ERROR_DIVBYZERO, "Distance from source to listener is zero");
+				return CVector3::ZERO();
+			}
+			return CVector3(x / distance, y / distance, z / distance);
 		}
 
 		/** \brief Get elevation in radians
