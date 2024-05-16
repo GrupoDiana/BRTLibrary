@@ -116,8 +116,9 @@ namespace Common {
 			*	\retval quaternion quaternion equivalent to the given axis-angle representation
 			*   \eh Nothing is reported to the error handler.
 			*/		
-		static CQuaternion FromAxisAngle(CVector3 _axis, float _angle)
+		static CQuaternion FromAxisAngle(CVector3& _axis, float _angle)
 		{
+			CVector3 _axisNormalized = _axis.Normalize();
 			// Error handler:
 			//SET_RESULT(RESULT_OK, "Conversion from axis-angle to quaternion was succesfull");
 
@@ -128,9 +129,9 @@ namespace Common {
 			float halfCos = std::cos(halfAngle);
 
 			newW = halfCos;
-			newX = halfSin * _axis.x;
-			newY = halfSin * _axis.y;
-			newZ = halfSin * _axis.z;
+			newX = halfSin * _axisNormalized.x;
+			newY = halfSin * _axisNormalized.y;
+			newZ = halfSin * _axisNormalized.z;
 
 			return CQuaternion(newW, newX, newY, newZ);
 		}
@@ -224,7 +225,7 @@ namespace Common {
 			double t4 = 1.0f - 2.0f * (right * right + down * down);
 			yaw = std::atan2(t3, t4);
 		}
-
+		
 		//////////////////////
 		// Basic operations
 		//////////////////////
