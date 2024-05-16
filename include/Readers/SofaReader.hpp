@@ -1,4 +1,4 @@
-/**
+﻿/**
 * \class CSOFAReader
 *
 * \brief Declaration of CSOFAReader class
@@ -17,11 +17,13 @@
 *
 * \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 *
-* \b Acknowledgement: This project has received funding from the European Union�s Horizon 2020 research and innovation programme under grant agreement no.101017743
+* \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 
 #ifndef _SOFA_READER_
 #define _SOFA_READER_
+
+#define EPSILON 0.0001f
 
 #include <ostream>
 #include <string>
@@ -166,23 +168,7 @@ namespace BRTReaders {
 			const int numberOfCoordinates = loader.getHRTF()->C;
 			const int numberOfReceivers = loader.getHRTF()->R;
 			const unsigned int numberOfSamples = loader.getHRTF()->N;			
-
-			//// Check number of delays			
-			//bool specifiedDelays = true;
-			//if (dataDelayVector.size() == dataMeasurements.size() / loader.getHRTF()->N) {
-			//	specifiedDelays = true;
-			//}
-			//else {
-			//	if (dataDelayVector.size() == 2)
-			//	{
-			//		specifiedDelays = false;
-			//		SET_RESULT(RESULT_WARNING, "This HRTF file does not contain individual delays for each HRIR. Therefore, some comb filter effect can be perceived due to interpolations and custom head radius should not be used");
-			//	}
-			//	else {
-			//		SET_RESULT(RESULT_ERROR_BADSIZE, "SOFA gives incoherent number of HRIRs and delays");
-			//		return false;
-			//	}
-			//}
+			
 
 			// Get first distance to check if all HRIRs are measured at the same distance
 			double measurementDistance = sourcePositionsVector[array2DIndex(0, 2, numberOfCoordinates)];		//We consider that every HRIR are meased at the same distance, so we get the firts one												
@@ -206,13 +192,7 @@ namespace BRTReaders {
 					SET_RESULT(RESULT_ERROR_INVALID_PARAM, "SOFA gives incoherent number of HRIRs distance.");
 					return false;
 				}
-
-				/*double leftDelay = dataDelayVector[specifiedDelays ? array2DIndex(measure, left_ear, 2) : 0];
-				double rightDelay = dataDelayVector[specifiedDelays ? array2DIndex(measure, right_ear, 2) : 1];
-				if (leftDelay < 0 || rightDelay < 0) {
-					SET_RESULT(RESULT_WARNING, "Error reading HRIR from SOFA file, one of the delay fields is negative. This data is rejected. [" + std::to_string(azimuth) + ", " + std::to_string(elevation) + "]");
-					continue;
-				}			*/	
+				
 				// Get Delays
 				double leftDelay, rightDelay;;
 				GetDelays(loader, dataDelayVector, leftDelay, rightDelay, numberOfMeasurements, numberOfReceivers, measure);
@@ -409,31 +389,7 @@ namespace BRTReaders {
 			const int numberOfEmitters = loader.getHRTF()->E;
 			const int numberOfCoordinates = loader.getHRTF()->C;
 
-			// Check number of delays			
-			/*bool specifiedDelays = true;
-			if (dataDelays.size() == dataMeasurements.size() / loader.getHRTF()->N) {
-				specifiedDelays = true;
-			}
-			else {
-				if (dataDelays.size() == 2)
-				{
-					specifiedDelays = false;
-					SET_RESULT(RESULT_WARNING, "This HRTF file does not contain individual delays for each HRIR. Therefore, some comb filter effect can be perceived due to interpolations and custom head radius should not be used");
-				}
-				else {
-					SET_RESULT(RESULT_ERROR_BADSIZE, "SOFA gives incoherent number of HRIRs and delays");
-					return false;
-				}
-			}*/
-
-			// Get and save HRIRs
-			//double distance = sourcePositionsVector[array2DIndex(0, 2, numberOfMeasurements, numberOfCoordinates)];		//We consider that every HRIR are meased at the same distance, so we get the firts one									
-
-			/*if (distance <= 0) {
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "SOFA gives incoherent number of HRIRs distance");
-				return false;
-			}*/
-
+			
 			dataHRBRIR->BeginSetup(numberOfSamples);
 
 			dataHRBRIR->SetSamplingRate(loader.GetSamplingRate());
@@ -448,40 +404,45 @@ namespace BRTReaders {
 					BRTServices::THRIRStruct hrir_value;
 					
 					// Get Source position
-					//double sourceEmitterAzimuth, sourceEmitterElevation, sourceEmitterDistance;
-					Common::CVector3 sourceEmitterPosition = GetCompositePositionSourceEmitter(loader, sourcePositionsVector, emitterPositionsVector, measure, emitter);					
-					if (sourceEmitterPosition.GetDistance() <= 0 ) {
-						SET_RESULT(RESULT_ERROR_INVALID_PARAM, "SOFA gives incoherent number of HRIRs distance");
-						return false;
-					}					
-					// Get source orientation					
-					std::vector<double> sourceView = std::move(GetSourceView(loader, sourceViewVector, numberOfMeasurements, measure));
-					std::vector<double> sourceUp = std::move(GetSourceUp(loader, sourceUpVector, numberOfMeasurements, measure));
+					Common::CVector3 sourcePosition = GetSourcePositionCartesian(loader, sourcePositionsVector, measure);
+					// Get source orientation components	
+					Common::CVector3 sourceView = GetSourceView(loader, sourceViewVector, numberOfMeasurements, measure);
+					Common::CVector3 sourceUp = GetSourceUp(loader, sourceUpVector, numberOfMeasurements, measure);
+					
+					//Get Emmiter location
+					Common::CVector3 emitterPosition = GetEmitterPosition(loader, emitterPositionsVector, measure, emitter); 
+					Common::CTransform globalEmitterLocation = CalculateTransformFromSeparateComponents(emitterPosition, sourceView, sourceUp);					
+					globalEmitterLocation.SetPosition(globalEmitterLocation.GetPosition() + sourcePosition);
+					
 					//Get Listener location			
-					std::vector<double> listenerPosition = std::move(GetListenerPosition(loader, listenerPositionsVector, measure));
-					std::vector<double> listenerView = std::move(GetListenerView(loader, listenerViewVector, numberOfMeasurements, measure));
-					std::vector<double> listenerUp = std::move(GetListenerUp(loader, listenerUpVector, numberOfMeasurements, measure));
-					//Get Delay
-					//double leftDelay = dataDelays[specifiedDelays ? array2DIndex(measure, left_ear, 2) : 0];
-					//double rightDelay = dataDelays[specifiedDelays ? array2DIndex(measure, right_ear, 2) : 1];
-					//
-					//if (leftDelay < 0 || rightDelay < 0) {
-					//	//SET_RESULT(RESULT_WARNING, "Error reading IR from SOFA file, one of the delay fields is negative. This data is rejected. [" + std::to_string(sourceEmitterAzimuth) + ", " + std::to_string(sourceEmitterElevation) + "]");
-					//	continue;
-					//}
-					//hrir_value.leftDelay = leftDelay;
-					//hrir_value.rightDelay = rightDelay;					
+					Common::CVector3 listenerPosition = GetListenerPosition(loader, listenerPositionsVector, measure);
+					Common::CVector3 listenerView = GetListenerView(loader, listenerViewVector, numberOfMeasurements, measure);
+					Common::CVector3 listenerUp = GetListenerUp(loader, listenerUpVector, numberOfMeasurements, measure);					
+					Common::CTransform listenerLocation = CalculateTransformFromSeparateComponents(listenerPosition, listenerView, listenerUp);
+					
+					// Make projection of source position to listener coordinate system
+					Common::CVector3 vectorListenerToEmitter = listenerLocation.GetVectorTo(globalEmitterLocation);
+					float _relativeAzimuthListenerEmitter = vectorListenerToEmitter.GetAzimuthDegrees();
+					float _relativeElevationListenerEmitter = vectorListenerToEmitter.GetElevationDegrees();
+					float _relativeDistanceListenerEmitter = vectorListenerToEmitter.GetDistance();
+
+					//Get Delay					
 					double leftDelay, rightDelay;;
 					GetDelays(loader, dataDelayVector, leftDelay, rightDelay, numberOfMeasurements, numberOfReceivers, measure);
 					hrir_value.leftDelay = std::round(leftDelay);
 					hrir_value.rightDelay = std::round(rightDelay);
 
-
 					//Get IR
 					Get4DMatrixData(dataMeasurements, hrir_value.leftHRIR, numberOfReceivers, numberOfSamples, numberOfEmitters, measure, left_ear, emitter);
 					Get4DMatrixData(dataMeasurements, hrir_value.rightHRIR, numberOfReceivers, numberOfSamples, numberOfEmitters, measure, right_ear, emitter);
-
-					//dataHRBRIR->AddHRBRIR(sourceEmitterPosition, sourceView, sourceUp, std::move(hrir_value));
+					
+					//TODO Listener position in our Convention
+					Common::CVector3 listenerPositionBRTConvention;					
+					listenerPositionBRTConvention.SetAxis(FORWARD_AXIS, listenerPosition.x);
+					listenerPositionBRTConvention.SetAxis(RIGHT_AXIS, listenerPosition.y);
+					listenerPositionBRTConvention.SetAxis(UP_AXIS, listenerPosition.z);
+					// Set data to HRBIR struct
+					dataHRBRIR->AddHRBRIR(_relativeAzimuthListenerEmitter, _relativeElevationListenerEmitter, _relativeDistanceListenerEmitter, listenerPosition, std::move(hrir_value));
 				}
 			}
 			return true;
@@ -512,32 +473,37 @@ namespace BRTReaders {
 				ToSpherical(_sourcePosition[0], _sourcePosition[1], _sourcePosition[2], tempX, tempY, tempZ);
 				_sourcePosition = std::vector<double>({ tempX, tempY, tempZ });
 			}
+			_sourcePosition = RoundToZeroIfClose(_sourcePosition);
 			azimuth = _sourcePosition[0];
 			elevation = _sourcePosition[1];
 			distance = _sourcePosition[2];			
 		}
 
-		/**
-		 * @brief Extract source and emitter position from LibMySofa struct and sum them. If in spherical  coordinates, convert to Cartesian.
-		 * @param loader The complete data structure read from the SOFA file.
-		 * @param _sourcePositionsVector Vector with all source positions.We pass it on so that we don't have to map it every time and save time.
-		 * @param emitterPositionsVector Vector with all emitter positions.We pass it on so that we don't have to map it every time and save time.
-		 * @param measure Measure to be recovered
-		 * @param _emitter Emitter to be recovered
-		 * @return The global position of the source-emitter summed in cartesian.
-		 */				
-		Common::CVector3 GetCompositePositionSourceEmitter(BRTReaders::CLibMySOFALoader& loader, const std::vector<double>& _sourcePositionsVector, const std::vector<double>& emitterPositionsVector, std::size_t measure, std::size_t _emitter) {
 
+		Common::CVector3 GetSourcePositionCartesian(BRTReaders::CLibMySOFALoader& loader, const std::vector<double>& _sourcePositionsVector, std::size_t measure) {
 			int numberOfCoordinates = loader.getHRTF()->C;
-			
-			// Get source position
 			std::vector<double> _sourcePosition;
+
 			GetOneVector3From2DMatrix(_sourcePositionsVector, _sourcePosition, measure, numberOfCoordinates);
 			if (IsSourcePositionCoordinateSystemsSpherical(loader)) {
 				double tempX, tempY, tempZ;
 				ToCartesian(_sourcePosition[0], _sourcePosition[1], _sourcePosition[2], tempX, tempY, tempZ);
 				_sourcePosition = std::vector<double>({ tempX, tempY, tempZ });
-			}
+			}			
+
+			return RoundToZeroIfClose(Common::CVector3(_sourcePosition[0], _sourcePosition[1], _sourcePosition[2]));
+		}
+
+		/**
+		 * @brief Extract source position from LibMySofa struct. If in spherical  coordinates, convert to Cartesian.
+		 * @param loader The complete data structure read from the SOFA file.
+		 * @param emitterPositionsVector 
+		 * @param measure 
+		 * @param _emitter 
+		 * @return 
+		 */
+		Common::CVector3 GetEmitterPosition(BRTReaders::CLibMySOFALoader& loader, const std::vector<double>& emitterPositionsVector, std::size_t measure, std::size_t _emitter) {
+			int numberOfCoordinates = loader.getHRTF()->C;
 			//Get emmiter position	
 			std::vector<double> _emitterPosition;
 			GetOneVector3From2DMatrix(emitterPositionsVector, _emitterPosition, _emitter, numberOfCoordinates);
@@ -545,15 +511,9 @@ namespace BRTReaders {
 				double tempX, tempY, tempZ;
 				ToCartesian(_emitterPosition[0], _emitterPosition[1], _emitterPosition[2], tempX, tempY, tempZ);
 				_emitterPosition = std::vector<double>({ tempX, tempY, tempZ });
-			}			
-			// Sum them
-			double sourceX = _sourcePosition[0] + _emitterPosition[0];
-			double sourceY = _sourcePosition[1] + _emitterPosition[1];
-			double sourceZ = _sourcePosition[2] + _emitterPosition[2];
-			
-			//ToSpherical(sourceX, sourceY, sourceZ, azimuth, elevation, distance);
-			return Common::CVector3(sourceX, sourceY, sourceZ);
-		}
+			}
+			return RoundToZeroIfClose(Common::CVector3(_emitterPosition[0], _emitterPosition[1], _emitterPosition[2]));
+		}		
 
 		/**
 		 * @brief Extract source view from LibMySofa struct. If in spherical  coordinates, convert to Cartesian.
@@ -563,7 +523,7 @@ namespace BRTReaders {
 		 * @param measure Measure to be recovered
 		 * @return View of the source, 3-dimensional vector, Cartesian.
 		 */
-		std::vector<double> GetSourceView(BRTReaders::CLibMySOFALoader& loader, const std::vector<double>& sourceViewVector, std::size_t numberOfMeasurements, std::size_t measure) {
+		Common::CVector3 GetSourceView(BRTReaders::CLibMySOFALoader& loader, const std::vector<double>& sourceViewVector, std::size_t numberOfMeasurements, std::size_t measure) {
 			int numberOfCoordinates = loader.getHRTF()->C;
 			std::vector<double> _sourceView;			
 			
@@ -576,9 +536,9 @@ namespace BRTReaders {
 				ToCartesian(_sourceView[0], _sourceView[1], _sourceView[2], tempX, tempY, tempZ);
 				_sourceView = std::vector<double>({ tempX, tempY, tempZ });
 			}
-			return _sourceView;
+			return RoundToZeroIfClose(Common::CVector3(_sourceView));
 		}
-
+		
 		/**
 		 * @brief Extract source up from LibMySofa struct. If in spherical  coordinates, convert to Cartesian.
 		 * @param loader The complete data structure read from the SOFA file.
@@ -587,7 +547,7 @@ namespace BRTReaders {
 		 * @param measure Measure to be recovered
 		 * @return UP of the source, 3-dimensional vector, Cartesian.
 		 */
-		std::vector<double> GetSourceUp(BRTReaders::CLibMySOFALoader& loader, const std::vector<double>& sourceUpVector, std::size_t numberOfMeasurements, std::size_t measure) {
+		Common::CVector3 GetSourceUp(BRTReaders::CLibMySOFALoader& loader, const std::vector<double>& sourceUpVector, std::size_t numberOfMeasurements, std::size_t measure) {
 			int numberOfCoordinates = loader.getHRTF()->C;			
 			std::vector<double> _sourceUp;
 			
@@ -599,7 +559,7 @@ namespace BRTReaders {
 				ToCartesian(_sourceUp[0], _sourceUp[1], _sourceUp[2], tempX, tempY, tempZ);
 				_sourceUp = std::vector<double>({ tempX, tempY, tempZ });
 			}
-			return _sourceUp;			
+			return RoundToZeroIfClose(Common::CVector3(_sourceUp));
 		}
 
 		/**
@@ -669,7 +629,7 @@ namespace BRTReaders {
 				ToCartesian(_listenerView[0], _listenerView[1], _listenerView[2], tempX, tempY, tempZ);
 				_listenerView = std::vector<double>({ tempX, tempY, tempZ });
 			};
-			return _listenerView;
+			return RoundToZeroIfClose(_listenerView);
 		}
 
 		/**
@@ -691,7 +651,7 @@ namespace BRTReaders {
 				ToCartesian(_listenerUp[0], _listenerUp[1], _listenerUp[2], tempX, tempY, tempZ);
 				_listenerUp = std::vector<double>({ tempX, tempY, tempZ });
 			};
-			return _listenerUp;
+			return RoundToZeroIfClose(_listenerUp);
 		}
 
 
@@ -883,6 +843,59 @@ namespace BRTReaders {
 		/////////////////////////
 		// AUXILAR METHODS
 		///////////////////////////
+		Common::CTransform CalculateTransformFromSeparateComponents(Common::CVector3 _position, Common::CVector3 _view, Common::CVector3 _up) {
+			//Yaw and Pitch are calculated from the view vector
+			Common::CVector3 _viewNormalized = _view.Normalize();
+			float azimuth = _viewNormalized.GetAzimuthRadians();
+			float elevation = _viewNormalized.GetElevationRadians();
+
+			Common::CQuaternion _orientation = Common::CQuaternion::FromYawPitchRoll(-azimuth, elevation, 0.0f);
+
+			// Roll is calculated from the up vector
+			Common::CVector3 _upNormalized = _up.Normalize();
+			Common::CVector3 _rotatedUpVector = _orientation.RotateVector(Common::CVector3(0, 0, 1));
+			Common::CVector3 rollAxis = (_rotatedUpVector.CrossProduct(_upNormalized)).Normalize();							
+			//float roll = std::acos(_rotatedUpVector.Normalize().DotProduct(_upNormalized));
+			float roll = Common::SafeAcos(_rotatedUpVector.Normalize().DotProduct(_upNormalized));
+
+			Common::CQuaternion rollQuaternion = Common::CQuaternion::FromAxisAngle(rollAxis, roll);
+
+			// Get complete orientation quaternion by multiplying yaw-pitch-roll quaternions
+			_orientation.Rotate(rollQuaternion);
+		
+			// Create the transform
+			Common::CTransform _transform;
+			_transform.SetPosition(_position);
+			_transform.SetOrientation(_orientation);
+			return _transform;
+		}
+
+		Common::CQuaternion GetObjectOrientation(Common::CVector3 _view, Common::CVector3 _up) {
+			//1 Obten el yaw como Yaw = View.getAzimutzRadians()
+			float  yaw = _view.GetAzimuthRadians();			 
+			//2 Obten Pitch como Pitch = View.getElevationRadians()
+			float pitch = _view.GetElevationRadians();
+			//3 Rota la matriz identidad con I.rotate(Z, Yaw) y I.rotate(Y, Pitch)
+			//Common::CTransform I;
+			Common::CQuaternion sourceOrientation; 
+			sourceOrientation = Common::CQuaternion::FromYawPitchRoll(yaw, pitch, 0);
+
+			//Common::CVector3 z;
+			//z.GetAxis(Common::TAxis::FORWARD_AXIS);)			
+			//I.Rotate(Common::CVector3(0, 0, 1), yaw);
+			//I.Rotate(Common::CVector3(0, 1, 0), pitch);
+			
+			//4️ Obten el up rotado Yaw y Pitch aplicnado la pmatriz anterior a Z.Lo llamaremos ZZ
+			//Common::CVector3 z(0, 0, 1);
+			
+			//Common::CVector3 ZZ = I * _up;
+			//5️ Calcula Roll como Roll = arccos(arccos(ZZ·Up)
+			//6️ Rota de nuevo ahora para el roll : I.rotate(X, Roll)	
+			// 
+			Common::CQuaternion sourceOrientation2;
+			//sourceOrientation2 = Common::CQuaternion::LookAt(_view, _up);
+			return sourceOrientation;
+		}
 
 				
 		/**
@@ -1037,6 +1050,33 @@ namespace BRTReaders {
 			_y = _vector.y;
 			_z = _vector.z;
 		}		
+
+	 
+		/**
+		 * @brief Round any coordinate to zero if it is close to zero
+		 * @param _inPoint 
+		 * @return 
+		 */
+		Common::CVector3 RoundToZeroIfClose(Common::CVector3 _inPoint) {
+			Common::CVector3 _outPoint;
+			_outPoint.x =  Common::AreSameDouble(_inPoint.x, 0, EPSILON) ? 0: _inPoint.x;
+			_outPoint.y = Common::AreSameDouble(_inPoint.x, 0, EPSILON) ? 0 : _inPoint.y;
+			_outPoint.z = Common::AreSameDouble(_inPoint.x, 0, EPSILON) ? 0 : _inPoint.z;
+			return _outPoint;
+		}
+
+		/**
+		 * @brief Round any coordinate to zero if it is close to zero
+		 * @param _inPoint
+		 * @return
+		 */
+		std::vector<double> RoundToZeroIfClose(std::vector<double> _inPoint) {
+			std::vector<double> _outPoint;
+			for (std::size_t i = 0; i < _inPoint.size(); i++) {
+				_outPoint.push_back(Common::AreSameDouble(_inPoint[i], 0, EPSILON) ? 0 : _inPoint[i]);
+			}									
+			return _outPoint;
+		}
 	};
 };
 #endif 

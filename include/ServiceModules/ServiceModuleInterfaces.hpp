@@ -43,6 +43,9 @@
 #define ORIENTATION_RESOLUTION			0.01
 #define ORIENTATION_RESOLUTION_INVERSE	1/ORIENTATION_RESOLUTION		// For faster operation, in case the compiler does not optimise the division
 
+#define POSITION_RESOLUTION				0.01
+#define POSITION_RESOLUTION_INVERSE		1/POSITION_RESOLUTION		// For faster operation, in case the compiler does not optimise the division
+
 #define EPSILON_SEWING 0.001
 
 // Structs and types definitions 
@@ -65,19 +68,20 @@ struct orientation
 	}
 };
 
-//struct orientation
-//{
-//	float azimuth;					///< Azimuth angle in degrees
-//	float elevation;				///< Elevation angle in degrees	
-//	Common::CVector3 cartessianPos; ///< Position in X, Y and Z
-//	orientation(float _azimuth, float _elevation) :azimuth{ _azimuth }, elevation{ _elevation } {}
-//	orientation(float _azimuth, float _elevation, Common::CVector3 _cartessianPos) :azimuth{ _azimuth }, elevation{ _elevation }, cartessianPos{ _cartessianPos } {}
-//	orientation() :orientation{ 0,0 } {}
-//	bool operator==(const orientation& other) const
-//	{
-//		return ((Common::AreSame(this->azimuth, other.azimuth, ORIENTATION_RESOLUTION)) && (Common::AreSame(this->elevation, other.elevation, ORIENTATION_RESOLUTION)));
-//	}
-//};
+struct TVector3 {
+	double x;
+	double y;
+	double z;
+	
+	TVector3() : x{ 0.0 }, y{ 0.0 }, z{ 0.0 } {}
+	TVector3(double _x, double _y, double _z) : x{ _x }, y{ _y }, z{ _z } {}
+	TVector3(Common::CVector3 _vector) : x{ _vector.x }, y{ _vector.y }, z{ _vector.z } {}
+	
+	bool operator==(const TVector3& other) const
+	{
+		return ((Common::AreSameDouble(this->x, other.x, ORIENTATION_RESOLUTION)) && (Common::AreSameDouble(this->y, other.y, ORIENTATION_RESOLUTION)) && (Common::AreSameDouble(this->z, other.z, ORIENTATION_RESOLUTION)));
+	}
+};
 
 namespace std
 {
@@ -85,7 +89,7 @@ namespace std
 	struct hash<orientation>
 	{
 		// adapted from http://en.cppreference.com/w/cpp/utility/hash
-		size_t operator()(const orientation& key) const
+		std::size_t operator()(const orientation& key) const
 		{			
 			//int keyAzimuth_hundredth	= static_cast<int> (round(key.azimuth / ORIENTATION_RESOLUTION));
 			//int keyElevation_hundredth	= static_cast<int> (round(key.elevation / ORIENTATION_RESOLUTION));
@@ -99,6 +103,26 @@ namespace std
 			return h1 ^ (h2 << 1);  // exclusive or of hash functions for each int.
 		}
 	};
+
+	inline void hash_combine(std::size_t& seed, const float& v) 
+	{
+		std::hash<float> hasher;
+		seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+	}
+
+	template<>	
+	struct hash<TVector3>
+	{		
+		std::size_t operator()(const TVector3& key) const
+		{				
+			size_t h = std::hash<float>()(key.x * POSITION_RESOLUTION_INVERSE);
+			hash_combine(h, key.y * POSITION_RESOLUTION_INVERSE);
+			hash_combine(h, key.z * POSITION_RESOLUTION_INVERSE);
+
+			return h;
+		}
+	};
+	
 }
 
 namespace BRTServices {
@@ -166,7 +190,7 @@ namespace BRTServices {
 		virtual void SetEarPosition(Common::T_ear _ear, Common::CVector3 _earPosition) {};
 
 		virtual void AddHRIR(double _azimuth, double _elevation, double _distance, THRIRStruct&& newHRIR) {};
-		virtual void AddHRBRIR(Common::CVector3 sourcePosition, Common::CVector3 sourceView, Common::CVector3 sourceUp, THRIRStruct&& newHRBRIR) {}
+		virtual void AddHRBRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRBRIR) {}		
 		virtual void AddCoefficients(float azimuth, float distance, TNFCFilterStruct&& newCoefs) {}
 		virtual void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF) {}
 		

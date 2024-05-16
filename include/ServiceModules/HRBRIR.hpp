@@ -38,6 +38,12 @@
 
 namespace BRTServices
 {
+	
+	//typedef std::unordered_map<orientation, BRTServices::THRIRStruct> T_HRTFTable;
+
+	typedef std::unordered_map<TVector3, T_HRTFTable> T_HRBRIRTable;
+
+
 	class CHRBRIR : public CServicesBase
 	{
 	public:
@@ -68,8 +74,11 @@ namespace BRTServices
 				//elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
 				//elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
 
-				////Clear every table			
-				//t_HRTF_DataBase.clear();
+				////Clear every table		
+				t_HRBRIR_DataBase.clear();
+				t_HRBRIR_DataBase_ListenerPositions.clear();
+				t_HRBRIR_DataBase_ListOfOrientations.clear();
+
 				//t_HRTF_Resampled_frequency.clear();
 				//t_HRTF_Resampled_partitioned.clear();
 
@@ -82,38 +91,46 @@ namespace BRTServices
 			}			
 		}
 
-		void AddHRBRIR(Common::CVector3 sourcePosition, Common::CVector3 sourceView, Common::CVector3 sourceUp, THRIRStruct&& newHRBRIR)
+		
+		void AddHRBRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRBRIR) 
 		{
-			if (setupInProgress) {
-				
-				/*Common::CVector3 ofApp::GetListenerOrientationView(const std::string & listenerID) {
-				if (!ListenerExist(listenerID)) return Common::CVector3();
-				Common::CTransform _listenerTransform = GetListener(listenerID)->GetListenerTransform();
-				Common::CVector3 front(1, 0, 0);
-				Common::CVector3 listenerView = _listenerTransform.GetOrientation().RotateVector(front);
-				return listenerView;
-			}
+			if (setupInProgress) {																				
+				_azimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
+				_elevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
+								
+				bool error = false;
+				//Check if the listenerPosition is already in the table
+				auto it = t_HRBRIR_DataBase.find(listenerPosition);
+				if (it != t_HRBRIR_DataBase.end())
+				{					
+					auto returnValue = it->second.emplace(orientation(_azimuth, _elevation, _distance), std::forward<THRIRStruct>(newHRBRIR));
+					if (!returnValue.second) {	
+						error = true; 
+					}
+				}
+				else
+				{
+					T_HRTFTable orientationTable;
+					auto returnValue = orientationTable.emplace(orientation(_azimuth, _elevation, _distance), std::forward<THRIRStruct>(newHRBRIR));
+					if (returnValue.second) {
+						auto returnValue2 = t_HRBRIR_DataBase.emplace(listenerPosition, std::forward<T_HRTFTable>(orientationTable));
+						if (returnValue2.second) { 
+							t_HRBRIR_DataBase_ListenerPositions.push_back(listenerPosition);
+						} else{
+							error = true;
+						}
+					}
+					else { error = true; }
+				}	
 
-			Common::CVector3 ofApp::GetListenerOrientationUp(const std::string & listenerID) {
-				if (!ListenerExist(listenerID)) return Common::CVector3();
-				Common::CTransform _listenerTransform = GetListener(listenerID)->GetListenerTransform();
-				Common::CVector3 up(0, 0, 1);
-				Common::CVector3 listenerUp = _listenerTransform.GetOrientation().RotateVector(up);
-				return listenerUp;
-			}*/
-				
-				
-				//_azimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
-				//_elevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
-				
-				
-				//auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation), std::forward<THRIRStruct>(newHRIR));
-				//Error handler
-				/*if (!returnValue.second) {
-					SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]");
-				}*/
+				if (error) {
+					SET_RESULT(RESULT_WARNING, "Error emplacing HRBRIR in t_HRBRIR_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]");
+				}
 			}
 		}
+
+		
+
 
 		/** \brief	Set the relative position of one ear (to the listener head center)
 		* 	\param [in]	_ear			ear type
@@ -279,6 +296,11 @@ namespace BRTServices
 		bool enableCustomizedITD;						// Indicate the use of a customized delay
 
 		bool setupInProgress;						// Variable that indicates the HRBRIR add and resample algorithm are in process
+
+		// HRBRIR tables			
+		T_HRBRIRTable					t_HRBRIR_DataBase;
+		std::vector<orientation>		t_HRBRIR_DataBase_ListOfOrientations;
+		std::vector<Common::CVector3>	t_HRBRIR_DataBase_ListenerPositions;
 	};
 }
 #endif
