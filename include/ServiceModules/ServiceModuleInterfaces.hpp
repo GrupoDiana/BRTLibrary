@@ -173,13 +173,11 @@ namespace BRTServices {
 		CServicesBase() {}
 		virtual ~CServicesBase() {}		
 		
-		virtual void BeginSetup() {}
-		//virtual void BeginSetup(int32_t _DirectivityTFLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {}
-		virtual void BeginSetup(int32_t _IRLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {}
-		virtual void BeginSetup(int32_t _HRIRLength) {}
+		virtual void BeginSetup() {}		
+		virtual void BeginSetup(int32_t _IRLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {}		
 		virtual bool EndSetup() { return false; }
 
-		virtual void SetResamplingStep(int _resamplingStep) {};
+		virtual void SetGridSamplingStep(int _samplingStep) {};
 		virtual void SetTitle(std::string _title) {}
 		virtual void SetDatabaseName(std::string _databaseName) {}
 		virtual void SetListenerShortName(std::string _listenerShortName) {};

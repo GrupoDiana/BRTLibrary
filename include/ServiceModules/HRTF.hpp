@@ -120,8 +120,8 @@ namespace BRTServices
 		*   \eh Nothing is reported to the error handler.
 		*/
 		CHRTF()
-			:enableWoodworthITD{ false }, resamplingStep{ DEFAULT_RESAMPLING_STEP }, gapThreshold{ DEFAULT_GAP_THRESHOLD }, HRIRLength{ 0 }, fileName{ "" },
-			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }, /*headRadius{ DEFAULT_LISTENER_HEAD_RADIUS }, leftEarLocalPosition{ Common::CVector3() }, rightEarLocalPosition{ Common::CVector3() },*/
+			:enableWoodworthITD{ false }, gridSamplingStep{ DEFAULT_RESAMPLING_STEP }, gapThreshold{ DEFAULT_GAP_THRESHOLD }, HRIRLength{ 0 }, fileName{ "" },
+			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE },
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER },
 			epsilon_sewing{ EPSILON_SEWING }, samplingRate{ -1 }, elevationNorth{ 0 }, elevationSouth{ 0 }, bufferSize{ 0 }, extrapolationMethod{ TEXTRAPOLATION_METHOD::nearest_point }
 		{ }
@@ -135,12 +135,19 @@ namespace BRTServices
 			return HRIRLength;
 		}
 
-		void SetResamplingStep(int _resamplingStep) {
-			resamplingStep = _resamplingStep;
+		/**
+		 * @brief Set sampling step for HRIR resampling
+		 * @param _resamplingStep 
+		 */
+		void SetGridSamplingStep(int _samplingStep) {
+			gridSamplingStep = _samplingStep;
 		}
-
-		int GetResamplingStep() {
-			return resamplingStep;
+		/**
+		 * @brief Get sampling step defined for HRIR resampling
+		 * @return 
+		 */
+		int GetGridSamplingStep() {
+			return gridSamplingStep;
 		}
 
 		/** \brief Start a new HRTF configuration
@@ -156,7 +163,7 @@ namespace BRTServices
 				HRIRLength = _HRIRLength;
 				//distanceOfMeasurement = _distance;
 				bufferSize = globalParameters.GetBufferSize();
-				SetExtrapolationMethod(_extrapolationMethod);
+				extrapolationMethod = _extrapolationMethod;
 
 				float partitions = (float)HRIRLength / (float)bufferSize;
 				HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
@@ -241,11 +248,11 @@ namespace BRTServices
 					RemoveCommonDelay_HRTFDataBaseTable();				// Delete the common delay of every HRIR functions of the DataBase Table					
 					t_HRTF_DataBase_ListOfOrientations = offlineInterpolation.CalculateListOfOrientations(t_HRTF_DataBase);
 					CalculateExtrapolation();							// Make the extrapolation if it's needed
-					offlineInterpolation.CalculateTF_InPoles<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, HRIRLength, resamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts());
-					offlineInterpolation.CalculateTF_SphericalCaps<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, HRIRLength, gapThreshold, resamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
+					offlineInterpolation.CalculateTF_InPoles<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, HRIRLength, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts());
+					offlineInterpolation.CalculateTF_SphericalCaps<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, HRIRLength, gapThreshold, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
 					//Creation and filling of resampling HRTF table
 					t_HRTF_DataBase_ListOfOrientations = offlineInterpolation.CalculateListOfOrientations(t_HRTF_DataBase);
-					quasiUniformSphereDistribution.CreateGrid<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, resamplingStep);
+					quasiUniformSphereDistribution.CreateGrid<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, gridSamplingStep);
 					offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct> (t_HRTF_DataBase, t_HRTF_Resampled_partitioned, bufferSize, HRIRLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
 
 					////TESTING:
@@ -733,7 +740,7 @@ namespace BRTServices
 		bool setupInProgress;						// Variable that indicates the HRTF add and resample algorithm are in process
 		bool HRTFLoaded;							// Variable that indicates if the HRTF has been loaded correctly
 		bool bInterpolatedResampleTable;			// If true: calculate the HRTF resample matrix with interpolation
-		int resamplingStep; 						// HRTF Resample table step (azimuth and elevation)
+		int gridSamplingStep; 						// HRTF Resample table step (azimuth and elevation)
 		bool enableWoodworthITD;					// Indicate the use of a customized delay
 		int gapThreshold;							// Max distance between pole and next elevation to be consider as a gap
 
@@ -830,25 +837,25 @@ namespace BRTServices
 		}
 				
 		
-		/**
-		 * @brief Set the extrapolation method that is going to be used
-		 * @param _extrapolationMethod 
-		*/
-		void SetExtrapolationMethod(BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
-		
-			extrapolationMethod = _extrapolationMethod;
-			/*if (_extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::ZERO_INSERTION EXTRAPOLATION_METHOD_ZEROINSERTION_STRING) {
-				extrapolationMethod = TExtrapolationMethod::zeroInsertion;
-			}
-			else if (_extrapolationMethod == EXTRAPOLATION_METHOD_NEARESTPOINT_STRING) {
-				extrapolationMethod = TExtrapolationMethod::nearestPoint;
-			}
-			else {
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Extrapolation Method not identified.");
-				extrapolationMethod = TExtrapolationMethod::nearestPoint;
-			}*/
+		///**
+		// * @brief Set the extrapolation method that is going to be used
+		// * @param _extrapolationMethod 
+		//*/
+		//void SetExtrapolationMethod(BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
+		//
+		//	extrapolationMethod = _extrapolationMethod;
+		//	/*if (_extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::ZERO_INSERTION EXTRAPOLATION_METHOD_ZEROINSERTION_STRING) {
+		//		extrapolationMethod = TExtrapolationMethod::zeroInsertion;
+		//	}
+		//	else if (_extrapolationMethod == EXTRAPOLATION_METHOD_NEARESTPOINT_STRING) {
+		//		extrapolationMethod = TExtrapolationMethod::nearestPoint;
+		//	}
+		//	else {
+		//		SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Extrapolation Method not identified.");
+		//		extrapolationMethod = TExtrapolationMethod::nearestPoint;
+		//	}*/
 
-		}
+		//}
 		/**
 		 * @brief Call the extrapolation method
 		*/
@@ -883,7 +890,7 @@ namespace BRTServices
 			//Update parameters			
 			HRIRLength = 0;
 			bufferSize = 0;
-			resamplingStep = DEFAULT_RESAMPLING_STEP;
+			gridSamplingStep = DEFAULT_RESAMPLING_STEP;
 		}			
 	};
 }

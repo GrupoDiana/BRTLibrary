@@ -43,7 +43,7 @@ namespace BRTServices
 			BRTServices::CQuasiUniformSphereDistribution  _gridQuasiUniform;
 
 			// Cause we call the Reader of the SOFA without the process, now we can call only the method that create the grid in which later will be emplace the data
-			_gridQuasiUniform.CreateGrid(_hrtf->t_HRTF_Resampled_partitioned, _hrtf->stepVector, _hrtf->resamplingStep);
+			_gridQuasiUniform.CreateGrid(_hrtf->t_HRTF_Resampled_partitioned, _hrtf->stepVector, _hrtf->gridSamplingStep);
 
 			//std::cout << _hrtf->GetFilename() << std::endl;
 			//std::cout << _hrtf->t_HRTF_DataBase.size() << std::endl;
@@ -89,7 +89,7 @@ namespace BRTServices
 			_hrtf->CalculateListOfOrientations_T_HRTF_DataBase();
 
 			// Cause we call the Reader of the SOFA without the process, now we can call only the method that create the grid in which later will be emplace the data
-			_gridQuasiUniform.CreateGrid(_hrtf->t_HRTF_Resampled_partitioned, _hrtf->stepVector, _hrtf->resamplingStep);
+			_gridQuasiUniform.CreateGrid(_hrtf->t_HRTF_Resampled_partitioned, _hrtf->stepVector, _hrtf->gridSamplingStep);
 
 			// Call to HRTF FillResampledTable to check if it occurs any interpolation with a Grid already interpolated out the app.
 			_hrtf->FillResampledTable();
