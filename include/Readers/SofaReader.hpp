@@ -98,10 +98,10 @@ namespace BRTReaders {
 		*	\param [out] listener affected by the hrtf
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		bool ReadBRIRFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CHRBRIR> listenerHRTF) {
+		bool ReadBRIRFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CHRBRIR> listenerHRTF, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
 
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerHRTF;
-			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR, -1, BRTServices::TEXTRAPOLATION_METHOD::none);
+			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR, _resamplingStep, _extrapolationMethod);
 		}
 		
 	private:
@@ -128,7 +128,7 @@ namespace BRTReaders {
 			} else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::FreeFieldDirectivityTF) { 
 				return  ReadFromSofa_FreeFieldDirectivityTF(loader, sofafile, data, _resamplingStep, _extrapolationMethod);
 			} else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR) { 
-				return ReadFromSofa_SingleRoomMIMOSRIR(loader, sofafile, data, _resamplingStep);
+				return ReadFromSofa_SingleRoomMIMOSRIR(loader, sofafile, data, _resamplingStep, _extrapolationMethod);
 			}
 			else { 
 				SET_RESULT(RESULT_ERROR_CASENOTDEFINED, "SOFA Convention loader not implemented"); 
@@ -152,7 +152,7 @@ namespace BRTReaders {
 			}
 
 			// Finish setup
-			if (_resamplingStep != -1) { data->SetResamplingStep(_resamplingStep); }
+			if (_resamplingStep != -1) { data->SetGridSamplingStep(_resamplingStep); }
 			data->EndSetup();
 			return true;
 		}
@@ -296,7 +296,7 @@ namespace BRTReaders {
 			}
 
 			// Finish setup
-			if (_resamplingStep != -1) { data->SetResamplingStep(_resamplingStep); }
+			if (_resamplingStep != -1) { data->SetGridSamplingStep(_resamplingStep); }
 			data->EndSetup();
 			return true;
 		}
@@ -345,14 +345,14 @@ namespace BRTReaders {
 		/////////////////////////////////////////////////////////////////
 		//////////////////	 SingleRoomMIMOSRIR		 ////////////////////
 		/////////////////////////////////////////////////////////////////
-		bool ReadFromSofa_SingleRoomMIMOSRIR(BRTReaders::CLibMySOFALoader &loader, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, int _resamplingStep) {
+		bool ReadFromSofa_SingleRoomMIMOSRIR(BRTReaders::CLibMySOFALoader &loader, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
 			
 			// Get and Save data			
 			GetAndSaveGlobalAttributes(loader, CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR ,sofafile, data);			// GET and Save Global Attributes			
 			GetAndSaveReceiverPosition(loader, data); // Get and Save listener ear
 			
 			bool result;
-			result = GetBRIRs(loader, data);
+			result = GetBRIRs(loader, data, _extrapolationMethod);
 
 			if (!result) {
 				SET_RESULT(RESULT_ERROR_UNKNOWN, "An error occurred creating the data structure from the SOFA file, please consider previous messages.");
@@ -360,13 +360,13 @@ namespace BRTReaders {
 			}
 
 			// Finish setup
-			if (_resamplingStep != -1) { data->SetResamplingStep(_resamplingStep); }
+			if (_resamplingStep != -1) { data->SetGridSamplingStep(_resamplingStep); }
 			data->EndSetup();
 			return true;
 
 		}
 		
-		bool GetBRIRs(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& dataHRBRIR) {
+		bool GetBRIRs(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& dataHRBRIR, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
 			//Get source positions												
 			std::vector<double> sourcePositionsVector	= std::move(loader.GetSourcePositionVector());
 			std::vector<double> sourceViewVector		= std::move(loader.GetSourceViewVector());
@@ -390,7 +390,7 @@ namespace BRTReaders {
 			const int numberOfCoordinates = loader.getHRTF()->C;
 
 			
-			dataHRBRIR->BeginSetup(numberOfSamples);
+			dataHRBRIR->BeginSetup(numberOfSamples, _extrapolationMethod);
 
 			dataHRBRIR->SetSamplingRate(loader.GetSamplingRate());
 			const int left_ear = 0;
@@ -442,7 +442,7 @@ namespace BRTReaders {
 					listenerPositionBRTConvention.SetAxis(RIGHT_AXIS, listenerPosition.y);
 					listenerPositionBRTConvention.SetAxis(UP_AXIS, listenerPosition.z);
 					// Set data to HRBIR struct
-					dataHRBRIR->AddHRBRIR(_relativeAzimuthListenerEmitter, _relativeElevationListenerEmitter, _relativeDistanceListenerEmitter, listenerPosition, std::move(hrir_value));
+					dataHRBRIR->AddHRBRIR(_relativeAzimuthListenerEmitter, _relativeElevationListenerEmitter, _relativeDistanceListenerEmitter, emitterPosition, listenerPosition, std::move(hrir_value));					
 				}
 			}
 			return true;
