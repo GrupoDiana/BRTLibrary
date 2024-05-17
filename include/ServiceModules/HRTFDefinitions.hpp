@@ -42,7 +42,7 @@ namespace BRTServices {
 #define PI 3.14159265
 #endif
 #ifndef DEFAULT_RESAMPLING_STEP
-#define DEFAULT_RESAMPLING_STEP 5
+#define DEFAULT_GRIDSAMPLING_STEP 5
 #endif
 
 #ifndef DEFAULT_HRTF_MEASURED_DISTANCE
@@ -83,14 +83,23 @@ namespace BRTServices {
 	//};
 
 
-	/** \brief Type definition for the HRTF table
+	/** \brief Type definition for table HRTF, this is the one read from the SOFA file.
 	*/
 	typedef std::unordered_map<orientation, BRTServices::THRIRStruct> T_HRTFTable;
 
-	/** \brief Type definition for the HRTF partitioned table used when UPConvolution is activated
+	/** \brief Type definition for the HRTF table, this is the one our grid has and is the one used for rendering.
 	*/
 	typedef std::unordered_map<orientation, THRIRPartitionedStruct> T_HRTFPartitionedTable;
 
+	/**
+	 * @brief Type definition for table HRBRIR, this is the one read from the SOFA file.
+	 */
+	typedef std::unordered_map<TDuplaVector3, T_HRTFTable> T_HRBRIRTable;
+
+	/**
+	 * @brief Type definition for the HRBRIR table, this is the one our grid has and is the one used for rendering.
+	 */
+	typedef std::unordered_map<TDuplaVector3, T_HRTFPartitionedTable> T_HRBRIRPartitionedTable;
 
 }
 #endif

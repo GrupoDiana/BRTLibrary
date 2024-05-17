@@ -108,7 +108,7 @@ namespace BRTReaders {
 				
 		// Methods
 		bool ReadFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, CLibMySOFALoader::TSofaConvention _SOFAConvention, 
-			int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, bool process = true) {
+			int _gridSamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, bool process = true) {
 
 			// Open file
 			BRTReaders::CLibMySOFALoader loader(sofafile);
@@ -122,13 +122,13 @@ namespace BRTReaders {
 			// Load convention data
 			bool result;
 			if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR) { 
-				return ReadFromSofa_SimpleFreeFieldHRIR(loader, sofafile, data, _resamplingStep, _extrapolationMethod);
+				return ReadFromSofa_SimpleFreeFieldHRIR(loader, sofafile, data, _gridSamplingStep, _extrapolationMethod);
 			} else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS) { 
 				return ReadFromSofa_SimpleFreeFieldHRSOS(loader, sofafile, data);
 			} else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::FreeFieldDirectivityTF) { 
-				return  ReadFromSofa_FreeFieldDirectivityTF(loader, sofafile, data, _resamplingStep, _extrapolationMethod);
+				return  ReadFromSofa_FreeFieldDirectivityTF(loader, sofafile, data, _gridSamplingStep, _extrapolationMethod);
 			} else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR) { 
-				return ReadFromSofa_SingleRoomMIMOSRIR(loader, sofafile, data, _resamplingStep, _extrapolationMethod);
+				return ReadFromSofa_SingleRoomMIMOSRIR(loader, sofafile, data, _gridSamplingStep, _extrapolationMethod);
 			}
 			else { 
 				SET_RESULT(RESULT_ERROR_CASENOTDEFINED, "SOFA Convention loader not implemented"); 
