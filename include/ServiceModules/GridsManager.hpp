@@ -27,7 +27,6 @@
 #include <unordered_map>
 #include <vector>
 #include <ServiceModules/InterpolationAuxiliarMethods.hpp>
-
 #include <ServiceModules/HRTFDefinitions.hpp>
 
 namespace BRTServices
@@ -160,7 +159,7 @@ namespace BRTServices
 		}
 
 		template <typename T, typename U>
-		U FindNearest(const T& table, /*std::vector<CMonoBuffer<float>>& _outData,*/ const std::unordered_map<orientation, float>& stepMap, /*Common::T_ear ear,*/ float _azimuth, float _elevation) const
+		static U FindNearest(const T& table, const std::unordered_map<orientation, float>& stepMap, /*Common::T_ear ear,*/ float _azimuth, float _elevation)
 		{
 			U emptyData;
 			float eleStep = stepMap.find(orientation(-1, -1))->second;

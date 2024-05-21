@@ -34,6 +34,7 @@
 #include <Common/Fprocessor.hpp>
 #include <Common/GlobalParameters.hpp>
 #include <Common/CommonDefinitions.hpp>
+#include <Common/CranicalGeometry.hpp>
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
 #include <ServiceModules/HRTFDefinitions.hpp>
 #include <ServiceModules/HRTFAuxiliarMethods.hpp>
@@ -44,72 +45,10 @@
 #include <ServiceModules/OfflineInterpolationAuxiliarMethods.hpp>
 #include <ServiceModules/InterpolationAuxiliarMethods.hpp>
 
-
 namespace BRTBase { class CListener; }
 
 namespace BRTServices
-{
-
-	class CCranialGeometry {
-	public:
-		CCranialGeometry() : headRadius{ -1 }, leftEarLocalPosition{ Common::CVector3() }, rightEarLocalPosition{ Common::CVector3() } { }
-		CCranialGeometry(float _headRadius) : headRadius{ _headRadius }, leftEarLocalPosition{ Common::CVector3() }, rightEarLocalPosition{ Common::CVector3() } { }
-		CCranialGeometry(float _headRadius, Common::CVector3 _leftEarLocalPosition, Common::CVector3 _rightEarLocalPosition) : headRadius{ _headRadius }, leftEarLocalPosition{ _leftEarLocalPosition }, rightEarLocalPosition{ _rightEarLocalPosition } { }
-
-		float GetHeadRadius() { return headRadius; }
-		Common::CVector3 GetLeftEarLocalPosition() { return leftEarLocalPosition; }
-		Common::CVector3 GetRightEarLocalPosition() { return rightEarLocalPosition; }
-
-		/**
-		 * @brief Set the radius of the listener head. A new ear position is calculated
-		 * @param _headRadius head radius in meters
-		 */
-		void SetHeadRadius(float _headRadius) {
-			headRadius = _headRadius;
-			CalculateEarLocalPositionFromHeadRadius();
-		}
-		/**
-		 * @brief Set the relative position of one ear (to the listener head center). A new head radius is calculated
-		 * @param _earPosition ear local position
-		 */
-		void SetLeftEarPosition(Common::CVector3 _earPosition) {
-			leftEarLocalPosition = _earPosition;
-			CalculateHeadRadiusFromEarPosition();	// Update the head radius			
-		}
-
-		/**
-		 * @brief Set the relative position of one ear (to the listener head center). A new head radius is calculated
-		 * @param _earPosition ear local position
-		 */
-		void SetRightEarPosition(Common::CVector3 _earPosition) {
-			rightEarLocalPosition = _earPosition;
-			CalculateHeadRadiusFromEarPosition();	// Update the head radius			
-		}
-
-	private:
-		float headRadius;								// Head radius of listener 
-		Common::CVector3 leftEarLocalPosition;			// Listener left ear relative position
-		Common::CVector3 rightEarLocalPosition;			// Listener right ear relative position
-
-		/**
-		* @brief Calculate head radius from the listener ear positions
-		* @return new head radius
-		*/
-		void CalculateHeadRadiusFromEarPosition() {
-			headRadius = (0.5f * (leftEarLocalPosition.GetDistance() + rightEarLocalPosition.GetDistance()));
-		}
-
-		/** \brief	Calculate the relative position of one ear taking into account the listener head radius
-		*	\param [in]	_ear			ear type
-		*   \return  Ear local position in meters
-		*   \eh <<Error not allowed>> is reported to error handler
-		*/
-		void CalculateEarLocalPositionFromHeadRadius() {
-			leftEarLocalPosition.SetAxis(RIGHT_AXIS, -headRadius);
-			rightEarLocalPosition.SetAxis(RIGHT_AXIS, headRadius);
-		}
-	};
-
+{	
 	/** \details This class gets impulse response data to compose HRTFs and implements different algorithms to interpolate the HRIR functions.
 	*/
 	class CHRTF : public CServicesBase
@@ -189,32 +128,13 @@ namespace BRTServices
 				t_HRTF_DataBase = newTable;
 			}
 		}
-
-		/** \brief Add a new HRIR to the HRTF table
-		*	\param [in] azimuth azimuth angle in degrees
-		*	\param [in] elevation elevation angle in degrees
-		*	\param [in] newHRIR HRIR data for both ears
-		*   \eh Warnings may be reported to the error handler.
-		*/
-		//void AddHRIR(float _azimuth, float _elevation, THRIRStruct&& newHRIR)
-		//{
-		//	if (setupInProgress) {
-		//		Common::CVector3 cartessianPos;
-		//		cartessianPos.SetFromAED(_azimuth, _elevation, GetHRTFDistanceOfMeasurement());
-		//		auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), std::forward<THRIRStruct>(newHRIR));
-		//		//Error handler
-		//		if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
-		//	}
-		//}
+		
 
 		void AddHRIR(double _azimuth, double _elevation, double _distance, THRIRStruct&& newHRIR)
 		{			
 			if (setupInProgress) {				
 				_azimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
-				_elevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
-				//Common::CVector3 cartessianPos;
-				//cartessianPos.SetFromAED(_azimuth, _elevation, GetHRTFDistanceOfMeasurement());
-				//auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, cartessianPos), std::forward<THRIRStruct>(newHRIR));				
+				_elevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);						
 				auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, _distance), std::forward<THRIRStruct>(newHRIR));
 				//Error handler
 				if (!returnValue.second) { 
@@ -243,15 +163,7 @@ namespace BRTServices
 					//Creation and filling of resampling HRTF table
 					//_orientationList = offlineInterpolation.CalculateListOfOrientations(t_HRTF_DataBase);
 					quasiUniformSphereDistribution.CreateGrid<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, gridSamplingStep);
-					offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct> (t_HRTF_DataBase, t_HRTF_Resampled_partitioned, globalParameters.GetBufferSize(), HRIRLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
-
-					////TESTING:
-					//for (auto it = t_HRTF_Resampled_partitioned.begin(); it != t_HRTF_Resampled_partitioned.end(); it++) {
-					//	if (it->second.leftHRIR_Partitioned.size() == 0 || it->second.rightHRIR_Partitioned.size() == 0) {
-					//		SET_RESULT(RESULT_ERROR_NOTSET, "The t_HRTF_Resampled_partitioned has an empty HRIR in position [" + std::to_string(it->first.azimuth) + ", " + std::to_string(it->first.elevation) + "]");
-					//	}
-					//
-					//}
+					offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct> (t_HRTF_DataBase, t_HRTF_Resampled_partitioned, globalParameters.GetBufferSize(), HRIRLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());					
 
 					//Setup values
 					auto it = t_HRTF_Resampled_partitioned.begin();
@@ -270,7 +182,6 @@ namespace BRTServices
 			}
 			return false;
 		}
-
 
 		/** \brief Switch on ITD customization in accordance with the listener head radius
 		*   \eh Nothing is reported to the error handler.
@@ -313,76 +224,11 @@ namespace BRTServices
 				return newHRIR;
 
 			}
-			if (!runTimeInterpolation) {				
-				THRIRPartitionedStruct temp = quasiUniformSphereDistribution.FindNearest<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, _azimuth, _elevation);
+
+			return CHRTFAuxiliarMethods::GetHRIRFromPartitionedTable(t_HRTF_Resampled_partitioned, ear, _azimuth, _elevation, runTimeInterpolation, 
+				HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, stepVector);										
+		}
 				
-				if (ear == Common::T_ear::LEFT)			{ newHRIR = temp.leftHRIR_Partitioned; }
-				else if (ear == Common::T_ear::RIGHT)	{ newHRIR = temp.rightHRIR_Partitioned;}
-				else { SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get HRIR for a wrong ear (BOTH or NONE)"); }
-
-				return newHRIR;
-			}
-
-			//  We have to do the run time interpolation -- (runTimeInterpolation = true)
-
-			// Check if we are close to 360 azimuth or elevation and change to 0
-			if (Common::AreSame(_azimuth, sphereBorder, epsilon_sewing)) { _azimuth = azimuthMin; }
-			if (Common::AreSame(_elevation, sphereBorder, epsilon_sewing)) { _elevation = elevationMin; }
-
-			// Check if we are at a pole
-			int ielevation = static_cast<int>(round(_elevation));
-			if ((ielevation == elevationNorth) || (ielevation == elevationSouth)) {
-				GetPoleHRIR_partitioned(newHRIR, ear, ielevation);
-				return newHRIR;
-			}
-			
-			// We search if the point already exists
-			auto it = t_HRTF_Resampled_partitioned.find(orientation(_azimuth, _elevation));
-			if (it != t_HRTF_Resampled_partitioned.end())
-			{
-				if (ear == Common::T_ear::LEFT)
-				{
-					newHRIR = it->second.leftHRIR_Partitioned;
-				}
-				else
-				{
-					newHRIR = it->second.rightHRIR_Partitioned;
-				}
-				return newHRIR;
-			} 
-
-			// ONLINE Interpolation 	
-			if (ear == Common::T_ear::LEFT) {
-				//const THRIRPartitionedStruct data = midPointOnlineInterpolator.CalculateTF_OnlineMethod<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_LeftEar());
-				const THRIRPartitionedStruct data = slopesMethodOnlineInterpolator.CalculateTF_OnlineMethod<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_LeftEar());
-				return data.leftHRIR_Partitioned;
-			}
-			else
-			{
-				//const THRIRPartitionedStruct data = midPointOnlineInterpolator.CalculateTF_OnlineMethod<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_RightEar());
-				const THRIRPartitionedStruct data = slopesMethodOnlineInterpolator.CalculateTF_OnlineMethod<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_RightEar());
-				return data.rightHRIR_Partitioned;
-			}									
-		}
-		
-		void GetPoleHRIR_partitioned(std::vector<CMonoBuffer<float>>& newHRIR, Common::T_ear ear, int ielevation) const {
-			auto it = t_HRTF_Resampled_partitioned.find(orientation(azimuthMin, ielevation));
-			if (it != t_HRTF_Resampled_partitioned.end())
-			{
-				if (ear == Common::T_ear::LEFT)
-				{
-					newHRIR = it->second.leftHRIR_Partitioned;
-				}
-				else
-				{
-					newHRIR = it->second.rightHRIR_Partitioned;
-				}
-			}
-			else
-			{
-				SET_RESULT(RESULT_WARNING, "Orientations in GetHRIR_partitioned() not found");
-			}
-		}
 
 		/** \brief Get the HRIR delay, in number of samples, for one ear
 		*	\param [in] ear for which ear we want to get the HRIR
@@ -402,75 +248,19 @@ namespace BRTServices
 				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIRDelay: HRTF Setup in progress return empty");
 				return data;
 			}
-
-			//Modify delay if customized delay is activate
+			
+			// Modify delay if customized delay is activate
 			if (enableWoodworthITD)
 			{			
-				data.leftDelay = GetCustomizedDelay(_azimuthCenter, _elevationCenter, Common::T_ear::LEFT);
-				data.rightDelay = GetCustomizedDelay(_azimuthCenter, _elevationCenter, Common::T_ear::RIGHT);
-				return data;
-			}
-	
-			if (!runTimeInterpolation)
-			{				
-				data = quasiUniformSphereDistribution.FindNearest<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, _azimuthCenter, _elevationCenter);										
-				return data;				
-			}
-			
-			// Calculate Delay using ONLINE Interpolation 			
-			
-			// Check if we are close to 360 azimuth or elevation and change to 0
-			if (Common::AreSame(_azimuthCenter, sphereBorder, epsilon_sewing)) { _azimuthCenter = 0.0f; }
-			if (Common::AreSame(_elevationCenter, sphereBorder, epsilon_sewing)) { _elevationCenter = 0.0f; }
-
-			// Check if we are at a pole
-			int ielevation = static_cast<int>(round(_elevationCenter));
-			if ((ielevation == elevationNorth) || (ielevation == elevationSouth))
-			{
-				float leftDelay;
-				float rightDelay;
-				GetPoleDelay_Partitioned(leftDelay, Common::T_ear::LEFT, ielevation);
-				GetPoleDelay_Partitioned(rightDelay,Common::T_ear::RIGHT, ielevation);
-				data.leftDelay = static_cast<uint64_t>(leftDelay);
-				data.rightDelay = static_cast<uint64_t>(rightDelay);
+				data.leftDelay = CHRTFAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry,Common::T_ear::LEFT);
+				data.rightDelay = CHRTFAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::RIGHT);
 				return data;
 			}
 
-			// We search if the point already exists
-			auto it = t_HRTF_Resampled_partitioned.find(orientation(_azimuthCenter, _elevationCenter));
-			if (it != t_HRTF_Resampled_partitioned.end())
-			{
-				THRIRPartitionedStruct temp;				
-				temp.leftDelay = it->second.leftDelay;;						
-				temp.rightDelay = it->second.rightDelay;			
-				return temp;
-			}
-			
-			const THRIRPartitionedStruct temp = slopesMethodOnlineInterpolator.CalculateTF_OnlineMethod<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, _azimuthCenter, _elevationCenter, stepVector, CHRTFAuxiliarMethods::CalculateDelay_FromBarycentricCoordinates());
-			return temp;
+			return CHRTFAuxiliarMethods::GetHRIRDelayFromPartitioned(t_HRTF_Resampled_partitioned, ear, _azimuthCenter, _elevationCenter, runTimeInterpolation,
+				HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, stepVector);													
 		}
-
-		void GetPoleDelay_Partitioned(float& HRIR_delay, Common::T_ear ear, int ielevation) const
-		{
-			//In the sphere poles the azimuth is always 0 degrees
-			auto it = t_HRTF_Resampled_partitioned.find(orientation(azimuthMin, ielevation));
-			if (it != t_HRTF_Resampled_partitioned.end())
-			{
-				if (ear == Common::T_ear::LEFT)
-				{
-					HRIR_delay = it->second.leftDelay;
-				}
-				else
-				{
-					HRIR_delay = it->second.rightDelay;
-				}
-			}
-			else
-			{
-				SET_RESULT(RESULT_WARNING, "Orientations in GetHRIRDelay() not found");
-			}
-
-		}
+		
 
 		/** \brief	Get the number of subfilters (blocks) in which the HRIR has been partitioned
 		*	\retval n Number of HRIR subfilters
@@ -505,31 +295,6 @@ namespace BRTServices
 		{
 			return t_HRTF_DataBase;
 		}
-
-		/** \brief	Calculate the ITD value for a specific source
-		*   \param [in]	_azimuth		source azimuth in degrees
-		*   \param [in]	_elevation		source elevation in degrees
-		*   \param [in]	ear				ear where the ITD is calculated (RIGHT, LEFT)
-		*   \return ITD ITD calculated with the current listener head circunference
-		*   \eh Nothing is reported to the error handler.
-		*/
-		unsigned long GetCustomizedDelay(float _azimuth, float _elevation, Common::T_ear ear)		
-		{
-
-			float rAzimuth = _azimuth * PI / 180;
-			float rElevation = _elevation * PI / 180;
-
-			//Calculate the customized delay
-			unsigned long customizedDelay = 0;
-			float interauralAzimuth = std::asin(std::sin(rAzimuth) * std::cos(rElevation));			
-			float ITD = CalculateITDFromHeadRadius(cranialGeometry.GetHeadRadius(), interauralAzimuth);
-
-			if ((ITD > 0 && ear == Common::T_ear::RIGHT) || (ITD < 0 && ear == Common::T_ear::LEFT)) {
-				customizedDelay = static_cast <unsigned long> (round(std::abs(globalParameters.GetSampleRate() * ITD)));
-			}
-			return customizedDelay;
-		}
-
 
 		/** \brief	Get the distance where the HRTF has been measured
 		*   \return distance of the speakers structure to calculate the HRTF
@@ -638,57 +403,7 @@ namespace BRTServices
 				return Common::CVector3();
 			}
 		}
-
-		/** \brief	Calculate the relative position of one ear taking into account the listener head radius
-		*	\param [in]	_ear			ear type
-		*   \return  Ear local position in meters
-		*   \eh <<Error not allowed>> is reported to error handler
-		*/
-		/*Common::CVector3 CalculateEarLocalPositionFromHeadRadius(Common::T_ear ear) {
-			if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
-			{
-				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get listener ear transform for BOTH or NONE ears");
-				return Common::CVector3();
-			}
-=======
-		Common::CVector3 GetEarLocalPosition(Common::T_ear _ear) {
-			if (enableCustomizedITD) {
-				return CHRTFAuxiliarMethods::CalculateEarLocalPositionFromHeadRadius(_ear, headRadius);
-			}
-			else {
-				if (_ear == Common::T_ear::LEFT)		{ return leftEarLocalPosition; }
-				else if (_ear == Common::T_ear::RIGHT)	{ return rightEarLocalPosition; }
-				else // either _ear == Common::T_ear::BOTH || _ear == Common::T_ear::NONE
-				{
-					SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to set listener ear transform for BOTH or NONE ears");
-					return Common::CVector3();
-				}
-			}
-		}
-
-		///** \brief	Calculate the relative position of one ear taking into account the listener head radius
-		//*	\param [in]	_ear			ear type
-		//*   \return  Ear local position in meters
-		//*   \eh <<Error not allowed>> is reported to error handler
-		//*/
-		//Common::CVector3 CalculateEarLocalPositionFromHeadRadius(Common::T_ear ear) {
-		//	if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
-		//	{
-		//		SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get listener ear transform for BOTH or NONE ears");
-		//		return Common::CVector3();
-		//	}
-
-
-		//	Common::CVector3 earLocalPosition = Common::CVector3::ZERO();
-		//	if (ear == Common::T_ear::LEFT) {
-		//		earLocalPosition.SetAxis(RIGHT_AXIS, -headRadius);
-		//	}
-		//	else
-		//		earLocalPosition.SetAxis(RIGHT_AXIS, headRadius);
-
-		//	return earLocalPosition;
-		//}
-
+		
 		/** \brief Set the sampling rate for the HRTF
 		*	\param [in] sampling rate
 		*/
@@ -713,12 +428,9 @@ namespace BRTServices
 		//int32_t bufferSize;								// Input signal buffer size		
 		int32_t HRIR_partitioned_NumberOfSubfilters;	// Number of subfilters (blocks) for the UPC algorithm
 		int32_t HRIR_partitioned_SubfilterLength;		// Size of one HRIR subfilter
-		float distanceOfMeasurement;					// Distance where the HRIR have been measurement
-		//float headRadius;								// Head radius of listener 
-		//Common::CVector3 leftEarLocalPosition;		// Listener left ear relative position
-		//Common::CVector3 rightEarLocalPosition;			// Listener right ear relative position
-		CCranialGeometry cranialGeometry;					// Cranial geometry of the listener
-		CCranialGeometry originalCranialGeometry;		// Cranial geometry of the listener
+		float distanceOfMeasurement;					// Distance where the HRIR have been measurement		
+		Common::CCranialGeometry cranialGeometry;					// Cranial geometry of the listener
+		Common::CCranialGeometry originalCranialGeometry;		// Cranial geometry of the listener
 		TEXTRAPOLATION_METHOD extrapolationMethod;		// Methods that is going to be used to extrapolate
 
 
@@ -729,7 +441,7 @@ namespace BRTServices
 
 		bool setupInProgress;						// Variable that indicates the HRTF add and resample algorithm are in process
 		bool HRTFLoaded;							// Variable that indicates if the HRTF has been loaded correctly
-		bool bInterpolatedResampleTable;			// If true: calculate the HRTF resample matrix with interpolation
+		//bool bInterpolatedResampleTable;			// If true: calculate the HRTF resample matrix with interpolation
 		int gridSamplingStep; 						// HRTF Resample table step (azimuth and elevation)
 		bool enableWoodworthITD;					// Indicate the use of a customized delay
 		int gapThreshold;							// Max distance between pole and next elevation to be consider as a gap
@@ -799,28 +511,9 @@ namespace BRTServices
 					it->second.rightDelay = it->second.rightDelay - minimumDelayRight;	//Right ear
 				}
 			}
-
 			//SET_RESULT(RESULT_OK, "Common delay deleted from HRTF table succesfully");
 		}
-
-		/**
-		 * @brief Calculate head radius from the listener ear positions
-		 * @return new head radius
-		 */
-		/*float CalculateHeadRadius() {
-			return (0.5f* (leftEarLocalPosition.GetDistance() + rightEarLocalPosition.GetDistance()));
-		}*/
-
-		//Calculate the ITD using the Woodworth formula which depend on the interaural azimuth and the listener head radious
-		//param		_headRadious		listener head radius, set by the App
-		//param		_interauralAzimuth	source interaural azimuth
-		//return	float				customizated ITD
-		float CalculateITDFromHeadRadius(float _headRadius, float _interauralAzimuth) {
-			//Calculate the ITD (from https://www.lpi.tel.uva.es/~nacho/docencia/ing_ond_1/trabajos_05_06/io5/public_html/ & http://interface.cipic.ucdavis.edu/sound/tutorial/psych.html)
-			float ITD = _headRadius * (_interauralAzimuth + std::sin(_interauralAzimuth)) / globalParameters.GetSoundSpeed(); //_azimuth in radians!
-			return ITD;
-		}
-								
+												
 
 		//}
 		/**
