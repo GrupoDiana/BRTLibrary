@@ -34,7 +34,10 @@
 #include <Common/Fprocessor.hpp>
 #include <Common/GlobalParameters.hpp>
 #include <Common/CommonDefinitions.hpp>
+#include <Common/CranicalGeometry.hpp>
+#include <ServiceModules/HRTFDefinitions.hpp>
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/HRTFAuxiliarMethods.hpp>
 
 namespace BRTServices
 {
@@ -44,8 +47,9 @@ namespace BRTServices
 	public:
 
 		CHRBRIR() : setupInProgress{ false }, samplingRate{ 0 }, HRIRLength{-1}, gridSamplingStep{ DEFAULT_GRIDSAMPLING_STEP }, 
-			gapThreshold {DEFAULT_GAP_THRESHOLD}, extrapolationMethod{ TEXTRAPOLATION_METHOD::zero_insertion }, title{""},	databaseName{""},
-			listenerShortName{""}, fileName{""} {}
+			gapThreshold {DEFAULT_GAP_THRESHOLD}, sphereBorder{ SPHERE_BORDER }, epsilon_sewing{ EPSILON_SEWING }, extrapolationMethod{ TEXTRAPOLATION_METHOD::zero_insertion },
+			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION },
+			elevationNorth{ 0 }, elevationSouth{ 0 }, title{""},	databaseName{""}, listenerShortName{""}, fileName{""} {}
 
 
 
@@ -65,8 +69,8 @@ namespace BRTServices
 				float partitions = (float)HRIRLength / (float)globalParameters.GetBufferSize();
 				HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
 
-				//elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
-				//elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
+				elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
+				elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
 
 				////Clear every table		
 				t_HRBRIR_DataBase.clear();
@@ -190,10 +194,7 @@ namespace BRTServices
 		int GetGridSamplingStep() {
 			return gridSamplingStep;
 		}
-
-
 		
-
 		/** \brief Set the title of the SOFA file
 		*    \param [in]	_title		string contains title
 		*/
@@ -243,24 +244,7 @@ namespace BRTServices
 		int GetSamplingRate() {
 			return samplingRate;
 		}
-		
-		/**
-		 * @brief Set the sampling step for the IR
-		 * The intended angular separation between two adjacent points at the equator or two adjacent points in the median plane (azimuth=0)
-		 * @param _samplingStep 
-		 */
-		void SetSamplingStep(int _resamplingStep) {
-			gridSamplingStep = _resamplingStep;
-		}
-
-		/** \brief Ask for the sampling step
-		*	\retval sampling step
-		*/
-		int GetSamplingStep() {
-			return gridSamplingStep;
-		}
-
-		
+						
 		/** \brief	Set the relative position of one ear (to the listener head center)
 		* 	\param [in]	_ear			ear type
 		*   \param [in]	_earPosition	ear local position
@@ -325,9 +309,93 @@ namespace BRTServices
 			cranialGeometry = originalCranialGeometry;
 		}
 
+		/** \brief Switch on ITD customization in accordance with the listener head radius
+		*   \eh Nothing is reported to the error handler.
+		*/
+		void EnableWoodworthITD() { enableWoodworthITD = true; }
+
+		/** \brief Switch off ITD customization in accordance with the listener head radius
+		*   \eh Nothing is reported to the error handler.
+		*/
+		void DisableWoodworthITD() { enableWoodworthITD = false; }
+
+		/** \brief Get the flag for HRTF cutomized ITD process
+		*	\retval HRTFCustomizedITD if true, the HRTF ITD customization process based on the head circumference is enabled
+		*   \eh Nothing is reported to the error handler.
+		*/
+		bool IsWoodworthITDEnabled() { return enableWoodworthITD; }
+
+		/** \brief Get interpolated and partitioned HRIR buffer with Delay, for one ear
+		*	\param [in] ear for which ear we want to get the HRIR
+		*	\param [in] _azimuth azimuth angle in degrees
+		*	\param [in] _elevation elevation angle in degrees
+		*	\param [in] runTimeInterpolation switch run-time interpolation
+		*	\param [in] runTimeInterpolation switch run-time interpolation
+		*	\retval HRIR interpolated buffer with delay for specified ear
+		*   \eh On error, an error code is reported to the error handler.
+		*       Warnings may be reported to the error handler.
+		*/
+		const std::vector<CMonoBuffer<float>> GetHRBRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, Common::CTransform& _listenerLocation, Common::CTransform& _sourceLocation) const
+		{
+			std::vector<CMonoBuffer<float>> newHRIR;
+			if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
+			{
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get HRIR for a wrong ear (BOTH or NONE)");
+				return newHRIR;
+			}
+
+			if (setupInProgress) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRTF Setup in progress return empty");
+				return newHRIR;
+
+			}
+
+			// Find Table to use
+			Common::CVector3 nearestListenerPosition = FindNearestListenerPosition(_listenerLocation.GetPosition());
+			Common::CVector3 nearestEmitterPosition = FindNearestEmitterPosition(_sourceLocation.GetPosition());
+			auto selectedTable = t_HRBRIR_Resampled_partitioned.find(TDuplaVector3(nearestListenerPosition, nearestEmitterPosition));
+
+			// Process
+			return  CHRTFAuxiliarMethods::GetHRIRFromPartitionedTable(selectedTable->second, ear, _azimuth, _elevation, runTimeInterpolation,
+				HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, stepVector);			
+		}
 
 
+		/** \brief Get the HRIR delay, in number of samples, for one ear
+		*	\param [in] ear for which ear we want to get the HRIR
+		*	\param [in] _azimuthCenter azimuth angle from the source and the listener head center in degrees
+		*	\param [in] _elevationCenter elevation angle from the source and the listener head center in degrees
+		*	\param [in] runTimeInterpolation switch run-time interpolation
+		*	\retval HRIR interpolated buffer with delay for specified ear
+		*   \eh On error, an error code is reported to the error handler.
+		*       Warnings may be reported to the error handler.
+		*/
+		THRIRPartitionedStruct GetHRBRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation, Common::CTransform& _listenerLocation, Common::CTransform& _sourceLocation)
+		{
+			THRIRPartitionedStruct data;
 
+			if (setupInProgress)
+			{
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIRDelay: HRTF Setup in progress return empty");
+				return data;
+			}
+
+			//Modify delay if customized delay is activate
+			if (enableWoodworthITD)
+			{
+				data.leftDelay = CHRTFAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::LEFT);
+				data.rightDelay = CHRTFAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::RIGHT);
+				return data;
+			}
+
+			// Find Table to use
+			Common::CVector3 nearestListenerPosition = FindNearestListenerPosition(_listenerLocation.GetPosition());
+			Common::CVector3 nearestEmitterPosition = FindNearestEmitterPosition(_sourceLocation.GetPosition());
+			auto selectedTable = t_HRBRIR_Resampled_partitioned.find(TDuplaVector3(nearestListenerPosition, nearestEmitterPosition));
+
+			return CHRTFAuxiliarMethods::GetHRIRDelayFromPartitioned(selectedTable->second, ear, _azimuthCenter, _elevationCenter, runTimeInterpolation,
+				HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, stepVector);
+		}
 
 	private:
 		
@@ -355,7 +423,7 @@ namespace BRTServices
 		}
 
 
-		void AddToListenersPositions(Common::CVector3 _listenerPosition) {			
+		void AddToListenersPositions( Common::CVector3& _listenerPosition) {			
 			//Check if the listenerPosition is already in the table
 			auto it = std::find(t_HRBRIR_DataBase_ListenerPositions.begin(), t_HRBRIR_DataBase_ListenerPositions.end(), _listenerPosition);
 			if (it == t_HRBRIR_DataBase_ListenerPositions.end()){
@@ -363,13 +431,40 @@ namespace BRTServices
 			}			
 		}
 
-		void AddToEmitterPositions(Common::CVector3 _emitterPosition) {
+		void AddToEmitterPositions(Common::CVector3& _emitterPosition) {
 			//Check if the listenerPosition is already in the table
 			auto it = std::find(t_HRBRIR_DataBase_EmitterPositions.begin(), t_HRBRIR_DataBase_EmitterPositions.end(), _emitterPosition);
 			if (it == t_HRBRIR_DataBase_EmitterPositions.end()) {
 				t_HRBRIR_DataBase_EmitterPositions.push_back(_emitterPosition);
 			}
 		}
+
+
+		Common::CVector3 FindNearestListenerPosition(Common::CVector3& _listenerPosition) const {
+			
+			Common::CTransform _listenerLocation(_listenerPosition);						
+			Common::CTransform nearestListenerLocation(t_HRBRIR_DataBase_ListenerPositions[0]);									
+			float minDistance = _listenerLocation.GetVectorTo(nearestListenerLocation).GetDistance();
+			
+			for (auto it = t_HRBRIR_DataBase_ListenerPositions.begin() + 1; it != t_HRBRIR_DataBase_ListenerPositions.end(); it++) {
+				
+				float distance = _listenerLocation.GetVectorTo(Common::CTransform(*it)).GetDistance();
+				if (distance < minDistance) {
+					minDistance = distance;
+					nearestListenerLocation = *it;
+				}
+			}
+			return nearestListenerLocation.GetPosition();
+		}
+
+
+		Common::CVector3 FindNearestEmitterPosition(Common::CVector3& _listenerPosition) const {
+			// For now we do nothing, we just return the first one.
+			return t_HRBRIR_DataBase_EmitterPositions[0];		
+		}
+
+
+
 
 		///////////////
 		// ATTRIBUTES
@@ -388,16 +483,26 @@ namespace BRTServices
 		int32_t HRIR_partitioned_NumberOfSubfilters;	// Number of subfilters (blocks) for the UPC algorithm
 		int32_t HRIR_partitioned_SubfilterLength;		// Size of one HRIR subfilter
 		//float distanceOfMeasurement;					//Distance where the HRIR have been measurement
-		CCranialGeometry cranialGeometry;					// Cranial geometry of the listener
-		CCranialGeometry originalCranialGeometry;		// Cranial geometry of the listener
+		Common::CCranialGeometry cranialGeometry;					// Cranial geometry of the listener
+		Common::CCranialGeometry originalCranialGeometry;		// Cranial geometry of the listener
 		TEXTRAPOLATION_METHOD extrapolationMethod;	// Methods that is going to be used to extrapolate
 		
 		bool setupInProgress;						// Variable that indicates the HRTF add and resample algorithm are in process
-		bool HRTFLoaded;							// Variable that indicates if the HRTF has been loaded correctly
-		//bool bInterpolatedResampleTable;			// If true: calculate the HRTF resample matrix with interpolation
+		bool HRTFLoaded;							// Variable that indicates if the HRTF has been loaded correctly		
+		bool enableWoodworthITD;					// Indicate the use of a customized delay
+
 		int gridSamplingStep; 						// HRTF Resample table step (azimuth and elevation)
-		//bool enableWoodworthITD;					// Indicate the use of a customized delay
 		int gapThreshold;							// Max distance between pole and next elevation to be consider as a gap
+
+		float sphereBorder;							// Define spheere "sewing"
+		float epsilon_sewing;						// Define spheere "sewing"
+		
+		float azimuthMin;							// Variables that define limits of work area
+		float azimuthMax;							// Variables that define limits of work area
+		float elevationMin; 						// Variables that define limits of work area
+		float elevationMax;							// Variables that define limits of work area
+		float elevationNorth;						// Variables that define limits of work area
+		float elevationSouth;						// Variables that define limits of work area
 
 
 		// HRBRIR tables			
