@@ -50,6 +50,11 @@ namespace Common {
 			orientation = CQuaternion::UNIT();			
 		}
 
+		CTransform(CVector3 _position)
+		{
+			position = _position;			
+		}
+
 		////////////////////////////////
 		// Get methods
 		////////////////////////////////
