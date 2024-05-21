@@ -146,7 +146,7 @@ namespace BRTServices
 						//Creation and filling of resampling HRTF table
 						//orientationsList = offlineInterpolation.CalculateListOfOrientations(it->second);
 						T_HRTFPartitionedTable tempPartitionedTable;
-						quasiUniformSphereDistribution.CreateGrid<T_HRTFPartitionedTable, THRIRPartitionedStruct>(tempPartitionedTable, stepVector, gridSamplingStep);
+						CQuasiUniformSphereDistribution::CreateGrid<T_HRTFPartitionedTable, THRIRPartitionedStruct>(tempPartitionedTable, stepVector, gridSamplingStep);
 						offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct>(it->second, tempPartitionedTable, globalParameters.GetBufferSize(), HRIRLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
 					
 
@@ -514,9 +514,7 @@ namespace BRTServices
 		std::vector<Common::CVector3>	t_HRBRIR_DataBase_EmitterPositions;
 
 		// Processors
-		CQuasiUniformSphereDistribution quasiUniformSphereDistribution;
-		CMidPointOnlineInterpolator midPointOnlineInterpolator;
-		CSlopesMethodOnlineInterpolator slopesMethodOnlineInterpolator;
+		//CQuasiUniformSphereDistribution quasiUniformSphereDistribution;		
 		COfflineInterpolation offlineInterpolation;
 		CExtrapolation extrapolation;
 	};

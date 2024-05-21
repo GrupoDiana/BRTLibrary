@@ -162,7 +162,7 @@ namespace BRTServices
 					offlineInterpolation.CalculateTF_SphericalCaps<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, HRIRLength, gapThreshold, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
 					//Creation and filling of resampling HRTF table
 					//_orientationList = offlineInterpolation.CalculateListOfOrientations(t_HRTF_DataBase);
-					quasiUniformSphereDistribution.CreateGrid<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, gridSamplingStep);
+					CQuasiUniformSphereDistribution::CreateGrid<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, gridSamplingStep);
 					offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct> (t_HRTF_DataBase, t_HRTF_Resampled_partitioned, globalParameters.GetBufferSize(), HRIRLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());					
 
 					//Setup values
@@ -466,9 +466,7 @@ namespace BRTServices
 		Common::CGlobalParameters globalParameters;
 
 		// Processors
-		CQuasiUniformSphereDistribution quasiUniformSphereDistribution;
-		CMidPointOnlineInterpolator midPointOnlineInterpolator;
-		CSlopesMethodOnlineInterpolator slopesMethodOnlineInterpolator;
+		//CQuasiUniformSphereDistribution quasiUniformSphereDistribution;		
 		COfflineInterpolation offlineInterpolation;
 		CExtrapolation extrapolation;		
 
