@@ -95,26 +95,24 @@ namespace BRTServices
 		*       On error, an error code is reported to the error handler.
 		*/
 		void BeginSetup(int32_t _HRIRLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod)
-		{			
-			//Update parameters			
-			HRIRLength = _HRIRLength;				
-			extrapolationMethod = _extrapolationMethod;
-
-			float partitions = (float)HRIRLength / (float)globalParameters.GetBufferSize();
-			HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
-
-			elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
-			elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
-
-			//Clear every table			
-			t_HRTF_DataBase.clear();				
-			t_HRTF_Resampled_partitioned.clear();
-
+		{		
+			std::lock_guard<std::mutex> l(mutex);
 			//Change class state
 			setupInProgress = true;
 			HRTFLoaded = false;
+			//Clear every table			
+			t_HRTF_DataBase.clear();
+			t_HRTF_Resampled_partitioned.clear();
+			stepVector.clear();
 
-
+			//Update parameters			
+			HRIRLength = _HRIRLength;				
+			extrapolationMethod = _extrapolationMethod;
+			float partitions = (float)HRIRLength / (float)globalParameters.GetBufferSize();
+			HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
+			elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
+			elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
+					
 			SET_RESULT(RESULT_OK, "HRTF Setup started");			
 		}
 
@@ -149,6 +147,7 @@ namespace BRTServices
 		*/
 		bool EndSetup()
 		{
+			std::lock_guard<std::mutex> l(mutex);
 			if (setupInProgress) {
 				if (!t_HRTF_DataBase.empty())
 				{					
@@ -212,6 +211,7 @@ namespace BRTServices
 		*/
 		const std::vector<CMonoBuffer<float>> GetHRIR_partitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation) const
 		{
+			std::lock_guard<std::mutex> l(mutex);
 			std::vector<CMonoBuffer<float>> newHRIR;
 			if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
 			{
@@ -241,6 +241,7 @@ namespace BRTServices
 		*/
 		THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation)
 		{			
+			std::lock_guard<std::mutex> l(mutex);
 			THRIRPartitionedStruct data;
 			
 			if (setupInProgress)
@@ -345,6 +346,7 @@ namespace BRTServices
 		*/
 		void SetHeadRadius(float _headRadius) 
 		{
+			std::lock_guard<std::mutex> l(mutex);
 			if (_headRadius >= 0.0f) {
 				// First time this is called we save the original cranial geometry. A bit ugly but it works.
 				if (originalCranialGeometry.GetHeadRadius() == -1) { originalCranialGeometry = cranialGeometry; }				
@@ -368,6 +370,7 @@ namespace BRTServices
 		 * @brief Return to original ear positions and head radius.
 		 */
 		void RestoreHeadRadius() {
+			std::lock_guard<std::mutex> l(mutex);
 			cranialGeometry = originalCranialGeometry;
 		}
 
@@ -419,11 +422,13 @@ namespace BRTServices
 		}
 
 
-	private:
-				
+	private:				
 		///////////////
 		// ATTRIBUTES
 		///////////////		
+
+		mutable std::mutex mutex;								// Thread management
+
 		int32_t HRIRLength;								// HRIR vector length
 		//int32_t bufferSize;								// Input signal buffer size		
 		int32_t HRIR_partitioned_NumberOfSubfilters;	// Number of subfilters (blocks) for the UPC algorithm

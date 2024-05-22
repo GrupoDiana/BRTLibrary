@@ -46,10 +46,10 @@ namespace BRTServices
 	{
 	public:
 
-		CHRBRIR() : setupInProgress{ false }, samplingRate{ 0 }, HRIRLength{-1}, gridSamplingStep{ DEFAULT_GRIDSAMPLING_STEP }, 
+		CHRBRIR() : setupInProgress{ false }, HRTFLoaded{ false }, samplingRate{0}, HRIRLength{-1}, gridSamplingStep{DEFAULT_GRIDSAMPLING_STEP},
 			gapThreshold {DEFAULT_GAP_THRESHOLD}, sphereBorder{ SPHERE_BORDER }, epsilon_sewing{ EPSILON_SEWING }, extrapolationMethod{ TEXTRAPOLATION_METHOD::zero_insertion },
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION },
-			elevationNorth{ 0 }, elevationSouth{ 0 }, title{""},	databaseName{""}, listenerShortName{""}, fileName{""} {}
+			windowThreshold { 0 }, windowRiseTime{ 0 }, elevationNorth{ 0 }, elevationSouth{ 0 }, title{""},	databaseName{""}, listenerShortName{""}, fileName{""} {}
 
 
 
@@ -60,31 +60,29 @@ namespace BRTServices
 		*/
 		void BeginSetup(int32_t _HRIRLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod)
 		{
-			//if ((ownerListener != nullptr) && ownerListener->ownerCore!=nullptr)
-			{
-				////Update parameters			
-				HRIRLength = _HRIRLength;								
-				extrapolationMethod = _extrapolationMethod;
+			std::lock_guard<std::mutex> l(mutex);
+			//Change class state
+			setupInProgress = true;
+			HRTFLoaded = false;
 
-				float partitions = (float)HRIRLength / (float)globalParameters.GetBufferSize();
-				HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
+			////Clear every table		
+			t_HRBRIR_DataBase.clear();
+			t_HRBRIR_Resampled_partitioned.clear();
+			t_HRBRIR_DataBase_ListenerPositions.clear();
+			t_HRBRIR_DataBase_EmitterPositions.clear();
+			stepVector.clear();
 
-				elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
-				elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
+			////Update parameters			
+			HRIRLength = _HRIRLength;								
+			extrapolationMethod = _extrapolationMethod;
 
-				////Clear every table		
-				t_HRBRIR_DataBase.clear();
-				t_HRBRIR_Resampled_partitioned.clear();
-				t_HRBRIR_DataBase_ListenerPositions.clear();
-				t_HRBRIR_DataBase_EmitterPositions.clear();
-				
-				//Change class state
-				setupInProgress = true;
-				HRTFLoaded = false;
+			float partitions = (float)HRIRLength / (float)globalParameters.GetBufferSize();
+			HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
 
+			elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
+			elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
 
-				SET_RESULT(RESULT_OK, "HRBRIR Setup started");
-			}			
+			SET_RESULT(RESULT_OK, "HRBRIR Setup started");					
 		}
 
 		void AddHRBRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 emitterPosition, Common::CVector3 listenerPosition, THRIRStruct&& newHRBRIR) {
@@ -131,6 +129,7 @@ namespace BRTServices
 		*/
 		bool EndSetup()
 		{
+			std::lock_guard<std::mutex> l(mutex);
 			if (setupInProgress) {
 				if (!t_HRBRIR_DataBase.empty())
 				{
@@ -143,13 +142,21 @@ namespace BRTServices
 						CalculateExtrapolation(it->second, orientationsList);	// Make the extrapolation if it's needed
 						offlineInterpolation.CalculateTF_InPoles<T_HRTFTable, BRTServices::THRIRStruct>(it->second, HRIRLength, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts());
 						offlineInterpolation.CalculateTF_SphericalCaps<T_HRTFTable, BRTServices::THRIRStruct>(it->second, HRIRLength, gapThreshold, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
-						//Creation and filling of resampling HRTF table
-						//orientationsList = offlineInterpolation.CalculateListOfOrientations(it->second);
+						//Creation and filling of resampling HRTF table						
 						T_HRTFPartitionedTable tempPartitionedTable;
 						CQuasiUniformSphereDistribution::CreateGrid<T_HRTFPartitionedTable, THRIRPartitionedStruct>(tempPartitionedTable, stepVector, gridSamplingStep);
-						offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct>(it->second, tempPartitionedTable, globalParameters.GetBufferSize(), HRIRLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
 					
-
+						
+						if (IsWindowingConfigured()) {
+							// Windowing the IRs
+							T_HRTFTable windowingTable;
+							CalculateWindowingIRTable(it->second, windowingTable);
+							offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct>(windowingTable, tempPartitionedTable, globalParameters.GetBufferSize(), HRIRLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());							
+						}
+						else {
+							offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct>(it->second, tempPartitionedTable, globalParameters.GetBufferSize(), HRIRLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
+						}
+																						
 						t_HRBRIR_Resampled_partitioned.emplace(it->first, std::forward<T_HRTFPartitionedTable>(tempPartitionedTable));
 					}													
 
@@ -283,6 +290,7 @@ namespace BRTServices
 		*/
 		void SetHeadRadius(float _headRadius)
 		{
+			std::lock_guard<std::mutex> l(mutex);
 			if (_headRadius >= 0.0f) {
 				// First time this is called we save the original cranial geometry. A bit ugly but it works.
 				if (originalCranialGeometry.GetHeadRadius() == -1) { originalCranialGeometry = cranialGeometry; }
@@ -300,6 +308,35 @@ namespace BRTServices
 		*/
 		float GetHeadRadius() {
 			return cranialGeometry.GetHeadRadius();
+		}
+
+		/**
+		 * @brief Set parameters for the windowing IR process
+		 * @param _windowThreshold The midpoint of the window in time (seconds), that is, where the window reaches 0.5.
+		 * @param _windowRiseTime time (secons) for the window to go from 0 to 1. A value of zero would represent the step window. 
+		 */
+		void SetWindowingParameters(float _windowThreshold, float _windowRiseTime) {			
+			mutex.lock();
+			windowThreshold = _windowThreshold;
+			windowRiseTime = _windowRiseTime;
+			mutex.unlock();
+			if (HRTFLoaded) {				
+				setupInProgress = true;
+				HRTFLoaded = false;
+				t_HRBRIR_Resampled_partitioned.clear();
+				EndSetup();
+
+			}			
+		}
+
+		/**
+		 * @brief Get parameters for the windowing IR process
+		 * @param [out] _windowThreshold 
+		 * @param [out] _windowRiseTime 
+		 */
+		void GetWindowingParameters(float& _windowThreshold, float& _windowRiseTime) {
+			_windowThreshold = windowThreshold;
+			_windowRiseTime = windowRiseTime;
 		}
 
 		/**
@@ -337,6 +374,8 @@ namespace BRTServices
 		*/
 		const std::vector<CMonoBuffer<float>> GetHRBRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, Common::CTransform& _listenerLocation, Common::CTransform& _sourceLocation) const
 		{
+			std::lock_guard<std::mutex> l(mutex);
+
 			std::vector<CMonoBuffer<float>> newHRIR;
 			if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
 			{
@@ -372,6 +411,8 @@ namespace BRTServices
 		*/
 		THRIRPartitionedStruct GetHRBRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation, Common::CTransform& _listenerLocation, Common::CTransform& _sourceLocation)
 		{
+			std::lock_guard<std::mutex> l(mutex);
+
 			THRIRPartitionedStruct data;
 
 			if (setupInProgress)
@@ -439,7 +480,11 @@ namespace BRTServices
 			}
 		}
 
-
+		/**
+		 * @brief Find the nearest position of the listener stored in the data table.
+		 * @param _listenerPosition listener position to compare
+		 * @return Closest listener position
+		 */
 		Common::CVector3 FindNearestListenerPosition(Common::CVector3& _listenerPosition) const {
 			
 			Common::CTransform _listenerLocation(_listenerPosition);						
@@ -457,18 +502,112 @@ namespace BRTServices
 			return nearestListenerLocation.GetPosition();
 		}
 
-
-		Common::CVector3 FindNearestEmitterPosition(Common::CVector3& _listenerPosition) const {
+		/**
+		 * @brief Get first emitter position stored in the data table.
+		 * @param _emitterPosition 
+		 * @return 
+		 */
+		Common::CVector3 FindNearestEmitterPosition(Common::CVector3& _emitterPosition) const {
 			// For now we do nothing, we just return the first one.
 			return t_HRBRIR_DataBase_EmitterPositions[0];		
 		}
 
 
+		/////////////////////////////////////////
+		/////////		WINDOWING		/////////
+		/////////////////////////////////////////
+		
+		/**
+		 * @brief Check if the windowing process is configured
+		 * @return 
+		 */
+		bool IsWindowingConfigured() {
+			return windowThreshold != 0 || windowRiseTime != 0;
+		}
+
+		/**
+		 * @brief Cretae a new table with the same data as the input table but with the IRs windowed
+		 * @param _inTable 
+		 * @param _outTable 
+		 */
+		void CalculateWindowingIRTable(const T_HRTFTable& _inTable, T_HRTFTable& _outTable) {
+			_outTable.clear();
+			_outTable = _inTable;
+
+			for (auto it = _outTable.begin(); it != _outTable.end(); it++) {				
+				it->second.leftHRIR = std::move(CalculateWindowingIR(it->second.leftHRIR));
+				it->second.rightHRIR = std::move(CalculateWindowingIR(it->second.rightHRIR));
+			}
+		}
+
+		/**
+		 * @brief Calculate the windowing of the IR
+		 * @param _inputIR Input IR
+		 * @return 
+		 */
+		CMonoBuffer<float> CalculateWindowingIR(const CMonoBuffer<float>& _inputIR)
+		{
+			// Vars to calculate the window
+			int numberOfZeros = floor((windowThreshold - windowRiseTime / 2) * globalParameters.GetSampleRate());
+			int numberOfSamplesFadeIn = ceil(windowRiseTime * globalParameters.GetSampleRate());
+			int numberOfOnes = _inputIR.size() - numberOfZeros - numberOfSamplesFadeIn;
+
+			// Check if the window is bigger than the IR
+			if (numberOfZeros >= _inputIR.size()) {
+				// If the window is bigger than the IR, we return the IR without windowing
+				SET_RESULT(RESULT_WARNING, "The window is bigger than the IR, the IR will be returned without windowing.");
+				return CMonoBuffer<float>(_inputIR);				
+			}
+			
+			// Create and fill first part of the window
+			CMonoBuffer<float> windowedIR = CMonoBuffer<float>(numberOfZeros, 0);
+			windowedIR.reserve(_inputIR.size());			
+
+			// Making the intermediate part with a raised cosine
+			for (int i = numberOfZeros; i < numberOfZeros + numberOfSamplesFadeIn; i++) {
+				windowedIR.push_back( _inputIR.at(i) * 0.5 * (1 - cos(M_PI * (i - numberOfZeros) / numberOfSamplesFadeIn)));
+			}
+			
+			// Copy last samples 
+			windowedIR.insert(windowedIR.end(), _inputIR.begin() + numberOfZeros + numberOfSamplesFadeIn, _inputIR.end());
+			
+
+			return windowedIR;
+		}
+
+		//CMonoBuffer<float> CalculateWindowingIR(const CMonoBuffer<float>& _inputIR, float gain = 1.0f)
+		//{
+		//	CMonoBuffer<float> windowedIR = CMonoBuffer<float>(_inputIR.size(), 0);						
+		//	
+		//	int numberOfZeros = floor((windowThreshold - windowRiseTime/2) * globalParameters.GetSampleRate());	
+		//	int numberOfSamplesFadeIn = ceil(windowRiseTime * globalParameters.GetSampleRate());
+		//	int numberOfOnes = windowedIR.size() - numberOfZeros - numberOfSamplesFadeIn;
+
+		//	if (numberOfZeros > _inputIR.size()) {
+		//		// If the window is bigger than the IR, we return the IR without windowing
+		//		SET_RESULT(RESULT_WARNING, "The window is bigger than the IR, the IR will be returned without windowing.");
+		//		return CMonoBuffer<float>(_inputIR);
+		//	}
+
+		//	for (int i = 0; i < numberOfZeros; i++)	{
+		//		windowedIR.at(i) = 0.0;
+		//	}
+		//	for (int i = numberOfZeros; i < numberOfZeros + numberOfSamplesFadeIn; i++)	{
+		//		windowedIR.at(i) = _inputIR.at(i) * 0.5 * (1 - cos(M_PI * (i - numberOfZeros) / numberOfSamplesFadeIn)) * gain;
+		//	}
+		//	for (int i = numberOfZeros + numberOfSamplesFadeIn; i < windowedIR.size(); i++)	{
+		//		windowedIR.at(i) = _inputIR.at(i) * gain;
+		//	}
+
+		//	return windowedIR;
+		//}
 
 
 		///////////////
 		// ATTRIBUTES
 		///////////////	
+		mutable std::mutex mutex;								// Thread management
+
 		Common::CGlobalParameters globalParameters;
 
 		std::string title;
@@ -478,14 +617,14 @@ namespace BRTServices
 		
 		int samplingRate;
 
-		int32_t HRIRLength;								// HRIR vector length
+		int32_t HRIRLength;									// HRIR vector length
 		//int32_t bufferSize;								// Input signal buffer size		
-		int32_t HRIR_partitioned_NumberOfSubfilters;	// Number of subfilters (blocks) for the UPC algorithm
-		int32_t HRIR_partitioned_SubfilterLength;		// Size of one HRIR subfilter
-		//float distanceOfMeasurement;					//Distance where the HRIR have been measurement
-		Common::CCranialGeometry cranialGeometry;					// Cranial geometry of the listener
-		Common::CCranialGeometry originalCranialGeometry;		// Cranial geometry of the listener
-		TEXTRAPOLATION_METHOD extrapolationMethod;	// Methods that is going to be used to extrapolate
+		int32_t HRIR_partitioned_NumberOfSubfilters;		// Number of subfilters (blocks) for the UPC algorithm
+		int32_t HRIR_partitioned_SubfilterLength;			// Size of one HRIR subfilter
+		//float distanceOfMeasurement;						// Distance where the HRIR have been measurement
+		Common::CCranialGeometry cranialGeometry;			// Cranial geometry of the listener
+		Common::CCranialGeometry originalCranialGeometry;	// Cranial geometry of the listener
+		TEXTRAPOLATION_METHOD extrapolationMethod;			// Methods that is going to be used to extrapolate
 		
 		bool setupInProgress;						// Variable that indicates the HRTF add and resample algorithm are in process
 		bool HRTFLoaded;							// Variable that indicates if the HRTF has been loaded correctly		
@@ -504,6 +643,8 @@ namespace BRTServices
 		float elevationNorth;						// Variables that define limits of work area
 		float elevationSouth;						// Variables that define limits of work area
 
+		float windowThreshold;						// Variable to be used in the windowing IR process 
+		float windowRiseTime;						// Variable to be used in the windowing IR process 
 
 		// HRBRIR tables			
 		T_HRBRIRTable					t_HRBRIR_DataBase;					// Store original data, normally read from SOFA file

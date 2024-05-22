@@ -92,23 +92,23 @@ namespace BRTReaders {
 			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::FreeFieldDirectivityTF, _resamplingStep, _extrapolationMethod);
 		}
 				
-
+				
 		/** \brief Loads an HRTF from a sofa file
 		*	\param [in] path of the sofa file
 		*	\param [out] listener affected by the hrtf
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		bool ReadBRIRFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CHRBRIR> listenerHRTF, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
+		bool ReadBRIRFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CHRBRIR> listenerHRTF, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, float _windowThreshold, float _windowRiseTime) {
 
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerHRTF;
-			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR, _resamplingStep, _extrapolationMethod);
+			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR, _resamplingStep, _extrapolationMethod, _windowThreshold, _windowRiseTime);
 		}
 		
 	private:
 				
 		// Methods
 		bool ReadFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, CLibMySOFALoader::TSofaConvention _SOFAConvention, 
-			int _gridSamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, bool process = true) {
+			int _gridSamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, float _windowThreshold = 0.0f, float _windowRiseTime = 0.0f) {
 
 			// Open file
 			BRTReaders::CLibMySOFALoader loader(sofafile);
@@ -128,7 +128,7 @@ namespace BRTReaders {
 			} else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::FreeFieldDirectivityTF) { 
 				return  ReadFromSofa_FreeFieldDirectivityTF(loader, sofafile, data, _gridSamplingStep, _extrapolationMethod);
 			} else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR) { 
-				return ReadFromSofa_SingleRoomMIMOSRIR(loader, sofafile, data, _gridSamplingStep, _extrapolationMethod);
+				return ReadFromSofa_SingleRoomMIMOSRIR(loader, sofafile, data, _gridSamplingStep, _extrapolationMethod, _windowThreshold, _windowRiseTime);
 			}
 			else { 
 				SET_RESULT(RESULT_ERROR_CASENOTDEFINED, "SOFA Convention loader not implemented"); 
@@ -144,6 +144,7 @@ namespace BRTReaders {
 			GetAndSaveGlobalAttributes(loader, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR, sofafile, data);			
 			CheckListenerOrientation(loader);					// Check listener view			
 			GetAndSaveReceiverPosition(loader, data);			// Get and Save listener ear 
+						
 			bool result;
 			result = GetHRIRs(loader, data, _extrapolationMethod);						
 			if (!result) {
@@ -345,12 +346,13 @@ namespace BRTReaders {
 		/////////////////////////////////////////////////////////////////
 		//////////////////	 SingleRoomMIMOSRIR		 ////////////////////
 		/////////////////////////////////////////////////////////////////
-		bool ReadFromSofa_SingleRoomMIMOSRIR(BRTReaders::CLibMySOFALoader &loader, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
+		bool ReadFromSofa_SingleRoomMIMOSRIR(BRTReaders::CLibMySOFALoader &loader, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, float _windowThreshold, float _windowRiseTime) {
 			
 			// Get and Save data			
 			GetAndSaveGlobalAttributes(loader, CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR ,sofafile, data);			// GET and Save Global Attributes			
 			GetAndSaveReceiverPosition(loader, data); // Get and Save listener ear
 			
+			data->SetWindowingParameters(_windowThreshold, _windowRiseTime);
 			bool result;
 			result = GetBRIRs(loader, data, _extrapolationMethod);
 
