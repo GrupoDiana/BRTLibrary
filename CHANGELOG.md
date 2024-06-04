@@ -5,6 +5,16 @@ All notable changes to the Binaural Rendering Toolbox (BRT) will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2024-06-04
+
+### Fixed
+
+- Fixes an accuracy error in a calculation performed during the SOFA interpolation offline process. 
+
+### Changed
+
+- The operation of the ITD simulation and parallax is fine-tuned. From now on, the ITD simulation and parallax can be activated and deactivated via the listener model. It is in the HRTF class where the radius of the listener's head can be configured and it can be configured to calculate the delays (for the ITD simulation) by means of the woodoworth formula or by reading the integrated ones in the SOFA file.
+
 
 ## [1.3.1] - 2024-03-19
 
