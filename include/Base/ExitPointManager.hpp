@@ -131,7 +131,7 @@ namespace BRTBase {
         // AmbisonicBIRs 
         /////////////////////
         void CreateABIRExitPoint() {            
-            abirExitPoint = std::make_shared<CExitPointABIRPtr>("moduleHRTF");
+            abirExitPoint = std::make_shared<CExitPointABIRPtr>("moduleABIR");
         }
 
         std::shared_ptr<CExitPointABIRPtr> GetABIRExitPoint() {
@@ -148,6 +148,17 @@ namespace BRTBase {
         std::shared_ptr<CExitPointILDPtr> GetILDExitPoint() {
             return ildExitPoint;
         }
+
+      /////////////////////
+      // HRBRIRs 
+      /////////////////////
+        void CreateHRBRIRExitPoint() {
+            hrbrirExitPoint = std::make_shared<CExitPointHRBRIRPtr>("moduleHRBRIR");
+        }
+
+        std::shared_ptr<CExitPointHRBRIRPtr> GetHRBRIRExitPoint() {
+            return hrbrirExitPoint;
+        }
     
     private:
         std::shared_ptr<CExitPointTransform> transformExitPoint;
@@ -158,6 +169,7 @@ namespace BRTBase {
         std::shared_ptr<CExitPointHRTFPtr>  hrtfExitPoint;
         std::shared_ptr<CExitPointILDPtr>   ildExitPoint;
         std::shared_ptr< CExitPointABIRPtr> abirExitPoint;
+        std::shared_ptr<CExitPointHRBRIRPtr>  hrbrirExitPoint;
     };
 }
 #endif

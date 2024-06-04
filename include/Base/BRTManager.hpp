@@ -331,8 +331,51 @@ namespace BRTBase {
 			module2->disconnectHRTFEntryTo(module1->GetHRTFExitPoint(), entryPointID);
 			return true;
 		}
+		
+		/**
+		 * @brief Connects the HRTF ExitPoint of one module to the HRTF EntryPoint of another.
+		 * @tparam T Type of module 1
+		 * @tparam U Type of module 2
+		 * @param module1 Pointer to module having HRTF exitpoint
+		 * @param module2 Pointer to module having HRTF entrypoint
+		 * @param entryPointID ID of entry point in module 2
+		 * @return Returns true if it was possible to make the connection. False in all other cases.
+		*/
+		template <typename T, typename U>
+		bool ConnectModuleHRBRIR(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectHRBRIREntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
+			return true;
+		}
+		template <typename T, typename U>
+		bool ConnectModuleHRBRIR(T* module1, std::shared_ptr <U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectHRBRIREntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
+			return true;
+		}
 
-
+		/**
+		 * @brief Disconnects the HRTF ExitPoint of one module with the HRTF EntryPoint of another.
+		 * @tparam T Type of module 1
+		 * @tparam U Type of module 2
+		 * @param module1 Pointer to module having HRTF exitpoint
+		 * @param module2 Pointer to module having HRTF entrypoint
+		 * @param entryPointID ID of entry point in module 2
+		 * @return Returns true if it was possible to make the disconnection. False in all other cases.
+		*/
+		template <typename T, typename U>
+		bool DisconnectModuleHRBRIR(std::shared_ptr<T> module1, std::shared_ptr <U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectHRBRIREntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
+			return true;
+		}
+		template <typename T, typename U>
+		bool DisconnectModuleHRBRIR(T* module1, std::shared_ptr <U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectHRBRIREntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
+			return true;
+		}
+		
 		template <typename T, typename U>
 		bool ConnectModuleABIR(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
