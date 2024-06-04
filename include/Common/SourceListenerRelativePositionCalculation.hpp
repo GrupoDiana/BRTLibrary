@@ -47,7 +47,7 @@ namespace Common {
 		 * @param centerAzimuth center head azimuth
 		 * @param interauralAzimuth interaural azimuth
 		*/
-		static void CalculateSourceListenerRelativePositions(Common::CTransform& _sourceTransform, Common::CTransform& _listenerTransform, std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF, bool parallaxCorrection,float& leftElevation, float& leftAzimuth, float& rightElevation, float& rightAzimuth, float& centerElevation, float& centerAzimuth, float& interauralAzimuth)
+		static void CalculateSourceListenerRelativePositions(Common::CTransform& _sourceTransform, Common::CTransform& _listenerTransform, std::shared_ptr<BRTServices::CServicesBase>& _listenerHRTF, bool parallaxCorrection,float& leftElevation, float& leftAzimuth, float& rightElevation, float& rightAzimuth, float& centerElevation, float& centerAzimuth, float& interauralAzimuth)
 		{
 
 			//Get azimuth and elevation between listener and source

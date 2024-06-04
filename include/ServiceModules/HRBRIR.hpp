@@ -49,6 +49,7 @@ namespace BRTServices
 		CHRBRIR() : setupInProgress{ false }, HRTFLoaded{ false }, samplingRate{0}, HRIRLength{-1}, gridSamplingStep{DEFAULT_GRIDSAMPLING_STEP},
 			gapThreshold {DEFAULT_GAP_THRESHOLD}, sphereBorder{ SPHERE_BORDER }, epsilon_sewing{ EPSILON_SEWING }, extrapolationMethod{ TEXTRAPOLATION_METHOD::zero_insertion },
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION },
+			enableWoodworthITD{ false }, HRIR_partitioned_NumberOfSubfilters{ 0 }, HRIR_partitioned_SubfilterLength{ 0 },
 			windowThreshold { 0 }, windowRiseTime{ 0 }, elevationNorth{ 0 }, elevationSouth{ 0 }, title{""},	databaseName{""}, listenerShortName{""}, fileName{""} {}
 
 
@@ -177,6 +178,21 @@ namespace BRTServices
 			return false;
 		}
 
+		/** \brief	Get the number of subfilters (blocks) in which the HRIR has been partitioned
+		*	\retval n Number of HRIR subfilters
+		*   \eh Nothing is reported to the error handler.
+		*/
+		const int32_t GetHRIRNumberOfSubfilters() const {
+			return HRIR_partitioned_NumberOfSubfilters;
+		}
+
+		/** \brief	Get the size of subfilters (blocks) in which the HRIR has been partitioned, every subfilter has the same size
+		*	\retval size Size of HRIR subfilters
+		*   \eh Nothing is reported to the error handler.
+		*/
+		const int32_t GetHRIRSubfilterLength() const {
+			return HRIR_partitioned_SubfilterLength;
+		}
 
 		/** \brief Get size of each HRIR buffer
 		*	\retval size number of samples of each HRIR buffer for one ear
@@ -372,7 +388,7 @@ namespace BRTServices
 		*   \eh On error, an error code is reported to the error handler.
 		*       Warnings may be reported to the error handler.
 		*/
-		const std::vector<CMonoBuffer<float>> GetHRBRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, Common::CTransform& _listenerLocation, Common::CTransform& _sourceLocation) const
+		const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, Common::CTransform& _listenerLocation, Common::CTransform& _sourceLocation) const
 		{
 			std::lock_guard<std::mutex> l(mutex);
 
@@ -409,7 +425,7 @@ namespace BRTServices
 		*   \eh On error, an error code is reported to the error handler.
 		*       Warnings may be reported to the error handler.
 		*/
-		THRIRPartitionedStruct GetHRBRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation, Common::CTransform& _listenerLocation, Common::CTransform& _sourceLocation)
+		THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation, Common::CTransform& _listenerLocation, Common::CTransform& _sourceLocation)
 		{
 			std::lock_guard<std::mutex> l(mutex);
 

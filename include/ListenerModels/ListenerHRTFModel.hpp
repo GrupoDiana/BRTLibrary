@@ -1,7 +1,7 @@
 /**
-* \class CListenerHRTFbasedModel
+* \class CListenerHRTFModel
 *
-* \brief Declaration of CListenerHRTFbasedModel class
+* \brief Declaration of CListenerHRTFModel class
 * \date	June 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
@@ -26,20 +26,17 @@
 #include <memory>
 #include <Base/ListenerModelBase.hpp>
 #include <ServiceModules/HRTF.hpp>
-//#include <ServiceModules/NFCFilters.hpp>
+#include <ServiceModules/HRBRIR.hpp>
 #include <ProcessingModules/HRTFConvolverProcessor.hpp>
 #include <ProcessingModules/NearFieldEffectProcessor.hpp>
 #include <Base/SourceModelBase.hpp>
 #include <Base/BRTManager.hpp>
 #include <third_party_libraries/nlohmann/json.hpp>
 
-namespace BRTServices {
-	class CHRTF;
-}
-
 namespace BRTListenerModel {
 
-	class CListenerHRTFbasedModel: public BRTBase::CListenerModelBase {
+	
+	class CListenerHRTFModel: public BRTBase::CListenerModelBase {
 		
 		class CSourceProcessors {
 		public:
@@ -96,11 +93,14 @@ namespace BRTListenerModel {
 		};
 
 	public:
-		CListenerHRTFbasedModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) : brtManager{ _brtManager }, BRTBase::CListenerModelBase(_listenerID), 
+		CListenerHRTFModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) : 
+			BRTBase::CListenerModelBase(_listenerID, BRTBase::TListenerType::ListenerHRFTModel), brtManager{ _brtManager },
 			enableSpatialization{ true }, enableInterpolation{ true }, enableNearFieldEffect{ false } {
 			
-			listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// Create a empty HRTF									
+			//listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// Create a empty HRTF		
+			listenerHRTF = nullptr;
 			CreateHRTFExitPoint();
+			CreateHRBRIRExitPoint();
 			CreateILDExitPoint();									
 		}
 
@@ -118,6 +118,7 @@ namespace BRTListenerModel {
 			listenerHRTF = _listenerHRTF;			
 			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);	
 			ResetProcessorBuffers();
+						
 			return true;
 		}
 
@@ -134,9 +135,10 @@ namespace BRTListenerModel {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void RemoveHRTF() {
-			listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// empty HRTF			
+			listenerHRTF = nullptr;			
+			//listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// empty HRTF			
 		}
-
+		
 		///
 		/** \brief SET HRTF of listener
 		*	\param[in] pointer to HRTF to be stored
@@ -458,9 +460,9 @@ namespace BRTListenerModel {
 		/////////////////
 		// Attributes
 		/////////////////
-		mutable std::mutex mutex;							// To avoid access collisions
-		std::string listenerID;								// Store unique listener ID
-		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;	// HRTF of listener														
+		mutable std::mutex mutex;									// To avoid access collisions
+		std::string listenerID;										// Store unique listener ID
+		std::shared_ptr<BRTServices::CHRTF>		listenerHRTF;		// HRTF of listener			
 		std::shared_ptr<BRTServices::CNearFieldCompensationFilters> listenerILD;		// ILD of listener						
 		std::vector< CSourceProcessors> sourcesConnectedProcessors;
 		BRTBase::CBRTManager* brtManager;
@@ -469,7 +471,7 @@ namespace BRTListenerModel {
 		bool enableSpatialization;		// Flags for independent control of processes
 		bool enableInterpolation;		// Enables/Disables the interpolation on run time
 		bool enableNearFieldEffect;     // Enables/Disables the Near Field Effect
-
+				
 	};
 }
 #endif

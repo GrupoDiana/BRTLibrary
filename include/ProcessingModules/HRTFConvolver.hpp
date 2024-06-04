@@ -27,7 +27,8 @@
 #include <Common/Buffer.hpp>
 #include <Common/AddDelayExpansionMethod.hpp>
 #include <Common/SourceListenerRelativePositionCalculation.hpp>
-#include <ServiceModules/HRTF.hpp>
+//#include <ServiceModules/HRTF.hpp>
+
 
 #include <memory>
 #include <vector>
@@ -97,8 +98,10 @@ namespace BRTProcessing {
 		*   \eh The error handler is informed if the size of the input buffer differs from that stored in the global
 		*       parameters and if the HRTF of the listener is null.		   
 		*/
-		void Process(CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CHRTF>& _listenerHRTFWeak) {
-
+		//void Process(CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CHRTF>& _listenerHRTFWeak) {
+		//void Process(CMonoBuffer<float>&_inBuffer, CMonoBuffer<float>&outLeftBuffer, CMonoBuffer<float>&outRightBuffer, Common::CTransform & sourceTransform, Common::CTransform & listenerTransform, std::weak_ptr<BRTServices::CServicesBase>&_listenerHRTFWeak) {
+		//template <typename T>
+		void Process(CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CServicesBase>& _listenerHRTFWeak) {
 			ASSERT(_inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");
 						
 			// Check process flag
@@ -110,7 +113,8 @@ namespace BRTProcessing {
 			}
 
 			// Check listener HRTF
-			std::shared_ptr<BRTServices::CHRTF> _listenerHRTF = _listenerHRTFWeak.lock();
+			//std::shared_ptr<BRTServices::CHRTF> _listenerHRTF = _listenerHRTFWeak.lock();
+			std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF = _listenerHRTFWeak.lock();
 			if (!_listenerHRTF) {
 				SET_RESULT(RESULT_ERROR_NULLPOINTER, "HRTF listener pointer is null when trying to use in HRTFConvolver");
 				outLeftBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
@@ -146,8 +150,8 @@ namespace BRTProcessing {
 			std::vector<CMonoBuffer<float>>  leftHRIR_partitioned;
 			std::vector<CMonoBuffer<float>>  rightHRIR_partitioned;
 
-			leftHRIR_partitioned = _listenerHRTF->GetHRIR_partitioned(Common::T_ear::LEFT, leftAzimuth, leftElevation, enableInterpolation);
-			rightHRIR_partitioned = _listenerHRTF->GetHRIR_partitioned(Common::T_ear::RIGHT, rightAzimuth, rightElevation, enableInterpolation);
+			leftHRIR_partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::LEFT, leftAzimuth, leftElevation, enableInterpolation);
+			rightHRIR_partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::RIGHT, rightAzimuth, rightElevation, enableInterpolation);
 						
 			// DO CONVOLUTION			
 			CMonoBuffer<float> leftChannel_withoutDelay;
@@ -288,7 +292,7 @@ namespace BRTProcessing {
 
 
 		/// Initialize convolvers and convolition buffers		
-		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF) {
+		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CServicesBase>& _listenerHRTF) {
 
 			int numOfSubfilters = _listenerHRTF->GetHRIRNumberOfSubfilters();
 			int subfilterLength = _listenerHRTF->GetHRIRSubfilterLength();

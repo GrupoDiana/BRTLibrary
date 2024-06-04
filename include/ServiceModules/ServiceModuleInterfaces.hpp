@@ -223,6 +223,25 @@ namespace BRTServices {
 		
 		virtual void AddImpulseResponse(int channel, const THRIRStruct&& newIR) {}		
 		virtual void AddImpulseResponse(int channel, const THRIRPartitionedStruct&& newPartitionedIR) {}
+
+		
+		virtual const int32_t GetHRIRNumberOfSubfilters() const { return 0; }
+		virtual const int32_t GetHRIRSubfilterLength() const { return 0; }
+		virtual float GetHeadRadius() { return 0.0f; };
+		virtual Common::CVector3 GetEarLocalPosition(Common::T_ear _ear) { return Common::CVector3(); }
+		virtual float GetHRTFDistanceOfMeasurement() { return 0; }
+		
+		//virtual const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation) const { 
+		//	return std::vector < CMonoBuffer<float>>();  
+		//};
+		virtual const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation,
+			Common::CTransform& _listenerLocation = Common::CTransform(), Common::CTransform& _sourceLocation = Common::CTransform()) const
+		{
+			return std::vector < CMonoBuffer<float>>();
+		};
+
+		virtual THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation) { return THRIRPartitionedStruct(); };
+		
 	};}
 
 #endif

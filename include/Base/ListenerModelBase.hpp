@@ -42,24 +42,30 @@ namespace BRTSourceModel {
 
 namespace BRTBase {
 
+	enum class TListenerType { ListenerHRFTModel, ListenerAmbisonicHRTFModel, ListenerEnviromentBRIRModel };
+
 	class CListenerModelBase: public CCommandEntryPointManager, public CExitPointManager, public CEntryPointManager {
 	public:
 
 		virtual ~CListenerModelBase() {}
 		virtual void Update(std::string entryPointID) = 0;
 		virtual void UpdateCommand() = 0;		
-		virtual bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) = 0;
-		virtual void SetILD(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerILD) = 0;
-		virtual std::shared_ptr < BRTServices::CHRTF> GetHRTF() const = 0;
-		virtual void RemoveHRTF() = 0;
-		virtual std::shared_ptr < BRTServices::CNearFieldCompensationFilters> GetILD() const = 0;
-		virtual void RemoveILD() = 0;
+		virtual bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) { return false; };
+		virtual void SetILD(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerILD) {};
+		virtual std::shared_ptr < BRTServices::CHRTF> GetHRTF() const { return nullptr; }
+		virtual void RemoveHRTF() {};
+		virtual std::shared_ptr < BRTServices::CNearFieldCompensationFilters> GetILD() const { return nullptr; }
+		virtual void RemoveILD() {};
+		virtual std::shared_ptr < BRTServices::CHRBRIR> GetHRBRIR() const { return nullptr; };
+		
+		virtual bool SetHRBRIR(std::shared_ptr< BRTServices::CHRBRIR > _listenerBRIR) { return false; };		        
+		virtual void RemoveHRBRIR() {};
 
 		virtual void EnableITDSimulation()= 0;
 		virtual void DisableITDSimulation() = 0;			
 		virtual bool IsITDSimulationEnabled() { return enableITDSimulation; }
-		virtual void EnableParallaxCorrection() = 0;
-		virtual void DisableParallaxCorrection() = 0;		
+		virtual void EnableParallaxCorrection() {};
+		virtual void DisableParallaxCorrection() {};
 		virtual bool IsParallaxCorrectionEnabled() { return enableParallaxCorrection; }
 
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel > _source) = 0;
@@ -67,8 +73,8 @@ namespace BRTBase {
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) = 0;
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) = 0;
 
-		CListenerModelBase(std::string _listenerID) : listenerID{ _listenerID }, leftDataReady{ false }, 
-			rightDataReady{ false }, enableITDSimulation{ true }, enableParallaxCorrection{true} {
+		CListenerModelBase(std::string _listenerID, TListenerType _listenerType) : listenerID{ _listenerID }, listenerType {_listenerType}, 
+			leftDataReady{ false },	rightDataReady{ false }, enableITDSimulation{ true }, enableParallaxCorrection{true} {
 												
 			CreateSamplesEntryPoint("leftEar");
 			CreateSamplesEntryPoint("rightEar");									
@@ -100,7 +106,12 @@ namespace BRTBase {
 		 * @return Return listener identificator
 		*/
 		std::string GetID() { return listenerID; }		
-										
+			
+		/**
+		* @brief Set listener type
+		* @param _listenerType Listener type
+		*/
+		TListenerType GetListenerType() const { return listenerType; }
 		
 		/**
 		 * @brief Get output sample buffers from the listener
@@ -150,6 +161,7 @@ namespace BRTBase {
 		bool enableParallaxCorrection;						// Enable parallax correction
 
 	private:
+		TListenerType listenerType;
 		std::string listenerID;								// Store unique listener ID		
 		Common::CTransform listenerTransform;				// Transform matrix (position and orientation) of listener  
 		

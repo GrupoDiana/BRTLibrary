@@ -136,7 +136,7 @@ namespace BRTProcessing {
 			//}
 
 			// Check listener HRTF
-			std::shared_ptr<BRTServices::CHRTF> _listenerHRTF = _listenerHRTFWeak.lock();
+			std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF = _listenerHRTFWeak.lock();
 			if (!_listenerHRTF) {
 				SET_RESULT(RESULT_ERROR_NULLPOINTER, "HRTF listener pointer is null when trying to use in Bilateral Ambisonic Encoder");
 				///leftChannelsBuffers = std::vector<CMonoBuffer<float>>(leftAmbisonicEncoder.GetTotalChannels(), CMonoBuffer<float>(globalParameters.GetBufferSize(), 0.0f));
