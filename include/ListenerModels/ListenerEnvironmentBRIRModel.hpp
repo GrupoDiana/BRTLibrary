@@ -92,8 +92,7 @@ namespace BRTListenerModel {
 			enableSpatialization{ true }, enableInterpolation{ true } {
 						
 			listenerHRBRIR = nullptr;
-			CreateHRBRIRExitPoint();
-			enableParallaxCorrection = false;
+			CreateHRBRIRExitPoint();			
 		}
 				
 		/** \brief SET HRBRIR of listener

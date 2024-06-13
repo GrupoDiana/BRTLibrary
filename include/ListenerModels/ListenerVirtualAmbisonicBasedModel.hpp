@@ -95,7 +95,7 @@ namespace BRTListenerModel {
 	public:
 		CListenerVirtualAmbisonicBasedModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) : 
 			brtManager{ _brtManager }, BRTBase::CListenerModelBase(_listenerID, BRTBase::TListenerType::ListenerAmbisonicHRTFModel),
-			ambisonicOrder{ 1 }, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D } {
+			ambisonicOrder{ 1 }, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }, enableNearFieldEffect{ false }, enableParallaxCorrection{ true }  {
 			
 			listenerHRTF = std::make_shared<BRTServices::CHRTF>();					// Create a empty HRTF	class
 			listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicBIR>();	// Create a empty AmbisonicIR class
@@ -305,6 +305,10 @@ namespace BRTListenerModel {
 			SetConfigurationInALLSourcesProcessors();
 		}
 
+		/**
+		* @brief Get Parallax Correction state
+		*/
+		bool IsParallaxCorrectionEnabled() { return enableParallaxCorrection; }
 
 		/**
 		 * @brief Connect a new source to this listener
@@ -395,27 +399,7 @@ namespace BRTListenerModel {
 
 	private:
 
-		/////////////////
-		// Attributes
-		/////////////////		
-		mutable std::mutex mutex;													// To avoid access collisions
-		std::string listenerID;														// Store unique listener ID
-		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;							// HRTF of listener														
-		std::shared_ptr<BRTServices::CNearFieldCompensationFilters> listenerILD;								// ILD of listener				
-		std::shared_ptr<BRTServices::CAmbisonicBIR> listenerAmbisonicIR;			// AmbisonicIR related to the listener				
 		
-		int ambisonicOrder;															// Store the Ambisonic order
-		Common::TAmbisonicNormalization ambisonicNormalization;						// Store the Ambisonic normalization
-		bool enableNearFieldEffect;													// Enables/Disables the Near Field Effect
-		//bool enableBilateralAmbisonic;												// 
-
-		std::vector< CSourceToBeProcessed> sourcesConnectedProcessors;				// List of sources connected to this listener model
-		
-		std::shared_ptr <BRTProcessing::CAmbisonicDomainConvolverProcessor> leftAmbisonicDomainConvolverProcessor;
-		std::shared_ptr <BRTProcessing::CAmbisonicDomainConvolverProcessor> rightAmbisonicDomainConvolverProcessor;
-		
-		BRTBase::CBRTManager* brtManager;
-		Common::CGlobalParameters globalParameters;
 
 
 		/////////////////
@@ -531,6 +515,28 @@ namespace BRTListenerModel {
 			}
 			return false;
 		}
+
+		/////////////////
+		// Attributes
+		/////////////////		
+		mutable std::mutex mutex;													// To avoid access collisions
+		std::string listenerID;														// Store unique listener ID
+		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;							// HRTF of listener														
+		std::shared_ptr<BRTServices::CNearFieldCompensationFilters> listenerILD;								// ILD of listener				
+		std::shared_ptr<BRTServices::CAmbisonicBIR> listenerAmbisonicIR;			// AmbisonicIR related to the listener				
+
+		int ambisonicOrder;															// Store the Ambisonic order
+		Common::TAmbisonicNormalization ambisonicNormalization;						// Store the Ambisonic normalization
+		bool enableNearFieldEffect;													// Enables/Disables the Near Field Effect
+		bool enableParallaxCorrection;												// Enable parallax correction
+
+		std::vector< CSourceToBeProcessed> sourcesConnectedProcessors;				// List of sources connected to this listener model
+
+		std::shared_ptr <BRTProcessing::CAmbisonicDomainConvolverProcessor> leftAmbisonicDomainConvolverProcessor;
+		std::shared_ptr <BRTProcessing::CAmbisonicDomainConvolverProcessor> rightAmbisonicDomainConvolverProcessor;
+
+		BRTBase::CBRTManager* brtManager;
+		Common::CGlobalParameters globalParameters;
 	};
 }
 #endif

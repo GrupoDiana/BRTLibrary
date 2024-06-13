@@ -95,7 +95,7 @@ namespace BRTListenerModel {
 	public:
 		CListenerHRTFModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) : 
 			BRTBase::CListenerModelBase(_listenerID, BRTBase::TListenerType::ListenerHRFTModel), brtManager{ _brtManager },
-			enableSpatialization{ true }, enableInterpolation{ true }, enableNearFieldEffect{ false } {
+			enableSpatialization{ true }, enableInterpolation{ true }, enableNearFieldEffect{ false }, enableParallaxCorrection{ true }  {
 			
 			//listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// Create a empty HRTF		
 			listenerHRTF = nullptr;
@@ -305,6 +305,11 @@ namespace BRTListenerModel {
 		}
 
 		/**
+		* @brief Get Parallax Correction state
+		*/
+		bool IsParallaxCorrectionEnabled() { return enableParallaxCorrection; }
+
+		/**
 		 * @brief Reset all processor buffers
 		*/
 		void ResetProcessorBuffers() {
@@ -471,6 +476,7 @@ namespace BRTListenerModel {
 		bool enableSpatialization;		// Flags for independent control of processes
 		bool enableInterpolation;		// Enables/Disables the interpolation on run time
 		bool enableNearFieldEffect;     // Enables/Disables the Near Field Effect
+		bool enableParallaxCorrection;	// Enable parallax correction
 				
 	};
 }

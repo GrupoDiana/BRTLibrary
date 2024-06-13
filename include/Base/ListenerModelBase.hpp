@@ -64,9 +64,7 @@ namespace BRTBase {
 		virtual void EnableITDSimulation()= 0;
 		virtual void DisableITDSimulation() = 0;			
 		virtual bool IsITDSimulationEnabled() { return enableITDSimulation; }
-		virtual void EnableParallaxCorrection() {};
-		virtual void DisableParallaxCorrection() {};
-		virtual bool IsParallaxCorrectionEnabled() { return enableParallaxCorrection; }
+		
 
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel > _source) = 0;
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel > _source) = 0;
@@ -74,7 +72,7 @@ namespace BRTBase {
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) = 0;
 
 		CListenerModelBase(std::string _listenerID, TListenerType _listenerType) : listenerID{ _listenerID }, listenerType {_listenerType}, 
-			leftDataReady{ false },	rightDataReady{ false }, enableITDSimulation{ true }, enableParallaxCorrection{true} {
+			leftDataReady{ false },	rightDataReady{ false }, enableITDSimulation{ true } {
 												
 			CreateSamplesEntryPoint("leftEar");
 			CreateSamplesEntryPoint("rightEar");									
@@ -158,7 +156,7 @@ namespace BRTBase {
 				
 		// Public Attributes
 		bool enableITDSimulation;							// Enable ITD simulation 
-		bool enableParallaxCorrection;						// Enable parallax correction
+		
 
 	private:
 		TListenerType listenerType;
