@@ -20,8 +20,8 @@
 * \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 
-#ifndef _CLISTENER_HRTFBASED_MODEL_HPP_
-#define _CLISTENER_HRTFBASED_MODEL_HPP_
+#ifndef _CLISTENER_HRTF_MODEL_HPP_
+#define _CLISTENER_HRTF_MODEL_HPP_
 
 #include <memory>
 #include <Base/ListenerModelBase.hpp>
