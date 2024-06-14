@@ -24,7 +24,7 @@
 
 
 #include <Common/Buffer.hpp>
-#include <ServiceModules/ILD.hpp>
+#include <ServiceModules/NFCFilters.hpp>
 #include <Common/GlobalParameters.hpp>
 //#define EPSILON 0.0001f
 
@@ -42,16 +42,20 @@ namespace BRTProcessing {
 
 
 		///Enable near field effect for this source
-		void EnableNearFieldEffect() { enableNearFieldEffect = true; };
+		void EnableNearFieldEffect() { 
+			enableNearFieldEffect = true; 
+		};
 		///Disable near field effect for this source
-		void DisableNearFieldEffect() { enableNearFieldEffect = false; };
+		void DisableNearFieldEffect() { 
+			enableNearFieldEffect = false; 
+		};
 		///Get the flag for near field effect enabling
 		bool IsNearFieldEffectEnabled() { return enableNearFieldEffect; };
 
 
 		// Apply Near field effects (ILD)	
 		
-		void Process(CMonoBuffer<float>& _inLeftBuffer, CMonoBuffer<float>& _inRightBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CILD>& _listenerILDWeak)
+		void Process(CMonoBuffer<float>& _inLeftBuffer, CMonoBuffer<float>& _inRightBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CNearFieldCompensationFilters>& _listenerILDWeak)
 		//void Process(CMonoBuffer<float>& leftBuffer, CMonoBuffer<float>& rightBuffer, float distance, float interauralAzimuth, std::weak_ptr<BRTServices::CILD>& _listenerHRTFWeak)
 		{
 			outLeftBuffer = _inLeftBuffer;
@@ -60,14 +64,14 @@ namespace BRTProcessing {
 			// Check process flag
 			if (!IsNearFieldEffectEnabled()) { return;	}
 			
-			float distance = CalculateDistance(sourceTransform, listenerTransform);
+			float distance = Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerDistance(sourceTransform, listenerTransform);
 			if (distance > DISTANCE_MODEL_THRESHOLD_NEAR) {	return; }
 			
 			//ASSERT(_inLeftBuffer.size() > 0 || _inRightBuffer.size() > 0, RESULT_ERROR_BADSIZE, "Input buffer is empty when processing ILD", "");
 			ASSERT(_inLeftBuffer.size() == globalParameters.GetBufferSize() || _inRightBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");			
 			
 			// Check listener ILD
-			std::shared_ptr<BRTServices::CILD> _listenerILD = _listenerILDWeak.lock();
+			std::shared_ptr<BRTServices::CNearFieldCompensationFilters> _listenerILD = _listenerILDWeak.lock();
 			if (!_listenerILD) {
 				SET_RESULT(RESULT_ERROR_NULLPOINTER, "ILD listener pointer is null when trying to use in BRTProcessing::CNearFieldEffect");
 				outLeftBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
@@ -85,25 +89,32 @@ namespace BRTProcessing {
 				SET_RESULT(RESULT_ERROR_BADSIZE, "Twelve coefficients were expected in order to be able to set up the filters in BRTProcessing::CNearFieldEffect");
 				return;
 			}						
-			//Set LEFT coefficients into the filters and process the signal									
-			SetCoefficients(nearFieldEffectFilters.left, coefficientsLeft);
+			
+			SetCoefficients(nearFieldEffectFilters.left, coefficientsLeft);		//Set LEFT coefficients 			 
+			SetCoefficients(nearFieldEffectFilters.right, coefficientsRight);	//Set RIGHT coefficients
+
+			// Process the signal
 			nearFieldEffectFilters.left.Process(outLeftBuffer);
-			//Set RIGHT coefficients into the filters and process the signal						
-			SetCoefficients(nearFieldEffectFilters.right, coefficientsRight);
 			nearFieldEffectFilters.right.Process(outRightBuffer);									
 		}
+
+		void ResetProcessBuffers() {
+			nearFieldEffectFilters.left.ResetBuffers();
+			nearFieldEffectFilters.right.ResetBuffers();			
+		}
+
 	
 	private:
 		///////////////////////
 		// Private Methods
 		///////////////////////
-		float CalculateDistance(Common::CTransform _sourceTransform, Common::CTransform _listenerTransform) {
+		//float CalculateDistance(Common::CTransform _sourceTransform, Common::CTransform _listenerTransform) {
 
-			//Get azimuth and elevation between listener and source
-			Common::CVector3 _vectorToListener = _listenerTransform.GetVectorTo(_sourceTransform);
-			float _distanceToListener = _vectorToListener.GetDistance();
-			return _distanceToListener;
-		}
+		//	//Get azimuth and elevation between listener and source
+		//	Common::CVector3 _vectorToListener = _listenerTransform.GetVectorTo(_sourceTransform);
+		//	float _distanceToListener = _vectorToListener.GetDistance();
+		//	return _distanceToListener;
+		//}
 
 		/// Calculates the parameters derived from the source and listener position
 		float CalculateInterauralAzimuth(Common::CTransform& _sourceTransform, Common::CTransform& _listenerTransform)
@@ -122,11 +133,14 @@ namespace BRTProcessing {
 		}
 
 		void SetCoefficients(Common::CFiltersChain& _filter, std::vector<float>& cofficients) {
-			std::vector<float> temp(cofficients.begin(), cofficients.begin() + 6);
-			_filter.GetFilter(0)->SetCoefficients(temp);
+			Common::TFiltersChainCoefficients filterCoeficientsVector;
+			std::vector<float> firstStage(cofficients.begin(), cofficients.begin() + 6);
+			std::vector<float> secondStage(cofficients.begin() + 6, cofficients.end());
 
-			std::vector<float> temp2(cofficients.begin() + 6, cofficients.end());
-			_filter.GetFilter(1)->SetCoefficients(temp2);
+			filterCoeficientsVector.push_back(firstStage);
+			filterCoeficientsVector.push_back(secondStage);
+
+			_filter.SetFromCoefficientsVector(filterCoeficientsVector);		
 		}
 
 

@@ -30,12 +30,16 @@ namespace BRTBase {
 	class CCommand { //TODO repensar esto, se puede almacenar el json ya parseado y se ahorra tiempo de proceso
 		using json = nlohmann::json;
 	public:
-		json j;
 		
-		CCommand() { };
-		CCommand(std::string _commandJsonString) : j{ json::parse(_commandJsonString) } {}
 		
-		bool isNull() { 
+		CCommand() : empty{ true } { };
+		CCommand(std::string _commandJsonString) : j {json::parse(_commandJsonString)}, empty { false }  { }
+		
+		bool isNull() { 			
+			return empty;
+		}
+
+		bool isCommand() {
 			return (j["address"].is_null() && j["command"].is_null());
 		}
 
@@ -117,6 +121,9 @@ namespace BRTBase {
 
 			return tempV4;
 		}
+	private:
+		bool empty;
+		json j;
 	};
 }
 #endif

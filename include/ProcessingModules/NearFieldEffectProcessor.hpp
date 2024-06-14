@@ -32,7 +32,7 @@
 #include <algorithm>
 
 namespace BRTProcessing {
-    class CNearFieldEffectProcessor : public BRTBase::CProcessorBase, CNearFieldEffect {
+    class CNearFieldEffectProcessor : public BRTBase::CProcessorBase, public CNearFieldEffect {
 		
     public:
 		CNearFieldEffectProcessor() {
@@ -41,49 +41,74 @@ namespace BRTProcessing {
 
             CreatePositionEntryPoint("sourcePosition");
 			CreatePositionEntryPoint("listenerPosition");           			
+			
+			CreateIDEntryPoint("sourceID");
 			CreateILDPtrEntryPoint("listenerILD");
 
             CreateSamplesExitPoint("leftEar");
             CreateSamplesExitPoint("rightEar");   									
         }
 
-        void Update(std::string _entryPointId) {            
+        void AllEntryPointsAllDataReady() {
 			std::lock_guard<std::mutex> l(mutex);
 			CMonoBuffer<float> outLeftBuffer;
 			CMonoBuffer<float> outRightBuffer;
 
-			if (_entryPointId == "leftEar" || _entryPointId == "rightEar") {
+			//if (_entryPointId == "leftEar" || _entryPointId == "rightEar") {
 				CMonoBuffer<float> leftBuffer = GetSamplesEntryPoint("leftEar")->GetData();
 				CMonoBuffer<float> rightBuffer = GetSamplesEntryPoint("rightEar")->GetData();
 
 				Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
 				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();												
-				std::weak_ptr<BRTServices::CILD> listenerILD = GetILDPtrEntryPoint("listenerILD")->GetData();
+				std::weak_ptr<BRTServices::CNearFieldCompensationFilters> listenerILD = GetILDPtrEntryPoint("listenerILD")->GetData();
 				
 				if (leftBuffer.size() != 0  || rightBuffer.size() !=0)  {
 					Process(leftBuffer, rightBuffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerILD);
 					GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
 					GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);
 				}				
-				this->resetUpdatingStack();				
-			}            
+				//this->ResetEntryPointWaitingList();				
+			//}            
         }
 
 		void UpdateCommand() {
 			std::lock_guard<std::mutex> l(mutex);
-			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
 			
-			//if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
-				if (command.GetCommand() == "/listener/enableNearFiedlEffect") {
+			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
+			if (command.isNull()) { return; }			
+			
+			if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
+				if (command.GetCommand() == "/nearFieldProcessor/enable") {
 					if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
 					else { DisableNearFieldEffect(); }
 				}
-			//}
+				else if (command.GetCommand() == "/nearFieldProcessor/resetBuffers") {
+					ResetProcessBuffers();
+				}
+			}
+			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
+				if (command.GetCommand() == "/source/resetBuffers") {
+					ResetProcessBuffers();
+				}
+			}
 		} 
       
     private:
 		mutable std::mutex mutex;
-		
+		bool IsToMySoundSource(std::string _sourceID) {
+			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
+			return mySourceID == _sourceID;
+		}
+		bool IsToMyListener(std::string _listenerID) {
+			std::shared_ptr<BRTBase::CEntryPointID> _listenerIDEntryPoint = GetIDEntryPoint("listenerID");
+			if (_listenerIDEntryPoint != nullptr) {
+				std::string myListenerID = _listenerIDEntryPoint->GetData();
+				return myListenerID == _listenerID;
+			}
+			else {
+				return false;
+			}
+		}
 		
     };
 }

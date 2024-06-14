@@ -32,61 +32,76 @@ namespace BRTBase {
 
     public:
 
-        virtual void updateFromEntryPoint(std::string entryPointID) = 0;       
-        virtual void addToUpdateStack(std::string _id, int _multiplicity) {};
-
-
-    
-
-        void CreateSamplesEntryPoint(std::string entryPointID, int _multiplicity = 1) {
-            std::shared_ptr<BRTBase::CEntryPointSamplesVector> _newEntryPoint = std::make_shared<BRTBase::CEntryPointSamplesVector >(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+        virtual void UpdateEntryPointData(std::string entryPointID) = 0;
+        virtual void EntryPointCreated(std::string _entryPointID, bool _notify) {};
+        virtual void UpdateEntryPointConnections(std::string _entryPointID, int _numberOfConnections) {};
+        
+       void CreateSamplesEntryPoint(std::string entryPointID, bool _notify = true) {
+            //std::shared_ptr<BRTBase::CEntryPointSamplesVector> _newEntryPoint = std::make_shared<BRTBase::CEntryPointSamplesVector >(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);            
+            std::shared_ptr<BRTBase::CEntryPointSamplesVector> _newEntryPoint = CreateGenericEntryPoint<BRTBase::CEntryPointSamplesVector>(entryPointID, _notify);
+            
             samplesEntryPoints.push_back(_newEntryPoint);
-            addToUpdateStack(entryPointID, _multiplicity);
+            EntryPointCreated(entryPointID, _notify);
         }
 
-        void CreatePositionEntryPoint(std::string entryPointID, int _multiplicity = 0) {
-            std::shared_ptr<BRTBase::CEntryPointTransform> _newEntryPoint = std::make_shared<BRTBase::CEntryPointTransform >(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+        void CreateMultipleChannelsEntryPoint(std::string entryPointID, bool _notify) {
+            //std::shared_ptr<BRTBase::CEntryPointMultipleSamplesVector> _newEntryPoint = std::make_shared<BRTBase::CEntryPointMultipleSamplesVector >(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+            std::shared_ptr<BRTBase::CEntryPointMultipleSamplesVector> _newEntryPoint = CreateGenericEntryPoint<BRTBase::CEntryPointMultipleSamplesVector>(entryPointID, _notify);
+            
+            multipleSamplesVectorEntryPoints.push_back(_newEntryPoint);                        
+            EntryPointCreated(entryPointID, _notify);
+        }
+
+        void CreatePositionEntryPoint(std::string entryPointID, bool _notify = false) {
+            //std::shared_ptr<BRTBase::CEntryPointTransform> _newEntryPoint = std::make_shared<BRTBase::CEntryPointTransform >(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+            std::shared_ptr<BRTBase::CEntryPointTransform> _newEntryPoint = CreateGenericEntryPoint<BRTBase::CEntryPointTransform>(entryPointID, _notify);
             positionEntryPoints.push_back(_newEntryPoint);
-            addToUpdateStack(entryPointID, _multiplicity);
+            EntryPointCreated(entryPointID, _notify);
         }
 
-        void CreateIDEntryPoint(std::string entryPointID, int _multiplicity = 0) {
-            std::shared_ptr<BRTBase::CEntryPointID> _newEntryPoint = std::make_shared<BRTBase::CEntryPointID >(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+        void CreateIDEntryPoint(std::string entryPointID, bool _notify = false) {
+            //std::shared_ptr<BRTBase::CEntryPointID> _newEntryPoint = std::make_shared<BRTBase::CEntryPointID >(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+            std::shared_ptr<BRTBase::CEntryPointID> _newEntryPoint = CreateGenericEntryPoint<BRTBase::CEntryPointID>(entryPointID, _notify);
+            
             idEntryPoints.push_back(_newEntryPoint);
-            addToUpdateStack(entryPointID, _multiplicity);
+            EntryPointCreated(entryPointID, _notify);
         }
 
-        void CreateHRTFPtrEntryPoint(std::string entryPointID, int _multiplicity = 0) {
-            std::shared_ptr<BRTBase::CEntryPointHRTFPtr> _newEntryPoint = std::make_shared<BRTBase::CEntryPointHRTFPtr>(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+        void CreateHRTFPtrEntryPoint(std::string entryPointID, bool _notify = false) {
+            //std::shared_ptr<BRTBase::CEntryPointHRTFPtr> _newEntryPoint = std::make_shared<BRTBase::CEntryPointHRTFPtr>(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+            std::shared_ptr<BRTBase::CEntryPointHRTFPtr> _newEntryPoint = CreateGenericEntryPoint<BRTBase::CEntryPointHRTFPtr>(entryPointID, _notify);
             hrtfPtrEntryPoints.push_back(_newEntryPoint);
-            addToUpdateStack(entryPointID, _multiplicity);
+            EntryPointCreated(entryPointID, _notify);
         }
 
-        void CreateILDPtrEntryPoint(std::string entryPointID, int _multiplicity = 0) {
-            std::shared_ptr<BRTBase::CEntryPointILDPtr> _newEntryPoint = std::make_shared<BRTBase::CEntryPointILDPtr>(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+        void CreateILDPtrEntryPoint(std::string entryPointID, bool _notify = false) {
+            //std::shared_ptr<BRTBase::CEntryPointILDPtr> _newEntryPoint = std::make_shared<BRTBase::CEntryPointILDPtr>(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+            std::shared_ptr<BRTBase::CEntryPointILDPtr> _newEntryPoint = CreateGenericEntryPoint<BRTBase::CEntryPointILDPtr>(entryPointID, _notify);
             ildPtrEntryPoints.push_back(_newEntryPoint);
-            addToUpdateStack(entryPointID, _multiplicity);
+            EntryPointCreated(entryPointID, _notify);
         }
 
-        /*void CreateSRTFPtrEntryPoint(std::string entryPointID, int _multiplicity = 0) {
-            std::shared_ptr<BRTBase::CEntryPointSRTFPtr> _newEntryPoint = std::make_shared<BRTBase::CEntryPointSRTFPtr>(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
-            srtfPtrEntryPoints.push_back(_newEntryPoint);
-            addToUpdateStack(entryPointID, _multiplicity);
-        }*/
-
-        //void CreateCommandEntryPoint(/*std::string entryPointID = "command", int _multiplicity = 1*/) {
-        //    std::string entryPointID = static_cast<std::string>(Common::COMMAND_ENTRY_POINT_ID);
-        //    int _multiplicity = 1;
-        //    commandsEntryPoint = std::make_shared<BRTBase::CEntryPointCommand>(std::bind(&CEntryPointManager::updateFromCommandEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
-        //    //addToUpdateStack(entryPointID, _multiplicity);            
-        //}
+        void CreateABIRPtrEntryPoint(std::string entryPointID, bool _notify = false) {
+            //std::shared_ptr<BRTBase::CEntryPointABIRPtr> _newEntryPoint = std::make_shared<BRTBase::CEntryPointABIRPtr>(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+            std::shared_ptr<BRTBase::CEntryPointABIRPtr> _newEntryPoint = CreateGenericEntryPoint<BRTBase::CEntryPointABIRPtr>(entryPointID, _notify);
+            abirPtrEntryPoints.push_back(_newEntryPoint);
+            EntryPointCreated(entryPointID, _notify);
+        }
 
 
-        ////
+        template <class T>
+        std::shared_ptr<T> CreateGenericEntryPoint(std::string entryPointID, bool _notify) {
+            std::shared_ptr<T> _newEntryPoint = std::make_shared<T>(std::bind(&CEntryPointManager::UpdateEntryPointData, this, std::placeholders::_1), entryPointID, _notify);
+            return _newEntryPoint;
+        }
+                       
+
+        //// Conections
         void connectSamplesEntryTo(std::shared_ptr<BRTBase::CExitPointSamplesVector> _exitPoint, std::string entryPointID) {
             std::shared_ptr<BRTBase::CEntryPointSamplesVector> _entryPoint2 = GetSamplesEntryPoint(entryPointID);
             if (_entryPoint2) {
-                _exitPoint->attach(*_entryPoint2.get());
+                _exitPoint->attach(*_entryPoint2.get());                
+                UpdateEntryPointConnections(entryPointID, _entryPoint2->AddConnection());
                 SET_RESULT(RESULT_OK, "Connection done correctly with this entry point " + entryPointID);
             }
             else {
@@ -97,13 +112,39 @@ namespace BRTBase {
         void disconnectSamplesEntryTo(std::shared_ptr<BRTBase::CExitPointSamplesVector> _exitPoint, std::string entryPointID) {
             std::shared_ptr<BRTBase::CEntryPointSamplesVector> _entryPoint2 = GetSamplesEntryPoint(entryPointID);
             if (_entryPoint2) {
-                _exitPoint->detach(_entryPoint2.get());
+                _exitPoint->detach(_entryPoint2.get());                
+                UpdateEntryPointConnections(entryPointID, _entryPoint2->RemoveConnection());
                 SET_RESULT(RESULT_OK, "Disconnection done correctly with this entry point " + entryPointID);
             }
             else {
                 ASSERT(false, RESULT_ERROR_INVALID_PARAM, "There is no entry point with this id " + entryPointID, "");
             }
         }
+
+        void connectMultipleSamplesVectorsEntryTo(std::shared_ptr<BRTBase::CExitPointMultipleSamplesVector> _exitPoint, std::string entryPointID) {
+            std::shared_ptr<BRTBase::CEntryPointMultipleSamplesVector> _entryPoint2 = GetMultipleSamplesVectorEntryPoint(entryPointID);
+            if (_entryPoint2) {
+                _exitPoint->attach(*_entryPoint2.get());                
+                UpdateEntryPointConnections(entryPointID, _entryPoint2->AddConnection());
+                SET_RESULT(RESULT_OK, "Connection done correctly with this entry point " + entryPointID);
+            }
+            else {
+                ASSERT(false, RESULT_ERROR_INVALID_PARAM, "There is no entry point with this id " + entryPointID, "");
+            }
+        }
+
+        void disconnectMultipleSamplesVectorsEntryTo(std::shared_ptr<BRTBase::CExitPointMultipleSamplesVector> _exitPoint, std::string entryPointID) {
+            std::shared_ptr<BRTBase::CEntryPointMultipleSamplesVector> _entryPoint2 = GetMultipleSamplesVectorEntryPoint(entryPointID);
+            if (_entryPoint2) {
+                _exitPoint->detach(_entryPoint2.get());                
+                UpdateEntryPointConnections(entryPointID, _entryPoint2->RemoveConnection());
+                SET_RESULT(RESULT_OK, "Disconnection done correctly with this entry point " + entryPointID);
+            }
+            else {
+                ASSERT(false, RESULT_ERROR_INVALID_PARAM, "There is no entry point with this id " + entryPointID, "");
+            }
+        }
+
 
         void connectPositionEntryTo(std::shared_ptr<BRTBase::CExitPointTransform> _exitPoint, std::string entryPointID) {
             std::shared_ptr<BRTBase::CEntryPointTransform> _entryPoint = GetPositionEntryPoint(entryPointID);
@@ -171,17 +212,28 @@ namespace BRTBase {
             }
         }
 
-        //void connectCommandEntryTo(std::shared_ptr<BRTBase::CExitPointCommand> _exitPoint) {
-        //    std::string entryPointID = static_cast<std::string>(Common::COMMAND_ENTRY_POINT_ID);
-        //    //if (_entryPoint) {
-        //    _exitPoint->attach(*commandsEntryPoint.get());
-        //    SET_RESULT(RESULT_OK, "Connection done correctly with this entry point " + entryPointID);
-        //    //}
-        //    //else {
-        //        //ASSERT(false, RESULT_ERROR_INVALID_PARAM, "There is no entry point with this id " + entryPointID, "");
-        //    //}
-        //}
+        void connectABIREntryTo(std::shared_ptr<BRTBase::CExitPointABIRPtr> _exitPoint, std::string entryPointID) {
+            std::shared_ptr<BRTBase::CEntryPointABIRPtr> _entryPoint = GetABIRPtrEntryPoint(entryPointID);
+            if (_entryPoint) {
+                _exitPoint->attach(*_entryPoint.get());
+                SET_RESULT(RESULT_OK, "Connection done correctly with this entry point " + entryPointID);
+            }
+            else {
+                ASSERT(false, RESULT_ERROR_INVALID_PARAM, "There is no entry point with this id " + entryPointID, "");
+            }
+        }
 
+        void disconnectABIREntryTo(std::shared_ptr<BRTBase::CExitPointABIRPtr> _exitPoint, std::string entryPointID) {
+            std::shared_ptr<BRTBase::CEntryPointABIRPtr> _entryPoint = GetABIRPtrEntryPoint(entryPointID);
+            if (_entryPoint) {
+                _exitPoint->detach(_entryPoint.get());
+                SET_RESULT(RESULT_OK, "Disconnection done correctly with this entry point " + entryPointID);
+            }
+            else {
+                ASSERT(false, RESULT_ERROR_INVALID_PARAM, "There is no entry point with this id " + entryPointID, "");
+            }
+        }
+        
         void connectIDEntryTo(std::shared_ptr<BRTBase::CExitPointID> _exitPoint, std::string entryPointID) {
             std::shared_ptr<BRTBase::CEntryPointID> _entryPoint2 = GetIDEntryPoint(entryPointID);
             if (_entryPoint2) {
@@ -230,12 +282,12 @@ namespace BRTBase {
             return nullptr;
         }
 
-      /*  std::shared_ptr<BRTBase::CEntryPointSRTFPtr >  GetSRTFPtrEntryPoint(std::string _id) {
-            for (auto& it : srtfPtrEntryPoints) {
-                if (it->GetID() == _id) { return it; }
+        std::shared_ptr<BRTBase::CEntryPointABIRPtr >  GetABIRPtrEntryPoint(std::string _id) {
+            for (auto& it : abirPtrEntryPoints) {
+                if (it->GetID() == _id) { return it; }                
             }
             return nullptr;
-        }*/
+        }
 
         std::shared_ptr<BRTBase::CEntryPointTransform >  GetPositionEntryPoint(std::string _id) {
             for (auto& it : positionEntryPoints) {
@@ -251,9 +303,13 @@ namespace BRTBase {
             return nullptr;
         }
 
-        /*std::shared_ptr<BRTBase::CEntryPointCommand >  GetCommandEntryPoint() {
-            return commandsEntryPoint;
-        }*/
+        std::shared_ptr<BRTBase::CEntryPointMultipleSamplesVector> GetMultipleSamplesVectorEntryPoint(std::string _id) {
+            for (auto& it : multipleSamplesVectorEntryPoints) {
+                if (it->GetID() == _id) { return it; }
+            }
+            return nullptr;
+        }
+        
 
         std::shared_ptr<BRTBase::CEntryPointID> GetIDEntryPoint(std::string _id) {
             for (auto& it : idEntryPoints) {
@@ -266,14 +322,13 @@ namespace BRTBase {
     private:
 
         std::vector<std::shared_ptr<BRTBase::CEntryPointSamplesVector> > samplesEntryPoints;
-        std::vector<std::shared_ptr <BRTBase::CEntryPointTransform > > positionEntryPoints;
-        //std::shared_ptr<BRTBase::CEntryPointCommand> commandsEntryPoint;
+        std::vector<std::shared_ptr<BRTBase::CEntryPointMultipleSamplesVector> > multipleSamplesVectorEntryPoints;
+        std::vector<std::shared_ptr <BRTBase::CEntryPointTransform > > positionEntryPoints;        
         std::vector<std::shared_ptr <BRTBase::CEntryPointHRTFPtr>> hrtfPtrEntryPoints;
         std::vector<std::shared_ptr <BRTBase::CEntryPointILDPtr>> ildPtrEntryPoints;
-        //std::vector<std::shared_ptr <BRTBase::CEntryPointSRTFPtr>> srtfPtrEntryPoints;
-        std::vector<std::shared_ptr<BRTBase::CEntryPointID> > idEntryPoints;
-
-
+        std::vector<std::shared_ptr <BRTBase::CEntryPointABIRPtr>> abirPtrEntryPoints;
+        std::vector<std::shared_ptr <BRTBase::CEntryPointID> > idEntryPoints;
+        
     };
 };
 #endif

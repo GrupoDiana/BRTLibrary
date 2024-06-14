@@ -29,22 +29,20 @@
 #include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
 
-//#define NEAR_FIELD_TABLE_AZIMUTH_STEP 5
-//#define NEAR_FIELD_TABLE_DISTANCE_STEP 10
 
 	/** \brief Class to be used as Key in the hash table used by CILD
 	*/
-	class CILD_Key
+	class CNFCFilter_Key
 	{
 	public:
 		int distance;      ///< Distance to the center of the head, in millimeters 
 		int azimuth;       ///< Azimuth angle of interaural coordinates, in degrees
 
-		CILD_Key() :CILD_Key{ 0,0 } {}
+		CNFCFilter_Key() :CNFCFilter_Key{ 0,0 } {}
 
-		CILD_Key(int _distance, int _azimuth) :distance{ _distance }, azimuth{ _azimuth } {}
+		CNFCFilter_Key(int _distance, int _azimuth) :distance{ _distance }, azimuth{ _azimuth } {}
 
-		bool operator==(const CILD_Key& key) const
+		bool operator==(const CNFCFilter_Key& key) const
 		{
 			return (this->azimuth == key.azimuth && this->distance == key.distance);
 		}
@@ -53,10 +51,10 @@
 	namespace std
 	{
 		template<>
-		struct hash<CILD_Key>
+		struct hash<CNFCFilter_Key>
 		{
 			// adapted from http://en.cppreference.com/w/cpp/utility/hash
-			size_t operator()(const CILD_Key & key) const
+			size_t operator()(const CNFCFilter_Key & key) const
 			{
 				size_t h1 = std::hash<int>()(key.distance);
 				size_t h2 = std::hash<int>()(key.azimuth);
@@ -64,40 +62,17 @@
 			}
 		};
 	}
-
-	///** \brief Template class to hold the coefficients of a set of biquad filters.
-	//*/
-	//template <int NUMBER_OF_BIQUAD_FILTERS>
-	//class CILD_BiquadFilterCoefs
-	//{
-	//public:
-	//	float coefs[6 * NUMBER_OF_BIQUAD_FILTERS];   /**< Holds the coefficients of one or more biquad filters.
-	//													Each biquad filter has 6 coefficients.
-	//													Format: f1_b0, f1_b1, f1_b2, f1_a0, f1_a1, f1_a2, f2_b0, f2_b1, f2_b2, f2_a0, f2_a1, f2_a2
-	//														where fx means filter xth     */
-	//};
-
-	///** \brief Type definition to work with a set of coefficients for two biquad filters
-	//*/
-	//typedef CILD_BiquadFilterCoefs<2> T_ILD_TwoBiquadFilterCoefs;
-
-
-	//struct TILDStruct {		
-	//	CMonoBuffer<float> leftCoefs;	///< Left filters coefs
-	//	CMonoBuffer<float> rightCoefs;	///< Right filters coefs
-	//};
-
+	
 
 	/** \brief Hash table that contains a set of coefficients for two biquads filters that are indexed through a pair of distance
-	 and azimuth values (interaural coordinates). */
-	//typedef std::unordered_map<CILD_Key, T_ILD_TwoBiquadFilterCoefs> T_ILD_HashTable;
-	typedef std::unordered_map<CILD_Key, BRTServices::TILDStruct> T_ILD_HashTable;
+	 and azimuth values (interaural coordinates). */	
+	typedef std::unordered_map<CNFCFilter_Key, BRTServices::TNFCFilterStruct> T_NFCFilter_HashTable;
 
 namespace BRTServices {
 
 	/** \details This class models the effect of frequency-dependent Interaural Level Differences when the sound source is close to the listener
 	*/
-	class CILD : public CServicesBase
+	class CNearFieldCompensationFilters : public CServicesBase
 	{
 
 	public:
@@ -109,17 +84,17 @@ namespace BRTServices {
 		*	\details Leaves ILD Table empty. Use SetILDNearFieldEffectTable to load.
 		*   \eh Nothing is reported to the error handler.
 		*/
-		CILD() : setupInProgress{ false }, ILDLoaded{ false }, numberOfEars{ -1 },azimuthStep{-1}, distanceStep{-1}, fileTitle{""}, fileName{""}
+		CNearFieldCompensationFilters() : setupInProgress{ false }, NFCFiltersLoaded{ false }, numberOfEars{ -1 },azimuthStep{-1}, distanceStep{-1}, fileTitle{""}, fileName{""}
 		{					
 		}
 
 
 		void BeginSetup() {
 			setupInProgress = true;			
-			ILDLoaded = false;			
+			NFCFiltersLoaded = false;			
 			Clear();
 
-			SET_RESULT(RESULT_OK, "ILD Setup started");
+			SET_RESULT(RESULT_OK, "NFC Filter Setup started");
 		}
 
 		bool EndSetup()
@@ -131,8 +106,8 @@ namespace BRTServices {
 				distanceStep = CalculateTableDistanceStep();
 
 				if (numberOfEars != -1 && azimuthStep != -1 && distanceStep != -1) {															
-					ILDLoaded = true;
-					SET_RESULT(RESULT_OK, "ILD Setup finished");
+					NFCFiltersLoaded = true;
+					SET_RESULT(RESULT_OK, "NFC Filter Setup finished");
 					azimuthList.clear();
 					distanceList.clear();
 					return true;
@@ -242,7 +217,7 @@ namespace BRTServices {
 		*	\param [in] newTable data for hash table
 		*   \eh Nothing is reported to the error handler.
 		*/					
-		void AddILDNearFieldEffectTable(T_ILD_HashTable && newTable)
+		void AddILDNearFieldEffectTable(T_NFCFilter_HashTable && newTable)
 		{
 			t_ILDNearFieldEffect = newTable;
 		}
@@ -253,13 +228,13 @@ namespace BRTServices {
 		*	\param [in] newHRIR HRIR data for both ears
 		*   \eh Warnings may be reported to the error handler.
 		*/
-		void AddCoefficients(float azimuth, float distance, TILDStruct&& newCoefs)
+		void AddCoefficients(float azimuth, float distance, TNFCFilterStruct&& newCoefs)
 		{
 			if (setupInProgress) {
 				int iAzimuth = static_cast<int> (round(azimuth));
 				int iDistance = static_cast<int> (round(GetDistanceInMM(distance)));
 
-				auto returnValue = t_ILDNearFieldEffect.emplace(CILD_Key(iDistance, iAzimuth), std::forward<TILDStruct>(newCoefs));
+				auto returnValue = t_ILDNearFieldEffect.emplace(CNFCFilter_Key(iDistance, iAzimuth), std::forward<TNFCFilterStruct>(newCoefs));
 				//Error handler
 				if (returnValue.second) { 
 					/*SET_RESULT(RESULT_OK, "ILD Coefficients emplaced into t_ILDNearFieldEffect succesfully"); */ 
@@ -284,7 +259,7 @@ namespace BRTServices {
 		*	\retval hashTable data from the hash table
 		*   \eh Nothing is reported to the error handler.
 		*/
-		const T_ILD_HashTable & GetILDNearFieldEffectTable() { return t_ILDNearFieldEffect; }
+		const T_NFCFilter_HashTable & GetILDNearFieldEffectTable() { return t_ILDNearFieldEffect; }
 		
 		/** \brief Get the internal hash table used for computing ILD Spatialization
 		*	\retval hashTable data from the hash table
@@ -301,7 +276,7 @@ namespace BRTServices {
 		*/				
 		std::vector<float> GetILDNearFieldEffectCoefficients(Common::T_ear ear, float distance_m, float azimuth)
 		{
-			if (!ILDLoaded) {
+			if (!NFCFiltersLoaded) {
 				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "ILD table was not initialized in BRTServices::CILD::GetILDNearFieldEffectCoefficients()");
 				return std::vector<float>();
 			}
@@ -326,7 +301,7 @@ namespace BRTServices {
 			int q_distance_mm	= GetRoundUp(distance_mm, distanceStep);
 			int q_azimuth		= GetRoundUp(azimuth, azimuthStep);
 
-			auto itEar = t_ILDNearFieldEffect.find(CILD_Key(q_distance_mm, q_azimuth));
+			auto itEar = t_ILDNearFieldEffect.find(CNFCFilter_Key(q_distance_mm, q_azimuth));
 			if (itEar != t_ILDNearFieldEffect.end())
 			{					
 				if (ear == Common::T_ear::LEFT)			{	return itEar->second.leftCoefs;	} 
@@ -445,9 +420,9 @@ namespace BRTServices {
 		///////////////	
 
 		bool setupInProgress;						// Variable that indicates the ILD load is in process
-		bool ILDLoaded;								// Variable that indicates if the ILD has been loaded correctly
+		bool NFCFiltersLoaded;								// Variable that indicates if the ILD has been loaded correctly
 
-		T_ILD_HashTable t_ILDNearFieldEffect;
+		T_NFCFilter_HashTable t_ILDNearFieldEffect;
 		int azimuthStep;							// In degress
 		int distanceStep;							// In milimeters
 		std::vector<double> azimuthList;

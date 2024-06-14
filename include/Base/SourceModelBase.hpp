@@ -51,7 +51,7 @@ namespace BRTBase {
 			CreateCommandEntryPoint();
 		}
 
-		void SetBuffer(CMonoBuffer<float>& _buffer) { 
+		void SetBuffer(const CMonoBuffer<float>& _buffer) { 
 			samplesBuffer = _buffer; 
 			dataReady = true;
 		}
@@ -61,17 +61,19 @@ namespace BRTBase {
 			
 		}
 		void SetDataReady() {
-			if (!dataReady) { return; }
-			//samplesExitPoint->sendData(samplesBuffer); 
-			Update(GetSamplesExitPoint("samples")->GetID());
-			//dataReady = false;
+			if (!dataReady) { 				
+				SetBuffer(CMonoBuffer<float>(globalParameters.GetBufferSize()));			// set and empty buffer to continue
+			}			
+			//Update(GetSamplesExitPoint("samples")->GetID());
+			Update("samples");
 		}
 
 		void operator()() {
 			//samplesExitPoint->sendData(samplesBuffer);
 			//Update();
 			//dataReady = false;
-			Update(GetSamplesExitPoint("samples")->GetID());
+			//Update(GetSamplesExitPoint("samples")->GetID());			
+			SetDataReady();
 		}
 
 		void SendData(CMonoBuffer<float>& _buffer) {
@@ -97,7 +99,7 @@ namespace BRTBase {
 		std::string GetID() { return sourceID; }
 
 		// Update callback
-		void updateFromEntryPoint(std::string entryPointID) {
+		void UpdateEntryPointData(std::string entryPointID) {
 			Update(entryPointID);
 		}
 		void updateFromCommandEntryPoint(std::string entryPointID) {			   
@@ -117,7 +119,8 @@ namespace BRTBase {
 
 		bool dataReady;
 		Common::CTransform sourceTransform;
-		CMonoBuffer<float> samplesBuffer;								
+		CMonoBuffer<float> samplesBuffer;			
+		Common::CGlobalParameters globalParameters;
 	};
 }
 #endif

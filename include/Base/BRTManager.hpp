@@ -17,7 +17,7 @@
 *
 * \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 *
-* \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
+* \b Acknowledgement: This project has received funding from the European Unionï¿½s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 
 #ifndef _BRT_MANAGER_
@@ -94,6 +94,7 @@ namespace BRTBase {
 			}
 		}
 				
+
 		/**
 		 * @brief Creates a new listener and returns a pointer to it. This listener pointer is also saved in a vector.
 		 * @tparam T It must be a listener model, i.e. a class that inherits from the CListenerModelBase class.
@@ -101,7 +102,7 @@ namespace BRTBase {
 		 * @return Returns the pointer to the listener if it could be created, otherwise returns a null pointer.
 		*/
 		template <typename T>
-		std::shared_ptr<T> CreateListener(std::string _listenerID) {			
+		std::shared_ptr<T> CreateListener(const std::string& _listenerID) {			
 			try
 			{
 				if (!setupModeActivated) {
@@ -126,6 +127,23 @@ namespace BRTBase {
 				return nullptr;
 			}
 		}
+
+		/**
+		 * @brief Returns pointer to a listener found by its ID
+		 * @tparam T Listener class model
+		 * @param _listenerID listenerID
+		 * @return Pointer to listener if exist, if not returns nullptr
+		*/
+		template <typename T>
+		std::shared_ptr<T> GetListener(const std::string& _listenerID) { 		
+			for (auto& it : listeners) {
+				if (it->GetID() == _listenerID) {
+					return it;
+				}
+			}
+			return nullptr;
+		}
+
 
 		/**
 		 * @brief Creates a new environment and returns a pointer to it. The brtmanager does NOT save the pointer.
@@ -174,6 +192,29 @@ namespace BRTBase {
 			}
 		}
 		
+
+		/**
+		 * @brief Creates a new processor and returns a pointer to it. The brtmanager does NOT save the pointer.
+		 * @tparam T It must be a procesor module, i.e. a class that inherits from the CProcessorBase class.
+		 * @return Returns the pointer to the procesor if it could be created, otherwise returns a null pointer.
+		*/
+		template <typename T, typename U>
+		std::shared_ptr<T> CreateProcessor(U data) {
+			if (!setupModeActivated) { return nullptr; }
+			try
+			{
+				std::shared_ptr<T> newProcessor = std::make_shared<T>(data);
+				ConnectModulesCommand(newProcessor);
+				SET_RESULT(RESULT_OK, "Processor created succesfully");
+				return newProcessor;
+			}
+			catch (std::bad_alloc& ba)
+			{
+				ASSERT(false, RESULT_ERROR_BADALLOC, ba.what(), "");
+				return nullptr;
+			}
+		}
+
 		/**
 		 * @brief Delete a source
 		 * @param _sourceID Identifier of the source to be deleted
@@ -212,13 +253,14 @@ namespace BRTBase {
 		 * @brief Delete a processor
 		 * @tparam T Processr type.
 		 * @param _processor 
-		 * @return Returns true in case the processor could have been deleted.
+		 * @return Returns true in case the processor was deleted.
 		*/
 		template <typename T>
 		bool RemoveProcessor(std::shared_ptr<T> _processor) {
 			if (!setupModeActivated) { return false; }
 			DisconnectModulesCommand(_processor);
 			_processor.reset();
+			return true;
 		}
 
 		
@@ -326,6 +368,22 @@ namespace BRTBase {
 			module2->disconnectHRTFEntryTo(module1->GetHRTFExitPoint(), entryPointID);
 			return true;
 		}
+
+
+		template <typename T, typename U>
+		bool ConnectModuleABIR(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectABIREntryTo(module1->GetABIRExitPoint(), entryPointID);
+			return true;
+		}
+		template <typename T, typename U>
+		bool ConnectModuleABIR(T* module1, std::shared_ptr <U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectABIREntryTo(module1->GetABIRExitPoint(), entryPointID);
+			return true;
+		}
+
+
 
 		/**
 		 * @brief Connects the ILD ExitPoint of one module to the ILD EntryPoint of another.
@@ -465,6 +523,50 @@ namespace BRTBase {
 		bool DisconnectModulesSamples(std::shared_ptr<T> module1, std::string exitPointID, U* module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->disconnectSamplesEntryTo(module1->GetSamplesExitPoint(exitPointID), entryPointID);
+			return true;
+		}
+
+		/**
+		 * @brief Connects the vector of multiples samples ExitPoint of one module to the vector of multiple samples EntryPoint of another.
+		  * @tparam T Type of module 1
+		 * @tparam U Type of module 2
+		 * @param module1 Pointer to module having Samples exitpoint
+		 * @param module2 Pointer to module having Samples entrypoint
+		 * @param entryPointID ID of entry point in module 2
+		 * @return Returns true if it was possible to make the disconnection. False in all other cases.
+		*/
+		template <typename T, typename U>
+		bool ConnectModulesMultipleSamplesVectors(std::shared_ptr <T> module1, std::string exitPointID, std::shared_ptr <U> module2, std::string entryPointID) {			
+			if (!setupModeActivated) return false;
+			module2->connectMultipleSamplesVectorsEntryTo(module1->GetMultipleSamplesVectorExitPoint(exitPointID), entryPointID);
+			return true;
+		}
+		template <typename T, typename U>
+		bool ConnectModulesMultipleSamplesVectors(std::shared_ptr <T> module1, std::string exitPointID, U* module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectMultipleSamplesVectorsEntryTo(module1->GetMultipleSamplesVectorExitPoint(exitPointID), entryPointID);
+			return true;
+		}
+
+		/**
+		 * @brief Disconnects the vector of multiples samples ExitPoint of one module with the vector of multiples samples EntryPoint of another.
+		 * @tparam T Type of module 1
+		 * @tparam U Type of module 2
+		 * @param module1 Pointer to module having Samples exitpoint
+		 * @param module2 Pointer to module having Samples entrypoint
+		 * @param entryPointID ID of entry point in module 2
+		 * @return Returns true if it was possible to make the disconnection. False in all other cases.
+		*/
+		template <typename T, typename U>
+		bool DisconnectModulesMultipleSamplesVectors(std::shared_ptr<T> module1, std::string exitPointID, std::shared_ptr <U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectMultipleSamplesVectorsEntryTo(module1->GetMultipleSamplesVectorExitPoint(exitPointID), entryPointID);
+			return true;
+		}
+		template <typename T, typename U>
+		bool DisconnectModulesMultipleSamplesVectors(std::shared_ptr<T> module1, std::string exitPointID, U* module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectMultipleSamplesVectorsEntryTo(module1->GetMultipleSamplesVectorExitPoint(exitPointID), entryPointID);
 			return true;
 		}
 

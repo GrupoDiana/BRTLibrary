@@ -65,7 +65,7 @@ namespace BRTBase {
             std::shared_ptr<BRTBase::CExitPointSamplesVector> _newExitPoint = std::make_shared<BRTBase::CExitPointSamplesVector>(exitPointID);
             samplesExitPoints.push_back(_newExitPoint);
         }
-
+        
         /** \brief Returns a pointer to the exit point
         *	\param [in] Exit point identifier to be searched for
         *	\retval A pointer to this type of exit point or null if not found.
@@ -73,6 +73,20 @@ namespace BRTBase {
         */
         std::shared_ptr<BRTBase::CExitPointSamplesVector > GetSamplesExitPoint(std::string exitPointID) {
             for (auto& it : samplesExitPoints) {
+                if (it->GetID() == exitPointID) { return it; }
+            }
+            ASSERT(false, RESULT_ERROR_INVALID_PARAM, "No exit point, of type Samples, has been found with this id." + exitPointID, "");
+            return nullptr;
+        }
+
+
+        void CreateMultipleSamplesExitPoint(std::string exitPointID) {
+            std::shared_ptr<BRTBase::CExitPointMultipleSamplesVector> _newExitPoint = std::make_shared<BRTBase::CExitPointMultipleSamplesVector>(exitPointID);
+            multipleSamplesVectorExitPoints.push_back(_newExitPoint);
+        }
+
+        std::shared_ptr<BRTBase::CExitPointMultipleSamplesVector > GetMultipleSamplesVectorExitPoint(std::string exitPointID) {
+            for (auto& it : multipleSamplesVectorExitPoints) {
                 if (it->GetID() == exitPointID) { return it; }
             }
             ASSERT(false, RESULT_ERROR_INVALID_PARAM, "No exit point, of type Samples, has been found with this id." + exitPointID, "");
@@ -114,6 +128,17 @@ namespace BRTBase {
         }
 
         /////////////////////
+        // AmbisonicBIRs 
+        /////////////////////
+        void CreateABIRExitPoint() {            
+            abirExitPoint = std::make_shared<CExitPointABIRPtr>("moduleHRTF");
+        }
+
+        std::shared_ptr<CExitPointABIRPtr> GetABIRExitPoint() {
+            return abirExitPoint;
+        }
+
+        /////////////////////
        // ILDs 
        /////////////////////
         void CreateILDExitPoint() {
@@ -126,12 +151,13 @@ namespace BRTBase {
     
     private:
         std::shared_ptr<CExitPointTransform> transformExitPoint;
-        std::vector<std::shared_ptr<BRTBase::CExitPointSamplesVector >> samplesExitPoints;        
+        std::vector<std::shared_ptr<BRTBase::CExitPointSamplesVector >> samplesExitPoints;
+        std::vector<std::shared_ptr<BRTBase::CExitPointMultipleSamplesVector >> multipleSamplesVectorExitPoints;
         std::shared_ptr<CExitPointID> moduleIDExitPoint;
         
         std::shared_ptr<CExitPointHRTFPtr>  hrtfExitPoint;
         std::shared_ptr<CExitPointILDPtr>   ildExitPoint;
-
+        std::shared_ptr< CExitPointABIRPtr> abirExitPoint;
     };
 }
 #endif
