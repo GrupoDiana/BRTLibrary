@@ -22,7 +22,7 @@ namespace BRTEnvironmentModel {
 			CreateVirtualSource("WallY1");
 			CreateVirtualSource("WallZ0");
 			CreateVirtualSource("WallZ1");
-			CreateVirtualSource("DirectPath");
+			//CreateVirtualSource("DirectPath");
 
 		}
 
@@ -152,8 +152,8 @@ namespace BRTEnvironmentModel {
 
 			if (muteLoS)
 				std::fill(virtualSourceBuffers[6].begin(), virtualSourceBuffers[6].end(), 0);
-			SetVirtualSourceBuffer("DirectPath", virtualSourceBuffers[6]);
-			SetVirtualSourcePosition("DirectPath", virtualSourcePositions[6]);
+			//SetVirtualSourceBuffer("DirectPath", virtualSourceBuffers[6]);
+			//SetVirtualSourcePosition("DirectPath", virtualSourcePositions[6]);
 		}
 
 
