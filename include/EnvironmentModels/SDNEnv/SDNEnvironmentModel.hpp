@@ -6,8 +6,6 @@
 #include <Base/BRTManager.hpp>
 #include <EnvironmentModels/SDNenv/SDNEnvironment.hpp>
 
-#define N_VIRTUAL_SOURCES 7
-
 namespace BRTEnvironmentModel {
 
 	class SDNEnvironmentModel : public BRTBase::CEnviromentVirtualSourceBaseModel, SDNEnvironment {
@@ -22,12 +20,15 @@ namespace BRTEnvironmentModel {
 			CreateVirtualSource("WallY1");
 			CreateVirtualSource("WallZ0");
 			CreateVirtualSource("WallZ1");
-			//CreateVirtualSource("DirectPath");
+			CreateVirtualSource("DirectPath");
 
 		}
 
+		~SDNEnvironmentModel() {};
 
-		void Update(std::string _entryPointID) {
+		void UpdateEntryPointData(std::string entryPointID) override {};
+
+		void Update(std::string _entryPointID) override{
 
 			std::lock_guard<std::mutex> l(mutex);
 
@@ -70,8 +71,8 @@ namespace BRTEnvironmentModel {
 		void Init(Common::CVector3 roomDimensions)
 		{
 			inBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
-			virtualSourceBuffers = std::vector<CMonoBuffer<float>>(N_VIRTUAL_SOURCES, inBuffer);
-			virtualSourcePositions = std::vector<Common::CTransform>(N_VIRTUAL_SOURCES);
+			virtualSourceBuffers = std::vector<CMonoBuffer<float>>(SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT, inBuffer);
+			virtualSourcePositions = std::vector<Common::CTransform>(SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT);
 
 			SyncVirtualSourcesToModel();
 
@@ -126,7 +127,7 @@ namespace BRTEnvironmentModel {
 			wallNodes[wallIndex].SetFreqAbsorption(newValue, freqIndex);
 		}
 
-		void UpdateCommand() {};
+		void UpdateCommand() override {};
 
 	private:
 
@@ -152,8 +153,8 @@ namespace BRTEnvironmentModel {
 
 			if (muteLoS)
 				std::fill(virtualSourceBuffers[6].begin(), virtualSourceBuffers[6].end(), 0);
-			//SetVirtualSourceBuffer("DirectPath", virtualSourceBuffers[6]);
-			//SetVirtualSourcePosition("DirectPath", virtualSourcePositions[6]);
+			SetVirtualSourceBuffer("DirectPath", virtualSourceBuffers[6]);
+			SetVirtualSourcePosition("DirectPath", virtualSourcePositions[6]);
 		}
 
 
@@ -167,7 +168,7 @@ namespace BRTEnvironmentModel {
 
 		CMonoBuffer<float> inBuffer;
 
-		bool muteLoS = false;
+		bool muteLoS = true;
 
 	};
 

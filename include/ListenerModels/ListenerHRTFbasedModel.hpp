@@ -179,6 +179,14 @@ namespace BRTListenerModel {
 		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel > _source) { 			
 			return ConnectAnySoundSource(_source, true);
 		};
+		/**
+		 * @brief Connect a new source to this listener
+		 * @param _source Pointer to the source
+		 * @return True if the connection success
+		*/
+		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel > _source) {
+			return ConnectAnySoundSource(_source, false);
+		};
 
 		/**
 		 * @brief Disconnect a new source to this listener
@@ -195,6 +203,14 @@ namespace BRTListenerModel {
 		*/
 		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) { 
 			return DisconnectAnySoundSource(_source, true);
+		};
+		/**
+		 * @brief Disconnect a new source to this listener
+		 * @param _source Pointer to the source
+		 * @return True if the disconnection success
+		*/
+		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _source) {
+			return DisconnectAnySoundSource(_source, false);
 		};
 
 		
