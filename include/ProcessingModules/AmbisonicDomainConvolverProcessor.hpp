@@ -22,17 +22,18 @@
 #ifndef _AMBISONIC_DOMAIN_CONVOLVER_PROCESSOR_
 #define _AMBISONIC_DOMAIN_CONVOLVER_PROCESSOR_
 
-#include <Base/ProcessorBase.hpp>
-#include <Base/EntryPoint.hpp>
-#include <Common/UPCAnechoic.hpp>
-#include <Common/Buffer.hpp>
-#include <ProcessingModules/AmbisonicDomainConvolver.hpp>
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <Base/AdvancedEntryPointManager.hpp>
+#include <Base/ExitPointManager.hpp>
+#include <Common/UPCAnechoic.hpp>
+#include <Common/Buffer.hpp>
+#include <ProcessingModules/AmbisonicDomainConvolver.hpp>
+
 
 namespace BRTProcessing {
-    class CAmbisonicDomainConvolverProcessor : public BRTBase::CProcessorBase, public CAmbisonicDomainConvolver {
+    class CAmbisonicDomainConvolverProcessor : public BRTBase::CAdvancedEntryPointManager, public BRTBase::CExitPointManager, public CAmbisonicDomainConvolver {
 		
     public:
 		CAmbisonicDomainConvolverProcessor(Common::T_ear _earToProcess) : CAmbisonicDomainConvolver(_earToProcess) {

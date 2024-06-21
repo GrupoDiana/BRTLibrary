@@ -25,12 +25,13 @@
 
 #include <thread>
 #include "SourceModelBase.hpp"
+#include "ListenerBase.hpp"
 #include "ListenerModelBase.hpp"
 #include "third_party_libraries/nlohmann/json.hpp"
 
 namespace BRTBase {
 	using json = nlohmann::json;
-
+		
 	class CBRTManager {
 
 	public:
@@ -62,6 +63,70 @@ namespace BRTBase {
 			return control;
 		}
 		
+		/**
+		 * @brief 
+		 * @param _listenerID 
+		 * @return 
+		 */
+		template <typename T>
+		std::shared_ptr<T> CreateListener(const std::string& _listenerID) {
+			try
+			{
+				if (!setupModeActivated) {
+					SET_RESULT(RESULT_ERROR_NOTALLOWED, "BRT library is not in configuration mode");
+					return nullptr;
+				}
+				auto it = std::find_if(listeners.begin(), listeners.end(), [&_listenerID](std::shared_ptr<CListenerBase>& listenerItem) { return listenerItem->GetID() == _listenerID; });
+				if (it != listeners.end()) {
+					SET_RESULT(RESULT_ERROR_NOTALLOWED, "A Listener with such an ID already exists.");
+					return nullptr;
+				}
+				std::shared_ptr<T> newListener(new T(_listenerID, this));
+				ConnectModulesCommand(newListener);
+				listeners.push_back(newListener);
+				SET_RESULT(RESULT_OK, "Listener created succesfully");
+				return newListener;
+			}
+			catch (std::bad_alloc& ba)
+			{
+				ASSERT(false, RESULT_ERROR_BADALLOC, ba.what(), "");
+				return nullptr;
+			}
+		}
+
+
+		/**
+		 * @brief Returns pointer to a listener found by its ID
+		 * @tparam T Listener class model
+		 * @param _listenerID listenerID
+		 * @return Pointer to listener if exist, if not returns nullptr
+		*/		
+		template <typename T>
+		std::shared_ptr<T> GetListener(const std::string& _listenerID) {
+			for (auto& it : listeners) {
+				if (it->GetID() == _listenerID) {
+					return it;
+				}
+			}
+			return nullptr;
+		}
+
+		/**
+		 * @brief Returns pointer to a listener found by its ID
+		 * @tparam T Listener class model
+		 * @param _listenerID listenerID
+		 * @return Pointer to listener if exist, if not returns nullptr
+		*/		
+		std::shared_ptr<CListener> GetListener(const std::string& _listenerID) {
+			for (auto& it : listeners) {
+				if (it->GetID() == _listenerID) {
+					std::shared_ptr<BRTBase::CListener> _listener = std::dynamic_pointer_cast<BRTBase::CListener>(it);
+					return _listener;
+				}
+			}
+			return nullptr;
+		}
+
 		/**
 		 * @brief Creates a new source and returns a pointer it. This pointer is also saved in a vector.
 		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
@@ -102,22 +167,22 @@ namespace BRTBase {
 		 * @return Returns the pointer to the listener if it could be created, otherwise returns a null pointer.
 		*/
 		template <typename T>
-		std::shared_ptr<T> CreateListener(const std::string& _listenerID) {			
+		std::shared_ptr<T> CreateListenerModel(const std::string& _listenerID) {			
 			try
 			{
 				if (!setupModeActivated) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "BRT library is not in configuration mode");
 					return nullptr;
 				}
-				auto it = std::find_if(listeners.begin(), listeners.end(), [&_listenerID](std::shared_ptr<CListenerModelBase>& listenerItem) { return listenerItem->GetID() == _listenerID; });
-				if (it != listeners.end()) {
+				auto it = std::find_if(listenerModels.begin(), listenerModels.end(), [&_listenerID](std::shared_ptr<CListenerModelBase>& listenerItem) { return listenerItem->GetID() == _listenerID; });
+				if (it != listenerModels.end()) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "A listener with such an ID already exists.");
 					return nullptr;
 				}
 
 				std::shared_ptr<T> newListener = std::make_shared<T>(_listenerID, this);
 				ConnectModulesCommand(newListener);
-				listeners.push_back(newListener);
+				listenerModels.push_back(newListener);
 				SET_RESULT(RESULT_OK, "Listener created succesfully");
 				return newListener;
 			}
@@ -135,8 +200,8 @@ namespace BRTBase {
 		 * @return Pointer to listener if exist, if not returns nullptr
 		*/
 		template <typename T>
-		std::shared_ptr<T> GetListener(const std::string& _listenerID) { 		
-			for (auto& it : listeners) {
+		std::shared_ptr<T> GetListenerModel(const std::string& _listenerID) { 		
+			for (auto& it : listenerModels) {
 				if (it->GetID() == _listenerID) {
 					return it;
 				}
@@ -214,10 +279,10 @@ namespace BRTBase {
 		*/
 		bool RemoveListener(std::string _listenerID) {
 			if (!setupModeActivated) { return false; }
-			auto it = std::find_if(listeners.begin(), listeners.end(), [&_listenerID](std::shared_ptr<CListenerModelBase>& listenerItem) { return listenerItem->GetID() == _listenerID; });
-			if (it != listeners.end()) {
+			auto it = std::find_if(listenerModels.begin(), listenerModels.end(), [&_listenerID](std::shared_ptr<CListenerModelBase>& listenerItem) { return listenerItem->GetID() == _listenerID; });
+			if (it != listenerModels.end()) {
 				DisconnectModulesCommand(*it);
-				listeners.erase(it);
+				listenerModels.erase(it);
 				it->reset();
 				return true;
 			}
@@ -617,9 +682,11 @@ namespace BRTBase {
 		}
 
 	private:
-		std::shared_ptr<BRTBase::CExitPointCommand> commandsExitPoint;	// Exit point to emit control commands
-		std::vector<std::shared_ptr<CSourceModelBase>> audioSources;	// List of audio sources 
-		std::vector<std::shared_ptr<CListenerModelBase>> listeners;		// List of audio sources 
+		std::shared_ptr<BRTBase::CExitPointCommand>			commandsExitPoint;	// Exit point to emit control commands
+		
+		std::vector<std::shared_ptr<CSourceModelBase>>		audioSources;		// List of audio sources 
+		std::vector<std::shared_ptr<CListenerBase>>			listeners;			// List of listeners		
+		std::vector<std::shared_ptr<CListenerModelBase>>	listenerModels;		// List of listener Models
 		bool initialized;
 		bool setupModeActivated;
 

@@ -26,6 +26,8 @@
 #include "Common/GlobalParameters.hpp"
 #include "Common/ErrorHandler.hpp"
 #include "Base/BRTManager.hpp"
+#include "Base/Listener.hpp"
+#include "Base/ListenerBase.hpp"
 #include "ListenerModels/ListenerHRTFModel.hpp"
 #include "ListenerModels/ListenerAmbisonicHRTFModel.hpp"
 #include "ListenerModels/ListenerEnvironmentBRIRModel.hpp"

@@ -22,19 +22,20 @@
 #ifndef HRTF_CONVOLVER_PROCESSOR_
 #define HRTF_CONVOLVER_PROCESSOR_
 
-#include <Base/ProcessorBase.hpp>
-#include <Base/EntryPoint.hpp>
+#include <memory>
+#include <vector>
+#include <algorithm>
+#include <Base/AdvancedEntryPointManager.hpp>
+#include <Base/ExitPointManager.hpp>
 #include <Common/UPCAnechoic.hpp>
 #include <Common/Buffer.hpp>
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
 #include <ServiceModules/HRBRIR.hpp>
 #include <ProcessingModules/HRTFConvolver.hpp>
-#include <memory>
-#include <vector>
-#include <algorithm>
+
 
 namespace BRTProcessing {
-    class CHRTFConvolverProcessor : public BRTBase::CProcessorBase, public CHRTFConvolver {
+    class CHRTFConvolverProcessor : public BRTBase::CAdvancedEntryPointManager, public BRTBase::CExitPointManager, public CHRTFConvolver {
 		
     public:
 		CHRTFConvolverProcessor() {
@@ -73,15 +74,15 @@ namespace BRTProcessing {
 			std::weak_ptr<BRTServices::CServicesBase> listenerHRTF = GetHRTFPtrEntryPoint("listenerHRTF")->GetData();
 			std::weak_ptr<BRTServices::CServicesBase> listenerHRBRIR = GetHRBRIRPtrEntryPoint("listenerHRBRIR")->GetData();
 
-			if (listenerHRTF.lock() != nullptr) { 
+			//if (listenerHRTF.lock() != nullptr) { 
 				Process(buffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerHRTF);
-			}							
-			else if (listenerHRBRIR.lock() != nullptr) {				
-				Process(buffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerHRBRIR);
-			} else {
-				SET_RESULT(RESULT_ERROR_NOTSET, "HRTF Convolver error: No HRTF or HRBRIR data available");
-				return;
-			}
+			//}							
+			//else if (listenerHRBRIR.lock() != nullptr) {				
+			//	Process(buffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerHRBRIR);
+			//} else {
+			//	SET_RESULT(RESULT_ERROR_NOTSET, "HRTF Convolver error: No HRTF or HRBRIR data available");
+			//	return;
+			//}
 
 								
 			GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);

@@ -1,7 +1,7 @@
 /**
-* \class CProcessorBase
+* \class CAdvancedEntryPointManager
 *
-* \brief Declaration of CProcessorBase class
+* \brief Declaration of CAdvancedEntryPointManager class
 * \date	June 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
@@ -20,8 +20,8 @@
 * \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 
-#ifndef _PROCESSOR_BASE_
-#define _PROCESSOR_BASE_
+#ifndef _CADVANCED_ENTRY_POINT_MANAGER_
+#define _CADVANCED_ENTRY_POINT_MANAGER_
 
 #include <Common/CommonDefinitions.hpp>
 #include <Base/EntryPointManager.hpp>
@@ -40,13 +40,13 @@ namespace BRTBase {
         bool received;
     };
 
-    class CProcessorBase : public CEntryPointManager, public CCommandEntryPointManager, public CExitPointManager {
+    class CAdvancedEntryPointManager : public CEntryPointManager, public CCommandEntryPointManager {
     public:
-        CProcessorBase() {
+        CAdvancedEntryPointManager() {
             CreateCommandEntryPoint();
         }
 
-        virtual ~CProcessorBase() {}
+        virtual ~CAdvancedEntryPointManager() {}
         
         /**
          * @brief This method will be called when data has been received at all input points with notification.

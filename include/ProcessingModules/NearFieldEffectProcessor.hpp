@@ -23,16 +23,17 @@
 #ifndef _NEAR_FIELD_EFFECT_PROCESSOR_HPP
 #define _NEAR_FIELD_EFFECT_PROCESSOR_HPP
 
-#include <Base/ProcessorBase.hpp>
-#include <Base/EntryPoint.hpp>
-#include <Common/Buffer.hpp>
-#include <ProcessingModules/NearFieldEffect.hpp>
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <Base/AdvancedEntryPointManager.hpp>
+#include <Base/ExitPointManager.hpp>
+#include <Common/Buffer.hpp>
+#include <ProcessingModules/NearFieldEffect.hpp>
+
 
 namespace BRTProcessing {
-    class CNearFieldEffectProcessor : public BRTBase::CProcessorBase, public CNearFieldEffect {
+    class CNearFieldEffectProcessor : public BRTBase::CAdvancedEntryPointManager, public BRTBase::CExitPointManager, public CNearFieldEffect {
 		
     public:
 		CNearFieldEffectProcessor() {

@@ -22,17 +22,18 @@
 #ifndef _CBILATERAL_AMBISONIC_ENCODER_PROCESSOR_HPP
 #define _CBILATERAL_AMBISONIC_ENCODER_PROCESSOR_HPP
 
-#include <Base/ProcessorBase.hpp>
-#include <Base/EntryPoint.hpp>
-#include <Common/UPCAnechoic.hpp>
-#include <Common/Buffer.hpp>
-#include <ProcessingModules/BilateralAmbisonicEncoder.hpp>
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <Base/AdvancedEntryPointManager.hpp>
+#include <Base/ExitPointManager.hpp>
+#include <Common/UPCAnechoic.hpp>
+#include <Common/Buffer.hpp>
+#include <ProcessingModules/BilateralAmbisonicEncoder.hpp>
+
 
 namespace BRTProcessing {
-    class CBilateralAmbisonicEncoderProcessor : public BRTBase::CProcessorBase, public CBilateralAmbisonicEncoder {
+    class CBilateralAmbisonicEncoderProcessor : public BRTBase::CAdvancedEntryPointManager, public BRTBase::CExitPointManager,  public CBilateralAmbisonicEncoder {
 		
     public:
 		CBilateralAmbisonicEncoderProcessor() {

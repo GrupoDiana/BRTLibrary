@@ -22,14 +22,14 @@
 #ifndef _DISTANCE_ATTENUATION_PROCESSOR_
 #define _DISTANCE_ATTENUATION_PROCESSOR_
 
-#include <Base/ProcessorBase.hpp>
-#include <Base/EntryPoint.hpp>
+#include <Base/AdvancedEntryPointManager.hpp>
+#include <Base/ExitPointManager.hpp>
 #include <ProcessingModules/DistanceAttenuation.hpp>
 
 namespace BRTProcessing {
     
 
-    class CDistanceAttenuationProcessor : public BRTBase::CProcessorBase, CDistanceAttenuation
+    class CDistanceAttenuationProcessor : public BRTBase::CAdvancedEntryPointManager, public BRTBase::CExitPointManager, CDistanceAttenuation
     {
     public:
         CDistanceAttenuationProcessor(){

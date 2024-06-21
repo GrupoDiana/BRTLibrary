@@ -93,8 +93,8 @@ namespace BRTListenerModel {
 		};
 
 	public:
-		CListenerHRTFModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) : 
-			BRTBase::CListenerModelBase(_listenerID, BRTBase::TListenerType::ListenerHRFTModel), brtManager{ _brtManager },
+		CListenerHRTFModel(std::string _listenerModelID, BRTBase::CBRTManager* _brtManager) : 
+			BRTBase::CListenerModelBase(_listenerModelID, BRTBase::TListenerType::ListenerHRFTModel), brtManager{ _brtManager },
 			enableSpatialization{ true }, enableInterpolation{ true }, enableNearFieldEffect{ false }, enableParallaxCorrection{ true }  {
 			
 			//listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// Create a empty HRTF		
@@ -198,22 +198,14 @@ namespace BRTListenerModel {
 		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) { 
 			return DisconnectAnySoundSource(_source, true);
 		};
-
-		
-
+	
 		/** \brief Enable binaural spatialization based in HRTF convolution
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void EnableSpatialization() { 
 			enableSpatialization = true;	
 			SetConfigurationInALLSourcesProcessors();
-		}
-		/*	nlohmann::json j;
-			j["command"] = "/listener/enableSpatialization";
-			j["listenerID"] = listenerID;
-			j["enable"] = true;
-			brtManager->ExecuteCommand(j.dump());	*/		
-		//}//
+		}		
 
 		/** \brief Disable binaural spatialization based in HRTF convolution
 		*/
@@ -331,9 +323,11 @@ namespace BRTListenerModel {
 		 * @brief Implementation of the virtual method for processing the received commands
 		*/
 		void UpdateCommand() {
-			std::lock_guard<std::mutex> l(mutex);
+			//std::lock_guard<std::mutex> l(mutex);
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();						
 			if (command.isNull() || command.GetCommand() == "") { return; }
+
+			std::string listenerID = GetIDEntryPoint("listenerID")->GetData();
 
 			if (listenerID == command.GetStringParameter("listenerID")) {				
 				if (command.GetCommand() == "/listener/enableSpatialization") {
@@ -389,9 +383,16 @@ namespace BRTListenerModel {
 		 * @return True if the connection success
 		*/
 		template <typename T>
-		bool ConnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
+		bool ConnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {			
 			std::lock_guard<std::mutex> l(mutex);
-
+			
+			// Get listener pointer
+			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(GetIDEntryPoint("listenerID")->GetData());
+			if (_listener == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This listener Model has not been connected to a listener.", "");
+				return false;
+			}
+			// Make connections						
 			CSourceProcessors _newSourceProcessors(_source->GetID(), brtManager);
 
 			bool control = brtManager->ConnectModuleTransform(_source, _newSourceProcessors.binauralConvolverProcessor, "sourcePosition");
@@ -400,11 +401,11 @@ namespace BRTListenerModel {
 			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.nearFieldEffectProcessor, "sourceID");
 			
 			if (sourceNeedsListenerPosition) {
-				control = control && brtManager->ConnectModuleTransform(this, _source, "listenerPosition");
+				control = control && brtManager->ConnectModuleTransform(_listener, _source, "listenerPosition");
 			}
 
-			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.binauralConvolverProcessor, "listenerPosition");
-			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerPosition");
+			control = control && brtManager->ConnectModuleTransform(_listener, _newSourceProcessors.binauralConvolverProcessor, "listenerPosition");
+			control = control && brtManager->ConnectModuleTransform(_listener, _newSourceProcessors.nearFieldEffectProcessor, "listenerPosition");
 			control = control && brtManager->ConnectModuleHRTF(this, _newSourceProcessors.binauralConvolverProcessor, "listenerHRTF");
 			control = control && brtManager->ConnectModuleILD(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerILD");
 			control = control && brtManager->ConnectModuleID(this, _newSourceProcessors.binauralConvolverProcessor, "listenerID");
