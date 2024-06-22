@@ -46,81 +46,9 @@ namespace BRTBase {
 	public:
 		
 		CListener(std::string _listenerID, CBRTManager* _brtManager) : CListenerBase { _listenerID }, brtManager { _brtManager } {
-												
-			/*CreateSamplesEntryPoint("leftEar");
-			CreateSamplesEntryPoint("rightEar");									
-			CreateTransformExitPoint();			
-			CreateIDExitPoint();
-			GetIDExitPoint()->sendData(listenerID);						
-			CreateCommandEntryPoint();*/			
+																
 		}
-				
-
-		///** \brief Set listener position and orientation
-		//*	\param [in] _listenerTransform new listener position and orientation
-		//*   \eh Nothing is reported to the error handler.
-		//*/
-		//void SetListenerTransform(Common::CTransform _transform) {
-		//	listenerTransform = _transform;
-		//	GetTransformExitPoint()->sendData(listenerTransform);	// Send to subscribers			
-		//}
-
-		///** \brief Get listener position and orientation
-		//*	\retval transform current listener position and orientation
-		//*   \eh Nothing is reported to the error handler.
-		//*/
-		//Common::CTransform GetListenerTransform() { return listenerTransform; }
-
-		///**
-		// * @brief Get listener ID
-		// * @return Return listener identificator
-		//*/
-		//std::string GetID() { return listenerID; }		
-		//					
-		///**
-		// * @brief Get output sample buffers from the listener
-		// * @param _leftBuffer Left ear sample buffer
-		// * @param _rightBuffer Right ear sample buffer
-		//*/
-		//void GetBuffers(CMonoBuffer<float>& _leftBuffer, CMonoBuffer<float>& _rightBuffer) {						
-		//	if (leftDataReady) {
-		//		_leftBuffer = leftBuffer;
-		//		leftDataReady = false;
-		//	}
-		//	else {
-		//		_leftBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
-		//	}
-		//	
-		//	if (rightDataReady) {
-		//		_rightBuffer = rightBuffer;
-		//		rightDataReady = false;
-		//	}
-		//	else {
-		//		_rightBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
-		//	}
-
-		//}
-
-		///////////////////////		
-		//// Update Callbacks
-		///////////////////////
-		//void UpdateEntryPointData(std::string id) {
-		//	if (id == "leftEar") {
-		//		UpdateLeftBuffer();
-		//	}
-		//	else if (id == "rightEar") {
-		//		UpdateRightBuffer();
-		//	}
-		//}
-		//
-		//void updateFromCommandEntryPoint(std::string entryPointID) {
-		//	BRTBase::CCommand _command = GetCommandEntryPoint()->GetData();
-		//	if (!_command.isNull()) {
-		//		//UpdateCommand();
-		//	}
-		//}
-		//		
-
+						
 		/**
 		 * @brief Connect listener model
 		 * @param _listener Pointer to the source
@@ -142,13 +70,15 @@ namespace BRTBase {
 			
 			std::shared_ptr<CListenerModelBase> _listenerModel = brtManager->GetListenerModel<CListenerModelBase>(_listenerModelID);
 			if (_listenerModel == nullptr) return false;
-			//TODO CHECK IF IT IS ALREADY CONNECTED
+			
+			if (_listenerModel->IsConnectedToListener()) { return false; };
 			bool control;
 			control = brtManager->ConnectModuleID(this, _listenerModel, "listenerID");						
 			control = control && brtManager->ConnectModulesSamples(_listenerModel, "leftEar", this, "leftEar");
 			control = control && brtManager->ConnectModulesSamples(_listenerModel, "rightEar", this, "rightEar");			
 
-			listenerModelsConnected.push_back(_listenerModel);
+			listenerModelsConnected.push_back(_listenerModel);			
+
 			return control;
 		};
 
@@ -220,50 +150,15 @@ namespace BRTBase {
 		//////////////////////////
 		// Private Methods
 		/////////////////////////
-		//
-		///**
-		// * @brief Mix the new buffer received for the left ear with the contents of the buffer.
-		//*/
-		//void UpdateLeftBuffer() {
-		//	if (!leftDataReady) {
-		//		leftBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
-		//	}			
-		//	CMonoBuffer<float> buffer = GetSamplesEntryPoint("leftEar")->GetData();
-		//	if (buffer.size() != 0) {
-		//		leftBuffer += buffer;
-		//		leftDataReady = true;
-		//	}
-		//}
-		///**
-		// * @brief Mix the new buffer received for the right ear with the contents of the buffer.
-		//*/
-		//void UpdateRightBuffer() {
-		//	if (!rightDataReady) {
-		//		rightBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
-		//	}			
-		//	CMonoBuffer<float> buffer = GetSamplesEntryPoint("rightEar")->GetData();
-		//	if (buffer.size() != 0) {
-		//		rightBuffer += buffer;
-		//		rightDataReady = true;
-		//	}
-		//}		
+		
 
 
 		//////////////////////////
 		// Private Attributes
 		/////////////////////////
-		CBRTManager* brtManager;							// Pointer to the BRT Manager	
-		//std::string listenerID;								// Store unique listener ID		
-		//Common::CTransform listenerTransform;				// Transform matrix (position and orientation) of listener  
-
+		CBRTManager* brtManager;							// Pointer to the BRT Manager			
 		std::vector<std::shared_ptr<CListenerModelBase>> listenerModelsConnected;		// Listener models connected to the listener
-
-		/*Common::CGlobalParameters globalParameters;
-		CMonoBuffer<float> leftBuffer;
-		CMonoBuffer<float> rightBuffer;
-
-		bool leftDataReady;
-		bool rightDataReady;*/
+		
 	};
 }
 #endif

@@ -81,7 +81,7 @@ namespace BRTBase {
 		// Class Methods
 
 		CListenerModelBase(std::string _listenerModelID, TListenerType _listenerType) : listenerModelID{ _listenerModelID }, listenerModelType {_listenerType},
-			leftDataReady{ false },	rightDataReady{ false }, enableITDSimulation{ true } {
+			leftDataReady{ false }, rightDataReady{ false }, enableITDSimulation{ true } {
 												
 			CreateSamplesEntryPoint("leftEar");
 			CreateSamplesEntryPoint("rightEar");									
@@ -94,25 +94,7 @@ namespace BRTBase {
 			GetIDExitPoint()->sendData(listenerModelID);						
 			CreateCommandEntryPoint();
 		}
-				
-
-		/** \brief Set listener position and orientation
-		*	\param [in] _listenerTransform new listener position and orientation
-		*   \eh Nothing is reported to the error handler.
-		*/
-		//void SetListenerTransform(Common::CTransform _transform) {
-		//	//listenerTransform = _transform;
-		//	//GetTransformExitPoint()->sendData(listenerTransform);	// Send to subscribers			
-		//}
-
-		///** \brief Get listener position and orientation
-		//*	\retval transform current listener position and orientation
-		//*   \eh Nothing is reported to the error handler.
-		//*/
-		//Common::CTransform GetListenerTransform() { 
-		//	return Common::CTransform();
-		//	/*return listenerTransform;*/ 
-		//}
+						
 
 		/**
 		 * @brief Get listener ID
@@ -126,29 +108,14 @@ namespace BRTBase {
 		*/
 		TListenerType GetListenerModelType() const { return listenerModelType; }
 		
-		/**
-		 * @brief Get output sample buffers from the listener
-		 * @param _leftBuffer Left ear sample buffer
-		 * @param _rightBuffer Right ear sample buffer
-		*/
-		/*void GetBuffers(CMonoBuffer<float>& _leftBuffer, CMonoBuffer<float>& _rightBuffer) {						
-			if (leftDataReady) {
-				_leftBuffer = leftBuffer;
-				leftDataReady = false;
+		
+		bool IsConnectedToListener() { 
+			std::string _listenerID = GetIDEntryPoint("listenerID")->GetData();
+			if (_listenerID != "") {
+				return true;
 			}
-			else {
-				_leftBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
-			}
-			
-			if (rightDataReady) {
-				_rightBuffer = rightBuffer;
-				rightDataReady = false;
-			}
-			else {
-				_rightBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
-			}
-
-		}*/
+			return false; 
+		}
 
 		/////////////////////		
 		// Update Callbacks
@@ -170,7 +137,7 @@ namespace BRTBase {
 				if (!rightDataReady) { InitBuffer(rightBuffer); }
 				CMonoBuffer<float> newBuffer = GetSamplesEntryPoint("rightEar")->GetData();				
 				rightDataReady = MixEarBuffers(rightBuffer, newBuffer);				
-			}
+			}			
 		}
 
 		/**
@@ -214,7 +181,7 @@ namespace BRTBase {
 	private:
 		TListenerType listenerModelType;
 		std::string listenerModelID;						// Store unique listener ID		
-		//Common::CTransform listenerTransform;				// Transform matrix (position and orientation) of listener  
+		//bool connectedToListener;
 		
 
 		Common::CGlobalParameters globalParameters;		
