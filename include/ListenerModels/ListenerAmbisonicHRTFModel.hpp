@@ -93,7 +93,7 @@ namespace BRTListenerModel {
 
 	public:
 		CListenerAmbisonicHRTFModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) : 
-			brtManager{ _brtManager }, BRTBase::CListenerModelBase(_listenerID, BRTBase::TListenerType::ListenerAmbisonicHRTFModel),
+			brtManager{ _brtManager }, BRTBase::CListenerModelBase(_listenerID, BRTBase::TListenerModelcharacteristics(true, false, true, true, true, true, false, false)),
 			ambisonicOrder{ 1 }, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }, enableNearFieldEffect{ false }, enableParallaxCorrection{ true }  {
 			
 			listenerHRTF = std::make_shared<BRTServices::CHRTF>();					// Create a empty HRTF	class
@@ -121,19 +121,13 @@ namespace BRTListenerModel {
 			if (_listenerHRTF->GetSamplingRate() != globalParameters.GetSampleRate()) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "This HRTF has not been assigned to the listener. The sample rate of the HRTF does not match the one set in the library Global Parameters.");
 				return false;
-			}
-			//std::lock_guard<std::mutex> l(mutex);
-			//std::unique_lock<std::mutex> l(mutex);
-			listenerHRTF = _listenerHRTF;			
-			
-			//listenerAmbisonicIR->BeginSetup(/*listenerHRTF->GetHRIRLength(), listenerHRTF->GetHRIRNumberOfSubfilters(), listenerHRTF->GetHRIRSubfilterLength(),*/ ambisonicOrder, ambisonicNormalization);
-			//listenerAmbisonicIR->AddImpulseResponsesFromHRTF(listenerHRTF);
+			}			
+			listenerHRTF = _listenerHRTF;									
 			InitListenerAmbisonicIR();
 
 			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
 			GetABIRExitPoint()->sendDataPtr(listenerAmbisonicIR);
-			
-			//l.unlock();
+						
 			ResetProcessorBuffers();
 			return true;
 		}
@@ -160,25 +154,26 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		void SetILD(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerILD) {
-			listenerILD = _listenerILD;
-			GetILDExitPoint()->sendDataPtr(listenerILD);
+		bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerILD) {
+			listenerNFCFilters = _listenerILD;
+			GetILDExitPoint()->sendDataPtr(listenerNFCFilters);
+			return true;
 		}
 
 		/** \brief Get HRTF of listener
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr <BRTServices::CNearFieldCompensationFilters> GetILD() const
+		std::shared_ptr <BRTServices::CNearFieldCompensationFilters> GetNearFieldCompensationFilters() const
 		{
-			return listenerILD;
+			return listenerNFCFilters;
 		}
 
 		/** \brief Remove the HRTF of thelistener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void RemoveILD() {
-			listenerILD = std::make_shared<BRTServices::CNearFieldCompensationFilters>();	// empty HRTF			
+		void RemoveNearFierldCompensationFilters() {
+			listenerNFCFilters = std::make_shared<BRTServices::CNearFieldCompensationFilters>();	// empty HRTF			
 		}
 
 		/**
@@ -215,14 +210,15 @@ namespace BRTListenerModel {
 		 * @brief Set the ambisonin normalization to be used
 		 * @param _ambisonicNormalization Normalization to be set up. 
 		*/
-		void SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) {
+		bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) {
 			
-			if (ambisonicNormalization == _ambisonicNormalization) { return; }
+			if (ambisonicNormalization == _ambisonicNormalization) { return true; }
 			
 			//std::lock_guard<std::mutex> l(mutex);
 			ambisonicNormalization = _ambisonicNormalization;
 			if (listenerHRTF->IsHRTFLoaded()) {	InitListenerAmbisonicIR();	}			
 			SetConfigurationInALLSourcesProcessors();
+			return true;
 		}
 		
 		/**
@@ -237,8 +233,7 @@ namespace BRTListenerModel {
 			else if (_ambisonicNormalization == "SN3D") {	temp = Common::TAmbisonicNormalization::SN3D; }
 			else if (_ambisonicNormalization == "maxN") {	temp = Common::TAmbisonicNormalization::maxN; }
 			else { return false; }
-			SetAmbisonicNormalization(temp);		
-			return true;
+			return SetAmbisonicNormalization(temp);					
 		}
 
 		/**
@@ -521,7 +516,7 @@ namespace BRTListenerModel {
 		mutable std::mutex mutex;													// To avoid access collisions
 		std::string listenerID;														// Store unique listener ID
 		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;							// HRTF of listener														
-		std::shared_ptr<BRTServices::CNearFieldCompensationFilters> listenerILD;								// ILD of listener				
+		std::shared_ptr<BRTServices::CNearFieldCompensationFilters> listenerNFCFilters;								// ILD of listener				
 		std::shared_ptr<BRTServices::CAmbisonicBIR> listenerAmbisonicIR;			// AmbisonicIR related to the listener				
 
 		int ambisonicOrder;															// Store the Ambisonic order

@@ -61,10 +61,10 @@ namespace BRTProcessing {
 
 				Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
 				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();												
-				std::weak_ptr<BRTServices::CNearFieldCompensationFilters> listenerILD = GetILDPtrEntryPoint("listenerILD")->GetData();
+				std::weak_ptr<BRTServices::CNearFieldCompensationFilters> listenerNFCFilters = GetILDPtrEntryPoint("listenerILD")->GetData();
 				
 				if (leftBuffer.size() != 0  || rightBuffer.size() !=0)  {
-					Process(leftBuffer, rightBuffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerILD);
+					Process(leftBuffer, rightBuffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerNFCFilters);
 					GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
 					GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);
 				}				

@@ -88,8 +88,8 @@ namespace BRTListenerModel {
 
 	public:
 		CListenerEnvironmentBRIRModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) : 
-			BRTBase::CListenerModelBase(_listenerID, BRTBase::TListenerType::ListenerEnviromentBRIRModel), brtManager{ _brtManager },
-			enableSpatialization{ true }, enableInterpolation{ true } {
+			BRTBase::CListenerModelBase(_listenerID, BRTBase::TListenerModelcharacteristics(false, true, false, false, false, true, true, true)),
+			brtManager{ _brtManager }, enableSpatialization{ true }, enableInterpolation{ true } {
 						
 			listenerHRBRIR = nullptr;
 			CreateHRBRIRExitPoint();			

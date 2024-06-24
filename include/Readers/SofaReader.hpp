@@ -75,9 +75,9 @@ namespace BRTReaders {
 		*	\param [out] listener affected by the hrtf
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		bool ReadNFCFiltersFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CNearFieldCompensationFilters>& listenerILD)
+		bool ReadNFCFiltersFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CNearFieldCompensationFilters>& listenerNFCFilters)
 		{
-			std::shared_ptr<BRTServices::CServicesBase> data = listenerILD;
+			std::shared_ptr<BRTServices::CServicesBase> data = listenerNFCFilters;
 			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS, -1, BRTServices::TEXTRAPOLATION_METHOD::none);
 		}
 

@@ -88,10 +88,11 @@ namespace BRTBase {
 		*/
 		bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) {
 			for (auto& _listenerModel : listenerModelsConnected) {
-				if (_listenerModel->GetListenerModelType() == TListenerType::ListenerHRFTModel) {
+				if (_listenerModel->GetListenerModelCharacteristics().SupportHRTF()) {
 					return _listenerModel->SetHRTF(_listenerHRTF);
 				}				
-			}			
+			}
+			return false;
 		}
 
 		/** \brief Get HRTF of listener
@@ -101,22 +102,106 @@ namespace BRTBase {
 		std::shared_ptr < BRTServices::CHRTF> GetHRTF() const
 		{
 			for (auto& _listenerModel : listenerModelsConnected) {
-				if (_listenerModel->GetListenerModelType() == TListenerType::ListenerHRFTModel) {
-					return _listenerModel->GetHRTF();
+				if (_listenerModel->GetListenerModelCharacteristics().SupportHRTF()) {
+					return _listenerModel->GetHRTF();				
 				}
 			}			
+			return nullptr;
 		}
 
 		/** \brief Remove the HRTF of thelistener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void RemoveHRTF() {
+		bool RemoveHRTF() {
 			for (auto& _listenerModel : listenerModelsConnected) {
-				if (_listenerModel->GetListenerModelType() == TListenerType::ListenerHRFTModel) {
-					_listenerModel->RemoveHRTF();
+				if (_listenerModel->GetListenerModelCharacteristics().SupportHRTF()) {
+					_listenerModel->RemoveHRTF();	
+					return true;
 				}
-			}						
+			}	
+			return false;
 		}
+
+		/** \brief SET HRBRIR of listener
+		*	\param[in] pointer to HRBRIR to be stored
+		*   \eh On error, NO error code is reported to the error handler.
+		*/
+		bool SetHRBRIR(std::shared_ptr< BRTServices::CHRBRIR > _listenerBRIR) {			
+			for (auto& _listenerModel : listenerModelsConnected) {
+				if (_listenerModel->GetListenerModelCharacteristics().SupportBRIR()) {
+					return _listenerModel->SetHRBRIR(_listenerBRIR);
+				}
+			}
+			return false;			
+		}
+
+		/** \brief Get HRBRIR of listener
+		*	\retval HRBRIR pointer to current listener HRBRIR
+		*   \eh On error, an error code is reported to the error handler.
+		*/
+		std::shared_ptr < BRTServices::CHRBRIR> GetHRBRIR() const
+		{
+			for (auto& _listenerModel : listenerModelsConnected) {
+				if (_listenerModel->GetListenerModelCharacteristics().SupportBRIR()) {
+					return _listenerModel->GetHRBRIR();
+				}
+			}
+			return nullptr;
+		}
+
+		/** \brief Remove the HRBRIR of thelistener
+		*   \eh Nothing is reported to the error handler.
+		*/
+		bool RemoveHRBRIR() {
+			for (auto& _listenerModel : listenerModelsConnected) {
+				if (_listenerModel->GetListenerModelCharacteristics().SupportBRIR()) {
+					_listenerModel->RemoveHRBRIR();
+					return true;
+				}			
+			}
+			return false;
+		}
+
+
+		/** \brief SET NFCFilters of listener
+		*	\param[in] pointer to NFCFilters to be stored
+		*   \eh On error, NO error code is reported to the error handler.
+		*/
+		bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerNFC) {
+			
+			for (auto& _listenerModel : listenerModelsConnected) {
+				if (_listenerModel->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {
+					return _listenerModel->SetNearFieldCompensationFilters(_listenerNFC);
+				}				
+			}
+			return false;						
+		}
+
+		/** \brief Get HRTF of listener
+		*	\retval HRTF pointer to current listener HRTF
+		*   \eh On error, an error code is reported to the error handler.
+		*/
+		std::shared_ptr <BRTServices::CNearFieldCompensationFilters> GetNearFieldCompensationFilters() const
+		{
+			for (auto& _listenerModel : listenerModelsConnected) {
+				if (_listenerModel->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {
+					return _listenerModel->GetNearFieldCompensationFilters();
+				}
+			}
+			return nullptr;			
+		}
+
+		/** \brief Remove the HRTF of thelistener
+		*   \eh Nothing is reported to the error handler.
+		*/
+		void RemoveNearFierldCompensationFilters() {
+			for (auto& _listenerModel : listenerModelsConnected) {
+				if (_listenerModel->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {
+					_listenerModel->RemoveNearFierldCompensationFilters();
+				}
+			}
+		}
+
 
 		//** \brief Get the flag for HRTF spatialization
 		//*	\retval IsSpatializationEnabled if true, run-time HRTF spatialization is enabled for this source
@@ -124,12 +209,12 @@ namespace BRTBase {
 		//*/
 		bool IsSpatializationEnabled() { 
 			for (auto& it : listenerModelsConnected) {
-				if (it->GetListenerModelType() == TListenerType::ListenerHRFTModel) {					
-					std::shared_ptr<BRTListenerModel::CListenerHRTFModel> listenerModel;
-					listenerModel = std::dynamic_pointer_cast<BRTListenerModel::CListenerHRTFModel>(it);
-					return listenerModel->IsSpatializationEnabled();
+				if (it->GetListenerModelCharacteristics().SupportConfigurableSpatialisation()) {										
+					return it->IsSpatializationEnabled();
+					return true;
 				}
-			}			
+			}
+			return false;
 		}
 		//** \brief Get the flag for run-time HRTF interpolation
 		//*	\retval IsInterpolationEnabled if true, run-time HRTF interpolation is enabled for this source
@@ -137,13 +222,58 @@ namespace BRTBase {
 		//*/
 		bool IsInterpolationEnabled() {
 			for (auto& it : listenerModelsConnected) {
-				if (it->GetListenerModelType() == TListenerType::ListenerHRFTModel) {
-					std::shared_ptr<BRTListenerModel::CListenerHRTFModel> listenerModel;
-					listenerModel = std::dynamic_pointer_cast<BRTListenerModel::CListenerHRTFModel>(it);
-					return listenerModel->IsInterpolationEnabled();
+				if (it->GetListenerModelCharacteristics().SupportConfigurableInterpolation()) {					
+					return it->IsInterpolationEnabled();					
 				}
 			}
+			return false;
 		}
+
+		bool SetAmbisonicOrder(int _ambisonicOrder) {
+			for (auto& it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().IsAmbisonic()) {
+					return it->SetAmbisonicOrder(_ambisonicOrder);
+				}
+			}
+			return false;
+		}
+		int GetAmbisonicOrder() const { 
+			for (auto& it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().IsAmbisonic()) {
+					return it->GetAmbisonicOrder();
+				}
+			}
+			return 0;
+		}
+		
+		template <typename T>
+		bool SetAmbisonicNormalization(T _ambisonicNormalization) {
+			for (auto& it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().IsAmbisonic()) {
+					return it->SetAmbisonicNormalization(_ambisonicNormalization);
+				}
+			}
+			return false;
+		}
+
+		/*bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) { 
+			for (auto& it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().IsAmbisonic()) {
+					return it->SetAmbisonicNormalization(_ambisonicNormalization);
+				}
+			}
+			return false;
+		}*/
+
+		Common::TAmbisonicNormalization GetAmbisonicNormalization() const { 			
+			for (auto& it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().IsAmbisonic()) {
+					return it->GetAmbisonicNormalization();
+				}
+			}							
+			return Common::TAmbisonicNormalization::none; 
+		}
+
 
 	private:
 				

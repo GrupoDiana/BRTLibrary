@@ -94,8 +94,9 @@ namespace BRTListenerModel {
 
 	public:
 		CListenerHRTFModel(std::string _listenerModelID, BRTBase::CBRTManager* _brtManager) : 
-			BRTBase::CListenerModelBase(_listenerModelID, BRTBase::TListenerType::ListenerHRFTModel), brtManager{ _brtManager },
-			enableSpatialization{ true }, enableInterpolation{ true }, enableNearFieldEffect{ false }, enableParallaxCorrection{ true }  {
+			BRTBase::CListenerModelBase(_listenerModelID, BRTBase::TListenerModelcharacteristics(true, false, false, true, true, true, true, true)), 
+			brtManager{ _brtManager }, enableSpatialization{ true }, enableInterpolation{ true }, enableNearFieldEffect{ false }, enableParallaxCorrection{ true }  {
+			
 			
 			//listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// Create a empty HRTF		
 			listenerHRTF = nullptr;
@@ -135,8 +136,7 @@ namespace BRTListenerModel {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void RemoveHRTF() {
-			listenerHRTF = nullptr;			
-			//listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// empty HRTF			
+			listenerHRTF = nullptr;						
 		}
 		
 		///
@@ -144,25 +144,26 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		void SetILD(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerILD) {
-			listenerILD = _listenerILD;
-			GetILDExitPoint()->sendDataPtr(listenerILD);				
+		bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerILD) {
+			listenerNFCFilters = _listenerILD;
+			GetILDExitPoint()->sendDataPtr(listenerNFCFilters);				
+			return true;
 		}
 
 		/** \brief Get HRTF of listener
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr <BRTServices::CNearFieldCompensationFilters> GetILD() const
+		std::shared_ptr <BRTServices::CNearFieldCompensationFilters> GetNearFieldCompensationFilters() const
 		{
-			return listenerILD;
+			return listenerNFCFilters;
 		}
 
 		/** \brief Remove the HRTF of thelistener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void RemoveILD() {
-			listenerILD = std::make_shared<BRTServices::CNearFieldCompensationFilters>();	// empty HRTF			
+		void RemoveNearFierldCompensationFilters() {
+			listenerNFCFilters = nullptr;
 		}
 
 		/**
@@ -469,7 +470,7 @@ namespace BRTListenerModel {
 		mutable std::mutex mutex;									// To avoid access collisions
 		std::string listenerID;										// Store unique listener ID
 		std::shared_ptr<BRTServices::CHRTF>		listenerHRTF;		// HRTF of listener			
-		std::shared_ptr<BRTServices::CNearFieldCompensationFilters> listenerILD;		// ILD of listener						
+		std::shared_ptr<BRTServices::CNearFieldCompensationFilters> listenerNFCFilters;		// ILD of listener						
 		std::vector< CSourceProcessors> sourcesConnectedProcessors;
 		BRTBase::CBRTManager* brtManager;
 		Common::CGlobalParameters globalParameters;

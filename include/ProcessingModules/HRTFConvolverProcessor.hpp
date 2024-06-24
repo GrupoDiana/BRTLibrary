@@ -70,25 +70,28 @@ namespace BRTProcessing {
 
 			Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
 			Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
-			//std::weak_ptr<BRTServices::CHRTF> listenerHRTF = GetHRTFPtrEntryPoint("listenerHRTF")->GetData();			 						
-			std::weak_ptr<BRTServices::CServicesBase> listenerHRTF = GetHRTFPtrEntryPoint("listenerHRTF")->GetData();
-			std::weak_ptr<BRTServices::CServicesBase> listenerHRBRIR = GetHRBRIRPtrEntryPoint("listenerHRBRIR")->GetData();
+			
+			// Check process flag
+			if (!CHRTFConvolver::IsSpatializationEnabled())
+			{
+				outLeftBuffer = buffer;
+				outRightBuffer = buffer;				
+			}
+			else {
+				std::weak_ptr<BRTServices::CServicesBase> listenerHRTF = GetHRTFPtrEntryPoint("listenerHRTF")->GetData();
+				std::weak_ptr<BRTServices::CServicesBase> listenerHRBRIR = GetHRBRIRPtrEntryPoint("listenerHRBRIR")->GetData();
 
-			//if (listenerHRTF.lock() != nullptr) { 
-				Process(buffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerHRTF);
-			//}							
-			//else if (listenerHRBRIR.lock() != nullptr) {				
-			//	Process(buffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerHRBRIR);
-			//} else {
-			//	SET_RESULT(RESULT_ERROR_NOTSET, "HRTF Convolver error: No HRTF or HRBRIR data available");
-			//	return;
-			//}
-
-								
+				if (listenerHRTF.lock() != nullptr) { 
+					Process(buffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerHRTF);
+				} else if (listenerHRBRIR.lock() != nullptr) {				
+					Process(buffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerHRBRIR);
+				} else {
+					SET_RESULT(RESULT_ERROR_NOTSET, "HRTF Convolver error: No HRTF or HRBRIR data available");
+					return;
+				}
+			}	
 			GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
-			GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);
-				
-
+			GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);				
         }
 
 		void UpdateCommand() {					

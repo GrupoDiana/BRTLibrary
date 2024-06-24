@@ -43,7 +43,42 @@ namespace BRTSourceModel {
 
 namespace BRTBase {
 
-	enum class TListenerType { ListenerHRFTModel, ListenerAmbisonicHRTFModel, ListenerEnviromentBRIRModel };
+	//enum class TListenerType { ListenerHRFTModel, ListenerAmbisonicHRTFModel, ListenerEnviromentBRIRModel };
+
+	/**
+	 * @brief This class looks for a method of identifying each model, so that we can then know which methods are called. 
+	 * It is actually a provisional solution.
+	 */
+	class TListenerModelcharacteristics {
+		bool supportHRTF;
+		bool supportBRIR;
+		bool ambisonic;
+		
+		bool nearFieldCompensation;
+		bool parallaxCorrection;
+		bool itdSimulation;
+
+		bool configurableSpatialisation;
+		bool configurableInterpolation;
+	
+	public:		
+		TListenerModelcharacteristics() : supportHRTF{ false }, supportBRIR{ false }, ambisonic{ false }, nearFieldCompensation{ false }, 
+			parallaxCorrection{ false }, itdSimulation{ false }, configurableSpatialisation{ false }, configurableInterpolation{ false } {}
+		
+		TListenerModelcharacteristics(bool _supportHRTF, bool _supportBRIR, bool _ambisonic, bool _nearFieldCompensation, bool _parallaxCorrection, bool _itdSimulation, bool _configurableSpatialisation, bool _configurableInterpolation) :
+			supportHRTF{ _supportHRTF }, supportBRIR{ _supportBRIR }, ambisonic{ _ambisonic }, nearFieldCompensation{ _nearFieldCompensation }, parallaxCorrection{ _parallaxCorrection },
+			itdSimulation{ _itdSimulation }, configurableSpatialisation{ _configurableSpatialisation }, configurableInterpolation{ _configurableInterpolation } {}
+
+		bool SupportHRTF() { return supportHRTF; }
+		bool SupportBRIR() { return supportBRIR; }
+		bool IsAmbisonic() { return ambisonic; }
+		bool SupportNearFieldCompensation() { return nearFieldCompensation; }
+		bool SupportParallaxCorrection() { return parallaxCorrection; }
+		bool SupportITDSimulation() { return itdSimulation; }
+		bool SupportConfigurableSpatialisation() { return configurableSpatialisation; }
+		bool SupportConfigurableInterpolation() { return configurableInterpolation; }
+	};
+
 
 	class CListenerModelBase: public CAdvancedEntryPointManager, public CExitPointManager/*, public CCommandEntryPointManager, public CEntryPointManager */{
 	public:
@@ -56,21 +91,36 @@ namespace BRTBase {
 		virtual ~CListenerModelBase() {}
 		virtual void Update(std::string entryPointID) = 0;
 		virtual void UpdateCommand() = 0;		
-		virtual bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) { return false; };
-		virtual void SetILD(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerILD) {};
+		
+		virtual bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) { return false; };				
 		virtual std::shared_ptr < BRTServices::CHRTF> GetHRTF() const { return nullptr; }
 		virtual void RemoveHRTF() {};
-		virtual std::shared_ptr < BRTServices::CNearFieldCompensationFilters> GetILD() const { return nullptr; }
-		virtual void RemoveILD() {};
-		virtual std::shared_ptr < BRTServices::CHRBRIR> GetHRBRIR() const { return nullptr; };
 		
+		virtual bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerILD) { return false; };
+		virtual std::shared_ptr < BRTServices::CNearFieldCompensationFilters> GetNearFieldCompensationFilters() const { return nullptr; }
+		virtual void RemoveNearFierldCompensationFilters() {};
+				
 		virtual bool SetHRBRIR(std::shared_ptr< BRTServices::CHRBRIR > _listenerBRIR) { return false; };		        
+		virtual std::shared_ptr < BRTServices::CHRBRIR> GetHRBRIR() const { return nullptr; };
 		virtual void RemoveHRBRIR() {};
 
 		virtual void EnableITDSimulation()= 0;
 		virtual void DisableITDSimulation() = 0;			
 		virtual bool IsITDSimulationEnabled() { return enableITDSimulation; }
 		
+		virtual void EnableSpatialization() {};
+		virtual void DisableSpatialization() {};
+		virtual bool IsSpatializationEnabled() { return false; }
+
+		virtual void EnableInterpolation() {};
+		virtual void DisableInterpolation() {};
+		virtual bool IsInterpolationEnabled() { return false; }
+
+		virtual bool SetAmbisonicOrder(int _ambisonicOrder) { return false; }
+		virtual int GetAmbisonicOrder() const { return 0; }
+		virtual bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) { return false; }
+		virtual bool SetAmbisonicNormalization(std::string _ambisonicNormalization) {return false;}
+		virtual Common::TAmbisonicNormalization GetAmbisonicNormalization() const { return Common::TAmbisonicNormalization::none; }
 
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel > _source) = 0;
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel > _source) = 0;
@@ -80,7 +130,8 @@ namespace BRTBase {
 
 		// Class Methods
 
-		CListenerModelBase(std::string _listenerModelID, TListenerType _listenerType) : listenerModelID{ _listenerModelID }, listenerModelType {_listenerType},
+		CListenerModelBase(std::string _listenerModelID, TListenerModelcharacteristics _listenerCharacteristics) : listenerModelID {_listenerModelID},
+			listenerCharacteristics{ _listenerCharacteristics },
 			leftDataReady{ false }, rightDataReady{ false }, enableITDSimulation{ true } {
 												
 			CreateSamplesEntryPoint("leftEar");
@@ -106,7 +157,13 @@ namespace BRTBase {
 		* @brief Set listener type
 		* @param _listenerType Listener type
 		*/
-		TListenerType GetListenerModelType() const { return listenerModelType; }
+		//TListenerType GetListenerModelType() const { return listenerModelType; }		
+		
+		/**
+		* @brief Get listener model characteristics
+		* @return Return characteristics
+		*/
+		TListenerModelcharacteristics GetListenerModelCharacteristics() const { return listenerCharacteristics; }
 		
 		
 		bool IsConnectedToListener() { 
@@ -152,38 +209,14 @@ namespace BRTBase {
 						           
 		}
 		
-		/*void UpdateCommand() {
-			BRTBase::CCommand _command = GetCommandEntryPoint()->GetData();
-			if (!_command.isNull()) {
-				UpdateCommand();
-			}
-			
-		}*/
 		
-		
-		// old
-		/*void UpdateEntryPointData(std::string id) {
-			if (id == "leftEar") {
-				UpdateLeftBuffer();
-			}
-			else if (id == "rightEar") {
-				UpdateRightBuffer();
-			}
-		}*/
-		/*void updateFromCommandEntryPoint(std::string entryPointID) {
-			BRTBase::CCommand _command = GetCommandEntryPoint()->GetData();
-			if (!_command.isNull()) {
-				UpdateCommand();
-			}
-		}*/
-
 
 	private:
-		TListenerType listenerModelType;
+		//TListenerType listenerModelType;
+		TListenerModelcharacteristics listenerCharacteristics;
 		std::string listenerModelID;						// Store unique listener ID		
-		//bool connectedToListener;
 		
-
+		
 		Common::CGlobalParameters globalParameters;		
 		CMonoBuffer<float> leftBuffer;
 		CMonoBuffer<float> rightBuffer;
@@ -195,34 +228,11 @@ namespace BRTBase {
 		//////////////////////////
 		// Private Methods
 		/////////////////////////
+				
 		
 		///**
-		// * @brief Mix the new buffer received for the left ear with the contents of the buffer.
-		//*/
-		//void UpdateLeftBuffer() {
-		//	if (!leftDataReady) {
-		//		leftBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
-		//	}			
-		//	CMonoBuffer<float> buffer = GetSamplesEntryPoint("leftEar")->GetData();
-		//	if (buffer.size() != 0) {
-		//		leftBuffer += buffer;
-		//		leftDataReady = true;
-		//	}
-		//}
-		///**
-		// * @brief Mix the new buffer received for the right ear with the contents of the buffer.
-		//*/
-		//void UpdateRightBuffer() {
-		//	if (!rightDataReady) {
-		//		rightBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
-		//	}			
-		//	CMonoBuffer<float> buffer = GetSamplesEntryPoint("rightEar")->GetData();
-		//	if (buffer.size() != 0) {
-		//		rightBuffer += buffer;
-		//		rightDataReady = true;
-		//	}
-		//}	
-		
+		// * @brief Mix the new buffer received with the contents of the buffer.
+		//*/				
 		bool MixEarBuffers(CMonoBuffer<float>& buffer, const CMonoBuffer<float>& newBuffer) {			
 			if (newBuffer.size() != 0) {
 				buffer += newBuffer;
@@ -230,6 +240,7 @@ namespace BRTBase {
 			}
 			return false;
 		}
+
 		void InitBuffer(CMonoBuffer<float>& buffer) {
 			buffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
 		}
