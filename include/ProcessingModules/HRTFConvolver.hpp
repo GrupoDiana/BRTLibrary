@@ -150,8 +150,8 @@ namespace BRTProcessing {
 			std::vector<CMonoBuffer<float>>  leftHRIR_partitioned;
 			std::vector<CMonoBuffer<float>>  rightHRIR_partitioned;
 
-			leftHRIR_partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::LEFT, leftAzimuth, leftElevation, enableInterpolation);
-			rightHRIR_partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::RIGHT, rightAzimuth, rightElevation, enableInterpolation);
+			leftHRIR_partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::LEFT, leftAzimuth, leftElevation, enableInterpolation, listenerTransform, sourceTransform);
+			rightHRIR_partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::RIGHT, rightAzimuth, rightElevation, enableInterpolation, listenerTransform, sourceTransform);
 						
 			// DO CONVOLUTION			
 			CMonoBuffer<float> leftChannel_withoutDelay;
@@ -165,7 +165,7 @@ namespace BRTProcessing {
 			uint64_t rightDelay;				///< Delay, in number of samples
 
 			if (enableITDSimulation){
-				BRTServices::THRIRPartitionedStruct delays = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, centerAzimuth, centerElevation, enableInterpolation);
+				BRTServices::THRIRPartitionedStruct delays = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, centerAzimuth, centerElevation, enableInterpolation, listenerTransform, sourceTransform);
 				leftDelay = delays.leftDelay;
 				rightDelay = delays.rightDelay;
 			}

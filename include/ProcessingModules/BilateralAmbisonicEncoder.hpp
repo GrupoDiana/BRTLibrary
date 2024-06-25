@@ -115,7 +115,7 @@ namespace BRTProcessing {
 		 * @param _listenerHRTFWeak Weak smart pointer to the listener HRTF
 		 * @param _listenerILDWeak Weak smart pointer to the listener ILD
 		*/
-		void Process(CMonoBuffer<float>& _inBuffer, std::vector<CMonoBuffer<float>>& leftChannelsBuffers, std::vector<CMonoBuffer<float>>& rightChannelsBuffers, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CHRTF>& _listenerHRTFWeak, std::weak_ptr<BRTServices::CNearFieldCompensationFilters>& _listenerILDWeak) {
+		void Process(CMonoBuffer<float>& _inBuffer, std::vector<CMonoBuffer<float>>& leftChannelsBuffers, std::vector<CMonoBuffer<float>>& rightChannelsBuffers, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CServicesBase>& _listenerHRTFWeak, std::weak_ptr<BRTServices::CNearFieldCompensationFilters>& _listenerILDWeak) {
 
 			std::lock_guard<std::mutex> l(mutex);
 
@@ -138,9 +138,7 @@ namespace BRTProcessing {
 			// Check listener HRTF
 			std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF = _listenerHRTFWeak.lock();
 			if (!_listenerHRTF) {
-				SET_RESULT(RESULT_ERROR_NULLPOINTER, "HRTF listener pointer is null when trying to use in Bilateral Ambisonic Encoder");
-				///leftChannelsBuffers = std::vector<CMonoBuffer<float>>(leftAmbisonicEncoder.GetTotalChannels(), CMonoBuffer<float>(globalParameters.GetBufferSize(), 0.0f));
-				//rightChannelsBuffers = std::vector<CMonoBuffer<float>>(rightAmbisonicEncoder.GetTotalChannels(), CMonoBuffer<float>(globalParameters.GetBufferSize(), 0.0f));				
+				SET_RESULT(RESULT_ERROR_NULLPOINTER, "HRTF listener pointer is null when trying to use in Bilateral Ambisonic Encoder");				
 				return;
 			}
 			
@@ -181,7 +179,7 @@ namespace BRTProcessing {
 			uint64_t leftDelay; 				///< Delay, in number of samples
 			uint64_t rightDelay;				///< Delay, in number of samples
 			if (enableITDSimulation) {
-				BRTServices::THRIRPartitionedStruct delays = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, centerAzimuth, centerElevation, enableInterpolation);
+				BRTServices::THRIRPartitionedStruct delays = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, centerAzimuth, centerElevation, enableInterpolation, listenerTransform, sourceTransform);
 				leftDelay = delays.leftDelay;
 				rightDelay = delays.rightDelay;
 			}

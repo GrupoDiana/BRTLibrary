@@ -42,6 +42,7 @@ namespace BRTProcessing {
             CreatePositionEntryPoint("sourcePosition");
 			CreatePositionEntryPoint("listenerPosition");           
 			CreateHRTFPtrEntryPoint("listenerHRTF");
+			CreateHRBRIRPtrEntryPoint("listenerHRBRIR");
 			CreateILDPtrEntryPoint("listenerILD");
 
 			CreateIDEntryPoint("sourceID");
@@ -61,20 +62,28 @@ namespace BRTProcessing {
 			std::vector<CMonoBuffer<float>> leftAmbisonicChannelsBuffers;
 			std::vector<CMonoBuffer<float>> rightAmbisonicChannelsBuffers;
 			CMonoBuffer<float> outRightBuffer;
+			
+			CMonoBuffer<float> buffer = GetSamplesEntryPoint("inputSamples")->GetData();
+			if (buffer.size() == 0) { return; }
 
-			//if (_entryPointId == "inputSamples") {
-				CMonoBuffer<float> buffer = GetSamplesEntryPoint("inputSamples")->GetData();
-				Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
-				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();												
-				std::weak_ptr<BRTServices::CHRTF> listenerHRTF = GetHRTFPtrEntryPoint("listenerHRTF")->GetData();
-				std::weak_ptr<BRTServices::CNearFieldCompensationFilters> listenerNFCFilters = GetILDPtrEntryPoint("listenerILD")->GetData();
-				if (buffer.size() != 0) {															
-					Process(buffer, leftAmbisonicChannelsBuffers, rightAmbisonicChannelsBuffers, sourcePosition, listenerPosition, listenerHRTF, listenerNFCFilters);															
-					GetMultipleSamplesVectorExitPoint("leftAmbisonicChannels")->sendData(leftAmbisonicChannelsBuffers);
-					GetMultipleSamplesVectorExitPoint("rightAmbisonicChannels")->sendData(rightAmbisonicChannelsBuffers);
-				}				
-				
-			//}            
+			Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
+			Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();												
+			std::weak_ptr<BRTServices::CServicesBase> listenerHRTF = GetHRTFPtrEntryPoint("listenerHRTF")->GetData();
+			std::weak_ptr<BRTServices::CServicesBase> listenerHRBRIR = GetHRBRIRPtrEntryPoint("listenerHRBRIR")->GetData();
+			std::weak_ptr<BRTServices::CNearFieldCompensationFilters> listenerNFCFilters = GetILDPtrEntryPoint("listenerILD")->GetData();
+			
+			if (listenerHRTF.lock() != nullptr) {
+				Process(buffer, leftAmbisonicChannelsBuffers, rightAmbisonicChannelsBuffers, sourcePosition, listenerPosition, listenerHRTF, listenerNFCFilters);
+			}
+			else if (listenerHRBRIR.lock() != nullptr) {
+				Process(buffer, leftAmbisonicChannelsBuffers, rightAmbisonicChannelsBuffers, sourcePosition, listenerPosition, listenerHRBRIR, listenerNFCFilters);
+			}
+			else {
+				SET_RESULT(RESULT_ERROR_NOTSET, "Bilateral Ambisonic Encoder Processor ERROR: No HRTF or HRBRIR data available");
+				return;
+			}								
+			GetMultipleSamplesVectorExitPoint("leftAmbisonicChannels")->sendData(leftAmbisonicChannelsBuffers);
+			GetMultipleSamplesVectorExitPoint("rightAmbisonicChannels")->sendData(rightAmbisonicChannelsBuffers);										
         }
 
 		/**

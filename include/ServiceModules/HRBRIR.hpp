@@ -46,7 +46,7 @@ namespace BRTServices
 	{
 	public:
 
-		CHRBRIR() : setupInProgress{ false }, HRTFLoaded{ false }, samplingRate{0}, HRIRLength{-1}, gridSamplingStep{DEFAULT_GRIDSAMPLING_STEP},
+		CHRBRIR() : setupInProgress{ false }, HRBRIRLoaded{ false }, samplingRate{0}, HRIRLength{-1}, gridSamplingStep{DEFAULT_GRIDSAMPLING_STEP},
 			gapThreshold {DEFAULT_GAP_THRESHOLD}, sphereBorder{ SPHERE_BORDER }, epsilon_sewing{ EPSILON_SEWING }, extrapolationMethod{ TEXTRAPOLATION_METHOD::zero_insertion },
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION },
 			enableWoodworthITD{ false }, HRIR_partitioned_NumberOfSubfilters{ 0 }, HRIR_partitioned_SubfilterLength{ 0 },
@@ -64,7 +64,7 @@ namespace BRTServices
 			std::lock_guard<std::mutex> l(mutex);
 			//Change class state
 			setupInProgress = true;
-			HRTFLoaded = false;
+			HRBRIRLoaded = false;
 
 			////Clear every table		
 			t_HRBRIR_DataBase.clear();
@@ -164,7 +164,7 @@ namespace BRTServices
 					// Setup values
 					HRIR_partitioned_SubfilterLength = t_HRBRIR_Resampled_partitioned.begin()->second.begin()->second.leftHRIR_Partitioned[0].size();					
 					setupInProgress = false;
-					HRTFLoaded = true;
+					HRBRIRLoaded = true;
 
 					SET_RESULT(RESULT_OK, "HRBRIR Matrix resample completed succesfully");
 					return true;
@@ -201,6 +201,15 @@ namespace BRTServices
 		int32_t GetHRIRLength() const
 		{
 			return HRIRLength;
+		}
+
+		/** \brief	Get if the HRBRIR has been loaded
+		*	\retval isLoadead bool var that is true if the HRTF has been loaded
+		*   \eh Nothing is reported to the error handler.
+		*/
+		bool IsHRBRIRLoaded()
+		{
+			return HRBRIRLoaded;
 		}
 
 		/**
@@ -336,9 +345,9 @@ namespace BRTServices
 			windowThreshold = _windowThreshold;
 			windowRiseTime = _windowRiseTime;
 			mutex.unlock();
-			if (HRTFLoaded) {				
+			if (HRBRIRLoaded) {				
 				setupInProgress = true;
-				HRTFLoaded = false;
+				HRBRIRLoaded = false;
 				t_HRBRIR_Resampled_partitioned.clear();
 				EndSetup();
 
@@ -643,7 +652,7 @@ namespace BRTServices
 		TEXTRAPOLATION_METHOD extrapolationMethod;			// Methods that is going to be used to extrapolate
 		
 		bool setupInProgress;						// Variable that indicates the HRTF add and resample algorithm are in process
-		bool HRTFLoaded;							// Variable that indicates if the HRTF has been loaded correctly		
+		bool HRBRIRLoaded;							// Variable that indicates if the HRTF has been loaded correctly		
 		bool enableWoodworthITD;					// Indicate the use of a customized delay
 
 		int gridSamplingStep; 						// HRTF Resample table step (azimuth and elevation)

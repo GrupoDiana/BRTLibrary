@@ -25,7 +25,7 @@
 
 #include <memory>
 #include <Base/ListenerModelBase.hpp>
-#include <ServiceModules/HRTF.hpp>
+//#include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/HRBRIR.hpp>
 #include <ProcessingModules/HRTFConvolverProcessor.hpp>
 #include <ProcessingModules/NearFieldEffectProcessor.hpp>
@@ -92,7 +92,7 @@ namespace BRTListenerModel {
 			brtManager{ _brtManager }, enableSpatialization{ true }, enableInterpolation{ true } {
 						
 			listenerHRBRIR = nullptr;
-			CreateHRBRIRExitPoint();			
+			CreateHRBRIRExitPoint();
 		}
 				
 		/** \brief SET HRBRIR of listener

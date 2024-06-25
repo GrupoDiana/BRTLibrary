@@ -31,6 +31,7 @@
 #include "ListenerModels/ListenerHRTFModel.hpp"
 #include "ListenerModels/ListenerAmbisonicHRTFModel.hpp"
 #include "ListenerModels/ListenerEnvironmentBRIRModel.hpp"
+#include "ListenerModels/ListenerAmbisonicEnvironmentBRIRModel.hpp"
 #include "SourceModels/SourceSimpleModel.hpp"
 #include "SourceModels/SourceDirectivityModel.hpp"
 #include "ProcessingModules/SingleProcessor.hpp"

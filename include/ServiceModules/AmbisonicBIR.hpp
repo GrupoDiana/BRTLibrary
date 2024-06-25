@@ -34,6 +34,7 @@
 #include <ServiceModules/ServiceModuleInterfaces.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/VirtualSpeakers.hpp>
+#include <ServiceModules/HRBRIR.hpp>
 
 namespace BRTServices
 {		
@@ -342,53 +343,106 @@ namespace BRTServices
 			return IRNumberOfSubFilters;
 		}
 
-
-
-//		/** \brief Returns true when the data is loaded and ready to be used
-//		*   \eh Nothing is reported to the error handler.*/
-//		bool IsInitialized() {
-//#ifdef USE_FREQUENCY_COVOLUTION_WITHOUT_PARTITIONS_REVERB 
-//			return impulseResponseLength != 0 && impulseResponseLength != 0 && setupDone && bFormat.size() > 0;
-//#else
-//			return impulseResponseLength != 0 && impulseResponseLength != 0 && setupDone && bFormat_Partitioned.size() > 0;
-//#endif
-//		}
-
-		//////////////////////////////////////////////////////
 		
+		
+		/** \brief Add impulse responses from HRTF data
+		*
+		*/
+		//bool AddImpulseResponsesFromHRTF(std::shared_ptr<BRTServices::CHRTF> _listenerHRTF) {
 
-		// NEW 
-		//bool GetHRIRofVirtualSpeakerPositions(std::shared_ptr<BRTServices::CHRTF> _listenerHRTF, std::vector<THRIRPartitionedStruct> & virtualSpeakersData) {
+		//	std::lock_guard<std::mutex> l(mutex);
+
+		//	impulseResponseLength = _listenerHRTF->GetHRIRLength();	// TODO Do we need this?
+		//	IRSubfilterLength = _listenerHRTF->GetHRIRSubfilterLength();
+		//	IRNumberOfSubFilters = _listenerHRTF->GetHRIRNumberOfSubfilters();
+		//							
+		//	std::vector<std::vector< CMonoBuffer<float>>> ambisonicChannelsLeft;
+		//	std::vector<std::vector< CMonoBuffer<float>>> ambisonicChannelsRight;
+		//	ambisonicChannelsLeft.resize(ambisonicEncoder.GetTotalChannels(), std::vector<CMonoBuffer<float>>(_listenerHRTF->GetHRIRNumberOfSubfilters(), CMonoBuffer<float>(_listenerHRTF->GetHRIRSubfilterLength(), 0)));
+		//	ambisonicChannelsRight.resize(ambisonicEncoder.GetTotalChannels(), std::vector<CMonoBuffer<float>>(_listenerHRTF->GetHRIRNumberOfSubfilters(), CMonoBuffer<float>(_listenerHRTF->GetHRIRSubfilterLength(), 0)));
+
+		//	std::vector<orientation> virtualSpeakerPositions = virtualSpeakers.GetVirtualSpeakersPositions();
+
+		//	//1. Get BRIR values for each channel
+		//	for (int i = 0; i < virtualSpeakerPositions.size(); i++) {
+		//		THRIRPartitionedStruct oneVirtualSpeakersData;
+
+		//		//oneVirtualSpeakersData = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
+		//		oneVirtualSpeakersData.leftHRIR_Partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::LEFT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
+		//		oneVirtualSpeakersData.rightHRIR_Partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::RIGHT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
+
+		//		if ((oneVirtualSpeakersData.leftHRIR_Partitioned.size() != _listenerHRTF->GetHRIRNumberOfSubfilters()) || (oneVirtualSpeakersData.rightHRIR_Partitioned.size() != _listenerHRTF->GetHRIRNumberOfSubfilters())) {
+		//			SET_RESULT(RESULT_ERROR_BADSIZE, "The HRIR of a virtual speaker does not have an appropriate value.");
+		//			return false;
+		//		}
+		//		
+		//		ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.leftHRIR_Partitioned, ambisonicChannelsLeft, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);
+		//		ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.rightHRIR_Partitioned, ambisonicChannelsRight, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);																	
+		//	}
 		//	
-		//	std::vector<orientation> virtualSpeakerPositions = GetVirtualSpeakersPositions();			
+		//	for (int i = 0; i < ambisonicEncoder.GetTotalChannels(); i++) {				
+		//		THRIRPartitionedStruct oneAmbisonicChannel;
+		//		oneAmbisonicChannel.leftHRIR_Partitioned = ambisonicChannelsLeft[i];
+		//		oneAmbisonicChannel.rightHRIR_Partitioned = ambisonicChannelsRight[i];
+		//		AddImpulseResponse(i, std::move(oneAmbisonicChannel));
+		//	}
+		//	return true;
+		//}
+		//
+		///** \brief Add impulse responses from HRTF data
+		//*
+		//*/
+		//bool AddImpulseResponsesFromHRBRIR(std::shared_ptr<BRTServices::CHRBRIR> _listenerHRBRIR) {
+
+		//	std::lock_guard<std::mutex> l(mutex);
+
+		//	impulseResponseLength = _listenerHRBRIR->GetHRIRLength();	// TODO Do we need this?
+		//	IRSubfilterLength = _listenerHRBRIR->GetHRIRSubfilterLength();
+		//	IRNumberOfSubFilters = _listenerHRBRIR->GetHRIRNumberOfSubfilters();
+
+		//	std::vector<std::vector< CMonoBuffer<float>>> ambisonicChannelsLeft;
+		//	std::vector<std::vector< CMonoBuffer<float>>> ambisonicChannelsRight;
+		//	ambisonicChannelsLeft.resize(ambisonicEncoder.GetTotalChannels(), std::vector<CMonoBuffer<float>>(_listenerHRBRIR->GetHRIRNumberOfSubfilters(), CMonoBuffer<float>(_listenerHRBRIR->GetHRIRSubfilterLength(), 0)));
+		//	ambisonicChannelsRight.resize(ambisonicEncoder.GetTotalChannels(), std::vector<CMonoBuffer<float>>(_listenerHRBRIR->GetHRIRNumberOfSubfilters(), CMonoBuffer<float>(_listenerHRBRIR->GetHRIRSubfilterLength(), 0)));
+
+		//	std::vector<orientation> virtualSpeakerPositions = virtualSpeakers.GetVirtualSpeakersPositions();
 
 		//	//1. Get BRIR values for each channel
 		//	for (int i = 0; i < virtualSpeakerPositions.size(); i++) {
 		//		THRIRPartitionedStruct oneVirtualSpeakersData;
 		//		
-		//		oneVirtualSpeakersData							= _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
-		//		oneVirtualSpeakersData.leftHRIR_Partitioned		= _listenerHRTF->GetHRIR_partitioned(Common::T_ear::LEFT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
-		//		oneVirtualSpeakersData.rightHRIR_Partitioned	= _listenerHRTF->GetHRIR_partitioned(Common::T_ear::RIGHT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
+		//		oneVirtualSpeakersData.leftHRIR_Partitioned = _listenerHRBRIR->GetHRIRPartitioned(Common::T_ear::LEFT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true, Common::CTransform(), Common::CTransform());
+		//		oneVirtualSpeakersData.rightHRIR_Partitioned = _listenerHRBRIR->GetHRIRPartitioned(Common::T_ear::RIGHT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true, Common::CTransform(), Common::CTransform());
 
-		//		if ((oneVirtualSpeakersData.leftHRIR_Partitioned.size != _listenerHRTF->GetHRIRNumberOfSubfilters()) || (oneVirtualSpeakersData.rightHRIR_Partitioned.size != _listenerHRTF->GetHRIRNumberOfSubfilters())) {
+		//		if ((oneVirtualSpeakersData.leftHRIR_Partitioned.size() != _listenerHRBRIR->GetHRIRNumberOfSubfilters()) || (oneVirtualSpeakersData.rightHRIR_Partitioned.size() != _listenerHRBRIR->GetHRIRNumberOfSubfilters())) {
 		//			SET_RESULT(RESULT_ERROR_BADSIZE, "The HRIR of a virtual speaker does not have an appropriate value.");
 		//			return false;
-		//		}		
+		//		}
 
-		//		virtualSpeakersData.push_back(oneVirtualSpeakersData);
-		//		
+		//		ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.leftHRIR_Partitioned, ambisonicChannelsLeft, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);
+		//		ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.rightHRIR_Partitioned, ambisonicChannelsRight, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);
 		//	}
-		//	return true;			
+
+		//	for (int i = 0; i < ambisonicEncoder.GetTotalChannels(); i++) {
+		//		THRIRPartitionedStruct oneAmbisonicChannel;
+		//		oneAmbisonicChannel.leftHRIR_Partitioned = ambisonicChannelsLeft[i];
+		//		oneAmbisonicChannel.rightHRIR_Partitioned = ambisonicChannelsRight[i];
+		//		AddImpulseResponse(i, std::move(oneAmbisonicChannel));
+		//	}
+		//	return true;
 		//}
 
-		bool AddImpulseResponsesFromHRTF(std::shared_ptr<BRTServices::CHRTF> _listenerHRTF) {
+		/** \brief Add impulse responses from HRTF or HRBRIR data
+		*
+		*/
+		bool AddImpulseResponsesFromHRIR(std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF) {
 
 			std::lock_guard<std::mutex> l(mutex);
 
 			impulseResponseLength = _listenerHRTF->GetHRIRLength();	// TODO Do we need this?
 			IRSubfilterLength = _listenerHRTF->GetHRIRSubfilterLength();
 			IRNumberOfSubFilters = _listenerHRTF->GetHRIRNumberOfSubfilters();
-									
+
 			std::vector<std::vector< CMonoBuffer<float>>> ambisonicChannelsLeft;
 			std::vector<std::vector< CMonoBuffer<float>>> ambisonicChannelsRight;
 			ambisonicChannelsLeft.resize(ambisonicEncoder.GetTotalChannels(), std::vector<CMonoBuffer<float>>(_listenerHRTF->GetHRIRNumberOfSubfilters(), CMonoBuffer<float>(_listenerHRTF->GetHRIRSubfilterLength(), 0)));
@@ -401,19 +455,19 @@ namespace BRTServices
 				THRIRPartitionedStruct oneVirtualSpeakersData;
 
 				//oneVirtualSpeakersData = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
-				oneVirtualSpeakersData.leftHRIR_Partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::LEFT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
-				oneVirtualSpeakersData.rightHRIR_Partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::RIGHT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
+				oneVirtualSpeakersData.leftHRIR_Partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::LEFT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true, Common::CTransform(), Common::CTransform());
+				oneVirtualSpeakersData.rightHRIR_Partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::RIGHT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true, Common::CTransform(), Common::CTransform());
 
 				if ((oneVirtualSpeakersData.leftHRIR_Partitioned.size() != _listenerHRTF->GetHRIRNumberOfSubfilters()) || (oneVirtualSpeakersData.rightHRIR_Partitioned.size() != _listenerHRTF->GetHRIRNumberOfSubfilters())) {
 					SET_RESULT(RESULT_ERROR_BADSIZE, "The HRIR of a virtual speaker does not have an appropriate value.");
 					return false;
 				}
-				
+
 				ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.leftHRIR_Partitioned, ambisonicChannelsLeft, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);
-				ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.rightHRIR_Partitioned, ambisonicChannelsRight, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);																	
+				ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.rightHRIR_Partitioned, ambisonicChannelsRight, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);
 			}
-			
-			for (int i = 0; i < ambisonicEncoder.GetTotalChannels(); i++) {				
+
+			for (int i = 0; i < ambisonicEncoder.GetTotalChannels(); i++) {
 				THRIRPartitionedStruct oneAmbisonicChannel;
 				oneAmbisonicChannel.leftHRIR_Partitioned = ambisonicChannelsLeft[i];
 				oneAmbisonicChannel.rightHRIR_Partitioned = ambisonicChannelsRight[i];
@@ -421,7 +475,7 @@ namespace BRTServices
 			}
 			return true;
 		}
-		
+
 
 	private:
 		
