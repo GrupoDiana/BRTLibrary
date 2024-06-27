@@ -1062,8 +1062,8 @@ namespace BRTReaders {
 		Common::CVector3 RoundToZeroIfClose(Common::CVector3 _inPoint) {
 			Common::CVector3 _outPoint;
 			_outPoint.x =  Common::AreSameDouble(_inPoint.x, 0, EPSILON) ? 0: _inPoint.x;
-			_outPoint.y = Common::AreSameDouble(_inPoint.x, 0, EPSILON) ? 0 : _inPoint.y;
-			_outPoint.z = Common::AreSameDouble(_inPoint.x, 0, EPSILON) ? 0 : _inPoint.z;
+			_outPoint.y = Common::AreSameDouble(_inPoint.y, 0, EPSILON) ? 0 : _inPoint.y;
+			_outPoint.z = Common::AreSameDouble(_inPoint.z, 0, EPSILON) ? 0 : _inPoint.z;
 			return _outPoint;
 		}
 
