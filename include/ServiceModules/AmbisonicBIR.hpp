@@ -31,7 +31,7 @@
 #include <Common/CommonDefinitions.hpp>
 #include <Common/AmbisonicEncoder.hpp>
 #include <Common/GlobalParameters.hpp>
-#include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/ServicesBase.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/VirtualSpeakers.hpp>
 #include <ServiceModules/HRBRIR.hpp>

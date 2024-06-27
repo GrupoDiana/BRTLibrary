@@ -25,7 +25,7 @@
 
 
 #include <unordered_map>
-#include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/ServicesBase.hpp>
 
 namespace BRTServices {
 

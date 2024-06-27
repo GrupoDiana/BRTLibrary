@@ -27,7 +27,7 @@
 
 #include <ostream>
 #include <string>
-#include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/ServicesBase.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <Common/ErrorHandler.hpp>
 #include <Readers/LibMySofaLoader.hpp>

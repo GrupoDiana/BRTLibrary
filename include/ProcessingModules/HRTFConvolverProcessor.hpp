@@ -29,7 +29,7 @@
 #include <Base/ExitPointManager.hpp>
 #include <Common/UPCAnechoic.hpp>
 #include <Common/Buffer.hpp>
-#include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/ServicesBase.hpp>
 #include <ServiceModules/HRBRIR.hpp>
 #include <ProcessingModules/HRTFConvolver.hpp>
 

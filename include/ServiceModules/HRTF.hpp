@@ -35,7 +35,7 @@
 #include <Common/GlobalParameters.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <Common/CranicalGeometry.hpp>
-#include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/ServicesBase.hpp>
 #include <ServiceModules/HRTFDefinitions.hpp>
 #include <ServiceModules/HRTFAuxiliarMethods.hpp>
 #include <ServiceModules/OnlineInterpolation.hpp>

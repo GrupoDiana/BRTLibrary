@@ -36,7 +36,7 @@
 #include <Common/CommonDefinitions.hpp>
 #include <Common/CranicalGeometry.hpp>
 #include <ServiceModules/HRTFDefinitions.hpp>
-#include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/ServicesBase.hpp>
 #include <ServiceModules/HRTFAuxiliarMethods.hpp>
 
 namespace BRTServices

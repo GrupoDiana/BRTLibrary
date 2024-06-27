@@ -27,7 +27,7 @@
 #include <Common/FiltersChain.hpp>
 #include <Common/Buffer.hpp>
 #include <Common/CommonDefinitions.hpp>
-#include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/ServicesBase.hpp>
 
 
 	/** \brief Class to be used as Key in the hash table used by CILD
