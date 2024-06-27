@@ -87,12 +87,18 @@ namespace BRTBase {
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
 		bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) {
+			
+			bool control = false;
 			for (auto& _listenerModel : listenerModelsConnected) {
-				if (_listenerModel->GetListenerModelCharacteristics().SupportHRTF()) {
-					return _listenerModel->SetHRTF(_listenerHRTF);
+				bool result = _listenerModel->SetHRTF(_listenerHRTF);
+				if (result) {
+					control = true;
+				}
+				else {
+					SET_RESULT(RESULT_ERROR_NOTSET, "ERROR: Unknown error when trying to set the HRTF in the listener model with ID " + _listenerModel->GetID());
 				}				
 			}
-			return false;
+			return control;
 		}
 
 		/** \brief Get HRTF of listener
@@ -112,7 +118,7 @@ namespace BRTBase {
 		/** \brief Remove the HRTF of thelistener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		bool RemoveHRTF() {
+		bool RemoveHRTF() {			
 			for (auto& _listenerModel : listenerModelsConnected) {
 				if (_listenerModel->GetListenerModelCharacteristics().SupportHRTF()) {
 					_listenerModel->RemoveHRTF();	
@@ -127,12 +133,20 @@ namespace BRTBase {
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
 		bool SetHRBRIR(std::shared_ptr< BRTServices::CHRBRIR > _listenerBRIR) {			
+			
+			bool control = false;
 			for (auto& _listenerModel : listenerModelsConnected) {
-				if (_listenerModel->GetListenerModelCharacteristics().SupportBRIR()) {
-					return _listenerModel->SetHRBRIR(_listenerBRIR);
+				if (_listenerModel->GetListenerModelCharacteristics().SupportBRIR()) {					
+					bool result = _listenerModel->SetHRBRIR(_listenerBRIR);
+					if (result) {
+						control = true;
+					}
+					else {
+						SET_RESULT(RESULT_ERROR_NOTSET, "ERROR: Unknown error when trying to set the BRIR in the listener model with ID " + _listenerModel->GetID());
+					}
 				}
 			}
-			return false;			
+			return control;
 		}
 
 		/** \brief Get HRBRIR of listener
@@ -202,20 +216,33 @@ namespace BRTBase {
 			}
 		}
 
+		void EnableSpatialization(){			
+			for (auto& it : listenerModelsConnected) {				
+				it->EnableSpatialization();								
+			}			
+		}
+
+		void DisableSpatialization() {			 
+			 for (auto& it : listenerModelsConnected) {
+				 it->DisableSpatialization();			
+			 }			
+		}
 
 		//** \brief Get the flag for HRTF spatialization
 		//*	\retval IsSpatializationEnabled if true, run-time HRTF spatialization is enabled for this source
 		//*   \eh Nothing is reported to the error handler.
 		//*/
 		bool IsSpatializationEnabled() { 
-			for (auto& it : listenerModelsConnected) {
-				if (it->GetListenerModelCharacteristics().SupportConfigurableSpatialisation()) {										
-					return it->IsSpatializationEnabled();
-					return true;
-				}
+			bool control = false;
+			for (auto& it : listenerModelsConnected) {				
+				if (it->IsSpatializationEnabled()) 
+				{
+					control = true;
+				}									
 			}
-			return false;
+			return control;
 		}
+
 		//** \brief Get the flag for run-time HRTF interpolation
 		//*	\retval IsInterpolationEnabled if true, run-time HRTF interpolation is enabled for this source
 		//*   \eh Nothing is reported to the error handler.
