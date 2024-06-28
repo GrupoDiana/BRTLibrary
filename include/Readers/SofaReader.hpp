@@ -398,7 +398,8 @@ namespace BRTReaders {
 			const int left_ear = 0;
 			const int right_ear = 1;
 
-			for (std::size_t emitter = 0; emitter < numberOfEmitters; emitter++)
+			//for (std::size_t emitter = 0; emitter < numberOfEmitters; emitter++)
+			std::size_t emitter = 0;
 			{
 				// This outtermost loop iterates over HRIRs
 				for (std::size_t measure = 0; measure < numberOfMeasurements; measure++)
@@ -444,7 +445,7 @@ namespace BRTReaders {
 					listenerPositionBRTConvention.SetAxis(RIGHT_AXIS, listenerPosition.y);
 					listenerPositionBRTConvention.SetAxis(UP_AXIS, listenerPosition.z);
 					// Set data to HRBIR struct
-					dataHRBRIR->AddHRBRIR(_relativeAzimuthListenerEmitter, _relativeElevationListenerEmitter, _relativeDistanceListenerEmitter, emitterPosition, listenerPosition, std::move(hrir_value));					
+					dataHRBRIR->AddHRBRIR(_relativeAzimuthListenerEmitter, _relativeElevationListenerEmitter, _relativeDistanceListenerEmitter, listenerPosition, std::move(hrir_value));					
 				}
 			}
 			return true;

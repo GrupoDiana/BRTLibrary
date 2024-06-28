@@ -70,7 +70,7 @@ namespace BRTServices
 			t_HRBRIR_DataBase.clear();
 			t_HRBRIR_Resampled_partitioned.clear();
 			t_HRBRIR_DataBase_ListenerPositions.clear();
-			t_HRBRIR_DataBase_EmitterPositions.clear();
+			//t_HRBRIR_DataBase_EmitterPositions.clear();
 			stepVector.clear();
 
 			////Update parameters			
@@ -86,13 +86,13 @@ namespace BRTServices
 			SET_RESULT(RESULT_OK, "HRBRIR Setup started");					
 		}
 
-		void AddHRBRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 emitterPosition, Common::CVector3 listenerPosition, THRIRStruct&& newHRBRIR) {
+		void AddHRBRIR(double _azimuth, double _elevation, double _distance, /*Common::CVector3 emitterPosition,*/ Common::CVector3 listenerPosition, THRIRStruct&& newHRBRIR) {
 			if (setupInProgress) {
 				_azimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
 				_elevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
 				bool error = false;
 				//Check if the listenerPosition is already in the table
-				auto it = t_HRBRIR_DataBase.find(TDuplaVector3(listenerPosition, emitterPosition));
+				auto it = t_HRBRIR_DataBase.find(TVector3(listenerPosition));
 				if (it != t_HRBRIR_DataBase.end())
 				{
 					auto returnValue = it->second.emplace(orientation(_azimuth, _elevation, _distance), std::forward<THRIRStruct>(newHRBRIR));
@@ -105,10 +105,10 @@ namespace BRTServices
 					T_HRTFTable orientationTable;
 					auto returnValue = orientationTable.emplace(orientation(_azimuth, _elevation, _distance), std::forward<THRIRStruct>(newHRBRIR));
 					if (returnValue.second) {
-						auto returnValue2 = t_HRBRIR_DataBase.emplace(TDuplaVector3(listenerPosition, emitterPosition), std::forward<T_HRTFTable>(orientationTable));
+						auto returnValue2 = t_HRBRIR_DataBase.emplace(TVector3(listenerPosition), std::forward<T_HRTFTable>(orientationTable));
 						if (returnValue2.second) {
 							AddToListenersPositions(listenerPosition);
-							AddToEmitterPositions(emitterPosition);							
+							//AddToEmitterPositions(emitterPosition);							
 						}
 						else {
 							error = true;
@@ -397,7 +397,7 @@ namespace BRTServices
 		*   \eh On error, an error code is reported to the error handler.
 		*       Warnings may be reported to the error handler.
 		*/
-		const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, Common::CTransform& _listenerLocation, Common::CTransform& _sourceLocation) const
+		const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, Common::CTransform& _listenerLocation/*, Common::CTransform& _sourceLocation*/) const
 		{
 			std::lock_guard<std::mutex> l(mutex);
 
@@ -416,8 +416,8 @@ namespace BRTServices
 
 			// Find Table to use
 			Common::CVector3 nearestListenerPosition = FindNearestListenerPosition(_listenerLocation.GetPosition());
-			Common::CVector3 nearestEmitterPosition = FindNearestEmitterPosition(_sourceLocation.GetPosition());
-			auto selectedTable = t_HRBRIR_Resampled_partitioned.find(TDuplaVector3(nearestListenerPosition, nearestEmitterPosition));
+			//Common::CVector3 nearestEmitterPosition = FindNearestEmitterPosition(_sourceLocation.GetPosition());
+			auto selectedTable = t_HRBRIR_Resampled_partitioned.find(TVector3(nearestListenerPosition));
 
 			// Process
 			return  CHRTFAuxiliarMethods::GetHRIRFromPartitionedTable(selectedTable->second, ear, _azimuth, _elevation, runTimeInterpolation,
@@ -434,7 +434,7 @@ namespace BRTServices
 		*   \eh On error, an error code is reported to the error handler.
 		*       Warnings may be reported to the error handler.
 		*/
-		THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation, Common::CTransform& _listenerLocation, Common::CTransform& _sourceLocation)
+		THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation, Common::CTransform& _listenerLocation/*, Common::CTransform& _sourceLocation*/)
 		{
 			std::lock_guard<std::mutex> l(mutex);
 
@@ -456,8 +456,8 @@ namespace BRTServices
 
 			// Find Table to use
 			Common::CVector3 nearestListenerPosition = FindNearestListenerPosition(_listenerLocation.GetPosition());
-			Common::CVector3 nearestEmitterPosition = FindNearestEmitterPosition(_sourceLocation.GetPosition());
-			auto selectedTable = t_HRBRIR_Resampled_partitioned.find(TDuplaVector3(nearestListenerPosition, nearestEmitterPosition));
+			//Common::CVector3 nearestEmitterPosition = FindNearestEmitterPosition(_sourceLocation.GetPosition());
+			auto selectedTable = t_HRBRIR_Resampled_partitioned.find(TVector3(nearestListenerPosition));
 
 			return CHRTFAuxiliarMethods::GetHRIRDelayFromPartitioned(selectedTable->second, ear, _azimuthCenter, _elevationCenter, runTimeInterpolation,
 				HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, stepVector);
@@ -497,13 +497,13 @@ namespace BRTServices
 			}			
 		}
 
-		void AddToEmitterPositions(Common::CVector3& _emitterPosition) {
-			//Check if the listenerPosition is already in the table
-			auto it = std::find(t_HRBRIR_DataBase_EmitterPositions.begin(), t_HRBRIR_DataBase_EmitterPositions.end(), _emitterPosition);
-			if (it == t_HRBRIR_DataBase_EmitterPositions.end()) {
-				t_HRBRIR_DataBase_EmitterPositions.push_back(_emitterPosition);
-			}
-		}
+		//void AddToEmitterPositions(Common::CVector3& _emitterPosition) {
+		//	//Check if the listenerPosition is already in the table
+		//	auto it = std::find(t_HRBRIR_DataBase_EmitterPositions.begin(), t_HRBRIR_DataBase_EmitterPositions.end(), _emitterPosition);
+		//	if (it == t_HRBRIR_DataBase_EmitterPositions.end()) {
+		//		t_HRBRIR_DataBase_EmitterPositions.push_back(_emitterPosition);
+		//	}
+		//}
 
 		/**
 		 * @brief Find the nearest position of the listener stored in the data table.
@@ -532,10 +532,10 @@ namespace BRTServices
 		 * @param _emitterPosition 
 		 * @return 
 		 */
-		Common::CVector3 FindNearestEmitterPosition(Common::CVector3& _emitterPosition) const {
-			// For now we do nothing, we just return the first one.
-			return t_HRBRIR_DataBase_EmitterPositions[0];		
-		}
+		//Common::CVector3 FindNearestEmitterPosition(Common::CVector3& _emitterPosition) const {
+		//	// For now we do nothing, we just return the first one.
+		//	return t_HRBRIR_DataBase_EmitterPositions[0];		
+		//}
 
 
 		/////////////////////////////////////////
@@ -677,7 +677,7 @@ namespace BRTServices
 		std::unordered_map<orientation, float> stepVector;					// Store hrtf interpolated grids steps
 		
 		std::vector<Common::CVector3>	t_HRBRIR_DataBase_ListenerPositions;
-		std::vector<Common::CVector3>	t_HRBRIR_DataBase_EmitterPositions;
+		//std::vector<Common::CVector3>	t_HRBRIR_DataBase_EmitterPositions;
 
 		// Processors
 		//CQuasiUniformSphereDistribution quasiUniformSphereDistribution;		

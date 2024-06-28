@@ -83,19 +83,19 @@ struct TVector3 {
 	}
 };
 
-struct TDuplaVector3 {
-	TVector3 listener;
-	TVector3 emitter;
-
-	TDuplaVector3() : listener{ 0.0, 0.0, 0.0 }, emitter{ 0.0, 0.0, 0.0 } {}
-	TDuplaVector3(TVector3 _listener, TVector3 _emitter) : listener{ _listener }, emitter{ _emitter } {}
-	TDuplaVector3(Common::CVector3 _listener, Common::CVector3 _emitter) : listener{ _listener }, emitter{ _emitter } {}
-	
-	bool operator==(const TDuplaVector3& other) const
-	{
-		return ((this->listener == other.listener) && (this->emitter == other.emitter));
-	}
-};
+//struct TDuplaVector3 {
+//	TVector3 listener;
+//	TVector3 emitter;
+//
+//	TDuplaVector3() : listener{ 0.0, 0.0, 0.0 }, emitter{ 0.0, 0.0, 0.0 } {}
+//	TDuplaVector3(TVector3 _listener, TVector3 _emitter) : listener{ _listener }, emitter{ _emitter } {}
+//	TDuplaVector3(Common::CVector3 _listener, Common::CVector3 _emitter) : listener{ _listener }, emitter{ _emitter } {}
+//	
+//	bool operator==(const TDuplaVector3& other) const
+//	{
+//		return ((this->listener == other.listener) && (this->emitter == other.emitter));
+//	}
+//};
 
 namespace std
 {
@@ -137,7 +137,7 @@ namespace std
 		}
 	};
 
-	template<>
+	/*template<>
 	struct hash<TDuplaVector3>
 	{
 		std::size_t operator()(const TDuplaVector3& key) const
@@ -147,7 +147,7 @@ namespace std
 			h1 ^= h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2);
 			return h1;
 		}
-	};
+	};*/
 	
 }
 
@@ -217,7 +217,7 @@ namespace BRTServices {
 		virtual void GetWindowingParameters(float& _windowThreshold, float& _windowRiseTime) {};
 
 		virtual void AddHRIR(double _azimuth, double _elevation, double _distance, THRIRStruct&& newHRIR) {};
-		virtual void AddHRBRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 emitterPosition, Common::CVector3 listenerPosition, THRIRStruct&& newHRBRIR) {}
+		virtual void AddHRBRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRBRIR) {}
 		virtual void AddCoefficients(float azimuth, float distance, TNFCFilterStruct&& newCoefs) {}
 		virtual void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF) {}
 		
@@ -230,19 +230,13 @@ namespace BRTServices {
 		virtual float GetHeadRadius() { return 0.0f; };
 		virtual Common::CVector3 GetEarLocalPosition(Common::T_ear _ear) { return Common::CVector3(); }
 		virtual float GetHRTFDistanceOfMeasurement() { return 0; }
-		
-		//virtual const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation) const { 
-		//	return std::vector < CMonoBuffer<float>>();  
-		//};
-		virtual const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation,
-			Common::CTransform& _listenerLocation, Common::CTransform& _sourceLocation) const
+				
+		virtual const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, Common::CTransform& _listenerLocation) const
 		{
 			return std::vector < CMonoBuffer<float>>();
 		};
-
-		//virtual THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation) { return THRIRPartitionedStruct(); };
-		virtual THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation,
-			Common::CTransform& _listenerLocation, Common::CTransform& _sourceLocation) {
+		
+		virtual THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation,	Common::CTransform& _listenerLocation) {
 			return THRIRPartitionedStruct();
 		};			
 	};}
