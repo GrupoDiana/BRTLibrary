@@ -243,6 +243,18 @@ namespace BRTBase {
 			return control;
 		}
 
+		void EnableInterpolation() {
+			for (auto& it : listenerModelsConnected) {
+				it->EnableInterpolation();
+			}
+		}
+
+		void DisableInterpolation() {
+			for (auto& it : listenerModelsConnected) {
+				it->DisableInterpolation();
+			}
+		}
+
 		//** \brief Get the flag for run-time HRTF interpolation
 		//*	\retval IsInterpolationEnabled if true, run-time HRTF interpolation is enabled for this source
 		//*   \eh Nothing is reported to the error handler.
@@ -251,6 +263,93 @@ namespace BRTBase {
 			for (auto& it : listenerModelsConnected) {
 				if (it->GetListenerModelCharacteristics().SupportConfigurableInterpolation()) {					
 					return it->IsInterpolationEnabled();					
+				}
+			}
+			return false;
+		}
+
+		void EnableITDSimulation() {
+			for (auto& it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().SupportITDSimulation()) {
+					it->EnableITDSimulation();
+				}
+			}
+		}
+
+		void DisableITDSimulation() {
+			for (auto& it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().SupportITDSimulation()) {
+					it->DisableITDSimulation();
+				}
+			}
+		}
+
+		/**
+		 * @brief 
+		 * @return 
+		 */
+		bool IsITDSimulationEnabled() {
+			for (auto& it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().SupportITDSimulation()) {
+					return it->IsITDSimulationEnabled();
+				}
+			}
+			return false;
+		}
+
+		void EnableNearFieldEffect() {
+			for (auto& it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {
+					it->EnableNearFieldEffect();
+				}
+			}
+		}
+
+		void DisableNearFieldEffect() {
+			for (auto& it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {
+					it->DisableNearFieldEffect();
+				}
+			}
+		}
+
+		/**
+		 * @brief 
+		 * @return 
+		 */
+		bool IsNearFieldEffectEnabled() {
+			for (auto& it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {
+					return it->IsNearFieldEffectEnabled();
+				}
+			}
+			return false;
+		}
+
+		void EnableParallaxCorrection() {
+			for (auto& it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().SupportParallaxCorrection()) {
+					it->EnableParallaxCorrection();
+				}
+			}
+		}
+
+		void DisableParallaxCorrection() {
+			for (auto& it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().SupportParallaxCorrection()) {
+					it->DisableParallaxCorrection();
+				}
+			}
+		}
+
+		/**
+		 * @brief 
+		 * @return 
+		 */
+		bool IsParallaxCorrectionEnabled() {
+			for (auto& it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().SupportParallaxCorrection()) {
+					return it->IsParallaxCorrectionEnabled();
 				}
 			}
 			return false;

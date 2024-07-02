@@ -107,6 +107,10 @@ namespace BRTBase {
 		virtual void EnableITDSimulation()= 0;
 		virtual void DisableITDSimulation() = 0;			
 		virtual bool IsITDSimulationEnabled() { return enableITDSimulation; }
+
+		virtual void EnableNearFieldEffect() {};
+		virtual void DisableNearFieldEffect() {};
+		virtual bool IsNearFieldEffectEnabled() { return false; }
 		
 		virtual void EnableSpatialization() {};
 		virtual void DisableSpatialization() {};
@@ -115,6 +119,10 @@ namespace BRTBase {
 		virtual void EnableInterpolation() {};
 		virtual void DisableInterpolation() {};
 		virtual bool IsInterpolationEnabled() { return false; }
+
+		virtual void EnableParallaxCorrection() {};
+		virtual void DisableParallaxCorrection() {};
+		virtual bool IsParallaxCorrectionEnabled() { return false; }
 
 		virtual bool SetAmbisonicOrder(int _ambisonicOrder) { return false; }
 		virtual int GetAmbisonicOrder() const { return 0; }
