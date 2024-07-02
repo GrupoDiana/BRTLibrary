@@ -29,7 +29,7 @@
 #include <Common/ErrorHandler.hpp>
 #include <Common/GlobalParameters.hpp>
 #include <Common/CommonDefinitions.hpp>
-#include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/ServicesBase.hpp>
 #include <ServiceModules/DirectivityTFDefinitions.hpp>
 #include <ServiceModules/DirectivityTFAuxiliarMethods.hpp>
 #include <ServiceModules/Extrapolation.hpp>

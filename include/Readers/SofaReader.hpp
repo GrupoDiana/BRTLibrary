@@ -27,7 +27,7 @@
 
 #include <ostream>
 #include <string>
-#include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/ServicesBase.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <Common/ErrorHandler.hpp>
 #include <Readers/LibMySofaLoader.hpp>
@@ -398,7 +398,8 @@ namespace BRTReaders {
 			const int left_ear = 0;
 			const int right_ear = 1;
 
-			for (std::size_t emitter = 0; emitter < numberOfEmitters; emitter++)
+			//for (std::size_t emitter = 0; emitter < numberOfEmitters; emitter++)
+			std::size_t emitter = 0;
 			{
 				// This outtermost loop iterates over HRIRs
 				for (std::size_t measure = 0; measure < numberOfMeasurements; measure++)
@@ -444,7 +445,7 @@ namespace BRTReaders {
 					listenerPositionBRTConvention.SetAxis(RIGHT_AXIS, listenerPosition.y);
 					listenerPositionBRTConvention.SetAxis(UP_AXIS, listenerPosition.z);
 					// Set data to HRBIR struct
-					dataHRBRIR->AddHRBRIR(_relativeAzimuthListenerEmitter, _relativeElevationListenerEmitter, _relativeDistanceListenerEmitter, emitterPosition, listenerPosition, std::move(hrir_value));					
+					dataHRBRIR->AddHRBRIR(_relativeAzimuthListenerEmitter, _relativeElevationListenerEmitter, _relativeDistanceListenerEmitter, listenerPosition, std::move(hrir_value));					
 				}
 			}
 			return true;
@@ -1062,8 +1063,8 @@ namespace BRTReaders {
 		Common::CVector3 RoundToZeroIfClose(Common::CVector3 _inPoint) {
 			Common::CVector3 _outPoint;
 			_outPoint.x =  Common::AreSameDouble(_inPoint.x, 0, EPSILON) ? 0: _inPoint.x;
-			_outPoint.y = Common::AreSameDouble(_inPoint.x, 0, EPSILON) ? 0 : _inPoint.y;
-			_outPoint.z = Common::AreSameDouble(_inPoint.x, 0, EPSILON) ? 0 : _inPoint.z;
+			_outPoint.y = Common::AreSameDouble(_inPoint.y, 0, EPSILON) ? 0 : _inPoint.y;
+			_outPoint.z = Common::AreSameDouble(_inPoint.z, 0, EPSILON) ? 0 : _inPoint.z;
 			return _outPoint;
 		}
 

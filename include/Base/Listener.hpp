@@ -50,36 +50,55 @@ namespace BRTBase {
 		}
 						
 		/**
-		 * @brief Connect listener model
+		 * @brief Connect listener model to this listener
 		 * @param _listener Pointer to the source
 		 * @return True if the connection success
 		*/
-		bool ConnectListenerModel(std::shared_ptr<CListenerModelBase> _listenerModel) {
+		bool ConnectListenerModel(std::shared_ptr<CListenerModelBase> _listenerModel, Common::T_ear _ear = Common::T_ear::BOTH) {
+			
+			if (_listenerModel == nullptr) return false;
+			if (_listenerModel->IsConnectedToListener()) { return false; };
 			
 			bool control;
 			control = brtManager->ConnectModuleID(this, _listenerModel, "listenerID");
-			control = control && brtManager->ConnectModulesSamples(_listenerModel, "leftEar", this, "leftEar");
-			control = control && brtManager->ConnectModulesSamples(_listenerModel, "rightEar", this, "rightEar");
-			//return ConnectAnySoundSource(_source, false);
-			
+
+			if (_ear == Common::T_ear::LEFT) {
+				control = control && brtManager->ConnectModulesSamples(_listenerModel, "leftEar", this, "leftEar");
+			}
+			else if (_ear == Common::T_ear::RIGHT) {
+				control = control && brtManager->ConnectModulesSamples(_listenerModel, "rightEar", this, "rightEar");
+			}
+			else if (_ear == Common::T_ear::BOTH){
+				control = control && brtManager->ConnectModulesSamples(_listenerModel, "leftEar", this, "leftEar");
+				control = control && brtManager->ConnectModulesSamples(_listenerModel, "rightEar", this, "rightEar");
+			}
+			else {
+				return false;
+			}
+						
 			listenerModelsConnected.push_back(_listenerModel);
-			return true;
+			return control;
 		};
 
-		bool ConnectListenerModel(const std::string& _listenerModelID) {
+		/**
+		 * @brief Connect listener model to this listener
+		 * @param _listener Pointer to the source
+		 * @return True if the connection success
+		*/
+		bool ConnectListenerModel(const std::string& _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) {
 			
 			std::shared_ptr<CListenerModelBase> _listenerModel = brtManager->GetListenerModel<CListenerModelBase>(_listenerModelID);
 			if (_listenerModel == nullptr) return false;
 			
-			if (_listenerModel->IsConnectedToListener()) { return false; };
+			/*if (_listenerModel->IsConnectedToListener()) { return false; };
 			bool control;
 			control = brtManager->ConnectModuleID(this, _listenerModel, "listenerID");						
 			control = control && brtManager->ConnectModulesSamples(_listenerModel, "leftEar", this, "leftEar");
 			control = control && brtManager->ConnectModulesSamples(_listenerModel, "rightEar", this, "rightEar");			
 
-			listenerModelsConnected.push_back(_listenerModel);			
+			listenerModelsConnected.push_back(_listenerModel);		*/	
 
-			return control;
+			return ConnectListenerModel(_listenerModel, _ear);			
 		};
 
 		/** \brief SET HRTF of listener
@@ -407,8 +426,7 @@ namespace BRTBase {
 		// Private Methods
 		/////////////////////////
 		
-
-
+		
 		//////////////////////////
 		// Private Attributes
 		/////////////////////////

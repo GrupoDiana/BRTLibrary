@@ -33,7 +33,7 @@
 #include <Common/ErrorHandler.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <Common/GlobalParameters.hpp>
-#include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/ServicesBase.hpp>
 
 namespace BRTServices {
 
@@ -94,12 +94,12 @@ namespace BRTServices {
 	/**
 	 * @brief Type definition for table HRBRIR, this is the one read from the SOFA file.
 	 */
-	typedef std::unordered_map<TDuplaVector3, T_HRTFTable> T_HRBRIRTable;
+	typedef std::unordered_map<TVector3, T_HRTFTable> T_HRBRIRTable;
 
 	/**
 	 * @brief Type definition for the HRBRIR table, this is the one our grid has and is the one used for rendering.
 	 */
-	typedef std::unordered_map<TDuplaVector3, T_HRTFPartitionedTable> T_HRBRIRPartitionedTable;
+	typedef std::unordered_map<TVector3, T_HRTFPartitionedTable> T_HRBRIRPartitionedTable;
 
 }
 #endif

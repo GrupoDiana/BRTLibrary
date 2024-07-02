@@ -30,7 +30,7 @@
 #include <list>
 #include <cstdint>
 #include <Common/Buffer.hpp>
-#include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/ServicesBase.hpp>
 //#include <ServiceModules/HRTFDefinitions.hpp>
 
 

@@ -35,7 +35,7 @@
 #include <Common/GlobalParameters.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <Common/CranicalGeometry.hpp>
-#include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/ServicesBase.hpp>
 #include <ServiceModules/HRTFDefinitions.hpp>
 #include <ServiceModules/HRTFAuxiliarMethods.hpp>
 #include <ServiceModules/OnlineInterpolation.hpp>
@@ -209,8 +209,7 @@ namespace BRTServices
 		*   \eh On error, an error code is reported to the error handler.
 		*       Warnings may be reported to the error handler.
 		*/
-		const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, 
-			Common::CTransform& _listenerLocation = Common::CTransform(), Common::CTransform& _sourceLocation = Common::CTransform()) const
+		const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, Common::CTransform& _listenerLocation) const
 		{
 			std::lock_guard<std::mutex> l(mutex);
 			std::vector<CMonoBuffer<float>> newHRIR;
@@ -240,7 +239,7 @@ namespace BRTServices
 		*   \eh On error, an error code is reported to the error handler.
 		*       Warnings may be reported to the error handler.
 		*/
-		THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation)
+		THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation,	Common::CTransform& _listenerLocation)
 		{			
 			std::lock_guard<std::mutex> l(mutex);
 			THRIRPartitionedStruct data;

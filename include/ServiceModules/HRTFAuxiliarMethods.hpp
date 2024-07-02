@@ -33,7 +33,7 @@
 #include <Common/ErrorHandler.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <Common/GlobalParameters.hpp>
-#include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/ServicesBase.hpp>
 #include <ServiceModules/HRTFDefinitions.hpp>
 #include <ServiceModules/InterpolationAuxiliarMethods.hpp>
 #include <ServiceModules/GridsManager.hpp>
