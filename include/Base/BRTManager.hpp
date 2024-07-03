@@ -128,6 +128,19 @@ namespace BRTBase {
 		}
 
 		/**
+		 * @brief Get a list of listener ID
+		 * @return listener ID list
+		 */
+		std::vector<std::string> GetListerIDs() {
+			std::vector<std::string> listenerIDs;
+			for (auto& it : listeners) {
+				listenerIDs.push_back(it->GetID());
+			}
+			return listenerIDs;
+		}
+
+
+		/**
 		 * @brief Creates a new source and returns a pointer it. This pointer is also saved in a vector.
 		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
 		 * @param sourceID Source ID to be assigned to the source. It must be unique and cannot be changed.
@@ -209,6 +222,17 @@ namespace BRTBase {
 			return nullptr;
 		}
 
+		/**
+		 * @brief Get listener model IDs list 
+		 * @return List of listener model IDs
+		 */
+		std::vector<std::string> GetListenerModelIDs() {
+			std::vector<std::string> listenerIDs;
+			for (auto& it : listenerModels) {
+				listenerIDs.push_back(it->GetID());
+			}
+			return listenerIDs;
+		}
 
 		/**
 		 * @brief Creates a new processor and returns a pointer to it. The brtmanager does NOT save the pointer.
