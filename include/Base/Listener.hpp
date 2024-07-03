@@ -60,7 +60,7 @@ namespace BRTBase {
 			
 			bool control;
 			control = brtManager->ConnectModuleID(this, _listenerModel, "listenerID");
-			control = control && _listenerModel->ConnectListenerTransform(GetID());					
+			_listenerModel->ConnectListenerTransform(GetID());					
 
 
 			if (_ear == Common::T_ear::LEFT) {
@@ -108,7 +108,7 @@ namespace BRTBase {
 
 			bool control;
 			control = brtManager->DisconnectModuleID(this, _listenerModel, "listenerID");
-			control = control && _listenerModel->DisconnectListenerTransform(GetID());
+			_listenerModel->DisconnectListenerTransform(GetID());
 
 
 			if (_ear == Common::T_ear::LEFT) {
