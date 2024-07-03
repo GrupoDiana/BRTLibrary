@@ -72,6 +72,15 @@ namespace BRTListenerModel {
 				
 			}
 
+			/**
+			 * @brief Set processor enable or disable
+			 * @param _enableProcessor
+			 */
+			void SetEnableProcessor(bool _enableProcessor) {
+				if (_enableProcessor) { bilateralAmbisonicEncoderProcessor->EnableProcessor(); }
+				else { bilateralAmbisonicEncoderProcessor->DisableProcessor(); }
+			}
+
 			/**		
 			 * @brief Reset processor buffers
 			*/
@@ -331,6 +340,33 @@ namespace BRTListenerModel {
 			}
 			return false;
 		}
+
+		/**
+		 * @brief Enable model
+		 */
+		void EnableModel() {
+			std::lock_guard<std::mutex> l(mutex);
+			enableModel = true;
+			for (auto& it : sourcesConnectedProcessors) {
+				it.SetEnableProcessor(true);
+			}
+			leftAmbisonicDomainConvolverProcessor->EnableProcessor();
+			rightAmbisonicDomainConvolverProcessor->EnableProcessor();
+		};
+
+		/**
+		 * @brief Disable model
+		 */
+		void DisableModel() {
+			std::lock_guard<std::mutex> l(mutex);
+			enableModel = false;
+			for (auto& it : sourcesConnectedProcessors) {
+				it.SetEnableProcessor(false);
+			}
+			leftAmbisonicDomainConvolverProcessor->DisableProcessor();
+			rightAmbisonicDomainConvolverProcessor->DisableProcessor();
+		};
+
 
 		/**
 		 * @brief Reset all processor buffers

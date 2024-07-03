@@ -73,6 +73,20 @@ namespace BRTListenerModel {
 			}
 
 			/**
+			 * @brief Set processor enable or disable
+			 * @param _enableProcessor
+			 */
+			void SetEnableProcessor(bool _enableProcessor) {
+				if (_enableProcessor) {
+					binauralConvolverProcessor->EnableProcessor();					
+
+				}
+				else {
+					binauralConvolverProcessor->DisableProcessor();					
+				}
+			}
+
+			/**
 			 * @brief Reset processor buffers
 			*/
 			void ResetBuffers() {
@@ -211,21 +225,27 @@ namespace BRTListenerModel {
 		bool IsInterpolationEnabled() { return enableInterpolation; }
 
 		
-		///**
-		// * @brief Enable ITD simulation
-		//*/
-		//void EnableITDSimulation() { 
-		//	enableITDSimulation = true; 
-		//	SetConfigurationInALLSourcesProcessors();
-		//}
+		/**
+		 * @brief Enable model
+		 */
+		void EnableModel() {
+			std::lock_guard<std::mutex> l(mutex);
+			enableModel = true;
+			for (auto& it : sourcesConnectedProcessors) {
+				it.SetEnableProcessor(true);
+			}
+		};
 
-		///**
-		// * @brief Disable ITD simulation
-		//*/
-		//void DisableITDSimulation() { 
-		//	enableITDSimulation = false; 
-		//	SetConfigurationInALLSourcesProcessors();
-		//}
+		/**
+		 * @brief Disable model
+		 */
+		void DisableModel() {
+			std::lock_guard<std::mutex> l(mutex);
+			enableModel = false;
+			for (auto& it : sourcesConnectedProcessors) {
+				it.SetEnableProcessor(false);
+			}
+		};
 
 
 		/**

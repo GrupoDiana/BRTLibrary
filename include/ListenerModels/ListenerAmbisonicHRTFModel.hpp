@@ -434,9 +434,6 @@ namespace BRTListenerModel {
 
 	private:
 
-		
-
-
 		/////////////////
 		// Methods
 		/////////////////
