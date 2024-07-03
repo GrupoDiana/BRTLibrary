@@ -131,14 +131,13 @@ namespace BRTBase {
 		 * @brief Get a list of listener ID
 		 * @return listener ID list
 		 */
-		std::vector<std::string> GetListerIDs() {
+		std::vector<std::string> GetListenerIDs() {
 			std::vector<std::string> listenerIDs;
 			for (auto& it : listeners) {
 				listenerIDs.push_back(it->GetID());
 			}
 			return listenerIDs;
 		}
-
 
 		/**
 		 * @brief Creates a new source and returns a pointer it. This pointer is also saved in a vector.
