@@ -463,6 +463,14 @@ namespace BRTServices
 				HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, stepVector);
 		}
 
+		/**
+		 * @brief Get the list of listener positions stored in the data table
+		 * @return Vector of listener positions stored in the data table
+		 */
+		std::vector <Common::CVector3> GetListenerPositions() {
+			return t_HRBRIR_DataBase_ListenerPositions;
+		}
+
 	private:
 		
 		/////////////

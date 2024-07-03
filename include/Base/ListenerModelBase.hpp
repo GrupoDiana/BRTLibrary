@@ -102,7 +102,7 @@ namespace BRTBase {
 				
 		virtual bool SetHRBRIR(std::shared_ptr< BRTServices::CHRBRIR > _listenerBRIR) { return false; };		        
 		virtual std::shared_ptr < BRTServices::CHRBRIR> GetHRBRIR() const { return nullptr; };
-		virtual void RemoveHRBRIR() {};
+		virtual void RemoveHRBRIR() {};		
 
 		virtual void EnableITDSimulation()= 0;
 		virtual void DisableITDSimulation() = 0;			
@@ -127,6 +127,8 @@ namespace BRTBase {
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) = 0;
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) = 0;
 
+		virtual bool ConnectListenerTransform(const std::string _listenerID) {return false; }
+		virtual bool DisconnectListenerTransform(const std::string _listenerID) { return false; }
 
 		// Class Methods
 

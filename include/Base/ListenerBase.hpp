@@ -28,10 +28,7 @@
 #include <Base/CommandEntryPointManager.hpp>
 #include <Base/ExitPointManager.hpp>
 #include <Base/ListenerModelBase.hpp>
-//#include <Base/BRTManager.hpp>
 #include <Common/CommonDefinitions.hpp>
-//#include <ServiceModules/HRTF.hpp>
-//#include <ServiceModules/NFCFilters.hpp>
 
 namespace BRTServices {
 	class CHRTF;

@@ -238,7 +238,9 @@ namespace BRTServices {
 		
 		virtual THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation,	Common::CTransform& _listenerLocation) {
 			return THRIRPartitionedStruct();
-		};			
+		};	
+
+		virtual std::vector <Common::CVector3> GetListenerPositions() {	return std::vector <Common::CVector3>{Common::CVector3()};	}
 	};}
 
 #endif

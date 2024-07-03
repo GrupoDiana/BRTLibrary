@@ -58,7 +58,7 @@ namespace BRTProcessing {
 		 * @param outBuffer Output channel in time in the real domain.
 		 * @param _listenerAmbisoninBIRWeak Smart pointer to impulse responses in the ambisonic domain of virtual loudspeakers.
 		*/
-		void Process(std::vector<CMonoBuffer<float>>& _inChannelsBuffers, CMonoBuffer<float>& outBuffer, std::weak_ptr<BRTServices::CAmbisonicBIR>& _listenerAmbisoninBIRWeak) {
+		void Process(std::vector<CMonoBuffer<float>>& _inChannelsBuffers, CMonoBuffer<float>& outBuffer, std::weak_ptr<BRTServices::CAmbisonicBIR>& _listenerAmbisoninBIRWeak, Common::CTransform& _listenerTransform) {
 
 			std::lock_guard<std::mutex> l(mutex);
 
@@ -94,7 +94,7 @@ namespace BRTProcessing {
 			std::vector<CMonoBuffer<float>> allChannelsBuffersConvolved (numberOfAmbisonicChannels);
 			for (int nChannel = 0; nChannel < _inChannelsBuffers.size(); nChannel++) {				
 				
-				std::vector<CMonoBuffer<float>>	oneChannel_ABIR_partitioned = _listenerAmbisonicBIR->GetChannelPartitionedIR_OneEar(nChannel, earToProcess); // GET ABIR								
+				std::vector<CMonoBuffer<float>>	oneChannel_ABIR_partitioned = _listenerAmbisonicBIR->GetChannelPartitionedIR_OneEar(nChannel, earToProcess, _listenerTransform); // GET ABIR								
 				if (oneChannel_ABIR_partitioned.size() == 0) {
 					SET_RESULT(RESULT_ERROR_BADSIZE, "Failure to obtain an IR from AmbisonicIR. This usually occurs because the ambisonic order has been changed during reproduction.");
 					outBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);

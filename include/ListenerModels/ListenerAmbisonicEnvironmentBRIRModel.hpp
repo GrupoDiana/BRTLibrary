@@ -98,12 +98,12 @@ namespace BRTListenerModel {
 			CreateILDExitPoint();
 			CreateABIRExitPoint();
 
-			leftAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>(Common::T_ear::LEFT);
-			//leftAmbisonicDomainConvolverProcessor->SetEar(Common::T_ear::LEFT);			
+			leftAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>(Common::T_ear::LEFT);			
 			brtManager->ConnectModuleABIR(this, leftAmbisonicDomainConvolverProcessor, "listenerAmbisonicBIR");
+
+
 			rightAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>(Common::T_ear::RIGHT);
-			//rightAmbisonicDomainConvolverProcessor->SetEar(Common::T_ear::RIGHT);
-			brtManager->ConnectModuleABIR(this, rightAmbisonicDomainConvolverProcessor, "listenerAmbisonicBIR");
+			brtManager->ConnectModuleABIR(this, rightAmbisonicDomainConvolverProcessor, "listenerAmbisonicBIR");			
 		}
 
 
@@ -304,7 +304,37 @@ namespace BRTListenerModel {
 		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) {
 			return DisconnectAnySoundSource(_source, true);
 		};
-					
+				
+		/**
+		 * @brief Connecting to a specific listener transform
+		 * @param _listenerID listener ID
+		 * @return true if the connection success
+		 */
+		bool ConnectListenerTransform(const std::string _listenerID) {
+			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(_listenerID);
+			if (_listener != nullptr) {
+				brtManager->ConnectModuleTransform(_listener, leftAmbisonicDomainConvolverProcessor, "listenerPosition");
+				brtManager->ConnectModuleTransform(_listener, rightAmbisonicDomainConvolverProcessor, "listenerPosition");
+				return true;
+			}			
+			return false;			
+		}
+
+		/**
+		 * @brief Disconnecting to a specific listener transform
+		 * @param _listenerID listener ID
+		 * @return true if the diconnection success
+		 */
+		bool DisconnectListenerTransform(const std::string _listenerID) {
+			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(_listenerID);
+			if (_listener != nullptr) {
+				brtManager->DisconnectModuleTransform(_listener, leftAmbisonicDomainConvolverProcessor, "listenerPosition");
+				brtManager->DisconnectModuleTransform(_listener, rightAmbisonicDomainConvolverProcessor, "listenerPosition");
+				return true;
+			}
+			return false;
+		}
+
 		/**
 		 * @brief Reset all processor buffers
 		*/

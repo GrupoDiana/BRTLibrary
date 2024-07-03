@@ -104,12 +104,10 @@ namespace BRTListenerModel {
 			CreateILDExitPoint();
 			CreateABIRExitPoint();
 
-			leftAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>(Common::T_ear::LEFT);
-			//leftAmbisonicDomainConvolverProcessor->SetEar(Common::T_ear::LEFT);			
+			leftAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>(Common::T_ear::LEFT);			
 			brtManager->ConnectModuleABIR(this, leftAmbisonicDomainConvolverProcessor, "listenerAmbisonicBIR");
-			rightAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>(Common::T_ear::RIGHT);
-			//rightAmbisonicDomainConvolverProcessor->SetEar(Common::T_ear::RIGHT);
-			brtManager->ConnectModuleABIR(this, rightAmbisonicDomainConvolverProcessor, "listenerAmbisonicBIR");
+			rightAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>(Common::T_ear::RIGHT);			
+			brtManager->ConnectModuleABIR(this, rightAmbisonicDomainConvolverProcessor, "listenerAmbisonicBIR");			
 		}
 
 
@@ -441,6 +439,15 @@ namespace BRTListenerModel {
 		template <typename T>
 		bool ConnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
 			std::lock_guard<std::mutex> l(mutex);
+			
+			// Get listener pointer
+			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(GetIDEntryPoint("listenerID")->GetData());
+			if (_listener == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This listener Model has not been connected to a listener.", "");
+				return false;
+			}
+
+			// Make connection
 			CSourceToBeProcessed _newSourceProcessors(_source->GetID(), brtManager);
 			_newSourceProcessors.bilateralAmbisonicEncoderProcessor->SetAmbisonicOrder(ambisonicOrder);
 			_newSourceProcessors.bilateralAmbisonicEncoderProcessor->SetAmbisonicNormalization(ambisonicNormalization);
@@ -449,10 +456,10 @@ namespace BRTListenerModel {
 			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "sourceID");			
 			
 			if (sourceNeedsListenerPosition) {
-				control = control && brtManager->ConnectModuleTransform(this, _source, "listenerPosition");
+				control = control && brtManager->ConnectModuleTransform(_listener, _source, "listenerPosition");
 			}
 
-			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerPosition");
+			control = control && brtManager->ConnectModuleTransform(_listener, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerPosition");
 			control = control && brtManager->ConnectModuleHRTF(this, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerHRTF");
 			control = control && brtManager->ConnectModuleILD(this, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerILD");
 			control = control && brtManager->ConnectModuleID(this, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerID");
@@ -481,6 +488,14 @@ namespace BRTListenerModel {
 		template <typename T>
 		bool DisconnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
 			std::lock_guard<std::mutex> l(mutex);
+			
+			// Get listener pointer
+			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(GetIDEntryPoint("listenerID")->GetData());
+			if (_listener == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This listener Model has not been connected to a listener.", "");
+				return false;
+			}
+			// Make disconnection
 			std::string _sourceID = _source->GetID();
 			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSourceToBeProcessed& sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
 			if (it != sourcesConnectedProcessors.end()) {
@@ -495,10 +510,10 @@ namespace BRTListenerModel {
 				control = control && brtManager->DisconnectModuleID(this, it->bilateralAmbisonicEncoderProcessor, "listenerID");
 				control = control && brtManager->DisconnectModuleILD(this, it->bilateralAmbisonicEncoderProcessor, "listenerILD");
 				control = control && brtManager->DisconnectModuleHRTF(this, it->bilateralAmbisonicEncoderProcessor, "listenerHRTF");
-				control = control && brtManager->DisconnectModuleTransform(this, it->bilateralAmbisonicEncoderProcessor, "listenerPosition");
+				control = control && brtManager->DisconnectModuleTransform(_listener, it->bilateralAmbisonicEncoderProcessor, "listenerPosition");
 
 				if (sourceNeedsListenerPosition) {
-					control = control && brtManager->DisconnectModuleTransform(this, _source, "listenerPosition");
+					control = control && brtManager->DisconnectModuleTransform(_listener, _source, "listenerPosition");
 				}
 
 				control = control && brtManager->DisconnectModuleID(_source, it->bilateralAmbisonicEncoderProcessor, "sourceID");

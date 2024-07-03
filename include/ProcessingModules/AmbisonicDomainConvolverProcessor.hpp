@@ -41,6 +41,7 @@ namespace BRTProcessing {
 			CreateABIRPtrEntryPoint("listenerAmbisonicBIR");
 			CreateIDEntryPoint("sourceID");
 			CreateIDEntryPoint("listenerID");
+			CreatePositionEntryPoint("listenerPosition");
             CreateSamplesExitPoint("outSamples");			            
         }
 		
@@ -62,18 +63,16 @@ namespace BRTProcessing {
 		void AllEntryPointsAllDataReady() {
 			
 			std::lock_guard<std::mutex> l(mutex);
-
+			if (channelsBuffer.size() == 0) { return;	}
 			CMonoBuffer<float> outBuffer;			
-			//if (_entryPointId == "inputChannels") {
-				
-				std::weak_ptr<BRTServices::CAmbisonicBIR> listenerABIR = GetABIRPtrEntryPoint("listenerAmbisonicBIR")->GetData();
-				if (channelsBuffer.size() != 0) {
-					Process(channelsBuffer, outBuffer, listenerABIR);
-					GetSamplesExitPoint("outSamples")->sendData(outBuffer);					
-					channelsBuffer.clear();
-				}				
-				//this->resetUpdatingStack();				
-			//}            
+							
+			std::weak_ptr<BRTServices::CAmbisonicBIR> listenerABIR = GetABIRPtrEntryPoint("listenerAmbisonicBIR")->GetData();
+			Common::CTransform _listenerTransform = GetPositionEntryPoint("listenerPosition")->GetData();
+			Process(channelsBuffer, outBuffer, listenerABIR, _listenerTransform);
+			GetSamplesExitPoint("outSamples")->sendData(outBuffer);					
+			channelsBuffer.clear();
+			
+			
         }
 
 		void UpdateCommand() {					

@@ -32,8 +32,6 @@
 #include <Base/ListenerBase.hpp>
 #include <Base/BRTManager.hpp>
 #include <Common/CommonDefinitions.hpp>
-//#include <ServiceModules/HRTF.hpp>
-//#include <ServiceModules/NFCFilters.hpp>
 
 namespace BRTServices {
 	class CHRTF;
@@ -52,8 +50,9 @@ namespace BRTBase {
 		/**
 		 * @brief Connect listener model to this listener
 		 * @param _listener Pointer to the source
+		 * @param _ear Ear to connect, both by default
 		 * @return True if the connection success
-		*/
+		*/		
 		bool ConnectListenerModel(std::shared_ptr<CListenerModelBase> _listenerModel, Common::T_ear _ear = Common::T_ear::BOTH) {
 			
 			if (_listenerModel == nullptr) return false;
@@ -61,6 +60,8 @@ namespace BRTBase {
 			
 			bool control;
 			control = brtManager->ConnectModuleID(this, _listenerModel, "listenerID");
+			control = control && _listenerModel->ConnectListenerTransform(GetID());					
+
 
 			if (_ear == Common::T_ear::LEFT) {
 				control = control && brtManager->ConnectModulesSamples(_listenerModel, "leftEar", this, "leftEar");
@@ -89,17 +90,46 @@ namespace BRTBase {
 			
 			std::shared_ptr<CListenerModelBase> _listenerModel = brtManager->GetListenerModel<CListenerModelBase>(_listenerModelID);
 			if (_listenerModel == nullptr) return false;
-			
-			/*if (_listenerModel->IsConnectedToListener()) { return false; };
-			bool control;
-			control = brtManager->ConnectModuleID(this, _listenerModel, "listenerID");						
-			control = control && brtManager->ConnectModulesSamples(_listenerModel, "leftEar", this, "leftEar");
-			control = control && brtManager->ConnectModulesSamples(_listenerModel, "rightEar", this, "rightEar");			
-
-			listenerModelsConnected.push_back(_listenerModel);		*/	
-
+						
 			return ConnectListenerModel(_listenerModel, _ear);			
 		};
+
+
+		/**
+		 * @brief Disconnect listener model to this listener
+		 * @param _listener Pointer to the source
+		 * @param _ear Ear to disconnect, both by default
+		 * @return True if the disconnection success
+		*/
+		bool DisconnectListenerModel(std::shared_ptr<CListenerModelBase> _listenerModel, Common::T_ear _ear = Common::T_ear::BOTH) {
+
+			if (_listenerModel == nullptr) return false;
+			if (_listenerModel->IsConnectedToListener()) { return false; };
+
+			bool control;
+			control = brtManager->DisconnectModuleID(this, _listenerModel, "listenerID");
+			control = control && _listenerModel->DisconnectListenerTransform(GetID());
+
+
+			if (_ear == Common::T_ear::LEFT) {
+				control = control && brtManager->DisconnectModulesSamples(_listenerModel, "leftEar", this, "leftEar");
+			}
+			else if (_ear == Common::T_ear::RIGHT) {
+				control = control && brtManager->DisconnectModulesSamples(_listenerModel, "rightEar", this, "rightEar");
+			}
+			else if (_ear == Common::T_ear::BOTH) {
+				control = control && brtManager->DisconnectModulesSamples(_listenerModel, "leftEar", this, "leftEar");
+				control = control && brtManager->DisconnectModulesSamples(_listenerModel, "rightEar", this, "rightEar");
+			}
+			else {
+				return false;
+			}
+
+			listenerModelsConnected.push_back(_listenerModel);
+			return control;
+		};
+
+
 
 		/** \brief SET HRTF of listener
 		*	\param[in] pointer to HRTF to be stored

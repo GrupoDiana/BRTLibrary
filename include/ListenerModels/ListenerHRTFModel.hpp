@@ -434,6 +434,14 @@ namespace BRTListenerModel {
 		template <typename T>
 		bool DisconnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
 			std::lock_guard<std::mutex> l(mutex);
+			
+			// Get listener pointer
+			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(GetIDEntryPoint("listenerID")->GetData());
+			if (_listener == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This listener Model has not been connected to a listener.", "");
+				return false;
+			}			
+			// Get source			
 			std::string _sourceID = _source->GetID();
 			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSourceProcessors& sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
 			if (it != sourcesConnectedProcessors.end()) {
@@ -446,11 +454,11 @@ namespace BRTListenerModel {
 				control = control && brtManager->DisconnectModuleID(this, it->binauralConvolverProcessor, "listenerID");
 				control = control && brtManager->DisconnectModuleILD(this, it->nearFieldEffectProcessor, "listenerILD");
 				control = control && brtManager->DisconnectModuleHRTF(this, it->binauralConvolverProcessor, "listenerHRTF");
-				control = control && brtManager->DisconnectModuleTransform(this, it->nearFieldEffectProcessor, "listenerPosition");
-				control = control && brtManager->DisconnectModuleTransform(this, it->binauralConvolverProcessor, "listenerPosition");
+				control = control && brtManager->DisconnectModuleTransform(_listener, it->nearFieldEffectProcessor, "listenerPosition");
+				control = control && brtManager->DisconnectModuleTransform(_listener, it->binauralConvolverProcessor, "listenerPosition");
 
 				if (sourceNeedsListenerPosition) {
-					control = control && brtManager->DisconnectModuleTransform(this, _source, "listenerPosition");								
+					control = control && brtManager->DisconnectModuleTransform(_listener, _source, "listenerPosition");
 				}
 				control = control && brtManager->DisconnectModuleID(_source, it->nearFieldEffectProcessor, "sourceID");
 				control = control && brtManager->DisconnectModuleID(_source, it->binauralConvolverProcessor, "sourceID");
