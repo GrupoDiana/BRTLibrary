@@ -84,7 +84,7 @@ namespace BRTBase {
 	public:
 
 		// Public Attributes
-		bool enableITDSimulation;							// Enable ITD simulation 
+		
 
 		// Virtual Methods
 
@@ -104,9 +104,9 @@ namespace BRTBase {
 		virtual std::shared_ptr < BRTServices::CHRBRIR> GetHRBRIR() const { return nullptr; };
 		virtual void RemoveHRBRIR() {};		
 
-		virtual void EnableITDSimulation()= 0;
-		virtual void DisableITDSimulation() = 0;			
-		virtual bool IsITDSimulationEnabled() { return enableITDSimulation; }
+		virtual void EnableITDSimulation() {};
+		virtual void DisableITDSimulation() {};
+		virtual bool IsITDSimulationEnabled() { return false; }
 
 		virtual void EnableNearFieldEffect() {};
 		virtual void DisableNearFieldEffect() {};
@@ -142,7 +142,7 @@ namespace BRTBase {
 
 		CListenerModelBase(std::string _listenerModelID, TListenerModelcharacteristics _listenerCharacteristics) : listenerModelID {_listenerModelID},
 			listenerCharacteristics{ _listenerCharacteristics },
-			leftDataReady{ false }, rightDataReady{ false }, enableITDSimulation{ true } {
+			leftDataReady{ false }, rightDataReady{ false } {
 												
 			CreateSamplesEntryPoint("leftEar");
 			CreateSamplesEntryPoint("rightEar");									

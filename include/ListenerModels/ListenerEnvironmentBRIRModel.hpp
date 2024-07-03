@@ -61,17 +61,14 @@ namespace BRTListenerModel {
 			 * @param enableInterpolation Interpolation state
 			 * @param enableNearFieldEffect Nearfield state
 			*/
-			void SetConfiguration(bool enableSpatialization, bool enableInterpolation, bool enableITD) {
+			void SetConfiguration(bool enableSpatialization, bool enableInterpolation) {
 				if (enableSpatialization) { binauralConvolverProcessor->EnableSpatialization(); }
 				else { binauralConvolverProcessor->DisableSpatialization(); }
 
 				if (enableInterpolation) { binauralConvolverProcessor->EnableInterpolation(); }
 				else { binauralConvolverProcessor->DisableInterpolation(); }
-				
-				if (enableITD) {binauralConvolverProcessor->EnableITDSimulation();}
-				else {binauralConvolverProcessor->DisableITDSimulation();}
-
-				
+								
+				binauralConvolverProcessor->DisableITDSimulation();								
 				binauralConvolverProcessor->DisableParallaxCorrection();
 			}
 
@@ -88,9 +85,9 @@ namespace BRTListenerModel {
 
 	public:
 		CListenerEnvironmentBRIRModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) : 
-			BRTBase::CListenerModelBase(_listenerID, BRTBase::TListenerModelcharacteristics(false, true, false, false, false, true, true, true)),
+			BRTBase::CListenerModelBase(_listenerID, BRTBase::TListenerModelcharacteristics(false, true, false, false, false, false, true, true)),
 			brtManager{ _brtManager }, enableSpatialization{ true }, enableInterpolation{ true } {
-						
+									
 			listenerHRBRIR = nullptr;
 			CreateHRBRIRExitPoint();
 		}
@@ -214,21 +211,21 @@ namespace BRTListenerModel {
 		bool IsInterpolationEnabled() { return enableInterpolation; }
 
 		
-		/**
-		 * @brief Enable ITD simulation
-		*/
-		void EnableITDSimulation() { 
-			enableITDSimulation = true; 
-			SetConfigurationInALLSourcesProcessors();
-		}
+		///**
+		// * @brief Enable ITD simulation
+		//*/
+		//void EnableITDSimulation() { 
+		//	enableITDSimulation = true; 
+		//	SetConfigurationInALLSourcesProcessors();
+		//}
 
-		/**
-		 * @brief Disable ITD simulation
-		*/
-		void DisableITDSimulation() { 
-			enableITDSimulation = false; 
-			SetConfigurationInALLSourcesProcessors();
-		}
+		///**
+		// * @brief Disable ITD simulation
+		//*/
+		//void DisableITDSimulation() { 
+		//	enableITDSimulation = false; 
+		//	SetConfigurationInALLSourcesProcessors();
+		//}
 
 
 		/**
@@ -295,7 +292,7 @@ namespace BRTListenerModel {
 		 * @param sourceProcessor 
 		*/
 		void SetSourceProcessorsConfiguration(CSourceProcessors& sourceProcessor) {			
-			sourceProcessor.SetConfiguration(enableSpatialization, enableInterpolation, enableITDSimulation);
+			sourceProcessor.SetConfiguration(enableSpatialization, enableInterpolation);
 		}
 
 		/**

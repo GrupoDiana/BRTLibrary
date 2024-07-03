@@ -61,15 +61,12 @@ namespace BRTListenerModel {
 			 * @param _ambisonicNormalization 
 			 * @param enableBilateral 			 
 			*/
-			void SetConfiguration(int _ambisonicOrder, Common::TAmbisonicNormalization _ambisonicNormalization, bool enableITDSimulation) {
+			void SetConfiguration(int _ambisonicOrder, Common::TAmbisonicNormalization _ambisonicNormalization) {
 
 				bilateralAmbisonicEncoderProcessor->SetAmbisonicOrder(_ambisonicOrder);
 				bilateralAmbisonicEncoderProcessor->SetAmbisonicNormalization(_ambisonicNormalization);
-								
-				if (enableITDSimulation) { bilateralAmbisonicEncoderProcessor->EnableITDSimulation(); }
-				else { bilateralAmbisonicEncoderProcessor->DisableITDSimulation(); }
-					
-
+													
+				bilateralAmbisonicEncoderProcessor->DisableITDSimulation();
 				bilateralAmbisonicEncoderProcessor->DisableNearFieldEffect();
 				bilateralAmbisonicEncoderProcessor->DisableParallaxCorrection(); 
 				
@@ -88,12 +85,12 @@ namespace BRTListenerModel {
 
 	public:
 		CListenerAmbisonicEnvironmentBRIRModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) :
-			brtManager{ _brtManager }, BRTBase::CListenerModelBase(_listenerID, BRTBase::TListenerModelcharacteristics(false, true, true, false, false, true, false, false)),
+			brtManager{ _brtManager }, BRTBase::CListenerModelBase(_listenerID, BRTBase::TListenerModelcharacteristics(false, true, true, false, false, false, false, false)),
 			ambisonicOrder{ 1 }, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }, enableNearFieldEffect{ false }, enableParallaxCorrection{ true }  {
 			
 			listenerHRBRIR = nullptr;												// Create a empty HRTF	class
-			listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicBIR>();	// Create a empty AmbisonicIR class //TODO CHANGE TO NULLPTR
-			
+			listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicBIR>();	// Create a empty AmbisonicIR class //TODO CHANGE TO NULLPTR						
+
 			CreateHRBRIRExitPoint();
 			CreateILDExitPoint();
 			CreateABIRExitPoint();
@@ -233,21 +230,21 @@ namespace BRTListenerModel {
 		*/
 		bool IsNearFieldEffectEnabled() { return enableNearFieldEffect; }
 
-		/** \brief Enable bilaterality for all source connected to this listener
-		*   \eh Nothing is reported to the error handler.
-		*/
-		void EnableITDSimulation() {
-			enableITDSimulation = true;
-			SetConfigurationInALLSourcesProcessors();
-		}
+		///** \brief Enable bilaterality for all source connected to this listener
+		//*   \eh Nothing is reported to the error handler.
+		//*/
+		//void EnableITDSimulation() {
+		//	enableITDSimulation = true;
+		//	SetConfigurationInALLSourcesProcessors();
+		//}
 
-		/** \brief Disable bilaterality for all source connected to this listener
-		*   \eh Nothing is reported to the error handler.
-		*/
-		void DisableITDSimulation() {
-			enableITDSimulation = false;
-			SetConfigurationInALLSourcesProcessors();
-		}
+		///** \brief Disable bilaterality for all source connected to this listener
+		//*   \eh Nothing is reported to the error handler.
+		//*/
+		//void DisableITDSimulation() {
+		//	enableITDSimulation = false;
+		//	SetConfigurationInALLSourcesProcessors();
+		//}
 		
 		/**
 		 * @brief Enable Parallax Correction
@@ -420,7 +417,7 @@ namespace BRTListenerModel {
 		 * @param sourceProcessor
 		*/
 		void SetSourceProcessorsConfiguration(CSourceToBeProcessed& sourceProcessor) {
-			sourceProcessor.SetConfiguration(ambisonicOrder, ambisonicNormalization, enableITDSimulation);
+			sourceProcessor.SetConfiguration(ambisonicOrder, ambisonicNormalization);
 		}
 
 

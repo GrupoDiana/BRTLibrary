@@ -49,7 +49,7 @@ namespace BRTServices
 		CHRBRIR() : setupInProgress{ false }, HRBRIRLoaded{ false }, samplingRate{0}, HRIRLength{-1}, gridSamplingStep{DEFAULT_GRIDSAMPLING_STEP},
 			gapThreshold {DEFAULT_GAP_THRESHOLD}, sphereBorder{ SPHERE_BORDER }, epsilon_sewing{ EPSILON_SEWING }, extrapolationMethod{ TEXTRAPOLATION_METHOD::zero_insertion },
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION },
-			enableWoodworthITD{ false }, HRIR_partitioned_NumberOfSubfilters{ 0 }, HRIR_partitioned_SubfilterLength{ 0 },
+			/*enableWoodworthITD{ false },*/ HRIR_partitioned_NumberOfSubfilters{ 0 }, HRIR_partitioned_SubfilterLength{ 0 },
 			windowThreshold { 0 }, windowRiseTime{ 0 }, elevationNorth{ 0 }, elevationSouth{ 0 }, title{""},	databaseName{""}, listenerShortName{""}, fileName{""} {}
 
 
@@ -310,22 +310,22 @@ namespace BRTServices
 			}
 		}
 
-		/** \brief	Set the radius of the listener head
-		*   \eh Nothing is reported to the error handler.
-		*/
-		void SetHeadRadius(float _headRadius)
-		{
-			std::lock_guard<std::mutex> l(mutex);
-			if (_headRadius >= 0.0f) {
-				// First time this is called we save the original cranial geometry. A bit ugly but it works.
-				if (originalCranialGeometry.GetHeadRadius() == -1) { originalCranialGeometry = cranialGeometry; }
-				cranialGeometry.SetHeadRadius(_headRadius);
-			}
-			else {
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Head Radius must be  greater than 0.");
-			}
+		///** \brief	Set the radius of the listener head
+		//*   \eh Nothing is reported to the error handler.
+		//*/
+		//void SetHeadRadius(float _headRadius)
+		//{
+		//	std::lock_guard<std::mutex> l(mutex);
+		//	if (_headRadius >= 0.0f) {
+		//		// First time this is called we save the original cranial geometry. A bit ugly but it works.
+		//		if (originalCranialGeometry.GetHeadRadius() == -1) { originalCranialGeometry = cranialGeometry; }
+		//		cranialGeometry.SetHeadRadius(_headRadius);
+		//	}
+		//	else {
+		//		SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Head Radius must be  greater than 0.");
+		//	}
 
-		}
+		//}
 
 		/** \brief	Get the radius of the listener head
 		*   \return listenerHeadRadius in meters
@@ -334,6 +334,13 @@ namespace BRTServices
 		float GetHeadRadius() {
 			return cranialGeometry.GetHeadRadius();
 		}
+
+		///**
+		// * @brief Return to original ear positions and head radius.
+		// */
+		//void RestoreHeadRadius() {
+		//	cranialGeometry = originalCranialGeometry;
+		//}
 
 		/**
 		 * @brief Set parameters for the windowing IR process
@@ -364,28 +371,23 @@ namespace BRTServices
 			_windowRiseTime = windowRiseTime;
 		}
 
-		/**
-		 * @brief Return to original ear positions and head radius.
-		 */
-		void RestoreHeadRadius() {
-			cranialGeometry = originalCranialGeometry;
-		}
+		
 
 		/** \brief Switch on ITD customization in accordance with the listener head radius
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableWoodworthITD() { enableWoodworthITD = true; }
+		//void EnableWoodworthITD() { enableWoodworthITD = true; }
 
-		/** \brief Switch off ITD customization in accordance with the listener head radius
-		*   \eh Nothing is reported to the error handler.
-		*/
-		void DisableWoodworthITD() { enableWoodworthITD = false; }
+		///** \brief Switch off ITD customization in accordance with the listener head radius
+		//*   \eh Nothing is reported to the error handler.
+		//*/
+		//void DisableWoodworthITD() { enableWoodworthITD = false; }
 
-		/** \brief Get the flag for HRTF cutomized ITD process
-		*	\retval HRTFCustomizedITD if true, the HRTF ITD customization process based on the head circumference is enabled
-		*   \eh Nothing is reported to the error handler.
-		*/
-		bool IsWoodworthITDEnabled() { return enableWoodworthITD; }
+		///** \brief Get the flag for HRTF cutomized ITD process
+		//*	\retval HRTFCustomizedITD if true, the HRTF ITD customization process based on the head circumference is enabled
+		//*   \eh Nothing is reported to the error handler.
+		//*/
+		//bool IsWoodworthITDEnabled() { return enableWoodworthITD; }
 
 		/** \brief Get interpolated and partitioned HRIR buffer with Delay, for one ear
 		*	\param [in] ear for which ear we want to get the HRIR
@@ -446,13 +448,13 @@ namespace BRTServices
 				return data;
 			}
 
-			//Modify delay if customized delay is activate
-			if (enableWoodworthITD)
-			{
-				data.leftDelay = CHRTFAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::LEFT);
-				data.rightDelay = CHRTFAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::RIGHT);
-				return data;
-			}
+			////Modify delay if customized delay is activate
+			//if (enableWoodworthITD)
+			//{
+			//	data.leftDelay = CHRTFAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::LEFT);
+			//	data.rightDelay = CHRTFAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::RIGHT);
+			//	return data;
+			//}
 
 			// Find Table to use
 			Common::CVector3 nearestListenerPosition = FindNearestListenerPosition(_listenerLocation.GetPosition());
@@ -661,7 +663,7 @@ namespace BRTServices
 		
 		bool setupInProgress;						// Variable that indicates the HRTF add and resample algorithm are in process
 		bool HRBRIRLoaded;							// Variable that indicates if the HRTF has been loaded correctly		
-		bool enableWoodworthITD;					// Indicate the use of a customized delay
+		//bool enableWoodworthITD;					// Indicate the use of a customized delay
 
 		int gridSamplingStep; 						// HRTF Resample table step (azimuth and elevation)
 		int gapThreshold;							// Max distance between pole and next elevation to be consider as a gap

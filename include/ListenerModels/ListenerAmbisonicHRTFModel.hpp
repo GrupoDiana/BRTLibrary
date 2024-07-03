@@ -94,7 +94,8 @@ namespace BRTListenerModel {
 	public:
 		CListenerAmbisonicHRTFModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) : 
 			brtManager{ _brtManager }, BRTBase::CListenerModelBase(_listenerID, BRTBase::TListenerModelcharacteristics(true, false, true, true, true, true, false, false)),
-			ambisonicOrder{ 1 }, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }, enableNearFieldEffect{ false }, enableParallaxCorrection{ true }  {
+			ambisonicOrder{ 1 }, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }, enableNearFieldEffect{ false }, enableParallaxCorrection{ true },
+			enableITDSimulation{ true } {
 			
 			// TODO Change to nullptr
 			listenerHRTF = std::make_shared<BRTServices::CHRTF>();					// Create a empty HRTF	class 
@@ -282,6 +283,12 @@ namespace BRTListenerModel {
 			SetConfigurationInALLSourcesProcessors();
 		}
 		
+		/**
+		 * @brief Check if ITD simulation is enabled
+		 * @return
+		 */
+		bool IsITDSimulationEnabled() { return enableITDSimulation; }
+
 		/**
 		 * @brief Enable Parallax Correction
 		*/
@@ -539,6 +546,7 @@ namespace BRTListenerModel {
 		Common::TAmbisonicNormalization ambisonicNormalization;						// Store the Ambisonic normalization
 		bool enableNearFieldEffect;													// Enables/Disables the Near Field Effect
 		bool enableParallaxCorrection;												// Enable parallax correction
+		bool enableITDSimulation;													// Enable ITD simulation 
 
 		std::vector< CSourceToBeProcessed> sourcesConnectedProcessors;				// List of sources connected to this listener model
 

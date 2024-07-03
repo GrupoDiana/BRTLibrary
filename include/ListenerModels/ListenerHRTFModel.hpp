@@ -95,7 +95,8 @@ namespace BRTListenerModel {
 	public:
 		CListenerHRTFModel(std::string _listenerModelID, BRTBase::CBRTManager* _brtManager) : 
 			BRTBase::CListenerModelBase(_listenerModelID, BRTBase::TListenerModelcharacteristics(true, false, false, true, true, true, true, true)), 
-			brtManager{ _brtManager }, enableSpatialization{ true }, enableInterpolation{ true }, enableNearFieldEffect{ false }, enableParallaxCorrection{ true }  {
+			brtManager{ _brtManager }, enableSpatialization{ true }, enableInterpolation{ true }, enableNearFieldEffect{ false }, enableParallaxCorrection{ true },
+			enableITDSimulation{ true }  {
 			
 			
 			//listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// Create a empty HRTF		
@@ -280,6 +281,12 @@ namespace BRTListenerModel {
 			enableITDSimulation = false; 
 			SetConfigurationInALLSourcesProcessors();
 		}
+
+		/**
+		 * @brief Check if ITD simulation is enabled
+		 * @return 
+		 */
+		bool IsITDSimulationEnabled() { return enableITDSimulation; }
 
 		/**
 		 * @brief Enable Parallax Correction
@@ -487,6 +494,7 @@ namespace BRTListenerModel {
 		bool enableInterpolation;		// Enables/Disables the interpolation on run time
 		bool enableNearFieldEffect;     // Enables/Disables the Near Field Effect
 		bool enableParallaxCorrection;	// Enable parallax correction
+		bool enableITDSimulation;		// Enable ITD simulation 
 				
 	};
 }
