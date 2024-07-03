@@ -84,7 +84,7 @@ namespace BRTBase {
 	public:
 
 		// Public Attributes
-		
+		bool enableModel;
 
 		// Virtual Methods
 
@@ -103,6 +103,13 @@ namespace BRTBase {
 		virtual bool SetHRBRIR(std::shared_ptr< BRTServices::CHRBRIR > _listenerBRIR) { return false; };		        
 		virtual std::shared_ptr < BRTServices::CHRBRIR> GetHRBRIR() const { return nullptr; };
 		virtual void RemoveHRBRIR() {};		
+
+
+		
+		virtual void EnableModel() {  };
+		virtual void DisableModel() {};
+		virtual bool IsModelEnabled() { return enableModel; }
+
 
 		virtual void EnableITDSimulation() {};
 		virtual void DisableITDSimulation() {};

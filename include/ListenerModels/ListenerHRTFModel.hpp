@@ -80,6 +80,21 @@ namespace BRTListenerModel {
 			}
 
 			/**
+			 * @brief Set processor enable or disable
+			 * @param _enableProcessor
+			 */
+			void SetEnableProcessor(bool _enableProcessor) {
+				if (_enableProcessor) { 
+					binauralConvolverProcessor->EnableProcessor(); 
+					nearFieldEffectProcessor->EnableProcessor();
+
+				} else { 
+					binauralConvolverProcessor->DisableProcessor(); 
+					nearFieldEffectProcessor->DisableProcessor();
+				}
+			}
+
+			/**
 			 * @brief Reset processor buffers
 			*/
 			void ResetBuffers() {
@@ -308,6 +323,29 @@ namespace BRTListenerModel {
 		* @brief Get Parallax Correction state
 		*/
 		bool IsParallaxCorrectionEnabled() { return enableParallaxCorrection; }
+
+		/**
+		 * @brief Enable model
+		 */
+		void EnableModel() {			
+			std::lock_guard<std::mutex> l(mutex);
+			enableModel = true;			
+			for (auto& it : sourcesConnectedProcessors) {
+				it.SetEnableProcessor(true);
+			}
+		};
+
+		/**
+		 * @brief Disable model
+		 */
+		void DisableModel() {
+			std::lock_guard<std::mutex> l(mutex);
+			enableModel = false;			
+			for (auto& it : sourcesConnectedProcessors) {
+				it.SetEnableProcessor(false);
+			}
+		};
+
 
 		/**
 		 * @brief Reset all processor buffers

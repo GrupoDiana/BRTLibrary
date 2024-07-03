@@ -39,7 +39,22 @@
 namespace BRTProcessing {
 	class CAmbisonicDomainConvolver  {
 	public:
-		CAmbisonicDomainConvolver(Common::T_ear _earToProcess) : earToProcess { _earToProcess }, convolutionBuffersInitialized{ false }, numberOfAmbisonicChannels{ 4 } { }
+		CAmbisonicDomainConvolver(Common::T_ear _earToProcess) : enableProcessor{ true }, earToProcess { _earToProcess }, convolutionBuffersInitialized{ false }, numberOfAmbisonicChannels{ 4 } { }
+
+
+		/**
+		 * @brief Enable processor
+		 */
+		void EnableProcessor() { enableProcessor = true; }
+		/**
+		 * @brief Disable processor
+		 */
+		void DisableProcessor() { enableProcessor = false; }
+		/**
+		 * @brief Get the flag to know if the processor is enabled.
+		 * @return true if the processor is enabled, false otherwise
+		 */
+		bool IsProcessorEnabled() { return enableProcessor; }
 
 		/**
 		 * @brief Set the ambisonic order to be user
@@ -51,7 +66,6 @@ namespace BRTProcessing {
 			ResetBuffers();
 		};
 	
-
 		/**
 		 * @brief Performs the frequency convolution between the input channels in the ambisonic domain and the IR of the virtual loudspeakers also in the ambisonic domain. The result is in time domain.
 		 * @param _inChannelsBuffers Ambisonic input channels 
@@ -61,9 +75,12 @@ namespace BRTProcessing {
 		void Process(std::vector<CMonoBuffer<float>>& _inChannelsBuffers, CMonoBuffer<float>& outBuffer, std::weak_ptr<BRTServices::CAmbisonicBIR>& _listenerAmbisoninBIRWeak, Common::CTransform& _listenerTransform) {
 
 			std::lock_guard<std::mutex> l(mutex);
-
-			//ASSERT(_inChannelsBuffers.size() == numberOfAmbisonicChannels, RESULT_ERROR_BADSIZE, "InChannlesBuffers size has to be equal to the number of channels set", "");
-			//ASSERT(_inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");
+			
+			// Check if the processor is enabled
+			if (!enableProcessor) {
+				outBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
+				return;
+			}
 						
 			// Check the number of channels
 			if (_inChannelsBuffers.size() != numberOfAmbisonicChannels) {
@@ -126,15 +143,15 @@ namespace BRTProcessing {
 		Common::CGlobalParameters globalParameters;		
 		std::vector<std::shared_ptr<Common::CUPCAnechoic>> channelsUPConvolutionVector;		// Object to make the inverse fft of the left channel with the UPC method				
 		
-		Common::T_ear earToProcess;
-		int numberOfAmbisonicChannels;		
-		bool convolutionBuffersInitialized;
-		
+		Common::T_ear earToProcess;							// Ear to process
+		int numberOfAmbisonicChannels;						// Number of ambisonic channels
+		bool convolutionBuffersInitialized;					// Flag to check if the convolution buffers are initialized
+		bool enableProcessor;								// Flag to enable the processor
+
+
 		/////////////////////
 		/// PRIVATE Methods        
 		/////////////////////
-
-
 
 		/// Initialize convolvers and convolition buffers		
 		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CAmbisonicBIR>& _listenerAmbisonicBIR) {
