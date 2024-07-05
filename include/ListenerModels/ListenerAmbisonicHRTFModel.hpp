@@ -24,6 +24,7 @@
 #define _CLISTENER_AMBISONIC_HRTF_MODEL_HPP_
 
 #include <memory>
+#include <Common/ErrorHandler.hpp>
 #include <Base/ListenerModelBase.hpp>
 #include <ServiceModules/HRTFDefinitions.hpp>
 #include <ServiceModules/HRTF.hpp>
@@ -482,7 +483,7 @@ namespace BRTListenerModel {
 			// Get listener pointer
 			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(GetIDEntryPoint("listenerID")->GetData());
 			if (_listener == nullptr) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "This listener Model has not been connected to a listener.", "");
+				SET_RESULT(RESULT_ERROR_NOTSET, "This listener Model has not been connected to a listener.");
 				return false;
 			}
 
@@ -531,7 +532,7 @@ namespace BRTListenerModel {
 			// Get listener pointer
 			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(GetIDEntryPoint("listenerID")->GetData());
 			if (_listener == nullptr) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "This listener Model has not been connected to a listener.", "");
+				SET_RESULT(RESULT_ERROR_NOTSET, "This listener Model has not been connected to a listener.");
 				return false;
 			}
 			// Make disconnection

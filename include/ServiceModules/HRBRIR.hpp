@@ -399,7 +399,7 @@ namespace BRTServices
 		*   \eh On error, an error code is reported to the error handler.
 		*       Warnings may be reported to the error handler.
 		*/
-		const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, Common::CTransform& _listenerLocation/*, Common::CTransform& _sourceLocation*/) const
+		const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, const Common::CTransform& _listenerLocation/*, Common::CTransform& _sourceLocation*/) const
 		{
 			std::lock_guard<std::mutex> l(mutex);
 
@@ -520,7 +520,7 @@ namespace BRTServices
 		 * @param _listenerPosition listener position to compare
 		 * @return Closest listener position
 		 */
-		Common::CVector3 FindNearestListenerPosition(Common::CVector3& _listenerPosition) const {
+		Common::CVector3 FindNearestListenerPosition(const Common::CVector3& _listenerPosition) const {
 			
 			Common::CTransform _listenerLocation(_listenerPosition);						
 			Common::CTransform nearestListenerLocation(t_HRBRIR_DataBase_ListenerPositions[0]);									

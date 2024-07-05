@@ -231,7 +231,7 @@ namespace BRTServices {
 		virtual Common::CVector3 GetEarLocalPosition(Common::T_ear _ear) { return Common::CVector3(); }
 		virtual float GetHRTFDistanceOfMeasurement() { return 0; }
 				
-		virtual const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, Common::CTransform& _listenerLocation) const
+		virtual const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, const Common::CTransform& _listenerLocation) const
 		{
 			return std::vector < CMonoBuffer<float>>();
 		};

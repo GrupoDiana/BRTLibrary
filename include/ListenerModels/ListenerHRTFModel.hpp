@@ -435,7 +435,7 @@ namespace BRTListenerModel {
 			// Get listener pointer
 			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(GetIDEntryPoint("listenerID")->GetData());
 			if (_listener == nullptr) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "This listener Model has not been connected to a listener.", "");
+				SET_RESULT(RESULT_ERROR_NOTSET, "This listener Model has not been connected to a listener.");
 				return false;
 			}
 			// Make connections						
@@ -483,7 +483,7 @@ namespace BRTListenerModel {
 			// Get listener pointer
 			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(GetIDEntryPoint("listenerID")->GetData());
 			if (_listener == nullptr) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "This listener Model has not been connected to a listener.", "");
+				SET_RESULT(RESULT_ERROR_NOTSET, "This listener Model has not been connected to a listener.");
 				return false;
 			}			
 			// Get source			
