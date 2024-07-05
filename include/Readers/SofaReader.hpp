@@ -61,15 +61,12 @@ namespace BRTReaders {
 		bool ReadHRTFFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CHRTF> listenerHRTF, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
 						
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerHRTF;
-			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR, _resamplingStep, _extrapolationMethod);
+			//return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR, _resamplingStep, _extrapolationMethod);
+			return ReadFromSofa(sofafile, data, _resamplingStep, _extrapolationMethod);
+
 		}
 		
-		/*bool ReadHRTFFromSofaWithoutProcess(const std::string& sofafile, std::shared_ptr<BRTServices::CHRTF> listenerHRTF, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
-
-			std::shared_ptr<BRTServices::CServicesBase> data = listenerHRTF;
-			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR, _resamplingStep, _extrapolationMethod, false);
-		}*/
-
+		
 		/** \brief Loads an ILD from a sofa file
 		*	\param [in] path of the sofa file
 		*	\param [out] listener affected by the hrtf
@@ -78,7 +75,7 @@ namespace BRTReaders {
 		bool ReadNFCFiltersFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CNearFieldCompensationFilters>& listenerNFCFilters)
 		{
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerNFCFilters;
-			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS, -1, BRTServices::TEXTRAPOLATION_METHOD::none);
+			return ReadFromSofa(sofafile, data, -1, BRTServices::TEXTRAPOLATION_METHOD::none);
 		}
 
 		/** \brief Loads an DirectivityTF from a sofa file
@@ -89,7 +86,7 @@ namespace BRTReaders {
 		bool ReadDirectivityTFFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CDirectivityTF> sourceDirectivityTF, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
 
 			std::shared_ptr<BRTServices::CServicesBase> data = sourceDirectivityTF;
-			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::FreeFieldDirectivityTF, _resamplingStep, _extrapolationMethod);
+			return ReadFromSofa(sofafile, data, _resamplingStep, _extrapolationMethod);
 		}
 				
 				
@@ -101,40 +98,71 @@ namespace BRTReaders {
 		bool ReadBRIRFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CHRBRIR> listenerHRTF, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, float _windowThreshold, float _windowRiseTime) {
 
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerHRTF;
-			return ReadFromSofa(sofafile, data, CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR, _resamplingStep, _extrapolationMethod, _windowThreshold, _windowRiseTime);
+			return ReadFromSofa(sofafile, data, _resamplingStep, _extrapolationMethod, _windowThreshold, _windowRiseTime);
 		}
 		
 	private:
 				
+
 		// Methods
-		bool ReadFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, CLibMySOFALoader::TSofaConvention _SOFAConvention, 
-			int _gridSamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, float _windowThreshold = 0.0f, float _windowRiseTime = 0.0f) {
+		bool ReadFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data,
+			int _gridSamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, float _windowThreshold = 0.0f, float _windowRiseTime = 0.0f) {		
 
 			// Open file
 			BRTReaders::CLibMySOFALoader loader(sofafile);
 			bool error = loader.getError();
 			if (error) return false;
-			
-			// Check convention
-			if (!loader.CheckSofaConvention(_SOFAConvention)) return false;			
-			SET_RESULT(RESULT_OK, "Open a valid SOFA file");
 
-			// Load convention data
-			bool result;
-			if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR) { 
-				return ReadFromSofa_SimpleFreeFieldHRIR(loader, sofafile, data, _gridSamplingStep, _extrapolationMethod);
-			} else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS) { 
-				return ReadFromSofa_SimpleFreeFieldHRSOS(loader, sofafile, data);
-			} else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::FreeFieldDirectivityTF) { 
-				return  ReadFromSofa_FreeFieldDirectivityTF(loader, sofafile, data, _gridSamplingStep, _extrapolationMethod);
-			} else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR) { 
-				return ReadFromSofa_SingleRoomMIMOSRIR(loader, sofafile, data, _gridSamplingStep, _extrapolationMethod, _windowThreshold, _windowRiseTime);
+			// Discover the file type
+			std::string dataType = loader.GetDataType();
+			std::string sofaConvention = loader.GetSofaConvention();
+						
+			// Load Data			
+			if (dataType == "FIR" || dataType == "FIR-E") {												
+				return ReadFromSofaFIRDataType(loader, sofafile, data, _gridSamplingStep, _extrapolationMethod, _windowThreshold, _windowRiseTime);
 			}
-			else { 
-				SET_RESULT(RESULT_ERROR_CASENOTDEFINED, "SOFA Convention loader not implemented"); 
-				return false; 
-			}			
+			else if (dataType == "SOS") {
+				return ReadFromSofaSOSDataType(loader, sofafile, data);
+			}
+			else if (dataType == "TF") {
+				return  ReadFromSofaTFDataType(loader, sofafile, data, _gridSamplingStep, _extrapolationMethod);
+			}
+			else {
+				SET_RESULT(RESULT_ERROR_CASENOTDEFINED, "The SOFA loader is not implemented for this data type " + dataType);
+				return false;
+			}						
 		}
+
+
+		// Methods
+		//bool ReadFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, CLibMySOFALoader::TSofaConvention _SOFAConvention, 
+		//	int _gridSamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, float _windowThreshold = 0.0f, float _windowRiseTime = 0.0f) {
+
+		//	// Open file
+		//	BRTReaders::CLibMySOFALoader loader(sofafile);
+		//	bool error = loader.getError();
+		//	if (error) return false;
+		//	
+		//	// Check convention
+		//	if (!loader.CheckSofaConvention(_SOFAConvention)) return false;			
+		//	SET_RESULT(RESULT_OK, "Open a valid SOFA file");
+
+		//	// Load convention data
+		//	bool result;
+		//	if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR) { 
+		//		return ReadFromSofa_SimpleFreeFieldHRIR(loader, sofafile, data, _gridSamplingStep, _extrapolationMethod);
+		//	} else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS) { 
+		//		return ReadFromSofa_SimpleFreeFieldHRSOS(loader, sofafile, data);
+		//	} else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::FreeFieldDirectivityTF) { 
+		//		return  ReadFromSofa_FreeFieldDirectivityTF(loader, sofafile, data, _gridSamplingStep, _extrapolationMethod);
+		//	} else if (_SOFAConvention == CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR) { 
+		//		return ReadFromSofa_SingleRoomMIMOSRIR(loader, sofafile, data, _gridSamplingStep, _extrapolationMethod, _windowThreshold, _windowRiseTime);
+		//	}
+		//	else { 
+		//		SET_RESULT(RESULT_ERROR_CASENOTDEFINED, "SOFA Convention loader not implemented"); 
+		//		return false; 
+		//	}			
+		//}
 		
 		/////////////////////////////////////////////////////////////////
 		/////////////////	SimpleFreeFieldHRIR		/////////////////
@@ -203,7 +231,7 @@ namespace BRTReaders {
 				Get3DMatrixData(dataMeasurements, hrir_value.leftHRIR, 2, numberOfSamples, left_ear, measure);
 				Get3DMatrixData(dataMeasurements, hrir_value.rightHRIR, 2, numberOfSamples, right_ear, measure);
 				
-				dataHRTF->AddHRIR(azimuth, elevation, distance, std::move(hrir_value));
+				dataHRTF->AddHRIR(azimuth, elevation, distance, Common::CVector3(), std::move(hrir_value));
 			}
 			return true;
 
@@ -212,7 +240,7 @@ namespace BRTReaders {
 		/////////////////////////////////////////////////////////////////
 		/////////////////	SimpleFreeFieldHRSOS		/////////////////
 		/////////////////////////////////////////////////////////////////
-		bool ReadFromSofa_SimpleFreeFieldHRSOS(BRTReaders::CLibMySOFALoader& loader, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data) {
+		bool ReadFromSofaSOSDataType(BRTReaders::CLibMySOFALoader& loader, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data) {
 			
 			GetAndSaveGlobalAttributes(loader, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS, sofafile, data); // GET and Save Global Attributes 			
 			CheckListenerOrientation(loader);									// Check listener view						
@@ -283,7 +311,7 @@ namespace BRTReaders {
 		/////////////////////////////////////////////////////////////////
 		/////////////////	FreeFieldDirectivityTF		/////////////////
 		/////////////////////////////////////////////////////////////////
-		bool ReadFromSofa_FreeFieldDirectivityTF(BRTReaders::CLibMySOFALoader& loader, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
+		bool ReadFromSofaTFDataType(BRTReaders::CLibMySOFALoader& loader, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
 			// Get and Save data			
 			GetAndSaveGlobalAttributes(loader, CLibMySOFALoader::TSofaConvention::FreeFieldDirectivityTF, sofafile, data); // GET and Save Global Attributes 
 			//CheckCoordinateSystems(loader, _SOFAConvention);					// Check coordiante system for Source and Receiver positions
@@ -346,7 +374,7 @@ namespace BRTReaders {
 		/////////////////////////////////////////////////////////////////
 		//////////////////	 SingleRoomMIMOSRIR		 ////////////////////
 		/////////////////////////////////////////////////////////////////
-		bool ReadFromSofa_SingleRoomMIMOSRIR(BRTReaders::CLibMySOFALoader &loader, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, float _windowThreshold, float _windowRiseTime) {
+		bool ReadFromSofaFIRDataType(BRTReaders::CLibMySOFALoader &loader, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, float _windowThreshold, float _windowRiseTime) {
 			
 			// Get and Save data			
 			GetAndSaveGlobalAttributes(loader, CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR ,sofafile, data);			// GET and Save Global Attributes			
@@ -371,8 +399,16 @@ namespace BRTReaders {
 		bool GetBRIRs(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& dataHRBRIR, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
 			//Get source positions												
 			std::vector<double> sourcePositionsVector	= std::move(loader.GetSourcePositionVector());
+			
 			std::vector<double> sourceViewVector		= std::move(loader.GetSourceViewVector());
+			if (sourceViewVector.size() == 0) {
+				sourceViewVector = std::vector<double>({1,0,0});
+			}
 			std::vector<double> sourceUpVector			= std::move(loader.GetSourceUpVector());			
+			if (sourceUpVector.size() == 0) {
+				sourceUpVector = std::vector<double>({ 0,0,1 });
+			}
+			
 			//Emitter
 			std::vector<double> emitterPositionsVector = std::move(loader.GetEmitterPositionVector());
 			//Listener
@@ -418,7 +454,7 @@ namespace BRTReaders {
 					globalEmitterLocation.SetPosition(globalEmitterLocation.GetPosition() + sourcePosition);
 					
 					//Get Listener location			
-					Common::CVector3 listenerPosition = GetListenerPosition(loader, listenerPositionsVector, measure);
+					Common::CVector3 listenerPosition = GetListenerPosition(loader, listenerPositionsVector, numberOfMeasurements, measure);
 					Common::CVector3 listenerView = GetListenerView(loader, listenerViewVector, numberOfMeasurements, measure);
 					Common::CVector3 listenerUp = GetListenerUp(loader, listenerUpVector, numberOfMeasurements, measure);					
 					Common::CTransform listenerLocation = CalculateTransformFromSeparateComponents(listenerPosition, listenerView, listenerUp);
@@ -445,7 +481,7 @@ namespace BRTReaders {
 					listenerPositionBRTConvention.SetAxis(RIGHT_AXIS, listenerPosition.y);
 					listenerPositionBRTConvention.SetAxis(UP_AXIS, listenerPosition.z);
 					// Set data to HRBIR struct
-					dataHRBRIR->AddHRBRIR(_relativeAzimuthListenerEmitter, _relativeElevationListenerEmitter, _relativeDistanceListenerEmitter, listenerPosition, std::move(hrir_value));					
+					dataHRBRIR->AddHRIR(_relativeAzimuthListenerEmitter, _relativeElevationListenerEmitter, _relativeDistanceListenerEmitter, listenerPosition, std::move(hrir_value));					
 				}
 			}
 			return true;
@@ -598,10 +634,11 @@ namespace BRTReaders {
 		 * @param measure  Measure to be recovered
 		 * @return positions of the listener, 3-dimensional vector, Cartesian.
 		 */
-		std::vector<double> GetListenerPosition(BRTReaders::CLibMySOFALoader& loader, const std::vector<double>& _listenerPositionsVector, std::size_t measure) {
+		std::vector<double> GetListenerPosition(BRTReaders::CLibMySOFALoader& loader, const std::vector<double>& _listenerPositionsVector, std::size_t numberOfMeasurements, std::size_t measure) {
 			std::vector<double> _listenerPosition;
 			int numberOfCoordinates = loader.getHRTF()->C;
 			// Get Listener position						
+			if (_listenerPositionsVector.size() != numberOfMeasurements * numberOfCoordinates) { measure = 0; }
 			GetOneVector3From2DMatrix(_listenerPositionsVector, _listenerPosition, measure, numberOfCoordinates);
 						
 			if (IsListenerPositionCoordinateSystemsSpherical(loader)) {				
@@ -716,12 +753,12 @@ namespace BRTReaders {
 		
 		//Check Source View Coordinate Systems
 		bool IsSourceViewCoordinateSystemsSpherical(BRTReaders::CLibMySOFALoader& loader) {
-			return CheckSourceViewCoordinateSystemsNew(loader, "spherical");
+			return CheckSourceViewCoordinateSystems(loader, "spherical");
 		}
 		bool IsSourceViewCoordinateSystemsCartesian(BRTReaders::CLibMySOFALoader& loader) {
-			return CheckSourceViewCoordinateSystemsNew(loader, "cartesian");
+			return CheckSourceViewCoordinateSystems(loader, "cartesian");
 		}
-		bool CheckSourceViewCoordinateSystemsNew(BRTReaders::CLibMySOFALoader& loader, std::string _coordinateSystem) {
+		bool CheckSourceViewCoordinateSystems(BRTReaders::CLibMySOFALoader& loader, std::string _coordinateSystem) {
 			if (loader.GetSourceViewType() == _coordinateSystem) { return true; }
 			return false;
 		}

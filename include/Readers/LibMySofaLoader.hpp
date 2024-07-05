@@ -89,11 +89,21 @@ namespace BRTReaders {
 		}
 		
 		char* GetSourceViewType() {
+
+			if (mysofa_getSourceView()== NULL) { return "cartesian"; }
 			return mysofa_getAttribute(mysofa_getSourceView()->attributes, "Type");
 		}
 
 		char* GetReceiverPositionType() {
 			return mysofa_getAttribute(hrtf->hrtf->ReceiverPosition.attributes, "Type");
+		}
+
+		std::string GetDataType() {
+			return mysofa_getAttribute(hrtf->hrtf->attributes, "DataType");
+		}
+
+		std::string GetSofaConvention(){
+			return mysofa_getAttribute(hrtf->hrtf->attributes, "SOFAConventions");
 		}
 
 		bool CheckSofaConvention(TSofaConvention sofaConvention) {
@@ -177,7 +187,8 @@ namespace BRTReaders {
 		}
 
 		std::vector<double> GetSourceViewVector() {
-			if (error == -1) return std::vector< double >();			
+			if (error == -1) return std::vector< double >();	
+			if (mysofa_getSourceView() == NULL) { return std::vector< double >();}
 			std::vector< double > _sourceView(mysofa_getSourceView()->values, mysofa_getSourceView()->values + mysofa_getSourceView()->elements);			
 			return _sourceView;
 		}
@@ -194,10 +205,13 @@ namespace BRTReaders {
 		}
 		std::vector<double> GetSourceUpVector() {
 			if (error == -1) return std::vector< double >();
+			if (mysofa_getSourceUp() == NULL) { return std::vector< double >(); }
 			std::vector<double> _sourceUp(mysofa_getSourceUp()->values, mysofa_getSourceUp()->values + mysofa_getSourceUp()->elements);
 			return _sourceUp;
 		}
 		
+		
+
 		//Emitter
 		std::vector<double> GetEmitterPositionVector() {	
 			if (error == -1) return std::vector< double >();
@@ -303,7 +317,7 @@ namespace BRTReaders {
 				return false;
 			}
 		}
-
+		
 		MYSOFA_ARRAY* mysofa_getSourceView() {
 			return mysofa_getVariable(hrtf->hrtf->variables, "SourceView");
 		}

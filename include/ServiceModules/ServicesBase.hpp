@@ -216,8 +216,8 @@ namespace BRTServices {
 		virtual void SetWindowingParameters(float _windowThreshold, float _windowRiseTime) {};
 		virtual void GetWindowingParameters(float& _windowThreshold, float& _windowRiseTime) {};
 
-		virtual void AddHRIR(double _azimuth, double _elevation, double _distance, THRIRStruct&& newHRIR) {};
-		virtual void AddHRBRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRBRIR) {}
+		virtual void AddHRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRIR) {};
+		//virtual void AddHRBRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRBRIR) {}
 		virtual void AddCoefficients(float azimuth, float distance, TNFCFilterStruct&& newCoefs) {}
 		virtual void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF) {}
 		
