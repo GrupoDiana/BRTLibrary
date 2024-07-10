@@ -86,7 +86,7 @@ namespace BRTServices
 			SET_RESULT(RESULT_OK, "HRBRIR Setup started");					
 		}
 
-		void AddHRBRIR(double _azimuth, double _elevation, double _distance, /*Common::CVector3 emitterPosition,*/ Common::CVector3 listenerPosition, THRIRStruct&& newHRBRIR) {
+		void AddHRIR(double _azimuth, double _elevation, double _distance, /*Common::CVector3 emitterPosition,*/ Common::CVector3 listenerPosition, THRIRStruct&& newHRBRIR) {
 			if (setupInProgress) {
 				_azimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
 				_elevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);

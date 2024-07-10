@@ -128,7 +128,7 @@ namespace BRTServices
 		}
 		
 
-		void AddHRIR(double _azimuth, double _elevation, double _distance, THRIRStruct&& newHRIR)
+		void AddHRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRIR)
 		{			
 			if (setupInProgress) {				
 				_azimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
