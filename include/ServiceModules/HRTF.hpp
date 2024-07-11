@@ -17,7 +17,7 @@
 *
 * \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 *
-* \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
+* \b Acknowledgement: This project has received funding from the European Union's Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 
 
@@ -209,7 +209,7 @@ namespace BRTServices
 		*   \eh On error, an error code is reported to the error handler.
 		*       Warnings may be reported to the error handler.
 		*/
-		const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, Common::CTransform& /* _listenerLocation*/ ) const
+		const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, const Common::CTransform& /* _listenerLocation*/ ) const override
 		{
 			std::lock_guard<std::mutex> l(mutex);
 			std::vector<CMonoBuffer<float>> newHRIR;

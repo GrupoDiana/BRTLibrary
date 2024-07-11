@@ -399,7 +399,7 @@ namespace BRTServices
 		*   \eh On error, an error code is reported to the error handler.
 		*       Warnings may be reported to the error handler.
 		*/
-		const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, const Common::CTransform& _listenerLocation/*, Common::CTransform& _sourceLocation*/) const
+		const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, const Common::CTransform& _listenerLocation/*, Common::CTransform& _sourceLocation*/) const override
 		{
 			std::lock_guard<std::mutex> l(mutex);
 
