@@ -220,24 +220,24 @@ namespace BRTListenerModel {
 		/** \brief Enable near field effect for this source
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableNearFieldEffect() {
+		/*void EnableNearFieldEffect() {
 			enableNearFieldEffect = true;
 			SetConfigurationInALLSourcesProcessors();			
-		}
+		}*/
 
 		/** \brief Disable near field effect for this source
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void DisableNearFieldEffect() {
+		/*void DisableNearFieldEffect() {
 			enableNearFieldEffect = false;
 			SetConfigurationInALLSourcesProcessors();			
-		}
+		}*/
 
 		/** \brief Get the flag for near field effect enabling
 		*	\retval nearFieldEffectEnabled if true, near field effect is enabled for this listener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		bool IsNearFieldEffectEnabled() { return enableNearFieldEffect; }
+		/*bool IsNearFieldEffectEnabled() { return enableNearFieldEffect; }*/
 
 		///** \brief Enable bilaterality for all source connected to this listener
 		//*   \eh Nothing is reported to the error handler.
@@ -258,23 +258,23 @@ namespace BRTListenerModel {
 		/**
 		 * @brief Enable Parallax Correction
 		*/
-		void EnableParallaxCorrection() { 
-			enableParallaxCorrection = true; 
-			SetConfigurationInALLSourcesProcessors();
-		}
+		//void EnableParallaxCorrection() { 
+		//	enableParallaxCorrection = true; 
+		//	SetConfigurationInALLSourcesProcessors();
+		//}
 
-		/**
-		 * @brief Disable Parallax Correction
-		*/
-		void DisableParallaxCorrection() { 
-			enableParallaxCorrection = false; 
-			SetConfigurationInALLSourcesProcessors();
-		}
+		///**
+		// * @brief Disable Parallax Correction
+		//*/
+		//void DisableParallaxCorrection() { 
+		//	enableParallaxCorrection = false; 
+		//	SetConfigurationInALLSourcesProcessors();
+		//}
 
-		/**
-		* @brief Get Parallax Correction state
-		*/
-		bool IsParallaxCorrectionEnabled() { return enableParallaxCorrection; }
+		///**
+		//* @brief Get Parallax Correction state
+		//*/
+		//bool IsParallaxCorrectionEnabled() { return enableParallaxCorrection; }
 
 		/**
 		 * @brief Connect a new source to this listener
