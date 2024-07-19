@@ -102,6 +102,7 @@ namespace BRTServices
 			if (_directivityTFPartLength != globalParameters.GetBufferSize()) //
 			{
 				SET_RESULT(RESULT_ERROR_BADSIZE, "Number of frequency samples (N) in SOFA file is different from Buffer Size");
+				return;
 			}
 
 			bufferSize = globalParameters.GetBufferSize();

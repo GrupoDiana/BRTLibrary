@@ -167,75 +167,75 @@ namespace BRTReaders {
 		/////////////////////////////////////////////////////////////////
 		/////////////////	SimpleFreeFieldHRIR		/////////////////
 		/////////////////////////////////////////////////////////////////
-		bool ReadFromSofa_SimpleFreeFieldHRIR(BRTReaders::CLibMySOFALoader& loader, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
-			
-			GetAndSaveGlobalAttributes(loader, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR, sofafile, data);			
-			CheckListenerOrientation(loader);					// Check listener view			
-			GetAndSaveReceiverPosition(loader, data);			// Get and Save listener ear 
-						
-			bool result;
-			result = GetHRIRs(loader, data, _extrapolationMethod);						
-			if (!result) {
-				SET_RESULT(RESULT_ERROR_UNKNOWN, "An error occurred creating the data structure from the SOFA file, please consider previous messages.");
-				return false;
-			}
+		//bool ReadFromSofa_SimpleFreeFieldHRIR(BRTReaders::CLibMySOFALoader& loader, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
+		//	
+		//	GetAndSaveGlobalAttributes(loader, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRIR, sofafile, data);			
+		//	CheckListenerOrientation(loader);					// Check listener view			
+		//	GetAndSaveReceiverPosition(loader, data);			// Get and Save listener ear 
+		//				
+		//	bool result;
+		//	result = GetHRIRs(loader, data, _extrapolationMethod);						
+		//	if (!result) {
+		//		SET_RESULT(RESULT_ERROR_UNKNOWN, "An error occurred creating the data structure from the SOFA file, please consider previous messages.");
+		//		return false;
+		//	}
 
-			// Finish setup
-			if (_resamplingStep != -1) { data->SetGridSamplingStep(_resamplingStep); }
-			data->EndSetup();
-			return true;
-		}
+		//	// Finish setup
+		//	if (_resamplingStep != -1) { data->SetGridSamplingStep(_resamplingStep); }
+		//	data->EndSetup();
+		//	return true;
+		//}
 
-		bool GetHRIRs(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& dataHRTF, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
-			//Get source positions												
-			std::vector< double > sourcePositionsVector = std::move(loader.GetSourcePositionVector());
-			// GET delays and IRs
-			std::vector< double > dataDelayVector(loader.getHRTF()->DataDelay.values, loader.getHRTF()->DataDelay.values + loader.getHRTF()->DataDelay.elements);
-			std::vector< double > dataMeasurements(loader.getHRTF()->DataIR.values, loader.getHRTF()->DataIR.values + loader.getHRTF()->DataIR.elements);
-			// Constants
-			const int numberOfMeasurements = loader.getHRTF()->M;
-			const int numberOfCoordinates = loader.getHRTF()->C;
-			const int numberOfReceivers = loader.getHRTF()->R;
-			const unsigned int numberOfSamples = loader.getHRTF()->N;			
-			
+		//bool GetHRIRs(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& dataHRTF, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
+		//	//Get source positions												
+		//	std::vector< double > sourcePositionsVector = std::move(loader.GetSourcePositionVector());
+		//	// GET delays and IRs
+		//	std::vector< double > dataDelayVector(loader.getHRTF()->DataDelay.values, loader.getHRTF()->DataDelay.values + loader.getHRTF()->DataDelay.elements);
+		//	std::vector< double > dataMeasurements(loader.getHRTF()->DataIR.values, loader.getHRTF()->DataIR.values + loader.getHRTF()->DataIR.elements);
+		//	// Constants
+		//	const int numberOfMeasurements = loader.getHRTF()->M;
+		//	const int numberOfCoordinates = loader.getHRTF()->C;
+		//	const int numberOfReceivers = loader.getHRTF()->R;
+		//	const unsigned int numberOfSamples = loader.getHRTF()->N;			
+		//	
 
-			// Get first distance to check if all HRIRs are measured at the same distance
-			double measurementDistance = sourcePositionsVector[array2DIndex(0, 2, numberOfCoordinates)];		//We consider that every HRIR are meased at the same distance, so we get the firts one												
-			if (measurementDistance <= 0) {
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "SOFA gives incoherent number of HRIRs distance");
-				return false;
-			}				
-			// Get and save HRIRs	
-			dataHRTF->BeginSetup(numberOfSamples, _extrapolationMethod);			
-			dataHRTF->SetSamplingRate(loader.GetSamplingRate());
-			const int left_ear = 0;
-			const int right_ear = 1;
-						
-			for (std::size_t measure = 0; measure < numberOfMeasurements; measure++)
-			{
-				BRTServices::THRIRStruct hrir_value;
-								
-				double azimuth, elevation, distance;
-				GetSourcePosition(loader, sourcePositionsVector, measure, azimuth, elevation, distance);					
-				if (distance <= 0 || distance != measurementDistance) {
-					SET_RESULT(RESULT_ERROR_INVALID_PARAM, "SOFA gives incoherent number of HRIRs distance.");
-					return false;
-				}
-				
-				// Get Delays
-				double leftDelay, rightDelay;;
-				GetDelays(loader, dataDelayVector, leftDelay, rightDelay, numberOfMeasurements, numberOfReceivers, measure);
-				hrir_value.leftDelay = std::round(leftDelay);
-				hrir_value.rightDelay = std::round(rightDelay);
-				// Get IRs
-				Get3DMatrixData(dataMeasurements, hrir_value.leftHRIR, 2, numberOfSamples, left_ear, measure);
-				Get3DMatrixData(dataMeasurements, hrir_value.rightHRIR, 2, numberOfSamples, right_ear, measure);
-				
-				dataHRTF->AddHRIR(azimuth, elevation, distance, Common::CVector3(), std::move(hrir_value));
-			}
-			return true;
+		//	// Get first distance to check if all HRIRs are measured at the same distance
+		//	double measurementDistance = sourcePositionsVector[array2DIndex(0, 2, numberOfCoordinates)];		//We consider that every HRIR are meased at the same distance, so we get the firts one												
+		//	if (measurementDistance <= 0) {
+		//		SET_RESULT(RESULT_ERROR_INVALID_PARAM, "SOFA gives incoherent number of HRIRs distance");
+		//		return false;
+		//	}				
+		//	// Get and save HRIRs	
+		//	dataHRTF->BeginSetup(numberOfSamples, _extrapolationMethod);			
+		//	dataHRTF->SetSamplingRate(loader.GetSamplingRate());
+		//	const int left_ear = 0;
+		//	const int right_ear = 1;
+		//				
+		//	for (std::size_t measure = 0; measure < numberOfMeasurements; measure++)
+		//	{
+		//		BRTServices::THRIRStruct hrir_value;
+		//						
+		//		double azimuth, elevation, distance;
+		//		GetSourcePosition(loader, sourcePositionsVector, measure, azimuth, elevation, distance);					
+		//		if (distance <= 0 || distance != measurementDistance) {
+		//			SET_RESULT(RESULT_ERROR_INVALID_PARAM, "SOFA gives incoherent number of HRIRs distance.");
+		//			return false;
+		//		}
+		//		
+		//		// Get Delays
+		//		double leftDelay, rightDelay;;
+		//		GetDelays(loader, dataDelayVector, leftDelay, rightDelay, numberOfMeasurements, numberOfReceivers, measure);
+		//		hrir_value.leftDelay = std::round(leftDelay);
+		//		hrir_value.rightDelay = std::round(rightDelay);
+		//		// Get IRs
+		//		Get3DMatrixData(dataMeasurements, hrir_value.leftHRIR, 2, numberOfSamples, left_ear, measure);
+		//		Get3DMatrixData(dataMeasurements, hrir_value.rightHRIR, 2, numberOfSamples, right_ear, measure);
+		//		
+		//		dataHRTF->AddHRIR(azimuth, elevation, distance, Common::CVector3(), std::move(hrir_value));
+		//	}
+		//	return true;
 
-		}
+		//}
 		
 		/////////////////////////////////////////////////////////////////
 		/////////////////	SimpleFreeFieldHRSOS		/////////////////
@@ -326,8 +326,7 @@ namespace BRTReaders {
 
 			// Finish setup
 			if (_resamplingStep != -1) { data->SetGridSamplingStep(_resamplingStep); }
-			data->EndSetup();
-			return true;
+			return data->EndSetup();			
 		}
 
 		bool GetDirectivityTF(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& dataDirectivityTF, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
