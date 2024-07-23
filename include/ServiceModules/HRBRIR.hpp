@@ -35,6 +35,7 @@
 #include <Common/GlobalParameters.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <Common/CranicalGeometry.hpp>
+#include <Common/IRWindowing.hpp>
 #include <ServiceModules/HRTFDefinitions.hpp>
 #include <ServiceModules/ServicesBase.hpp>
 #include <ServiceModules/HRTFAuxiliarMethods.hpp>
@@ -49,8 +50,9 @@ namespace BRTServices
 		CHRBRIR() : setupInProgress{ false }, HRBRIRLoaded{ false }, samplingRate{0}, HRIRLength{-1}, gridSamplingStep{DEFAULT_GRIDSAMPLING_STEP},
 			gapThreshold {DEFAULT_GAP_THRESHOLD}, sphereBorder{ SPHERE_BORDER }, epsilon_sewing{ EPSILON_SEWING }, extrapolationMethod{ TEXTRAPOLATION_METHOD::zero_insertion },
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION },
-			/*enableWoodworthITD{ false },*/ HRIR_partitioned_NumberOfSubfilters{ 0 }, HRIR_partitioned_SubfilterLength{ 0 },
-			windowThreshold { 0 }, windowRiseTime{ 0 }, elevationNorth{ 0 }, elevationSouth{ 0 }, title{""},	databaseName{""}, listenerShortName{""}, fileName{""} {}
+			HRIR_partitioned_NumberOfSubfilters{ 0 }, HRIR_partitioned_SubfilterLength{ 0 },
+			fadeInWindowThreshold { 0 }, fadeInWindowRiseTime{ 0 }, fadeOutWindowThreshold{ 0 }, fadeOutWindowRiseTime{ 0 },
+			elevationNorth{ 0 }, elevationSouth{ 0 }, title{""},	databaseName{""}, listenerShortName{""}, fileName{""} {}
 
 
 
@@ -148,7 +150,7 @@ namespace BRTServices
 						CQuasiUniformSphereDistribution::CreateGrid<T_HRTFPartitionedTable, THRIRPartitionedStruct>(tempPartitionedTable, stepVector, gridSamplingStep);
 					
 						
-						if (IsWindowingConfigured()) {
+						if (IsFadeInWindowingConfigured() || IsFadeOutWindowingConfigured()) {
 							// Windowing the IRs
 							T_HRTFTable windowingTable;
 							CalculateWindowingIRTable(it->second, windowingTable);
@@ -347,17 +349,19 @@ namespace BRTServices
 		 * @param _windowThreshold The midpoint of the window in time (seconds), that is, where the window reaches 0.5.
 		 * @param _windowRiseTime time (secons) for the window to go from 0 to 1. A value of zero would represent the step window. 
 		 */
-		void SetWindowingParameters(float _windowThreshold, float _windowRiseTime) {			
+		void SetWindowingParameters(float _fadeInWindowThreshold, float _fadeInWindowRiseTime, float _fadeOutWindowThreshold, float _fadeOutWindowRiseTime) override {			
 			mutex.lock();
-			windowThreshold = _windowThreshold;
-			windowRiseTime = _windowRiseTime;
+			fadeInWindowThreshold = _fadeInWindowThreshold;
+			fadeInWindowRiseTime = _fadeInWindowRiseTime;
+			fadeOutWindowThreshold = _fadeOutWindowThreshold;
+			fadeOutWindowRiseTime = _fadeOutWindowRiseTime;
+
 			mutex.unlock();
 			if (HRBRIRLoaded) {				
 				setupInProgress = true;
 				HRBRIRLoaded = false;
 				t_HRBRIR_Resampled_partitioned.clear();
 				EndSetup();
-
 			}			
 		}
 
@@ -366,9 +370,11 @@ namespace BRTServices
 		 * @param [out] _windowThreshold 
 		 * @param [out] _windowRiseTime 
 		 */
-		void GetWindowingParameters(float& _windowThreshold, float& _windowRiseTime) {
-			_windowThreshold = windowThreshold;
-			_windowRiseTime = windowRiseTime;
+		void GetWindowingParameters(float & _fadeInWindowThreshold, float & _fadeInWindowRiseTime, float & _fadeOutWindowThreshold, float & _fadeOutWindowRiseTime) override {
+			_fadeInWindowThreshold = fadeInWindowThreshold;
+			_fadeInWindowRiseTime = fadeInWindowRiseTime;
+			_fadeOutWindowThreshold = fadeOutWindowThreshold;
+			_fadeOutWindowRiseTime = fadeOutWindowRiseTime;
 		}
 
 		
@@ -556,8 +562,12 @@ namespace BRTServices
 		 * @brief Check if the windowing process is configured
 		 * @return 
 		 */
-		bool IsWindowingConfigured() {
-			return windowThreshold != 0 || windowRiseTime != 0;
+		bool IsFadeInWindowingConfigured() {
+			return fadeInWindowThreshold != 0 || fadeInWindowRiseTime != 0;
+		}
+
+		bool IsFadeOutWindowingConfigured() {
+			return fadeOutWindowThreshold != 0 || fadeOutWindowRiseTime != 0;
 		}
 
 		/**
@@ -568,11 +578,25 @@ namespace BRTServices
 		void CalculateWindowingIRTable(const T_HRTFTable& _inTable, T_HRTFTable& _outTable) {
 			_outTable.clear();
 			_outTable = _inTable;
-
-			for (auto it = _outTable.begin(); it != _outTable.end(); it++) {				
-				it->second.leftHRIR = std::move(CalculateWindowingIR(it->second.leftHRIR));
-				it->second.rightHRIR = std::move(CalculateWindowingIR(it->second.rightHRIR));
+			
+									
+			if (IsFadeInWindowingConfigured()) {
+				for (auto it = _outTable.begin(); it != _outTable.end(); it++) {
+					//it->second.leftHRIR = std::move(CalculateWindowingIR(it->second.leftHRIR));
+					//it->second.rightHRIR = std::move(CalculateWindowingIR(it->second.rightHRIR));
+					it->second.leftHRIR		= std::move(Common::CIRWindowing::Proccess(it->second.leftHRIR, Common::CIRWindowing::fadein, fadeInWindowThreshold, fadeInWindowRiseTime, globalParameters.GetSampleRate()));
+					it->second.rightHRIR	= std::move(Common::CIRWindowing::Proccess(it->second.rightHRIR, Common::CIRWindowing::fadein, fadeInWindowThreshold, fadeInWindowRiseTime, globalParameters.GetSampleRate()));
+				}
 			}
+
+			if (IsFadeOutWindowingConfigured()) {
+				for (auto it = _outTable.begin(); it != _outTable.end(); it++) {					
+					it->second.leftHRIR		= std::move(Common::CIRWindowing::Proccess(it->second.leftHRIR, Common::CIRWindowing::fadeout, fadeOutWindowThreshold, fadeOutWindowRiseTime, globalParameters.GetSampleRate()));
+					it->second.rightHRIR	= std::move(Common::CIRWindowing::Proccess(it->second.rightHRIR, Common::CIRWindowing::fadeout, fadeOutWindowThreshold, fadeOutWindowRiseTime, globalParameters.GetSampleRate()));
+				}
+				//HRIRLength = _outTable.begin()->second.leftHRIR.size();
+			}
+
 		}
 
 		/**
@@ -580,35 +604,35 @@ namespace BRTServices
 		 * @param _inputIR Input IR
 		 * @return 
 		 */
-		CMonoBuffer<float> CalculateWindowingIR(const CMonoBuffer<float>& _inputIR)
-		{
-			// Vars to calculate the window
-			int numberOfZeros = floor((windowThreshold - windowRiseTime / 2) * globalParameters.GetSampleRate());
-			int numberOfSamplesFadeIn = ceil(windowRiseTime * globalParameters.GetSampleRate());
-			int numberOfOnes = _inputIR.size() - numberOfZeros - numberOfSamplesFadeIn;
+		//CMonoBuffer<float> CalculateWindowingIR(const CMonoBuffer<float>& _inputIR)
+		//{
+		//	// Vars to calculate the window
+		//	int numberOfZeros = floor((fadeInWindowThreshold - fadeInWindowRiseTime / 2) * globalParameters.GetSampleRate());
+		//	int numberOfSamplesFadeIn = ceil(fadeInWindowRiseTime * globalParameters.GetSampleRate());
+		//	int numberOfOnes = _inputIR.size() - numberOfZeros - numberOfSamplesFadeIn;
 
-			// Check if the window is bigger than the IR
-			if (numberOfZeros >= _inputIR.size()) {
-				// If the window is bigger than the IR, we return the IR without windowing
-				SET_RESULT(RESULT_WARNING, "The window is bigger than the IR, the IR will be returned without windowing.");
-				return CMonoBuffer<float>(_inputIR);				
-			}
-			
-			// Create and fill first part of the window
-			CMonoBuffer<float> windowedIR = CMonoBuffer<float>(numberOfZeros, 0);
-			windowedIR.reserve(_inputIR.size());			
+		//	// Check if the window is bigger than the IR
+		//	if (numberOfZeros >= _inputIR.size()) {
+		//		// If the window is bigger than the IR, we return the IR without windowing
+		//		SET_RESULT(RESULT_WARNING, "The window is bigger than the IR, the IR will be returned without windowing.");
+		//		return CMonoBuffer<float>(_inputIR);				
+		//	}
+		//	
+		//	// Create and fill first part of the window
+		//	CMonoBuffer<float> windowedIR = CMonoBuffer<float>(numberOfZeros, 0);
+		//	windowedIR.reserve(_inputIR.size());			
 
-			// Making the intermediate part with a raised cosine
-			for (int i = numberOfZeros; i < numberOfZeros + numberOfSamplesFadeIn; i++) {
-				windowedIR.push_back( _inputIR.at(i) * 0.5 * (1 - cos(M_PI * (i - numberOfZeros) / numberOfSamplesFadeIn)));
-			}
-			
-			// Copy last samples 
-			windowedIR.insert(windowedIR.end(), _inputIR.begin() + numberOfZeros + numberOfSamplesFadeIn, _inputIR.end());
-			
+		//	// Making the intermediate part with a raised cosine
+		//	for (int i = numberOfZeros; i < numberOfZeros + numberOfSamplesFadeIn; i++) {
+		//		windowedIR.push_back( _inputIR.at(i) * 0.5 * (1 - cos(M_PI * (i - numberOfZeros) / numberOfSamplesFadeIn)));
+		//	}
+		//	
+		//	// Copy last samples 
+		//	windowedIR.insert(windowedIR.end(), _inputIR.begin() + numberOfZeros + numberOfSamplesFadeIn, _inputIR.end());
+		//	
 
-			return windowedIR;
-		}
+		//	return windowedIR;
+		//}
 
 		//CMonoBuffer<float> CalculateWindowingIR(const CMonoBuffer<float>& _inputIR, float gain = 1.0f)
 		//{
@@ -678,8 +702,10 @@ namespace BRTServices
 		float elevationNorth;						// Variables that define limits of work area
 		float elevationSouth;						// Variables that define limits of work area
 
-		float windowThreshold;						// Variable to be used in the windowing IR process 
-		float windowRiseTime;						// Variable to be used in the windowing IR process 
+		float fadeInWindowThreshold;				// Variable to be used in the windowing IR process 
+		float fadeInWindowRiseTime;					// Variable to be used in the windowing IR process 
+		float fadeOutWindowThreshold;				// Variable to be used in the windowing IR process
+		float fadeOutWindowRiseTime;				// Variable to be used in the windowing IR process 
 
 		// HRBRIR tables			
 		T_HRBRIRTable					t_HRBRIR_DataBase;					// Store original data, normally read from SOFA file

@@ -213,8 +213,8 @@ namespace BRTServices {
 		virtual void SetNumberOfEars(int _numberOfEars) {}
 		virtual void SetEarPosition(Common::T_ear _ear, Common::CVector3 _earPosition) {};
 
-		virtual void SetWindowingParameters(float _windowThreshold, float _windowRiseTime) {};
-		virtual void GetWindowingParameters(float& _windowThreshold, float& _windowRiseTime) {};
+		virtual void SetWindowingParameters(float _fadeInWindowThreshold, float _fadeInWindowRiseTime, float _fadeOutWindowThreshold, float _fadeOutWindowRiseTime) {};
+		virtual void GetWindowingParameters(float& _fadeInWindowThreshold, float& _fadeInWindowRiseTime, float& _fadeOutWindowThreshold, float& _fadeOutWindowRiseTime) {};
 
 		virtual void AddHRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRIR) {};
 		//virtual void AddHRBRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRBRIR) {}
