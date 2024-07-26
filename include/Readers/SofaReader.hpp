@@ -95,10 +95,12 @@ namespace BRTReaders {
 		*	\param [out] listener affected by the hrtf
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		bool ReadBRIRFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CHRBRIR> listenerHRTF, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, float _fadeInWindowThreshold, float _fadeInWindowRiseTime) {
+		bool ReadBRIRFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CHRBRIR> listenerHRTF, int _resamplingStep, 
+			BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, 
+			float _fadeInWindowThreshold, float _fadeInWindowRiseTime, float _fadeOutWindowThreshold, float _fadeOutWindowRiseTime) {
 
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerHRTF;
-			return ReadFromSofa(sofafile, data, _resamplingStep, _extrapolationMethod, _fadeInWindowThreshold, _fadeInWindowRiseTime);
+			return ReadFromSofa(sofafile, data, _resamplingStep, _extrapolationMethod, _fadeInWindowThreshold, _fadeInWindowRiseTime, _fadeOutWindowThreshold, _fadeOutWindowRiseTime);
 		}
 		
 	private:
@@ -106,7 +108,8 @@ namespace BRTReaders {
 
 		// Methods
 		bool ReadFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data,
-			int _gridSamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, float _fadeInWindowThreshold = 0.0f, float _fadeInWindowRiseTime = 0.0f) {		
+			int _gridSamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, 
+			float _fadeInWindowThreshold = 0.0f, float _fadeInWindowRiseTime = 0.0f, float _fadeOutWindowThreshold = 0.0f, float _fadeOutWindowRiseTime = 0.0f) {		
 
 			// Open file
 			BRTReaders::CLibMySOFALoader loader(sofafile);
@@ -119,7 +122,7 @@ namespace BRTReaders {
 						
 			// Load Data			
 			if (dataType == "FIR" || dataType == "FIR-E") {												
-				return ReadFromSofaFIRDataType(loader, sofafile, data, _gridSamplingStep, _extrapolationMethod, _fadeInWindowThreshold, _fadeInWindowRiseTime);
+				return ReadFromSofaFIRDataType(loader, sofafile, data, _gridSamplingStep, _extrapolationMethod, _fadeInWindowThreshold, _fadeInWindowRiseTime, _fadeOutWindowThreshold, _fadeOutWindowRiseTime);
 			}
 			else if (dataType == "SOS") {
 				return ReadFromSofaSOSDataType(loader, sofafile, data);
@@ -375,13 +378,13 @@ namespace BRTReaders {
 		/////////////////////////////////////////////////////////////////
 		bool ReadFromSofaFIRDataType(BRTReaders::CLibMySOFALoader &loader, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data,
 			int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, 
-			float _fadeInWindowThreshold, float _fadeInWindowRiseTime) {
+			float _fadeInWindowThreshold, float _fadeInWindowRiseTime, float _fadeOutWindowThreshold, float _fadeOutWindowRiseTime) {
 			
 			// Get and Save data			
 			GetAndSaveGlobalAttributes(loader, CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR ,sofafile, data);			// GET and Save Global Attributes			
 			GetAndSaveReceiverPosition(loader, data); // Get and Save listener ear
 			
-			data->SetWindowingParameters(_fadeInWindowThreshold, _fadeInWindowRiseTime, 0.2, 0.01);
+			data->SetWindowingParameters(_fadeInWindowThreshold, _fadeInWindowRiseTime, _fadeOutWindowThreshold, _fadeOutWindowRiseTime);
 			bool result;
 			result = GetBRIRs(loader, data, _extrapolationMethod);
 
