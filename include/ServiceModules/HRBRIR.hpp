@@ -79,14 +79,15 @@ namespace BRTServices
 			HRIRLength = _HRIRLength;								
 			extrapolationMethod = _extrapolationMethod;
 
-			float partitions = (float)HRIRLength / (float)globalParameters.GetBufferSize();
-			HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
+			CalculateNumberOfSubfilters();
 
 			elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
 			elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
 
 			SET_RESULT(RESULT_OK, "HRBRIR Setup started");					
 		}
+
+		
 
 		void AddHRIR(double _azimuth, double _elevation, double _distance, /*Common::CVector3 emitterPosition,*/ Common::CVector3 listenerPosition, THRIRStruct&& newHRBRIR) {
 			if (setupInProgress) {
@@ -486,6 +487,14 @@ namespace BRTServices
 		/////////////
 		
 		/**
+		 * @brief Calculate the number of subfilters needed to partition the HRIR
+		 */
+		void CalculateNumberOfSubfilters() {
+			float partitions = (float)HRIRLength / (float)globalParameters.GetBufferSize();
+			HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
+		}
+
+		/**
 		* @brief Call the extrapolation method
 		*/
 		void CalculateExtrapolation(T_HRTFTable& _table, std::vector<orientation>& _orientationList) {
@@ -594,7 +603,10 @@ namespace BRTServices
 					it->second.leftHRIR		= std::move(Common::CIRWindowing::Proccess(it->second.leftHRIR, Common::CIRWindowing::fadeout, fadeOutWindowThreshold, fadeOutWindowRiseTime, globalParameters.GetSampleRate()));
 					it->second.rightHRIR	= std::move(Common::CIRWindowing::Proccess(it->second.rightHRIR, Common::CIRWindowing::fadeout, fadeOutWindowThreshold, fadeOutWindowRiseTime, globalParameters.GetSampleRate()));
 				}
-				//HRIRLength = _outTable.begin()->second.leftHRIR.size();
+				
+				// Update HRIRLength and the number of subfilters
+				HRIRLength = _outTable.begin()->second.leftHRIR.size();
+				CalculateNumberOfSubfilters();
 			}
 
 		}

@@ -120,8 +120,8 @@ namespace Common {
 			}
 
 			// Copy last samples
-			CMonoBuffer<float> zeros = CMonoBuffer<float>(numberOfZeros, 0);
-			windowedIR.insert(windowedIR.end(), zeros.begin(), zeros.end());
+			//CMonoBuffer<float> zeros = CMonoBuffer<float>(numberOfZeros, 0);
+			//windowedIR.insert(windowedIR.end(), zeros.begin(), zeros.end());
 
 			return windowedIR;
 		}
