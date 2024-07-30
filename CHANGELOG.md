@@ -5,12 +5,13 @@ All notable changes to the Binaural Rendering Toolbox (BRT) will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.5.0] - 2024-07-19
+## [1.5.0] - 2024-07-30
 
 ### Added
 - Added a couple of new listener models for reverberation rendering based on BRIR. One of the models performs direct convolution with the BRIR, the other one performs convolution in the ambisonic domain.
 - The listener class has been created as its own entity separate from the models, its motivation is to represent real listeners. Among other things it acts as a mixer for different rendering models. This does not allow to render a scene for different listeners simultaneously.
 - Loading of SOFA files with the FIR-E type is now supported.
+- The BRIR charger supports truncation of the impulse responses both at the beginning and at the end. That is, you can fade-in and fade-out the impulse responses.
 
 ### Fixed
 
