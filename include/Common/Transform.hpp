@@ -50,6 +50,11 @@ namespace Common {
 			orientation = CQuaternion::UNIT();			
 		}
 
+		CTransform(CVector3 _position)
+		{
+			position = _position;			
+		}
+
 		////////////////////////////////
 		// Get methods
 		////////////////////////////////
@@ -81,7 +86,7 @@ namespace Common {
 		*	\retval position vector containing the position
 		*   \eh Nothing is reported to the error handler.
 		*/		
-		CVector3 GetPosition()
+		CVector3 GetPosition() const
 		{
 			return position;
 		}
@@ -90,7 +95,7 @@ namespace Common {
 		*	\retval orientation quaternion containing the orientation
 		*   \eh Nothing is reported to the error handler.
 		*/		
-		CQuaternion GetOrientation()
+		CQuaternion GetOrientation() const
 		{
 			return orientation;
 		}

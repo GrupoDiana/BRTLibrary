@@ -21,15 +21,15 @@
 */
 
 #pragma once
-#include <Base/ProcessorBase.hpp>
-#include <Base/EntryPoint.hpp>
+#include <Base/AdvancedEntryPointManager.hpp>
+#include <Base/ExitPointManager.hpp>
 
 #include <memory>
 #include <vector>
 #include <algorithm>
     
 namespace BRTProcessing {
-    class CSingleBinauralProcessor : public BRTBase::CProcessorBase {
+    class CSingleBinauralProcessor : public BRTBase::CAdvancedEntryPointManager, public BRTBase::CExitPointManager {
     public:
         CSingleBinauralProcessor() : leftGain{ 1.0f }, rightGain{ 1.0f } {
             CreateSamplesEntryPoint("inputSamples");

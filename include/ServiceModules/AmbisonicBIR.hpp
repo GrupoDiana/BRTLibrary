@@ -31,27 +31,32 @@
 #include <Common/CommonDefinitions.hpp>
 #include <Common/AmbisonicEncoder.hpp>
 #include <Common/GlobalParameters.hpp>
-#include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/ServicesBase.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/VirtualSpeakers.hpp>
+#include <ServiceModules/HRBRIR.hpp>
 
 namespace BRTServices
 {		
 	class CAmbisonicBIR : public CServicesBase
-	{	
-		enum TDataOrigin { BRIR, HRTF };
+	{			
 		/** \brief Type definition for the AmbisonicIR table	*/
 		typedef std::unordered_map<int, BRTServices::THRIRStruct> TAmbisonicIRTable;
 
 		/** \brief Type definition for the AmbisonicIR partitioned table */
 		typedef std::unordered_map<int, THRIRPartitionedStruct> TAmbisonicIRPartitionedTable;
+		
+		/**
+		* @brief Type definition for the AmbisonicIR table ordered by listener posision
+		*/
+		typedef std::unordered_map<TVector3, TAmbisonicIRPartitionedTable> TAmbisonicIRPartitionedTableByPosition;
 
 
 	public:
 
 		/** \brief Default constructor.
 		*/
-		CAmbisonicBIR() : dataOrigin{ TDataOrigin::BRIR }, AmbisonicBIRLoaded{ false }, setupInProgress{ false }, impulseResponseLength { 0 }, IRNumberOfSubFilters{ 0 }, IRSubfilterLength{ 0 }
+		CAmbisonicBIR() : AmbisonicBIRLoaded{ false }, setupInProgress{ false }, impulseResponseLength { 0 }, IRNumberOfSubFilters{ 0 }, IRSubfilterLength{ 0 }
 		{			
 		}
 
@@ -91,30 +96,18 @@ namespace BRTServices
 		*   \eh On error, an error code is reported to the error handler.
 		*/
 
-		// TODO Do we need all these parameters? Check them when we integrate the BRIR file reader.
-		void BeginSetup(/*int _irLength, int _numberOfSubfilters, int _partitionedSubfilterLength, */int _ambisonicOrder, Common::TAmbisonicNormalization _ambisonicNormalization)
-		{						
-			//ASSERT(nVirtualSpeakers > 0, RESULT_ERROR_BADSIZE, "Attempt to setup AIR for 0 virtual speakers", "");
-			//ASSERT((_irLength > 0), RESULT_ERROR_BADSIZE, "IR and input source length must be greater than 0", "AIR setup successfull");
+
+		void BeginSetup(int _ambisonicOrder, Common::TAmbisonicNormalization _ambisonicNormalization)
+		{									
+			ASSERT(_ambisonicOrder > 0, RESULT_ERROR_BADSIZE, "Attempt to set an unllowed value for the ambisonic order.","");
+			ASSERT(_ambisonicOrder < 4, RESULT_ERROR_BADSIZE, "Attempt to set an unllowed value for the ambisonic order.","");
 			
 			std::lock_guard<std::mutex> l(mutex);
 
-            Reset();
-					
-			//impulseResponseLength = _irLength;
-			
-			//IRSubfilterLength = _partitionedSubfilterLength;			
-			//IRNumberOfSubFilters = _numberOfSubfilters;
-			
-			//ambisonicIRTable.clear();
-			//ambisonicIRPartitionedTable.clear();
-			
-			ambisonicEncoder.Setup(_ambisonicOrder, _ambisonicNormalization);			
-			virtualSpeakers.Setup(_ambisonicOrder);
-
-			dataOrigin = TDataOrigin::HRTF;		//TODO Do we need this?
-			//setupDone = true;				//	Indicate that the setup has been done
+            Reset();								
 			setupInProgress = true;
+			ambisonicEncoder.Setup(_ambisonicOrder, _ambisonicNormalization);			
+			virtualSpeakers.Setup(_ambisonicOrder);			
 		}
 
 
@@ -130,16 +123,16 @@ namespace BRTServices
 		/** \brief Set to initial state
 		*   \eh Nothing is reported to the error handler.*/
 		void Reset() {
-			AmbisonicBIRLoaded = false;
+			AmbisonicBIRLoaded = false;			
 			setupInProgress = false;
-			//bufferSize = 0;
 			impulseResponseLength = 0;
-			//impulseResponseBlockLength_time = 0;
+			
 			IRSubfilterLength = 0;
 			IRNumberOfSubFilters = 0;
 									
 			ambisonicIRTable.clear();
-			ambisonicIRPartitionedTable.clear();			
+			ambisonicIRPartitionedTable.clear();	
+			ambisonicIRPartitionedTable_ListenerPositions.clear();
 
 			ambisonicEncoder.Reset();
 			virtualSpeakers.Reset();
@@ -155,19 +148,19 @@ namespace BRTServices
 		*	\param [in] newData impulse response data to be added
 		*   \eh On error, an error code is reported to the error handler.
 		*/		
-		void AddImpulseResponse(int channel, const THRIRStruct&& newIR)
-		{			
-			// TODO this method has not yet been tested within BRT.
+		//void AddImpulseResponse(int channel, const THRIRStruct&& newIR)
+		//{			
+		//	// TODO this method has not yet been tested within BRT.
 
-			ASSERT(setupInProgress, RESULT_ERROR_NOTSET, "Error trying to ADD  a IR to the Ambisonic IR data. The necessary setup of the class has not been carried out.", "");
-			ASSERT(channel < ambisonicEncoder.GetTotalChannels(), RESULT_ERROR_OUTOFRANGE, "Trying to load AIR data for a bFormat channel of a higher order Ambisonic", "");
-			ASSERT(newIR.leftHRIR.size() == impulseResponseLength, RESULT_ERROR_BADSIZE, "Size of impulse response does not agree with the one specified in the AIR setup", "");
-			ASSERT(newIR.rightHRIR.size() == impulseResponseLength, RESULT_ERROR_BADSIZE, "Size of impulse response does not agree with the one specified in the AIR setup", "");
+		//	ASSERT(setupInProgress, RESULT_ERROR_NOTSET, "Error trying to ADD  a IR to the Ambisonic IR data. The necessary setup of the class has not been carried out.", "");
+		//	ASSERT(channel < ambisonicEncoder.GetTotalChannels(), RESULT_ERROR_OUTOFRANGE, "Trying to load AIR data for a bFormat channel of a higher order Ambisonic", "");
+		//	ASSERT(newIR.leftHRIR.size() == impulseResponseLength, RESULT_ERROR_BADSIZE, "Size of impulse response does not agree with the one specified in the AIR setup", "");
+		//	ASSERT(newIR.rightHRIR.size() == impulseResponseLength, RESULT_ERROR_BADSIZE, "Size of impulse response does not agree with the one specified in the AIR setup", "");
 
-			THRIRPartitionedStruct partitionedFFTIR;
-			//partitionedFFTIR = Calculate_ARIRFFT_partitioned(newIR);		// TODO this method has not been implemented yet
-			AddImpulseResponse(channel, std::move(partitionedFFTIR));
-		}
+		//	THRIRPartitionedStruct partitionedFFTIR;
+		//	//partitionedFFTIR = Calculate_ARIRFFT_partitioned(newIR);		// TODO this method has not been implemented yet
+		//	AddImpulseResponse(channel, std::move(partitionedFFTIR));
+		//}
 
 		/** \brief Add partitioned impulse response for one BFormat channel on one virtual speaker
 		*	\param [in] channel channel where data will be added 
@@ -197,55 +190,61 @@ namespace BRTServices
 		//	}
 		//}
 
-		void AddImpulseResponse(int channel, THRIRPartitionedStruct&& newPartitionedIR)
+		void AddImpulseResponse(int channel, THRIRPartitionedStruct&& newPartitionedIR, const Common::CVector3& _listenerPosition)
 		{			
-			ASSERT(setupInProgress, RESULT_ERROR_NOTSET, "Error trying to ADD  a IR to the Ambisonic IR data. The necessary setup of the class has not been carried out.", "");
+			
+			ASSERT(setupInProgress, RESULT_ERROR_NOTSET, "Error trying to ADD a IR to the Ambisonic IR data. The necessary setup of the class has not been carried out.", "");
 			ASSERT(channel < ambisonicEncoder.GetTotalChannels(), RESULT_ERROR_OUTOFRANGE, "Attempting to load Ambisonic IR data for a channel of a higher Ambisonic order than defined.", "");			
 
-			//// Emplace new channel data in current bFormat_Partitioned data
-			auto it = ambisonicIRPartitionedTable.find(channel);
+			std::lock_guard<std::mutex> l(mutex);
+
+			////// Emplace new channel data in current bFormat_Partitioned data
+			//auto it = ambisonicIRPartitionedTable.find(channel);
+			//if (it != ambisonicIRPartitionedTable.end())
+			//{
+			//	SET_RESULT(RESULT_WARNING, "Error emplacing IR in ambisonicIRPartitioned Table for channel " + std::to_string(channel) +", data already exists.");				
+			//}
+			//else {
+			//	auto returnValue = ambisonicIRPartitionedTable.emplace(channel, std::move(newPartitionedIR));
+			//	if (!returnValue.second) {
+			//		SET_RESULT(RESULT_WARNING, "Error emplacing IR in ambisonicIRPartitioned Table for channel " + std::to_string(channel) + ", unknown reason.");
+			//	}
+			//}
+
+			// new
+			bool error = false;
+			//Check if the listenerPosition is already in the table
+			auto it = ambisonicIRPartitionedTable.find(TVector3(_listenerPosition));
 			if (it != ambisonicIRPartitionedTable.end())
 			{
-				SET_RESULT(RESULT_WARNING, "Error emplacing IR in ambisonicIRPartitioned Table for channel " + std::to_string(channel) +", data already exists.");				
-			}
-			else {
-				auto returnValue = ambisonicIRPartitionedTable.emplace(channel, std::move(newPartitionedIR));
+				auto returnValue = it->second.emplace(channel, std::move(newPartitionedIR));
 				if (!returnValue.second) {
-					SET_RESULT(RESULT_WARNING, "Error emplacing IR in ambisonicIRPartitioned Table for channel " + std::to_string(channel) + ", unknown reason.");
+					error = true;
 				}
 			}
+			else
+			{
+				TAmbisonicIRPartitionedTable irChannelTable;
+				auto returnValue = irChannelTable.emplace(channel, std::forward<THRIRPartitionedStruct>(newPartitionedIR));
+				if (returnValue.second) {
+					auto returnValue2 = ambisonicIRPartitionedTable.emplace(TVector3(_listenerPosition), std::forward<TAmbisonicIRPartitionedTable>(irChannelTable));
+					if (returnValue2.second) {
+						AddToListenersPositions(_listenerPosition);
+					}
+					else {
+						error = true;
+					}
+				}
+				else {
+					error = true;
+				}
+			}
+			if (error) {
+				SET_RESULT(RESULT_WARNING, "Error emplacing IR in ambisonicIRPartitioned Table for channel " + std::to_string(channel) + ", unknown reason.");
+			}
+
 		}
-		
-
-
-		//////////////////////////////////////////////////////
-
-		/** \brief Get data from one BFormat channel
-		*	\details In most cases, GetImpulseResponse should be used rather than this method.
-		*	\param [in] channel channel from which data will be obtained 
-		*	\retval channelData data from channel
-		*	\pre Channel must be filled with data before calling this method 
-		*   \eh On success, RESULT_OK is reported to the error handler.
-		*       On error, an error code is reported to the error handler.
-		*	\sa GetImpulseResponse, AddImpulseResponse
-		*/
-		//const THRIRStruct& GetChannelIR(int channel) const
-		//{
-		//	// TO DO: check if data was added for this channel?
-
-		//	auto it = ambisonicIRTable.find(channel);
-		//	if (it != ambisonicIRTable.end())
-		//	{				
-		//		return it->second; // return a const reference so the caller sees changes.		
-		//	}
-		//	else
-		//	{				
-		//		SET_RESULT(RESULT_ERROR_OUTOFRANGE, "Error trying to get Ambisonic IR data from a ambisonicIR Table, channel not found.");
-		//		return THRIRStruct(); // returning an empty channel.
-		//	}
-		//}
-
-		//////////////////////////////////////////////////////
+					
 
 		/** \brief Get data from one BFormat_Partitioned channel
 		*	\details In most cases, GetImpulseResponse_Partitioned should be used rather than this method.
@@ -255,36 +254,43 @@ namespace BRTServices
 		*   \eh On error, an error code is reported to the error handler.
 		*	\sa GetImpulseResponse_Partitioned, AddImpulseResponse
 		*/
-		const THRIRPartitionedStruct& GetChannelPartitionedIR(int channel) const
-		{
+		//const THRIRPartitionedStruct& GetChannelPartitionedIR(int channel) const
+		//{
 
-			// TO DO: check if data was added for this channel?
+		//	// TO DO: check if data was added for this channel?
 
-			auto it = ambisonicIRPartitionedTable.find(channel);
-			if (it != ambisonicIRPartitionedTable.end())
-			{
-				//SET_RESULT(RESULT_OK, "AIR returned correct channel data");
-				return it->second; // return a const reference so the caller sees changes.		
-			}
-			else
-			{
-				SET_RESULT(RESULT_ERROR_OUTOFRANGE, "Error trying to get Ambisonic IR data from a ambisonicIRPartitioned Table, channel not found.");				
-				return THRIRPartitionedStruct(); // FIXME: returning ref to temporary object
-			}
-		}
+		//	auto it = ambisonicIRPartitionedTable.find(channel);
+		//	if (it != ambisonicIRPartitionedTable.end())
+		//	{
+		//		//SET_RESULT(RESULT_OK, "AIR returned correct channel data");
+		//		return it->second; // return a const reference so the caller sees changes.		
+		//	}
+		//	else
+		//	{
+		//		SET_RESULT(RESULT_ERROR_OUTOFRANGE, "Error trying to get Ambisonic IR data from a ambisonicIRPartitioned Table, channel not found.");				
+		//		return THRIRPartitionedStruct(); // FIXME: returning ref to temporary object
+		//	}
+		//}
 
-		const std::vector<CMonoBuffer<float>>& GetChannelPartitionedIR_OneEar(int channel, Common::T_ear _ear)
-		{			
-			std::lock_guard<std::mutex> l(mutex);
-			if (!AmbisonicBIRLoaded) { 
-				SET_RESULT(RESULT_ERROR_NOTSET, "Error trying to get Ambisonic IR data from a ambisonicIRPartitioned Table. The necessary setup of the class has not been carried out.");
-				return std::vector<CMonoBuffer<float>>(); // FIXME: returning ref to temporary object
-			}
+		
+		const std::vector<CMonoBuffer<float>>& GetChannelPartitionedIR_OneEar(int channel, Common::T_ear _ear, Common::CTransform& _listenerLocation) {
+						
 			
-			auto it = ambisonicIRPartitionedTable.find(channel);
-			if (it != ambisonicIRPartitionedTable.end())
-			{
-				//SET_RESULT(RESULT_OK, "ABIR returned correct channel data");
+			if (!AmbisonicBIRLoaded || setupInProgress) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "Error trying to get Ambisonic IR data from a ambisonicIRPartitioned Table. The necessary setup of the class has not been carried out.");
+				return std::vector<CMonoBuffer<float>>(); 
+			}
+
+			std::lock_guard<std::mutex> l(mutex);
+
+			// Find Table to use
+			Common::CVector3 nearestListenerPosition = FindNearestListenerPosition(_listenerLocation.GetPosition());			
+			auto selectedTable = ambisonicIRPartitionedTable.find(TVector3(nearestListenerPosition));
+			
+			// Find channel into the selected table
+			auto it = selectedTable->second.find(channel);
+			if (it != selectedTable->second.end())
+			{				
 				if (_ear == Common::T_ear::LEFT) {
 					return it->second.leftHRIR_Partitioned;
 				}
@@ -293,9 +299,36 @@ namespace BRTServices
 				}
 			}
 			SET_RESULT(RESULT_ERROR_OUTOFRANGE, "Error trying to get Ambisonic IR data from a ambisonicIRPartitioned Table. Either the channel is not found or the requested ear did not have a valid parameter.");
-			return std::vector<CMonoBuffer<float>>(); // FIXME: returning ref to temporary object
-			
+			return std::vector<CMonoBuffer<float>>(); 
 		}
+
+
+		//const std::vector<CMonoBuffer<float>>& GetChannelPartitionedIR_OneEar(int channel, Common::T_ear _ear)
+		//{			
+
+		//	if (setupInProgress) {return std::vector<CMonoBuffer<float>>(); }
+
+		//	std::lock_guard<std::mutex> l(mutex);
+		//	if (!AmbisonicBIRLoaded) { 
+		//		SET_RESULT(RESULT_ERROR_NOTSET, "Error trying to get Ambisonic IR data from a ambisonicIRPartitioned Table. The necessary setup of the class has not been carried out.");
+		//		return std::vector<CMonoBuffer<float>>(); // FIXME: returning ref to temporary object
+		//	}
+		//	
+		//	auto it = ambisonicIRPartitionedTable.find(channel);
+		//	if (it != ambisonicIRPartitionedTable.end())
+		//	{
+		//		//SET_RESULT(RESULT_OK, "ABIR returned correct channel data");
+		//		if (_ear == Common::T_ear::LEFT) {
+		//			return it->second.leftHRIR_Partitioned;
+		//		}
+		//		else if (_ear == Common::T_ear::RIGHT) {
+		//			return it->second.rightHRIR_Partitioned;
+		//		}
+		//	}
+		//	SET_RESULT(RESULT_ERROR_OUTOFRANGE, "Error trying to get Ambisonic IR data from a ambisonicIRPartitioned Table. Either the channel is not found or the requested ear did not have a valid parameter.");
+		//	return std::vector<CMonoBuffer<float>>(); // FIXME: returning ref to temporary object
+		//	
+		//}
 				
 		//////////////////////////////////////////////////////
 
@@ -342,53 +375,111 @@ namespace BRTServices
 			return IRNumberOfSubFilters;
 		}
 
-
-
-//		/** \brief Returns true when the data is loaded and ready to be used
-//		*   \eh Nothing is reported to the error handler.*/
-//		bool IsInitialized() {
-//#ifdef USE_FREQUENCY_COVOLUTION_WITHOUT_PARTITIONS_REVERB 
-//			return impulseResponseLength != 0 && impulseResponseLength != 0 && setupDone && bFormat.size() > 0;
-//#else
-//			return impulseResponseLength != 0 && impulseResponseLength != 0 && setupDone && bFormat_Partitioned.size() > 0;
-//#endif
-//		}
-
-		//////////////////////////////////////////////////////
 		
+		
+		/** \brief Add impulse responses from HRTF data
+		*
+		*/
+		//bool AddImpulseResponsesFromHRTF(std::shared_ptr<BRTServices::CHRTF> _listenerHRTF) {
 
-		// NEW 
-		//bool GetHRIRofVirtualSpeakerPositions(std::shared_ptr<BRTServices::CHRTF> _listenerHRTF, std::vector<THRIRPartitionedStruct> & virtualSpeakersData) {
+		//	std::lock_guard<std::mutex> l(mutex);
+
+		//	impulseResponseLength = _listenerHRTF->GetHRIRLength();	// TODO Do we need this?
+		//	IRSubfilterLength = _listenerHRTF->GetHRIRSubfilterLength();
+		//	IRNumberOfSubFilters = _listenerHRTF->GetHRIRNumberOfSubfilters();
+		//							
+		//	std::vector<std::vector< CMonoBuffer<float>>> ambisonicChannelsLeft;
+		//	std::vector<std::vector< CMonoBuffer<float>>> ambisonicChannelsRight;
+		//	ambisonicChannelsLeft.resize(ambisonicEncoder.GetTotalChannels(), std::vector<CMonoBuffer<float>>(_listenerHRTF->GetHRIRNumberOfSubfilters(), CMonoBuffer<float>(_listenerHRTF->GetHRIRSubfilterLength(), 0)));
+		//	ambisonicChannelsRight.resize(ambisonicEncoder.GetTotalChannels(), std::vector<CMonoBuffer<float>>(_listenerHRTF->GetHRIRNumberOfSubfilters(), CMonoBuffer<float>(_listenerHRTF->GetHRIRSubfilterLength(), 0)));
+
+		//	std::vector<orientation> virtualSpeakerPositions = virtualSpeakers.GetVirtualSpeakersPositions();
+
+		//	//1. Get BRIR values for each channel
+		//	for (int i = 0; i < virtualSpeakerPositions.size(); i++) {
+		//		THRIRPartitionedStruct oneVirtualSpeakersData;
+
+		//		//oneVirtualSpeakersData = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
+		//		oneVirtualSpeakersData.leftHRIR_Partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::LEFT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
+		//		oneVirtualSpeakersData.rightHRIR_Partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::RIGHT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
+
+		//		if ((oneVirtualSpeakersData.leftHRIR_Partitioned.size() != _listenerHRTF->GetHRIRNumberOfSubfilters()) || (oneVirtualSpeakersData.rightHRIR_Partitioned.size() != _listenerHRTF->GetHRIRNumberOfSubfilters())) {
+		//			SET_RESULT(RESULT_ERROR_BADSIZE, "The HRIR of a virtual speaker does not have an appropriate value.");
+		//			return false;
+		//		}
+		//		
+		//		ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.leftHRIR_Partitioned, ambisonicChannelsLeft, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);
+		//		ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.rightHRIR_Partitioned, ambisonicChannelsRight, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);																	
+		//	}
 		//	
-		//	std::vector<orientation> virtualSpeakerPositions = GetVirtualSpeakersPositions();			
+		//	for (int i = 0; i < ambisonicEncoder.GetTotalChannels(); i++) {				
+		//		THRIRPartitionedStruct oneAmbisonicChannel;
+		//		oneAmbisonicChannel.leftHRIR_Partitioned = ambisonicChannelsLeft[i];
+		//		oneAmbisonicChannel.rightHRIR_Partitioned = ambisonicChannelsRight[i];
+		//		AddImpulseResponse(i, std::move(oneAmbisonicChannel));
+		//	}
+		//	return true;
+		//}
+		//
+		///** \brief Add impulse responses from HRTF data
+		//*
+		//*/
+		//bool AddImpulseResponsesFromHRBRIR(std::shared_ptr<BRTServices::CHRBRIR> _listenerHRBRIR) {
+
+		//	std::lock_guard<std::mutex> l(mutex);
+
+		//	impulseResponseLength = _listenerHRBRIR->GetHRIRLength();	// TODO Do we need this?
+		//	IRSubfilterLength = _listenerHRBRIR->GetHRIRSubfilterLength();
+		//	IRNumberOfSubFilters = _listenerHRBRIR->GetHRIRNumberOfSubfilters();
+
+		//	std::vector<std::vector< CMonoBuffer<float>>> ambisonicChannelsLeft;
+		//	std::vector<std::vector< CMonoBuffer<float>>> ambisonicChannelsRight;
+		//	ambisonicChannelsLeft.resize(ambisonicEncoder.GetTotalChannels(), std::vector<CMonoBuffer<float>>(_listenerHRBRIR->GetHRIRNumberOfSubfilters(), CMonoBuffer<float>(_listenerHRBRIR->GetHRIRSubfilterLength(), 0)));
+		//	ambisonicChannelsRight.resize(ambisonicEncoder.GetTotalChannels(), std::vector<CMonoBuffer<float>>(_listenerHRBRIR->GetHRIRNumberOfSubfilters(), CMonoBuffer<float>(_listenerHRBRIR->GetHRIRSubfilterLength(), 0)));
+
+		//	std::vector<orientation> virtualSpeakerPositions = virtualSpeakers.GetVirtualSpeakersPositions();
 
 		//	//1. Get BRIR values for each channel
 		//	for (int i = 0; i < virtualSpeakerPositions.size(); i++) {
 		//		THRIRPartitionedStruct oneVirtualSpeakersData;
 		//		
-		//		oneVirtualSpeakersData							= _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
-		//		oneVirtualSpeakersData.leftHRIR_Partitioned		= _listenerHRTF->GetHRIR_partitioned(Common::T_ear::LEFT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
-		//		oneVirtualSpeakersData.rightHRIR_Partitioned	= _listenerHRTF->GetHRIR_partitioned(Common::T_ear::RIGHT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
+		//		oneVirtualSpeakersData.leftHRIR_Partitioned = _listenerHRBRIR->GetHRIRPartitioned(Common::T_ear::LEFT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true, Common::CTransform(), Common::CTransform());
+		//		oneVirtualSpeakersData.rightHRIR_Partitioned = _listenerHRBRIR->GetHRIRPartitioned(Common::T_ear::RIGHT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true, Common::CTransform(), Common::CTransform());
 
-		//		if ((oneVirtualSpeakersData.leftHRIR_Partitioned.size != _listenerHRTF->GetHRIRNumberOfSubfilters()) || (oneVirtualSpeakersData.rightHRIR_Partitioned.size != _listenerHRTF->GetHRIRNumberOfSubfilters())) {
+		//		if ((oneVirtualSpeakersData.leftHRIR_Partitioned.size() != _listenerHRBRIR->GetHRIRNumberOfSubfilters()) || (oneVirtualSpeakersData.rightHRIR_Partitioned.size() != _listenerHRBRIR->GetHRIRNumberOfSubfilters())) {
 		//			SET_RESULT(RESULT_ERROR_BADSIZE, "The HRIR of a virtual speaker does not have an appropriate value.");
 		//			return false;
-		//		}		
+		//		}
 
-		//		virtualSpeakersData.push_back(oneVirtualSpeakersData);
-		//		
+		//		ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.leftHRIR_Partitioned, ambisonicChannelsLeft, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);
+		//		ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.rightHRIR_Partitioned, ambisonicChannelsRight, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);
 		//	}
-		//	return true;			
+
+		//	for (int i = 0; i < ambisonicEncoder.GetTotalChannels(); i++) {
+		//		THRIRPartitionedStruct oneAmbisonicChannel;
+		//		oneAmbisonicChannel.leftHRIR_Partitioned = ambisonicChannelsLeft[i];
+		//		oneAmbisonicChannel.rightHRIR_Partitioned = ambisonicChannelsRight[i];
+		//		AddImpulseResponse(i, std::move(oneAmbisonicChannel));
+		//	}
+		//	return true;
 		//}
 
-		bool AddImpulseResponsesFromHRTF(std::shared_ptr<BRTServices::CHRTF> _listenerHRTF) {
+		/** \brief Add impulse responses from HRTF or HRBRIR data
+		*
+		*/
+		bool AddImpulseResponsesFromHRIR(std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF) {
 
-			std::lock_guard<std::mutex> l(mutex);
+			if (!setupInProgress) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "Error trying to add IR to the Ambisonic IR Table. The necessary setup of the class has not been carried out.");
+				return false;
+			}
+
+			//std::lock_guard<std::mutex> l(mutex);
 
 			impulseResponseLength = _listenerHRTF->GetHRIRLength();	// TODO Do we need this?
 			IRSubfilterLength = _listenerHRTF->GetHRIRSubfilterLength();
 			IRNumberOfSubFilters = _listenerHRTF->GetHRIRNumberOfSubfilters();
-									
+
 			std::vector<std::vector< CMonoBuffer<float>>> ambisonicChannelsLeft;
 			std::vector<std::vector< CMonoBuffer<float>>> ambisonicChannelsRight;
 			ambisonicChannelsLeft.resize(ambisonicEncoder.GetTotalChannels(), std::vector<CMonoBuffer<float>>(_listenerHRTF->GetHRIRNumberOfSubfilters(), CMonoBuffer<float>(_listenerHRTF->GetHRIRSubfilterLength(), 0)));
@@ -396,38 +487,84 @@ namespace BRTServices
 
 			std::vector<orientation> virtualSpeakerPositions = virtualSpeakers.GetVirtualSpeakersPositions();
 
-			//1. Get BRIR values for each channel
-			for (int i = 0; i < virtualSpeakerPositions.size(); i++) {
-				THRIRPartitionedStruct oneVirtualSpeakersData;
 
-				//oneVirtualSpeakersData = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
-				oneVirtualSpeakersData.leftHRIR_Partitioned = _listenerHRTF->GetHRIR_partitioned(Common::T_ear::LEFT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
-				oneVirtualSpeakersData.rightHRIR_Partitioned = _listenerHRTF->GetHRIR_partitioned(Common::T_ear::RIGHT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
+			std::vector<Common::CVector3> listenerPositions = _listenerHRTF->GetListenerPositions();
 
-				if ((oneVirtualSpeakersData.leftHRIR_Partitioned.size() != _listenerHRTF->GetHRIRNumberOfSubfilters()) || (oneVirtualSpeakersData.rightHRIR_Partitioned.size() != _listenerHRTF->GetHRIRNumberOfSubfilters())) {
-					SET_RESULT(RESULT_ERROR_BADSIZE, "The HRIR of a virtual speaker does not have an appropriate value.");
-					return false;
+			for (Common::CVector3 _listenerPosition : listenerPositions) {
+				//1. Get BRIR values for each channel
+				for (int i = 0; i < virtualSpeakerPositions.size(); i++) {
+					THRIRPartitionedStruct oneVirtualSpeakersData;
+
+					//oneVirtualSpeakersData = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
+					oneVirtualSpeakersData.leftHRIR_Partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::LEFT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true, Common::CTransform(_listenerPosition));
+					oneVirtualSpeakersData.rightHRIR_Partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::RIGHT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true, Common::CTransform(_listenerPosition));
+
+					if ((oneVirtualSpeakersData.leftHRIR_Partitioned.size() != _listenerHRTF->GetHRIRNumberOfSubfilters()) || (oneVirtualSpeakersData.rightHRIR_Partitioned.size() != _listenerHRTF->GetHRIRNumberOfSubfilters())) {
+						SET_RESULT(RESULT_ERROR_BADSIZE, "The HRIR of a virtual speaker does not have an appropriate value.");
+						return false;
+					}
+
+					ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.leftHRIR_Partitioned, ambisonicChannelsLeft, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);
+					ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.rightHRIR_Partitioned, ambisonicChannelsRight, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);
 				}
-				
-				ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.leftHRIR_Partitioned, ambisonicChannelsLeft, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);
-				ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.rightHRIR_Partitioned, ambisonicChannelsRight, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);																	
-			}
-			
-			for (int i = 0; i < ambisonicEncoder.GetTotalChannels(); i++) {				
-				THRIRPartitionedStruct oneAmbisonicChannel;
-				oneAmbisonicChannel.leftHRIR_Partitioned = ambisonicChannelsLeft[i];
-				oneAmbisonicChannel.rightHRIR_Partitioned = ambisonicChannelsRight[i];
-				AddImpulseResponse(i, std::move(oneAmbisonicChannel));
+
+				for (int i = 0; i < ambisonicEncoder.GetTotalChannels(); i++) {
+					THRIRPartitionedStruct oneAmbisonicChannel;
+					oneAmbisonicChannel.leftHRIR_Partitioned = ambisonicChannelsLeft[i];
+					oneAmbisonicChannel.rightHRIR_Partitioned = ambisonicChannelsRight[i];
+					AddImpulseResponse(i, std::move(oneAmbisonicChannel), _listenerPosition);
+				}
 			}
 			return true;
 		}
-		
+
 
 	private:
 		
+
+		////////////////////
+		// PRIVATE METHODS
+		////////////////////
+
+		/** 
+		* \brief Add listener position to the list of listener positions
+		**/
+		void AddToListenersPositions(const Common::CVector3& _listenerPosition) {
+			//Check if the listenerPosition is already in the table
+			auto it = std::find(ambisonicIRPartitionedTable_ListenerPositions.begin(), ambisonicIRPartitionedTable_ListenerPositions.end(), _listenerPosition);
+			if (it == ambisonicIRPartitionedTable_ListenerPositions.end()) {
+				ambisonicIRPartitionedTable_ListenerPositions.push_back(_listenerPosition);
+			}
+		}
+
+		/**
+		 * @brief Find the nearest position of the listener stored in the data table.
+		 * @param _listenerPosition listener position to compare
+		 * @return Closest listener position
+		 */
+		Common::CVector3 FindNearestListenerPosition(const Common::CVector3& _listenerPosition) const {
+
+			Common::CTransform _listenerLocation(_listenerPosition);
+			Common::CTransform nearestListenerLocation(ambisonicIRPartitionedTable_ListenerPositions[0]);
+			float minDistance = _listenerLocation.GetVectorTo(nearestListenerLocation).GetDistance();
+
+			for (auto it = ambisonicIRPartitionedTable_ListenerPositions.begin() + 1; it != ambisonicIRPartitionedTable_ListenerPositions.end(); it++) {
+
+				float distance = _listenerLocation.GetVectorTo(Common::CTransform(*it)).GetDistance();
+				if (distance < minDistance) {
+					minDistance = distance;
+					nearestListenerLocation = *it;
+				}
+			}
+			return nearestListenerLocation.GetPosition();
+		}
+
+		//////////////////////
+		// PRIVATE ATRIBUTES
+		//////////////////////
+
 		mutable std::mutex mutex;
-		CVirtualSpeakers virtualSpeakers;		// To Store virtual speakers data
-		TDataOrigin dataOrigin;					// To know the origin of the data 
+		CVirtualSpeakers virtualSpeakers;		// To Store virtual speakers data		
 		bool setupInProgress;						// To know if the setup has started
 		bool AmbisonicBIRLoaded;							// To know if the setup has been done
 		//int bufferSize;							// Input source length		
@@ -438,10 +575,16 @@ namespace BRTServices
 		
 			
 		TAmbisonicIRTable ambisonicIRTable;								// IR data (usally in time domain)
-		TAmbisonicIRPartitionedTable ambisonicIRPartitionedTable;		// IR data partitioned and transformed (FFT)
+		//TAmbisonicIRPartitionedTable ambisonicIRPartitionedTable;		// IR data partitioned and transformed (FFT)
+		TAmbisonicIRPartitionedTableByPosition ambisonicIRPartitionedTable;		// IR data partitioned and transformed (FFT) ordered by listener position
+
+		std::vector<Common::CVector3>	ambisonicIRPartitionedTable_ListenerPositions;
+
 		Common::CAmbisonicEncoder ambisonicEncoder;						// To do the ambisonic encoding
 
-		Common::CGlobalParameters globalParameters;
+		Common::CGlobalParameters globalParameters;						// To store global parameters
+
+		
 	};
 }
 

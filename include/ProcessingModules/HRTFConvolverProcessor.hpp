@@ -22,17 +22,20 @@
 #ifndef HRTF_CONVOLVER_PROCESSOR_
 #define HRTF_CONVOLVER_PROCESSOR_
 
-#include <Base/ProcessorBase.hpp>
-#include <Base/EntryPoint.hpp>
-#include <Common/UPCAnechoic.hpp>
-#include <Common/Buffer.hpp>
-#include <ProcessingModules/HRTFConvolver.hpp>
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <Base/AdvancedEntryPointManager.hpp>
+#include <Base/ExitPointManager.hpp>
+#include <Common/UPCAnechoic.hpp>
+#include <Common/Buffer.hpp>
+#include <ServiceModules/ServicesBase.hpp>
+#include <ServiceModules/HRBRIR.hpp>
+#include <ProcessingModules/HRTFConvolver.hpp>
+
 
 namespace BRTProcessing {
-    class CHRTFConvolverProcessor : public BRTBase::CProcessorBase, public CHRTFConvolver {
+    class CHRTFConvolverProcessor : public BRTBase::CAdvancedEntryPointManager, public BRTBase::CExitPointManager, public CHRTFConvolver {
 		
     public:
 		CHRTFConvolverProcessor() {
@@ -41,6 +44,7 @@ namespace BRTProcessing {
             CreatePositionEntryPoint("sourcePosition");
 			CreatePositionEntryPoint("listenerPosition");           
 			CreateHRTFPtrEntryPoint("listenerHRTF");
+			CreateHRBRIRPtrEntryPoint("listenerHRBRIR");
 
 			CreateIDEntryPoint("sourceID");
 			CreateIDEntryPoint("listenerID");
@@ -53,24 +57,41 @@ namespace BRTProcessing {
 		 * @brief Implementation of CProcessorBase virtual method
 		*/
 		void AllEntryPointsAllDataReady() {
-			
+
 			std::lock_guard<std::mutex> l(mutex);
 
 			CMonoBuffer<float> outLeftBuffer;
 			CMonoBuffer<float> outRightBuffer;
 
 			//if (_entryPointId == "inputSamples") {
-				CMonoBuffer<float> buffer = GetSamplesEntryPoint("inputSamples")->GetData();
-				Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
-				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();												
-				std::weak_ptr<BRTServices::CHRTF> listenerHRTF = GetHRTFPtrEntryPoint("listenerHRTF")->GetData();
-				if (buffer.size() != 0) {
+			CMonoBuffer<float> buffer = GetSamplesEntryPoint("inputSamples")->GetData();
+
+			if (buffer.size() == 0) { return; }
+
+			Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
+			Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
+			
+			// Check process flag
+			if (!CHRTFConvolver::IsSpatializationEnabled())
+			{
+				outLeftBuffer = buffer;
+				outRightBuffer = buffer;				
+			}
+			else {
+				std::weak_ptr<BRTServices::CServicesBase> listenerHRTF = GetHRTFPtrEntryPoint("listenerHRTF")->GetData();
+				std::weak_ptr<BRTServices::CServicesBase> listenerHRBRIR = GetHRBRIRPtrEntryPoint("listenerHRBRIR")->GetData();
+
+				if (listenerHRTF.lock() != nullptr) { 
 					Process(buffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerHRTF);
-					GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
-					GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);
-				}				
-				//this->ResetEntryPointWaitingList();				
-			//}            
+				} else if (listenerHRBRIR.lock() != nullptr) {				
+					Process(buffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerHRBRIR);
+				} else {
+					SET_RESULT(RESULT_ERROR_NOTSET, "HRTF Convolver error: No HRTF or HRBRIR data available");
+					return;
+				}
+			}	
+			GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
+			GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);				
         }
 
 		void UpdateCommand() {					

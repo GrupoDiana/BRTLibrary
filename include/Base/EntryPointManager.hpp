@@ -81,10 +81,15 @@ namespace BRTBase {
             EntryPointCreated(entryPointID, _notify);
         }
 
-        void CreateABIRPtrEntryPoint(std::string entryPointID, bool _notify = false) {
-            //std::shared_ptr<BRTBase::CEntryPointABIRPtr> _newEntryPoint = std::make_shared<BRTBase::CEntryPointABIRPtr>(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+        void CreateABIRPtrEntryPoint(std::string entryPointID, bool _notify = false) {            
             std::shared_ptr<BRTBase::CEntryPointABIRPtr> _newEntryPoint = CreateGenericEntryPoint<BRTBase::CEntryPointABIRPtr>(entryPointID, _notify);
             abirPtrEntryPoints.push_back(_newEntryPoint);
+            EntryPointCreated(entryPointID, _notify);
+        }
+
+        void CreateHRBRIRPtrEntryPoint(std::string entryPointID, bool _notify = false) {            
+            std::shared_ptr<BRTBase::CEntryPointHRBRIRPtr> _newEntryPoint = CreateGenericEntryPoint<BRTBase::CEntryPointHRBRIRPtr>(entryPointID, _notify);
+            hrbrirPtrEntryPoints.push_back(_newEntryPoint);
             EntryPointCreated(entryPointID, _notify);
         }
 
@@ -178,7 +183,7 @@ namespace BRTBase {
                 ASSERT(false, RESULT_ERROR_INVALID_PARAM, "There is no entry point with this id " + entryPointID, "");
             }
         }
-
+        
         void disconnectHRTFEntryTo(std::shared_ptr<BRTBase::CExitPointHRTFPtr> _exitPoint, std::string entryPointID) {
             std::shared_ptr<BRTBase::CEntryPointHRTFPtr> _entryPoint = GetHRTFPtrEntryPoint(entryPointID);
             if (_entryPoint) {
@@ -189,6 +194,29 @@ namespace BRTBase {
                 ASSERT(false, RESULT_ERROR_INVALID_PARAM, "There is no entry point with this id " + entryPointID, "");
             }
         }
+        //
+        void connectHRBRIREntryTo(std::shared_ptr<BRTBase::CExitPointHRBRIRPtr> _exitPoint, std::string entryPointID) {
+            std::shared_ptr<BRTBase::CEntryPointHRBRIRPtr> _entryPoint = GetHRBRIRPtrEntryPoint(entryPointID);
+            if (_entryPoint) {
+                _exitPoint->attach(*_entryPoint.get());
+                SET_RESULT(RESULT_OK, "Connection done correctly with this entry point " + entryPointID);
+            }
+            else {
+                ASSERT(false, RESULT_ERROR_INVALID_PARAM, "There is no entry point with this id " + entryPointID, "");
+            }
+        }
+
+        void disconnectHRBRIREntryTo(std::shared_ptr<BRTBase::CExitPointHRBRIRPtr> _exitPoint, std::string entryPointID) {
+            std::shared_ptr<BRTBase::CEntryPointHRBRIRPtr> _entryPoint = GetHRBRIRPtrEntryPoint(entryPointID);
+            if (_entryPoint) {
+                _exitPoint->detach(_entryPoint.get());
+                SET_RESULT(RESULT_OK, "Disconnection done correctly with this entry point " + entryPointID);
+            }
+            else {
+                ASSERT(false, RESULT_ERROR_INVALID_PARAM, "There is no entry point with this id " + entryPointID, "");
+            }
+        }
+        //
 
         void connectILDEntryTo(std::shared_ptr<BRTBase::CExitPointILDPtr> _exitPoint, std::string entryPointID) {
             std::shared_ptr<BRTBase::CEntryPointILDPtr> _entryPoint = GetILDPtrEntryPoint(entryPointID);
@@ -275,6 +303,13 @@ namespace BRTBase {
             return nullptr;
         }
 
+        std::shared_ptr<BRTBase::CEntryPointHRBRIRPtr >  GetHRBRIRPtrEntryPoint(std::string _id) {
+            for (auto& it : hrbrirPtrEntryPoints) {
+                if (it->GetID() == _id) { return it; }
+            }
+            return nullptr;
+        }
+
         std::shared_ptr<BRTBase::CEntryPointILDPtr >  GetILDPtrEntryPoint(std::string _id) {
             for (auto& it : ildPtrEntryPoints) {
                 if (it->GetID() == _id) { return it; }
@@ -328,6 +363,7 @@ namespace BRTBase {
         std::vector<std::shared_ptr <BRTBase::CEntryPointILDPtr>> ildPtrEntryPoints;
         std::vector<std::shared_ptr <BRTBase::CEntryPointABIRPtr>> abirPtrEntryPoints;
         std::vector<std::shared_ptr <BRTBase::CEntryPointID> > idEntryPoints;
+        std::vector<std::shared_ptr <BRTBase::CEntryPointHRBRIRPtr>> hrbrirPtrEntryPoints;
         
     };
 };

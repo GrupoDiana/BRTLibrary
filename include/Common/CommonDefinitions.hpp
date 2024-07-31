@@ -79,6 +79,11 @@ namespace Common {
 		return diff < epsilon;
 	}
 
+	static bool AreSame(Common::CVector3 a, Common::CVector3 b, float epsilon)
+	{
+		return AreSame(a.x, b.x, epsilon) && AreSame(a.y, b.y, epsilon) && AreSame(a.z, b.z, epsilon);
+	}
+
 	/** \brief This method check if a number is a power of 2
 		*	\param [in] integer to check
 		*	\param [out] return true if the number is power of two

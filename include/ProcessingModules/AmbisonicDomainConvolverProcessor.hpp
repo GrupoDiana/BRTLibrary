@@ -22,17 +22,18 @@
 #ifndef _AMBISONIC_DOMAIN_CONVOLVER_PROCESSOR_
 #define _AMBISONIC_DOMAIN_CONVOLVER_PROCESSOR_
 
-#include <Base/ProcessorBase.hpp>
-#include <Base/EntryPoint.hpp>
-#include <Common/UPCAnechoic.hpp>
-#include <Common/Buffer.hpp>
-#include <ProcessingModules/AmbisonicDomainConvolver.hpp>
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <Base/AdvancedEntryPointManager.hpp>
+#include <Base/ExitPointManager.hpp>
+#include <Common/UPCAnechoic.hpp>
+#include <Common/Buffer.hpp>
+#include <ProcessingModules/AmbisonicDomainConvolver.hpp>
+
 
 namespace BRTProcessing {
-    class CAmbisonicDomainConvolverProcessor : public BRTBase::CProcessorBase, public CAmbisonicDomainConvolver {
+    class CAmbisonicDomainConvolverProcessor : public BRTBase::CAdvancedEntryPointManager, public BRTBase::CExitPointManager, public CAmbisonicDomainConvolver {
 		
     public:
 		CAmbisonicDomainConvolverProcessor(Common::T_ear _earToProcess) : CAmbisonicDomainConvolver(_earToProcess) {
@@ -40,6 +41,7 @@ namespace BRTProcessing {
 			CreateABIRPtrEntryPoint("listenerAmbisonicBIR");
 			CreateIDEntryPoint("sourceID");
 			CreateIDEntryPoint("listenerID");
+			CreatePositionEntryPoint("listenerPosition");
             CreateSamplesExitPoint("outSamples");			            
         }
 		
@@ -61,18 +63,16 @@ namespace BRTProcessing {
 		void AllEntryPointsAllDataReady() {
 			
 			std::lock_guard<std::mutex> l(mutex);
-
+			if (channelsBuffer.size() == 0) { return;	}
 			CMonoBuffer<float> outBuffer;			
-			//if (_entryPointId == "inputChannels") {
-				
-				std::weak_ptr<BRTServices::CAmbisonicBIR> listenerABIR = GetABIRPtrEntryPoint("listenerAmbisonicBIR")->GetData();
-				if (channelsBuffer.size() != 0) {
-					Process(channelsBuffer, outBuffer, listenerABIR);
-					GetSamplesExitPoint("outSamples")->sendData(outBuffer);					
-					channelsBuffer.clear();
-				}				
-				//this->resetUpdatingStack();				
-			//}            
+							
+			std::weak_ptr<BRTServices::CAmbisonicBIR> listenerABIR = GetABIRPtrEntryPoint("listenerAmbisonicBIR")->GetData();
+			Common::CTransform _listenerTransform = GetPositionEntryPoint("listenerPosition")->GetData();
+			Process(channelsBuffer, outBuffer, listenerABIR, _listenerTransform);
+			GetSamplesExitPoint("outSamples")->sendData(outBuffer);					
+			channelsBuffer.clear();
+			
+			
         }
 
 		void UpdateCommand() {					

@@ -25,12 +25,13 @@
 
 #include <thread>
 #include "SourceModelBase.hpp"
+#include "ListenerBase.hpp"
 #include "ListenerModelBase.hpp"
 #include "third_party_libraries/nlohmann/json.hpp"
 
 namespace BRTBase {
 	using json = nlohmann::json;
-
+		
 	class CBRTManager {
 
 	public:
@@ -62,6 +63,82 @@ namespace BRTBase {
 			return control;
 		}
 		
+		/**
+		 * @brief 
+		 * @param _listenerID 
+		 * @return 
+		 */
+		template <typename T>
+		std::shared_ptr<T> CreateListener(const std::string& _listenerID) {
+			try
+			{
+				if (!setupModeActivated) {
+					SET_RESULT(RESULT_ERROR_NOTALLOWED, "BRT library is not in configuration mode");
+					return nullptr;
+				}
+				auto it = std::find_if(listeners.begin(), listeners.end(), [&_listenerID](std::shared_ptr<CListenerBase>& listenerItem) { return listenerItem->GetID() == _listenerID; });
+				if (it != listeners.end()) {
+					SET_RESULT(RESULT_ERROR_NOTALLOWED, "A Listener with such an ID already exists.");
+					return nullptr;
+				}
+				std::shared_ptr<T> newListener(new T(_listenerID, this));
+				ConnectModulesCommand(newListener);
+				listeners.push_back(newListener);
+				SET_RESULT(RESULT_OK, "Listener created succesfully");
+				return newListener;
+			}
+			catch (std::bad_alloc& ba)
+			{
+				ASSERT(false, RESULT_ERROR_BADALLOC, ba.what(), "");
+				return nullptr;
+			}
+		}
+
+
+		/**
+		 * @brief Returns pointer to a listener found by its ID
+		 * @tparam T Listener class model
+		 * @param _listenerID listenerID
+		 * @return Pointer to listener if exist, if not returns nullptr
+		*/		
+		template <typename T>
+		std::shared_ptr<T> GetListener(const std::string& _listenerID) {
+			for (auto& it : listeners) {
+				if (it->GetID() == _listenerID) {
+					return it;
+				}
+			}
+			return nullptr;
+		}
+
+		/**
+		 * @brief Returns pointer to a listener found by its ID
+		 * @tparam T Listener class model
+		 * @param _listenerID listenerID
+		 * @return Pointer to listener if exist, if not returns nullptr
+		*/		
+		std::shared_ptr<CListener> GetListener(const std::string& _listenerID) {
+			for (auto& it : listeners) {
+				if (it->GetID() == _listenerID) {
+					std::shared_ptr<BRTBase::CListener> _listener = std::dynamic_pointer_cast<BRTBase::CListener>(it);
+					return _listener;
+				}
+			}
+			return nullptr;
+		}
+
+		/**
+		 * @brief Get a list of listener ID
+		 * @return listener ID list
+		 */
+		std::vector<std::string> GetListenerIDs() {
+			std::vector<std::string> listenerIDs;
+			for (auto& it : listeners) {
+				listenerIDs.push_back(it->GetID());
+			}
+			return listenerIDs;
+		}
+
 		/**
 		 * @brief Creates a new source and returns a pointer it. This pointer is also saved in a vector.
 		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
@@ -102,22 +179,22 @@ namespace BRTBase {
 		 * @return Returns the pointer to the listener if it could be created, otherwise returns a null pointer.
 		*/
 		template <typename T>
-		std::shared_ptr<T> CreateListener(const std::string& _listenerID) {			
+		std::shared_ptr<T> CreateListenerModel(const std::string& _listenerID) {			
 			try
 			{
 				if (!setupModeActivated) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "BRT library is not in configuration mode");
 					return nullptr;
 				}
-				auto it = std::find_if(listeners.begin(), listeners.end(), [&_listenerID](std::shared_ptr<CListenerModelBase> listenerItem) { return listenerItem->GetID() == _listenerID; });
-				if (it != listeners.end()) {
+				auto it = std::find_if(listenerModels.begin(), listenerModels.end(), [&_listenerID](std::shared_ptr<CListenerModelBase>& listenerItem) { return listenerItem->GetID() == _listenerID; });
+				if (it != listenerModels.end()) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "A listener with such an ID already exists.");
 					return nullptr;
 				}
 
 				std::shared_ptr<T> newListener = std::make_shared<T>(_listenerID, this);
 				ConnectModulesCommand(newListener);
-				listeners.push_back(newListener);
+				listenerModels.push_back(newListener);
 				SET_RESULT(RESULT_OK, "Listener created succesfully");
 				return newListener;
 			}
@@ -135,8 +212,8 @@ namespace BRTBase {
 		 * @return Pointer to listener if exist, if not returns nullptr
 		*/
 		template <typename T>
-		std::shared_ptr<T> GetListener(const std::string& _listenerID) { 		
-			for (auto& it : listeners) {
+		std::shared_ptr<T> GetListenerModel(const std::string& _listenerID) { 		
+			for (auto& it : listenerModels) {
 				if (it->GetID() == _listenerID) {
 					return it;
 				}
@@ -144,30 +221,16 @@ namespace BRTBase {
 			return nullptr;
 		}
 
-
 		/**
-		 * @brief Creates a new environment and returns a pointer to it. The brtmanager does NOT save the pointer.
-		 * @tparam T It must be a environment module, i.e. a class that inherits from the CEnvironmentBase class.
-		 * @return Returns the pointer to the environment if it could be created, otherwise returns a null pointer.
-		*/
-		template <typename T>
-		std::shared_ptr<T> CreateEnvironment() {
-			if (!setupModeActivated) {
-				SET_RESULT(RESULT_ERROR_NOTALLOWED, "BRT library is not in configuration mode");
-				return nullptr;
+		 * @brief Get listener model IDs list 
+		 * @return List of listener model IDs
+		 */
+		std::vector<std::string> GetListenerModelIDs() {
+			std::vector<std::string> listenerIDs;
+			for (auto& it : listenerModels) {
+				listenerIDs.push_back(it->GetID());
 			}
-			try
-			{
-				std::shared_ptr<T> newEnvironment = std::make_shared<T>(this);
-				ConnectModulesCommand(newEnvironment);
-				SET_RESULT(RESULT_OK, "Environment created succesfully");
-				return newEnvironment;
-			}
-			catch (std::bad_alloc& ba)
-			{
-				ASSERT(false, RESULT_ERROR_BADALLOC, ba.what(), "");
-				return nullptr;
-			}
+			return listenerIDs;
 		}
 
 		/**
@@ -239,10 +302,10 @@ namespace BRTBase {
 		*/
 		bool RemoveListener(std::string _listenerID) {
 			if (!setupModeActivated) { return false; }
-			auto it = std::find_if(listeners.begin(), listeners.end(), [&_listenerID](std::shared_ptr<CListenerModelBase>& listenerItem) { return listenerItem->GetID() == _listenerID; });
-			if (it != listeners.end()) {
+			auto it = std::find_if(listenerModels.begin(), listenerModels.end(), [&_listenerID](std::shared_ptr<CListenerModelBase>& listenerItem) { return listenerItem->GetID() == _listenerID; });
+			if (it != listenerModels.end()) {
 				DisconnectModulesCommand(*it);
-				listeners.erase(it);
+				listenerModels.erase(it);
 				it->reset();
 				return true;
 			}
@@ -286,18 +349,6 @@ namespace BRTBase {
 		}
 		template <typename T, typename U>
 		bool ConnectModuleTransform(T* module1, std::shared_ptr<U> module2, std::string entryPointID) {
-			if (!setupModeActivated) return false;
-			module2->connectPositionEntryTo(module1->GetTransformExitPoint(), entryPointID);
-			return true;
-		}
-		template <typename T, typename U>
-		bool ConnectModuleTransform(std::shared_ptr<T> module1, U* module2, std::string entryPointID) {
-			if (!setupModeActivated) return false;
-			module2->connectPositionEntryTo(module1->GetTransformExitPoint(), entryPointID);
-			return true;
-		}
-		template <typename T, typename U>
-		bool ConnectModuleTransform(T* module1, U* module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->connectPositionEntryTo(module1->GetTransformExitPoint(), entryPointID);
 			return true;
@@ -368,8 +419,51 @@ namespace BRTBase {
 			module2->disconnectHRTFEntryTo(module1->GetHRTFExitPoint(), entryPointID);
 			return true;
 		}
+		
+		/**
+		 * @brief Connects the HRTF ExitPoint of one module to the HRTF EntryPoint of another.
+		 * @tparam T Type of module 1
+		 * @tparam U Type of module 2
+		 * @param module1 Pointer to module having HRTF exitpoint
+		 * @param module2 Pointer to module having HRTF entrypoint
+		 * @param entryPointID ID of entry point in module 2
+		 * @return Returns true if it was possible to make the connection. False in all other cases.
+		*/
+		template <typename T, typename U>
+		bool ConnectModuleHRBRIR(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectHRBRIREntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
+			return true;
+		}
+		template <typename T, typename U>
+		bool ConnectModuleHRBRIR(T* module1, std::shared_ptr <U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectHRBRIREntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
+			return true;
+		}
 
-
+		/**
+		 * @brief Disconnects the HRTF ExitPoint of one module with the HRTF EntryPoint of another.
+		 * @tparam T Type of module 1
+		 * @tparam U Type of module 2
+		 * @param module1 Pointer to module having HRTF exitpoint
+		 * @param module2 Pointer to module having HRTF entrypoint
+		 * @param entryPointID ID of entry point in module 2
+		 * @return Returns true if it was possible to make the disconnection. False in all other cases.
+		*/
+		template <typename T, typename U>
+		bool DisconnectModuleHRBRIR(std::shared_ptr<T> module1, std::shared_ptr <U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectHRBRIREntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
+			return true;
+		}
+		template <typename T, typename U>
+		bool DisconnectModuleHRBRIR(T* module1, std::shared_ptr <U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectHRBRIREntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
+			return true;
+		}
+		
 		template <typename T, typename U>
 		bool ConnectModuleABIR(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
@@ -449,18 +543,6 @@ namespace BRTBase {
 			module2->connectIDEntryTo(module1->GetIDExitPoint(), entryPointID);
 			return true;
 		}
-		template <typename T, typename U>
-		bool ConnectModuleID(std::shared_ptr<T> module1, U* module2, std::string entryPointID) {
-			if (!setupModeActivated) return false;
-			module2->connectIDEntryTo(module1->GetIDExitPoint(), entryPointID);
-			return true;
-		}
-		template <typename T, typename U>
-		bool ConnectModuleID(T* module1, U* module2, std::string entryPointID) {
-			if (!setupModeActivated) return false;
-			module2->connectIDEntryTo(module1->GetIDExitPoint(), entryPointID);
-			return true;
-		}
 		/**
 		 * @brief Disconnects the ID ExitPoint of one module with the ID EntryPoint of another.
 		 * @tparam T
@@ -503,7 +585,7 @@ namespace BRTBase {
 			if (!setupModeActivated) return false;
 			module2->connectSamplesEntryTo(module1->GetSamplesExitPoint(exitPointID), entryPointID);
 			return true;
-		}		
+		}
 		/**
 		 * @brief Disconnects the Samples ExitPoint of one module with the Samples EntryPoint of another.
 		 * @tparam T Type of module 1
@@ -623,9 +705,11 @@ namespace BRTBase {
 		}
 
 	private:
-		std::shared_ptr<BRTBase::CExitPointCommand> commandsExitPoint;	// Exit point to emit control commands
-		std::vector<std::shared_ptr<CSourceModelBase>> audioSources;	// List of audio sources 
-		std::vector<std::shared_ptr<CListenerModelBase>> listeners;		// List of audio sources 
+		std::shared_ptr<BRTBase::CExitPointCommand>			commandsExitPoint;	// Exit point to emit control commands
+		
+		std::vector<std::shared_ptr<CSourceModelBase>>		audioSources;		// List of audio sources 
+		std::vector<std::shared_ptr<CListenerBase>>			listeners;			// List of listeners		
+		std::vector<std::shared_ptr<CListenerModelBase>>	listenerModels;		// List of listener Models
 		bool initialized;
 		bool setupModeActivated;
 

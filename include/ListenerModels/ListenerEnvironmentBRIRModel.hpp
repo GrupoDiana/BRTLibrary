@@ -1,8 +1,8 @@
 /**
-* \class CListenerHRTFbasedModel
+* \class CListenerEnviromentBRIRModel
 *
-* \brief Declaration of CListenerHRTFbasedModel class
-* \date	June 2023
+* \brief Declaration of CListenerEnviromentBRIRModel class
+* \date	June 2024
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
 * Coordinated by , A. Reyes-Lecuona (University of Malaga)||
@@ -20,33 +20,30 @@
 * \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 
-#ifndef _CLISTENER_HRTFBASED_MODEL_HPP_
-#define _CLISTENER_HRTFBASED_MODEL_HPP_
+#ifndef _CLISTENER_ENVIRONMENT_BRIR_MODEL_HPP_
+#define _CLISTENER_ENVIRONMENT_BRIR_MODEL_HPP_
 
 #include <memory>
 #include <Base/ListenerModelBase.hpp>
-#include <ServiceModules/HRTF.hpp>
-//#include <ServiceModules/NFCFilters.hpp>
+//#include <ServiceModules/HRTF.hpp>
+#include <ServiceModules/HRBRIR.hpp>
 #include <ProcessingModules/HRTFConvolverProcessor.hpp>
 #include <ProcessingModules/NearFieldEffectProcessor.hpp>
 #include <Base/SourceModelBase.hpp>
 #include <Base/BRTManager.hpp>
 #include <third_party_libraries/nlohmann/json.hpp>
 
-namespace BRTServices {
-	class CHRTF;
-}
-
 namespace BRTListenerModel {
 
-	class CListenerHRTFbasedModel: public BRTBase::CListenerModelBase {
+	
+	class CListenerEnvironmentBRIRModel : public BRTBase::CListenerModelBase {
 		
 		class CSourceProcessors {
 		public:
 			
 			CSourceProcessors(std::string _sourceID, BRTBase::CBRTManager* brtManager) : sourceID{ _sourceID} {
 				binauralConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CHRTFConvolverProcessor>();
-				nearFieldEffectProcessor = brtManager->CreateProcessor<BRTProcessing::CNearFieldEffectProcessor>();
+				binauralConvolverProcessor->DisableParallaxCorrection();
 			}	
 
 			/**
@@ -54,8 +51,7 @@ namespace BRTListenerModel {
 			 * @param brtManager brtManager pointer
 			*/
 			void Clear(BRTBase::CBRTManager* brtManager) {
-				sourceID = "";
-				brtManager->RemoveProcessor(nearFieldEffectProcessor);
+				sourceID = "";				
 				brtManager->RemoveProcessor(binauralConvolverProcessor);
 			}
 
@@ -65,103 +61,83 @@ namespace BRTListenerModel {
 			 * @param enableInterpolation Interpolation state
 			 * @param enableNearFieldEffect Nearfield state
 			*/
-			void SetConfiguration(bool enableSpatialization, bool enableInterpolation, bool enableNearFieldEffect, bool enableITD, bool enableParallaxCorrection) {
+			void SetConfiguration(bool enableSpatialization, bool enableInterpolation) {
 				if (enableSpatialization) { binauralConvolverProcessor->EnableSpatialization(); }
 				else { binauralConvolverProcessor->DisableSpatialization(); }
 
 				if (enableInterpolation) { binauralConvolverProcessor->EnableInterpolation(); }
 				else { binauralConvolverProcessor->DisableInterpolation(); }
+								
+				binauralConvolverProcessor->DisableITDSimulation();								
+				binauralConvolverProcessor->DisableParallaxCorrection();
+			}
 
-				if (enableNearFieldEffect) { nearFieldEffectProcessor->EnableNearFieldEffect(); }
-				else { nearFieldEffectProcessor->DisableNearFieldEffect(); }	
+			/**
+			 * @brief Set processor enable or disable
+			 * @param _enableProcessor
+			 */
+			void SetEnableProcessor(bool _enableProcessor) {
+				if (_enableProcessor) {
+					binauralConvolverProcessor->EnableProcessor();					
 
-				if (enableITD) {binauralConvolverProcessor->EnableITDSimulation();}
-				else {binauralConvolverProcessor->DisableITDSimulation();}
-
-				if (enableParallaxCorrection) {binauralConvolverProcessor->EnableParallaxCorrection();}
-				else {binauralConvolverProcessor->DisableParallaxCorrection();}
+				}
+				else {
+					binauralConvolverProcessor->DisableProcessor();					
+				}
 			}
 
 			/**
 			 * @brief Reset processor buffers
 			*/
 			void ResetBuffers() {
-				binauralConvolverProcessor->ResetSourceConvolutionBuffers();
-				nearFieldEffectProcessor->ResetProcessBuffers();
+				binauralConvolverProcessor->ResetSourceConvolutionBuffers();				
 			}
 
 			std::string sourceID;
-			std::shared_ptr <BRTProcessing::CHRTFConvolverProcessor> binauralConvolverProcessor;
-			std::shared_ptr <BRTProcessing::CNearFieldEffectProcessor> nearFieldEffectProcessor;
+			std::shared_ptr <BRTProcessing::CHRTFConvolverProcessor> binauralConvolverProcessor;			
 		};
 
 	public:
-		CListenerHRTFbasedModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) : brtManager{ _brtManager }, BRTBase::CListenerModelBase(_listenerID), 
-			enableSpatialization{ true }, enableInterpolation{ true }, enableNearFieldEffect{ false } {
-			
-			listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// Create a empty HRTF									
-			CreateHRTFExitPoint();
-			CreateILDExitPoint();									
+		CListenerEnvironmentBRIRModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) : 
+			BRTBase::CListenerModelBase(_listenerID, BRTBase::TListenerModelcharacteristics(false, true, false, false, false, false, true, true)),
+			brtManager{ _brtManager }, enableSpatialization{ true }, enableInterpolation{ true } {
+									
+			listenerHRBRIR = nullptr;
+			CreateHRBRIRExitPoint();
 		}
-
-		
-		/** \brief SET HRTF of listener
-		*	\param[in] pointer to HRTF to be stored
+				
+		/** \brief SET HRBRIR of listener
+		*	\param[in] pointer to HRBRIR to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) {			
-			
-			if (_listenerHRTF->GetSamplingRate() != globalParameters.GetSampleRate()) { 
+		bool SetHRBRIR(std::shared_ptr< BRTServices::CHRBRIR > _listenerBRIR) {			    
+			if (_listenerBRIR->GetSamplingRate() != globalParameters.GetSampleRate()) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "This HRTF has not been assigned to the listener. The sample rate of the HRTF does not match the one set in the library Global Parameters.");
 				return false;
 			}
-			listenerHRTF = _listenerHRTF;			
-			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);	
+			listenerHRBRIR = _listenerBRIR;
+			GetHRBRIRExitPoint()->sendDataPtr(_listenerBRIR);
 			ResetProcessorBuffers();
+						
 			return true;
 		}
 
-		/** \brief Get HRTF of listener
-		*	\retval HRTF pointer to current listener HRTF
-		*   \eh On error, an error code is reported to the error handler.
-		*/		
-		std::shared_ptr < BRTServices::CHRTF> GetHRTF() const
-		{
-			return listenerHRTF;
-		}
-
-		/** \brief Remove the HRTF of thelistener
-		*   \eh Nothing is reported to the error handler.
-		*/
-		void RemoveHRTF() {
-			listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// empty HRTF			
-		}
-
-		///
-		/** \brief SET HRTF of listener
-		*	\param[in] pointer to HRTF to be stored
-		*   \eh On error, NO error code is reported to the error handler.
-		*/
-		void SetILD(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerILD) {
-			listenerILD = _listenerILD;
-			GetILDExitPoint()->sendDataPtr(listenerILD);				
-		}
-
-		/** \brief Get HRTF of listener
-		*	\retval HRTF pointer to current listener HRTF
+		/** \brief Get HRBRIR of listener
+		*	\retval HRBRIR pointer to current listener HRBRIR
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr <BRTServices::CNearFieldCompensationFilters> GetILD() const
+		std::shared_ptr < BRTServices::CHRBRIR> GetHRBRIR() const
 		{
-			return listenerILD;
+			return listenerHRBRIR;
 		}
 
-		/** \brief Remove the HRTF of thelistener
+		/** \brief Remove the HRBRIR of thelistener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void RemoveILD() {
-			listenerILD = std::make_shared<BRTServices::CNearFieldCompensationFilters>();	// empty HRTF			
+		void RemoveHRBRIR() {						
+			listenerHRBRIR = nullptr;
 		}
+
 
 		/**
 		 * @brief Connect a new source to this listener
@@ -178,14 +154,6 @@ namespace BRTListenerModel {
 		*/
 		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel > _source) { 			
 			return ConnectAnySoundSource(_source, true);
-		};
-		/**
-		 * @brief Connect a new source to this listener
-		 * @param _source Pointer to the source
-		 * @return True if the connection success
-		*/
-		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel > _source) {
-			return ConnectAnySoundSource(_source, false);
 		};
 
 		/**
@@ -204,22 +172,8 @@ namespace BRTListenerModel {
 		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) { 
 			return DisconnectAnySoundSource(_source, true);
 		};
-		/**
-		 * @brief Disconnect a new source to this listener
-		 * @param _source Pointer to the source
-		 * @return True if the disconnection success
-		*/
-		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _source) {
-			return DisconnectAnySoundSource(_source, false);
-		};
 
 		
-
-		
-		template <typename T>
-		bool ConnectEnvironment(std::shared_ptr<T> _environment) {
-			return _environment->ConnectToListener(this);
-		}
 
 		/** \brief Enable binaural spatialization based in HRTF convolution
 		*   \eh Nothing is reported to the error handler.
@@ -270,59 +224,29 @@ namespace BRTListenerModel {
 		*/
 		bool IsInterpolationEnabled() { return enableInterpolation; }
 
-		/** \brief Enable near field effect for this source
-		*   \eh Nothing is reported to the error handler.
-		*/
-		void EnableNearFieldEffect() {
-			enableNearFieldEffect = true;
-			SetConfigurationInALLSourcesProcessors();			
-		}
-
-		/** \brief Disable near field effect for this source
-		*   \eh Nothing is reported to the error handler.
-		*/
-		void DisableNearFieldEffect() {
-			enableNearFieldEffect = false;
-			SetConfigurationInALLSourcesProcessors();		
-		}
-
-		/** \brief Get the flag for near field effect enabling
-		*	\retval nearFieldEffectEnabled if true, near field effect is enabled for this source
-		*   \eh Nothing is reported to the error handler.
-		*/
-		bool IsNearFieldEffectEnabled() { return enableNearFieldEffect; }
+		
+		/**
+		 * @brief Enable model
+		 */
+		void EnableModel() {
+			std::lock_guard<std::mutex> l(mutex);
+			enableModel = true;
+			for (auto& it : sourcesConnectedProcessors) {
+				it.SetEnableProcessor(true);
+			}
+		};
 
 		/**
-		 * @brief Enable ITD simulation
-		*/
-		void EnableITDSimulation() { 
-			enableITDSimulation = true; 
-			SetConfigurationInALLSourcesProcessors();
-		}
+		 * @brief Disable model
+		 */
+		void DisableModel() {
+			std::lock_guard<std::mutex> l(mutex);
+			enableModel = false;
+			for (auto& it : sourcesConnectedProcessors) {
+				it.SetEnableProcessor(false);
+			}
+		};
 
-		/**
-		 * @brief Disable ITD simulation
-		*/
-		void DisableITDSimulation() { 
-			enableITDSimulation = false; 
-			SetConfigurationInALLSourcesProcessors();
-		}
-
-		/**
-		 * @brief Enable Parallax Correction
-		*/
-		void EnableParallaxCorrection() { 
-			enableParallaxCorrection = true; 
-			SetConfigurationInALLSourcesProcessors();
-		}
-
-		/**
-		 * @brief Disable Parallax Correction
-		*/
-		void DisableParallaxCorrection() { 
-			enableParallaxCorrection = false; 
-			SetConfigurationInALLSourcesProcessors();
-		}
 
 		/**
 		 * @brief Reset all processor buffers
@@ -359,18 +283,12 @@ namespace BRTListenerModel {
 					if (command.GetBoolParameter("enable")) { EnableInterpolation(); }
 					else { DisableInterpolation(); }
 				}
-				else if (command.GetCommand() == "/listener/enableNearFieldEffect") {
-					if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
-					else { DisableNearFieldEffect(); }
-				}
+				
 				else if (command.GetCommand() == "/listener/enableITD") {
 					if (command.GetBoolParameter("enable")) { EnableITDSimulation(); }
 					else { DisableITDSimulation(); }
 				}
-				else if (command.GetCommand() == "/listener/enableParallaxCorrection") {
-					if (command.GetBoolParameter("enable")) { EnableParallaxCorrection(); }
-					else { DisableParallaxCorrection(); }
-				}
+				
 				else if (command.GetCommand() == "/listener/resetBuffers") {
 					ResetProcessorBuffers();
 				}
@@ -394,7 +312,7 @@ namespace BRTListenerModel {
 		 * @param sourceProcessor 
 		*/
 		void SetSourceProcessorsConfiguration(CSourceProcessors& sourceProcessor) {			
-			sourceProcessor.SetConfiguration(enableSpatialization, enableInterpolation, enableNearFieldEffect, enableITDSimulation, enableParallaxCorrection);
+			sourceProcessor.SetConfiguration(enableSpatialization, enableInterpolation);
 		}
 
 		/**
@@ -409,26 +327,20 @@ namespace BRTListenerModel {
 
 			CSourceProcessors _newSourceProcessors(_source->GetID(), brtManager);
 
-			bool control = brtManager->ConnectModuleTransform(_source, _newSourceProcessors.binauralConvolverProcessor, "sourcePosition");
-			control = control && brtManager->ConnectModuleTransform(_source, _newSourceProcessors.nearFieldEffectProcessor, "sourcePosition");
+			bool control = brtManager->ConnectModuleTransform(_source, _newSourceProcessors.binauralConvolverProcessor, "sourcePosition");			
 			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.binauralConvolverProcessor, "sourceID");
-			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.nearFieldEffectProcessor, "sourceID");
-			
+						
 			if (sourceNeedsListenerPosition) {
 				control = control && brtManager->ConnectModuleTransform(this, _source, "listenerPosition");
 			}
 
-			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.binauralConvolverProcessor, "listenerPosition");
-			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerPosition");
-			control = control && brtManager->ConnectModuleHRTF(this, _newSourceProcessors.binauralConvolverProcessor, "listenerHRTF");
-			control = control && brtManager->ConnectModuleILD(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerILD");
+			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.binauralConvolverProcessor, "listenerPosition");			
+			control = control && brtManager->ConnectModuleHRBRIR(this, _newSourceProcessors.binauralConvolverProcessor, "listenerHRBRIR");			
 			control = control && brtManager->ConnectModuleID(this, _newSourceProcessors.binauralConvolverProcessor, "listenerID");
 
 			control = control && brtManager->ConnectModulesSamples(_source, "samples", _newSourceProcessors.binauralConvolverProcessor, "inputSamples");
-			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.binauralConvolverProcessor, "leftEar", _newSourceProcessors.nearFieldEffectProcessor, "leftEar");
-			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.binauralConvolverProcessor, "rightEar", _newSourceProcessors.nearFieldEffectProcessor, "rightEar");
-			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.nearFieldEffectProcessor, "leftEar", this, "leftEar");
-			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.nearFieldEffectProcessor, "rightEar", this, "rightEar");
+			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.binauralConvolverProcessor, "leftEar", this, "leftEar");
+			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.binauralConvolverProcessor, "rightEar", this, "rightEar");
 
 			if (control) {				
 				SetSourceProcessorsConfiguration(_newSourceProcessors);
@@ -450,24 +362,18 @@ namespace BRTListenerModel {
 			std::string _sourceID = _source->GetID();
 			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSourceProcessors& sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
 			if (it != sourcesConnectedProcessors.end()) {
-				bool control = brtManager->DisconnectModulesSamples(it->nearFieldEffectProcessor, "leftEar", this, "leftEar");
-				control = control && brtManager->DisconnectModulesSamples(it->nearFieldEffectProcessor, "rightEar", this, "rightEar");
-				control = control && brtManager->DisconnectModulesSamples(it->binauralConvolverProcessor, "leftEar", it->nearFieldEffectProcessor, "leftEar");
-				control = control && brtManager->DisconnectModulesSamples(it->binauralConvolverProcessor, "rightEar", it->nearFieldEffectProcessor, "rightEar");
+				bool control = brtManager->DisconnectModulesSamples(it->binauralConvolverProcessor, "leftEar", this, "leftEar");
+				control = control && brtManager->DisconnectModulesSamples(it->binauralConvolverProcessor, "rightEar", this, "rightEar");				
 				control = control && brtManager->DisconnectModulesSamples(_source, "samples", it->binauralConvolverProcessor, "inputSamples");
 
-				control = control && brtManager->DisconnectModuleID(this, it->binauralConvolverProcessor, "listenerID");
-				control = control && brtManager->DisconnectModuleILD(this, it->nearFieldEffectProcessor, "listenerILD");
-				control = control && brtManager->DisconnectModuleHRTF(this, it->binauralConvolverProcessor, "listenerHRTF");
-				control = control && brtManager->DisconnectModuleTransform(this, it->nearFieldEffectProcessor, "listenerPosition");
+				control = control && brtManager->DisconnectModuleID(this, it->binauralConvolverProcessor, "listenerID");				
+				control = control && brtManager->DisconnectModuleHRBRIR(this, it->binauralConvolverProcessor, "listenerHRTF");				
 				control = control && brtManager->DisconnectModuleTransform(this, it->binauralConvolverProcessor, "listenerPosition");
 
 				if (sourceNeedsListenerPosition) {
 					control = control && brtManager->DisconnectModuleTransform(this, _source, "listenerPosition");								
-				}
-				control = control && brtManager->DisconnectModuleID(_source, it->nearFieldEffectProcessor, "sourceID");
-				control = control && brtManager->DisconnectModuleID(_source, it->binauralConvolverProcessor, "sourceID");
-				control = control && brtManager->DisconnectModuleTransform(_source, it->nearFieldEffectProcessor, "sourcePosition");
+				}				
+				control = control && brtManager->DisconnectModuleID(_source, it->binauralConvolverProcessor, "sourceID");				
 				control = control && brtManager->DisconnectModuleTransform(_source, it->binauralConvolverProcessor, "sourcePosition");
 
 				it->Clear(brtManager);
@@ -480,18 +386,15 @@ namespace BRTListenerModel {
 		/////////////////
 		// Attributes
 		/////////////////
-		mutable std::mutex mutex;							// To avoid access collisions
-		std::string listenerID;								// Store unique listener ID
-		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;	// HRTF of listener														
-		std::shared_ptr<BRTServices::CNearFieldCompensationFilters> listenerILD;		// ILD of listener						
-		std::vector< CSourceProcessors> sourcesConnectedProcessors;
+		mutable std::mutex mutex;									// To avoid access collisions
+		std::string listenerID;										// Store unique listener ID		
+		std::shared_ptr<BRTServices::CHRBRIR>	listenerHRBRIR;		// RBRIR of listener		
+		std::vector< CSourceProcessors> sourcesConnectedProcessors;	// Store the sources connected to this listener
 		BRTBase::CBRTManager* brtManager;
 		Common::CGlobalParameters globalParameters;
 
 		bool enableSpatialization;		// Flags for independent control of processes
-		bool enableInterpolation;		// Enables/Disables the interpolation on run time
-		bool enableNearFieldEffect;     // Enables/Disables the Near Field Effect
-
+		bool enableInterpolation;		// Enables/Disables the interpolation on run time						
 	};
 }
 #endif

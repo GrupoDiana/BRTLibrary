@@ -24,8 +24,9 @@
 #define _CLISTENER_MODEL_BASE_H_
 
 #include <memory>
-#include <Base/EntryPointManager.hpp>
-#include <Base/CommandEntryPointManager.hpp>
+//#include <Base/EntryPointManager.hpp>
+//#include <Base/CommandEntryPointManager.hpp>
+#include <Base/AdvancedEntryPointManager.hpp>
 #include <Base/ExitPointManager.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/HRTF.hpp>
@@ -42,118 +43,197 @@ namespace BRTSourceModel {
 
 namespace BRTBase {
 
-	class CListenerModelBase: public CCommandEntryPointManager, public CExitPointManager, public CEntryPointManager {
+	//enum class TListenerType { ListenerHRFTModel, ListenerAmbisonicHRTFModel, ListenerEnviromentBRIRModel };
+
+	/**
+	 * @brief This class looks for a method of identifying each model, so that we can then know which methods are called. 
+	 * It is actually a provisional solution.
+	 */
+	class TListenerModelcharacteristics {
+		bool supportHRTF;
+		bool supportBRIR;
+		bool ambisonic;
+		
+		bool nearFieldCompensation;
+		bool parallaxCorrection;
+		bool itdSimulation;
+
+		bool configurableSpatialisation;
+		bool configurableInterpolation;
+	
+	public:		
+		TListenerModelcharacteristics() : supportHRTF{ false }, supportBRIR{ false }, ambisonic{ false }, nearFieldCompensation{ false }, 
+			parallaxCorrection{ false }, itdSimulation{ false }, configurableSpatialisation{ false }, configurableInterpolation{ false } {}
+		
+		TListenerModelcharacteristics(bool _supportHRTF, bool _supportBRIR, bool _ambisonic, bool _nearFieldCompensation, bool _parallaxCorrection, bool _itdSimulation, bool _configurableSpatialisation, bool _configurableInterpolation) :
+			supportHRTF{ _supportHRTF }, supportBRIR{ _supportBRIR }, ambisonic{ _ambisonic }, nearFieldCompensation{ _nearFieldCompensation }, parallaxCorrection{ _parallaxCorrection },
+			itdSimulation{ _itdSimulation }, configurableSpatialisation{ _configurableSpatialisation }, configurableInterpolation{ _configurableInterpolation } {}
+
+		bool SupportHRTF() { return supportHRTF; }
+		bool SupportBRIR() { return supportBRIR; }
+		bool IsAmbisonic() { return ambisonic; }
+		bool SupportNearFieldCompensation() { return nearFieldCompensation; }
+		bool SupportParallaxCorrection() { return parallaxCorrection; }
+		bool SupportITDSimulation() { return itdSimulation; }
+		bool SupportConfigurableSpatialisation() { return configurableSpatialisation; }
+		bool SupportConfigurableInterpolation() { return configurableInterpolation; }
+	};
+
+
+	class CListenerModelBase: public CAdvancedEntryPointManager, public CExitPointManager/*, public CCommandEntryPointManager, public CEntryPointManager */{
 	public:
+
+		// Public Attributes
+		bool enableModel;
+
+		// Virtual Methods
 
 		virtual ~CListenerModelBase() {}
 		virtual void Update(std::string entryPointID) = 0;
 		virtual void UpdateCommand() = 0;		
-		virtual bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) = 0;
-		virtual void SetILD(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerILD) = 0;
-		virtual std::shared_ptr < BRTServices::CHRTF> GetHRTF() const = 0;
-		virtual void RemoveHRTF() = 0;
-		virtual std::shared_ptr < BRTServices::CNearFieldCompensationFilters> GetILD() const = 0;
-		virtual void RemoveILD() = 0;
+		
+		virtual bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) { return false; };				
+		virtual std::shared_ptr < BRTServices::CHRTF> GetHRTF() const { return nullptr; }
+		virtual void RemoveHRTF() {};
+		
+		virtual bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerILD) { return false; };
+		virtual std::shared_ptr < BRTServices::CNearFieldCompensationFilters> GetNearFieldCompensationFilters() const { return nullptr; }
+		virtual void RemoveNearFierldCompensationFilters() {};
+				
+		virtual bool SetHRBRIR(std::shared_ptr< BRTServices::CHRBRIR > _listenerBRIR) { return false; };		        
+		virtual std::shared_ptr < BRTServices::CHRBRIR> GetHRBRIR() const { return nullptr; };
+		virtual void RemoveHRBRIR() {};		
 
-		virtual void EnableITDSimulation()= 0;
-		virtual void DisableITDSimulation() = 0;			
-		virtual bool IsITDSimulationEnabled() { return enableITDSimulation; }
-		virtual void EnableParallaxCorrection() = 0;
-		virtual void DisableParallaxCorrection() = 0;		
-		virtual bool IsParallaxCorrectionEnabled() { return enableParallaxCorrection; }
+
+		
+		virtual void EnableModel() {  };
+		virtual void DisableModel() {};
+		virtual bool IsModelEnabled() { return enableModel; }
+
+
+		virtual void EnableITDSimulation() {};
+		virtual void DisableITDSimulation() {};
+		virtual bool IsITDSimulationEnabled() { return false; }
+
+		virtual void EnableNearFieldEffect() {};
+		virtual void DisableNearFieldEffect() {};
+		virtual bool IsNearFieldEffectEnabled() { return false; }
+		
+		virtual void EnableSpatialization() {};
+		virtual void DisableSpatialization() {};
+		virtual bool IsSpatializationEnabled() { return false; }
+
+		virtual void EnableInterpolation() {};
+		virtual void DisableInterpolation() {};
+		virtual bool IsInterpolationEnabled() { return false; }
+
+		virtual void EnableParallaxCorrection() {};
+		virtual void DisableParallaxCorrection() {};
+		virtual bool IsParallaxCorrectionEnabled() { return false; }
+
+		virtual bool SetAmbisonicOrder(int _ambisonicOrder) { return false; }
+		virtual int GetAmbisonicOrder() const { return 0; }
+		virtual bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) { return false; }
+		virtual bool SetAmbisonicNormalization(std::string _ambisonicNormalization) {return false;}
+		virtual Common::TAmbisonicNormalization GetAmbisonicNormalization() const { return Common::TAmbisonicNormalization::none; }
 
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel > _source) = 0;
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel > _source) = 0;
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) = 0;
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) = 0;
 
-		CListenerModelBase(std::string _listenerID) : listenerID{ _listenerID }, leftDataReady{ false }, 
-			rightDataReady{ false }, enableITDSimulation{ true }, enableParallaxCorrection{true} {
+		virtual bool ConnectListenerTransform(const std::string _listenerID) {return false; }
+		virtual bool DisconnectListenerTransform(const std::string _listenerID) { return false; }
+
+		// Class Methods
+
+		CListenerModelBase(std::string _listenerModelID, TListenerModelcharacteristics _listenerCharacteristics) : listenerModelID {_listenerModelID},
+			listenerCharacteristics{ _listenerCharacteristics },
+			leftDataReady{ false }, rightDataReady{ false } {
 												
 			CreateSamplesEntryPoint("leftEar");
 			CreateSamplesEntryPoint("rightEar");									
 			CreateTransformExitPoint();			
 			CreateIDExitPoint();
-			GetIDExitPoint()->sendData(listenerID);						
+			
+			CreateSamplesExitPoint("leftEar");
+			CreateSamplesExitPoint("rightEar");
+			CreateIDEntryPoint("listenerID");
+			GetIDExitPoint()->sendData(listenerModelID);						
 			CreateCommandEntryPoint();
 		}
-				
-
-		/** \brief Set listener position and orientation
-		*	\param [in] _listenerTransform new listener position and orientation
-		*   \eh Nothing is reported to the error handler.
-		*/
-		void SetListenerTransform(Common::CTransform _transform) {
-			listenerTransform = _transform;
-			GetTransformExitPoint()->sendData(listenerTransform);	// Send to subscribers
-			//listenerPositionExitPoint->sendData(listenerTransform);			// Send
-		}
-
-		/** \brief Get listener position and orientation
-		*	\retval transform current listener position and orientation
-		*   \eh Nothing is reported to the error handler.
-		*/
-		Common::CTransform GetListenerTransform() { return listenerTransform; }
+						
 
 		/**
 		 * @brief Get listener ID
 		 * @return Return listener identificator
 		*/
-		std::string GetID() { return listenerID; }		
-										
+		std::string GetID() { return listenerModelID; }
+			
+		/**
+		* @brief Set listener type
+		* @param _listenerType Listener type
+		*/
+		//TListenerType GetListenerModelType() const { return listenerModelType; }		
 		
 		/**
-		 * @brief Get output sample buffers from the listener
-		 * @param _leftBuffer Left ear sample buffer
-		 * @param _rightBuffer Right ear sample buffer
+		* @brief Get listener model characteristics
+		* @return Return characteristics
 		*/
-		void GetBuffers(CMonoBuffer<float>& _leftBuffer, CMonoBuffer<float>& _rightBuffer) {						
-			if (leftDataReady) {
-				_leftBuffer = leftBuffer;
-				leftDataReady = false;
+		TListenerModelcharacteristics GetListenerModelCharacteristics() const { return listenerCharacteristics; }
+		
+		
+		bool IsConnectedToListener() { 
+			std::string _listenerID = GetIDEntryPoint("listenerID")->GetData();
+			if (_listenerID != "") {
+				return true;
 			}
-			else {
-				_leftBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
-			}
-			
-			if (rightDataReady) {
-				_rightBuffer = rightBuffer;
-				rightDataReady = false;
-			}
-			else {
-				_rightBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
-			}
-
+			return false; 
 		}
 
 		/////////////////////		
 		// Update Callbacks
 		/////////////////////
-		void UpdateEntryPointData(std::string id) {
-			if (id == "leftEar") {
-				UpdateLeftBuffer();
-			}
-			else if (id == "rightEar") {
-				UpdateRightBuffer();
-			}
-		}
-		void updateFromCommandEntryPoint(std::string entryPointID) {
-			BRTBase::CCommand _command = GetCommandEntryPoint()->GetData();
-			if (!_command.isNull()) {
-				UpdateCommand();
-			}
-		}
-
 				
-		// Public Attributes
-		bool enableITDSimulation;							// Enable ITD simulation 
-		bool enableParallaxCorrection;						// Enable parallax correction
+		/**
+		 * @brief Implementation of CAdvancedEntryPointManager virtual method
+		 * @param _entryPointId entryPoint ID
+		*/
+		
+		void OneEntryPointOneDataReceived(std::string _entryPointId) {
+						
+			if (_entryPointId == "leftEar") {				
+				if (!leftDataReady) { InitBuffer(leftBuffer); }				
+				CMonoBuffer<float> newBuffer = GetSamplesEntryPoint("leftEar")->GetData();				
+				leftDataReady = MixEarBuffers(leftBuffer, newBuffer);									
+			}
+			else if (_entryPointId == "rightEar") {
+				if (!rightDataReady) { InitBuffer(rightBuffer); }
+				CMonoBuffer<float> newBuffer = GetSamplesEntryPoint("rightEar")->GetData();				
+				rightDataReady = MixEarBuffers(rightBuffer, newBuffer);				
+			}			
+		}
 
-	private:
-		std::string listenerID;								// Store unique listener ID		
-		Common::CTransform listenerTransform;				// Transform matrix (position and orientation) of listener  
+		/**
+		 * @brief Implementation of CAdvancedEntryPointManager virtual method
+		*/
+		void AllEntryPointsAllDataReady() {
+			
+			GetSamplesExitPoint("leftEar")->sendData(leftBuffer);
+			GetSamplesExitPoint("rightEar")->sendData(rightBuffer);
+			leftDataReady = false;
+			rightDataReady = false;
+						           
+		}
+		
 		
 
+	private:
+		//TListenerType listenerModelType;
+		TListenerModelcharacteristics listenerCharacteristics;
+		std::string listenerModelID;						// Store unique listener ID		
+		
+		
 		Common::CGlobalParameters globalParameters;		
 		CMonoBuffer<float> leftBuffer;
 		CMonoBuffer<float> rightBuffer;
@@ -165,33 +245,22 @@ namespace BRTBase {
 		//////////////////////////
 		// Private Methods
 		/////////////////////////
+				
 		
-		/**
-		 * @brief Mix the new buffer received for the left ear with the contents of the buffer.
-		*/
-		void UpdateLeftBuffer() {
-			if (!leftDataReady) {
-				leftBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
-			}			
-			CMonoBuffer<float> buffer = GetSamplesEntryPoint("leftEar")->GetData();
-			if (buffer.size() != 0) {
-				leftBuffer += buffer;
-				leftDataReady = true;
+		///**
+		// * @brief Mix the new buffer received with the contents of the buffer.
+		//*/				
+		bool MixEarBuffers(CMonoBuffer<float>& buffer, const CMonoBuffer<float>& newBuffer) {			
+			if (newBuffer.size() != 0) {
+				buffer += newBuffer;
+				return true;
 			}
+			return false;
 		}
-		/**
-		 * @brief Mix the new buffer received for the right ear with the contents of the buffer.
-		*/
-		void UpdateRightBuffer() {
-			if (!rightDataReady) {
-				rightBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
-			}			
-			CMonoBuffer<float> buffer = GetSamplesEntryPoint("rightEar")->GetData();
-			if (buffer.size() != 0) {
-				rightBuffer += buffer;
-				rightDataReady = true;
-			}
-		}		
+
+		void InitBuffer(CMonoBuffer<float>& buffer) {
+			buffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
+		}
 	};
 }
 #endif

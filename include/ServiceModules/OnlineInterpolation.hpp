@@ -246,7 +246,7 @@ namespace BRTServices
 		///**
 		// * @brief Calculate from resample table HRIR subfilters using a barycentric interpolation of the three nearest orientation.
 		template <typename T, typename U, typename Functor>
-		U CalculateTF_OnlineMethod(const T& resampledTable, int32_t numberOfSubfilters, int32_t subfilterLength, float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap, Functor f) const
+		static U CalculateTF_OnlineMethod(const T& resampledTable, int32_t numberOfSubfilters, int32_t subfilterLength, float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap, Functor f)
 		{
 			U data;
 			TBarycentricCoordinatesStruct barycentricCoordinates;
@@ -306,8 +306,8 @@ namespace BRTServices
 		 * @return 
 		*/
 		template <typename T, typename U, typename Functor>
-		U CalculateTF_BarycentricInterpolation(const T& resampledTable, int32_t numberOfSubfilters, int32_t subfilterLength,
-			float _azimuth, float _elevation, float elevationCeil, float elevationFloor, orientation point1, orientation point2, orientation point3, orientation point4, Functor f) const
+		static U CalculateTF_BarycentricInterpolation(const T& resampledTable, int32_t numberOfSubfilters, int32_t subfilterLength,
+			float _azimuth, float _elevation, float elevationCeil, float elevationFloor, orientation point1, orientation point2, orientation point3, orientation point4, Functor f)
 		{
 			U data;
 			TBarycentricCoordinatesStruct barycentricCoordinates = CInterpolationAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, point1.azimuth, point1.elevation, point2.azimuth, point2.elevation, point3.azimuth, point3.elevation);
@@ -347,7 +347,7 @@ namespace BRTServices
 		 * @param orientation_ptoP 
 		 * @param nearestElevations 
 		*/
-		void Find_4Nearest_Points(float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap, orientation& orientation_ptoA, orientation& orientation_ptoB, orientation& orientation_ptoC, orientation& orientation_ptoD, orientation& orientation_ptoP, std::pair<float, float>& nearestElevations)const
+		static void Find_4Nearest_Points(float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap, orientation& orientation_ptoA, orientation& orientation_ptoB, orientation& orientation_ptoC, orientation& orientation_ptoD, orientation& orientation_ptoP, std::pair<float, float>& nearestElevations)
 		{
 			float azimuthCeilBack, azimuthCeilFront, azimuthFloorBack, azimuthFloorFront;
 			float azimuthStepCeil, azimuthStepFloor;

@@ -32,7 +32,7 @@ namespace BRTProcessing {
 
 	class CNearFieldEffect {
 	public:
-		CNearFieldEffect() : enableNearFieldEffect{false} {
+		CNearFieldEffect() : enableProcessor{ true }, enableNearFieldEffect { false } {
 		
 			nearFieldEffectFilters.left.AddFilter();		//Initialize the filter to ILD simulation 
 			nearFieldEffectFilters.left.AddFilter();		//Initialize the filter to ILD simulation
@@ -40,6 +40,19 @@ namespace BRTProcessing {
 			nearFieldEffectFilters.right.AddFilter();		//Initialize the filter to ILD simulation
 		}
 
+		/**
+		 * @brief Enable processor
+		 */
+		void EnableProcessor() { enableProcessor = true; }
+		/**
+		 * @brief Disable processor
+		 */
+		void DisableProcessor() { enableProcessor = false; }
+		/**
+		 * @brief Get the flag to know if the processor is enabled.
+		 * @return true if the processor is enabled, false otherwise
+		 */
+		bool IsProcessorEnabled() { return enableProcessor; }
 
 		///Enable near field effect for this source
 		void EnableNearFieldEffect() { 
@@ -62,7 +75,7 @@ namespace BRTProcessing {
 			outRightBuffer = _inRightBuffer;
 
 			// Check process flag
-			if (!IsNearFieldEffectEnabled()) { return;	}
+			if (!IsNearFieldEffectEnabled() || !enableProcessor) { return;	}
 			
 			float distance = Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerDistance(sourceTransform, listenerTransform);
 			if (distance > DISTANCE_MODEL_THRESHOLD_NEAR) {	return; }
@@ -107,14 +120,7 @@ namespace BRTProcessing {
 	private:
 		///////////////////////
 		// Private Methods
-		///////////////////////
-		//float CalculateDistance(Common::CTransform _sourceTransform, Common::CTransform _listenerTransform) {
-
-		//	//Get azimuth and elevation between listener and source
-		//	Common::CVector3 _vectorToListener = _listenerTransform.GetVectorTo(_sourceTransform);
-		//	float _distanceToListener = _vectorToListener.GetDistance();
-		//	return _distanceToListener;
-		//}
+		///////////////////////		
 
 		/// Calculates the parameters derived from the source and listener position
 		float CalculateInterauralAzimuth(Common::CTransform& _sourceTransform, Common::CTransform& _listenerTransform)
@@ -152,7 +158,8 @@ namespace BRTProcessing {
 
 		Common::CEarPair<Common::CFiltersChain> nearFieldEffectFilters;		// Computes the Near field effects
 
-		bool enableNearFieldEffect;     // Enables/Disables the ILD (Interaural Level Difference) processing
+		bool enableProcessor;			// Flag to enable the processor
+		bool enableNearFieldEffect;     // Enable or disable the ILD (Interaural Level Difference) processing
 
 	};
 }

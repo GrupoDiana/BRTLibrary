@@ -20,14 +20,14 @@
 * \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 
-#ifndef _CLISTENER_VIRTUALAMBISONICBASED_MODEL_HPP_
-#define _CLISTENER_VIRTUALAMBISONICBASED_MODEL_HPP_
+#ifndef _CLISTENER_AMBISONIC_HRTF_MODEL_HPP_
+#define _CLISTENER_AMBISONIC_HRTF_MODEL_HPP_
 
 #include <memory>
+#include <Common/ErrorHandler.hpp>
 #include <Base/ListenerModelBase.hpp>
 #include <ServiceModules/HRTFDefinitions.hpp>
 #include <ServiceModules/HRTF.hpp>
-//#include <ServiceModules/NFCFilters.hpp>
 #include <ServiceModules/AmbisonicBIR.hpp>
 #include <ProcessingModules/BilateralAmbisonicEncoderProcessor.hpp>
 #include <ProcessingModules/AmbisonicDomainConvolverProcessor.hpp>
@@ -41,7 +41,7 @@ namespace BRTServices {
 
 namespace BRTListenerModel {
 
-	class CListenerVirtualAmbisonicBasedModel : public BRTBase::CListenerModelBase {
+	class CListenerAmbisonicHRTFModel : public BRTBase::CListenerModelBase {
 
 		class CSourceToBeProcessed {
 		public:
@@ -81,6 +81,15 @@ namespace BRTListenerModel {
 				else { bilateralAmbisonicEncoderProcessor->DisableParallaxCorrection(); }
 			}
 
+			/**
+			 * @brief Set processor enable or disable
+			 * @param _enableProcessor 
+			 */
+			void SetEnableProcessor(bool _enableProcessor) {
+				if (_enableProcessor) {	bilateralAmbisonicEncoderProcessor->EnableProcessor(); }
+				else {	bilateralAmbisonicEncoderProcessor->DisableProcessor();	}
+			}
+
 			/**		
 			 * @brief Reset processor buffers
 			*/
@@ -93,22 +102,23 @@ namespace BRTListenerModel {
 		};
 
 	public:
-		CListenerVirtualAmbisonicBasedModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) : brtManager{ _brtManager }, BRTBase::CListenerModelBase(_listenerID),
-			ambisonicOrder{ 1 }, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D } {
+		CListenerAmbisonicHRTFModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) : 
+			brtManager{ _brtManager }, BRTBase::CListenerModelBase(_listenerID, BRTBase::TListenerModelcharacteristics(true, false, true, true, true, true, false, false)),
+			ambisonicOrder{ 1 }, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }, enableNearFieldEffect{ false }, enableParallaxCorrection{ true },
+			enableITDSimulation{ true } {
 			
-			listenerHRTF = std::make_shared<BRTServices::CHRTF>();					// Create a empty HRTF	class
+			// TODO Change to nullptr
+			listenerHRTF = std::make_shared<BRTServices::CHRTF>();					// Create a empty HRTF	class 
 			listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicBIR>();	// Create a empty AmbisonicIR class
 			
 			CreateHRTFExitPoint();
 			CreateILDExitPoint();
 			CreateABIRExitPoint();
 
-			leftAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>(Common::T_ear::LEFT);
-			//leftAmbisonicDomainConvolverProcessor->SetEar(Common::T_ear::LEFT);			
+			leftAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>(Common::T_ear::LEFT);			
 			brtManager->ConnectModuleABIR(this, leftAmbisonicDomainConvolverProcessor, "listenerAmbisonicBIR");
-			rightAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>(Common::T_ear::RIGHT);
-			//rightAmbisonicDomainConvolverProcessor->SetEar(Common::T_ear::RIGHT);
-			brtManager->ConnectModuleABIR(this, rightAmbisonicDomainConvolverProcessor, "listenerAmbisonicBIR");
+			rightAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>(Common::T_ear::RIGHT);			
+			brtManager->ConnectModuleABIR(this, rightAmbisonicDomainConvolverProcessor, "listenerAmbisonicBIR");			
 		}
 
 
@@ -121,19 +131,13 @@ namespace BRTListenerModel {
 			if (_listenerHRTF->GetSamplingRate() != globalParameters.GetSampleRate()) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "This HRTF has not been assigned to the listener. The sample rate of the HRTF does not match the one set in the library Global Parameters.");
 				return false;
-			}
-			//std::lock_guard<std::mutex> l(mutex);
-			//std::unique_lock<std::mutex> l(mutex);
-			listenerHRTF = _listenerHRTF;			
-			
-			//listenerAmbisonicIR->BeginSetup(/*listenerHRTF->GetHRIRLength(), listenerHRTF->GetHRIRNumberOfSubfilters(), listenerHRTF->GetHRIRSubfilterLength(),*/ ambisonicOrder, ambisonicNormalization);
-			//listenerAmbisonicIR->AddImpulseResponsesFromHRTF(listenerHRTF);
+			}			
+			listenerHRTF = _listenerHRTF;									
 			InitListenerAmbisonicIR();
 
 			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
 			GetABIRExitPoint()->sendDataPtr(listenerAmbisonicIR);
-			
-			//l.unlock();
+						
 			ResetProcessorBuffers();
 			return true;
 		}
@@ -160,25 +164,26 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		void SetILD(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerILD) {
-			listenerILD = _listenerILD;
-			GetILDExitPoint()->sendDataPtr(listenerILD);
+		bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerILD) {
+			listenerNFCFilters = _listenerILD;
+			GetILDExitPoint()->sendDataPtr(listenerNFCFilters);
+			return true;
 		}
 
 		/** \brief Get HRTF of listener
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr <BRTServices::CNearFieldCompensationFilters> GetILD() const
+		std::shared_ptr <BRTServices::CNearFieldCompensationFilters> GetNearFieldCompensationFilters() const
 		{
-			return listenerILD;
+			return listenerNFCFilters;
 		}
 
 		/** \brief Remove the HRTF of thelistener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void RemoveILD() {
-			listenerILD = std::make_shared<BRTServices::CNearFieldCompensationFilters>();	// empty HRTF			
+		void RemoveNearFierldCompensationFilters() {
+			listenerNFCFilters = std::make_shared<BRTServices::CNearFieldCompensationFilters>();	// empty HRTF			
 		}
 
 		/**
@@ -215,14 +220,15 @@ namespace BRTListenerModel {
 		 * @brief Set the ambisonin normalization to be used
 		 * @param _ambisonicNormalization Normalization to be set up. 
 		*/
-		void SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) {
+		bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) {
 			
-			if (ambisonicNormalization == _ambisonicNormalization) { return; }
+			if (ambisonicNormalization == _ambisonicNormalization) { return true; }
 			
 			//std::lock_guard<std::mutex> l(mutex);
 			ambisonicNormalization = _ambisonicNormalization;
 			if (listenerHRTF->IsHRTFLoaded()) {	InitListenerAmbisonicIR();	}			
 			SetConfigurationInALLSourcesProcessors();
+			return true;
 		}
 		
 		/**
@@ -237,8 +243,7 @@ namespace BRTListenerModel {
 			else if (_ambisonicNormalization == "SN3D") {	temp = Common::TAmbisonicNormalization::SN3D; }
 			else if (_ambisonicNormalization == "maxN") {	temp = Common::TAmbisonicNormalization::maxN; }
 			else { return false; }
-			SetAmbisonicNormalization(temp);		
-			return true;
+			return SetAmbisonicNormalization(temp);					
 		}
 
 		/**
@@ -289,6 +294,12 @@ namespace BRTListenerModel {
 		}
 		
 		/**
+		 * @brief Check if ITD simulation is enabled
+		 * @return
+		 */
+		bool IsITDSimulationEnabled() { return enableITDSimulation; }
+
+		/**
 		 * @brief Enable Parallax Correction
 		*/
 		void EnableParallaxCorrection() { 
@@ -304,6 +315,36 @@ namespace BRTListenerModel {
 			SetConfigurationInALLSourcesProcessors();
 		}
 
+		/**
+		* @brief Get Parallax Correction state
+		*/
+		bool IsParallaxCorrectionEnabled() { return enableParallaxCorrection; }
+
+		/**
+		 * @brief Enable model
+		 */
+		void EnableModel() {
+			std::lock_guard<std::mutex> l(mutex);
+			enableModel = true;
+			for (auto& it : sourcesConnectedProcessors) {
+				it.SetEnableProcessor(true);
+			}
+			leftAmbisonicDomainConvolverProcessor->EnableProcessor();
+			rightAmbisonicDomainConvolverProcessor->EnableProcessor();
+		};
+
+		/**
+		 * @brief Disable model
+		 */
+		void DisableModel() {
+			std::lock_guard<std::mutex> l(mutex);
+			enableModel = false;
+			for (auto& it : sourcesConnectedProcessors) {
+				it.SetEnableProcessor(false);
+			}
+			leftAmbisonicDomainConvolverProcessor->DisableProcessor();
+			rightAmbisonicDomainConvolverProcessor->DisableProcessor();
+		};
 
 		/**
 		 * @brief Connect a new source to this listener
@@ -395,36 +436,13 @@ namespace BRTListenerModel {
 	private:
 
 		/////////////////
-		// Attributes
-		/////////////////		
-		mutable std::mutex mutex;													// To avoid access collisions
-		std::string listenerID;														// Store unique listener ID
-		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;							// HRTF of listener														
-		std::shared_ptr<BRTServices::CNearFieldCompensationFilters> listenerILD;								// ILD of listener				
-		std::shared_ptr<BRTServices::CAmbisonicBIR> listenerAmbisonicIR;			// AmbisonicIR related to the listener				
-		
-		int ambisonicOrder;															// Store the Ambisonic order
-		Common::TAmbisonicNormalization ambisonicNormalization;						// Store the Ambisonic normalization
-		bool enableNearFieldEffect;													// Enables/Disables the Near Field Effect
-		//bool enableBilateralAmbisonic;												// 
-
-		std::vector< CSourceToBeProcessed> sourcesConnectedProcessors;				// List of sources connected to this listener model
-		
-		std::shared_ptr <BRTProcessing::CAmbisonicDomainConvolverProcessor> leftAmbisonicDomainConvolverProcessor;
-		std::shared_ptr <BRTProcessing::CAmbisonicDomainConvolverProcessor> rightAmbisonicDomainConvolverProcessor;
-		
-		BRTBase::CBRTManager* brtManager;
-		Common::CGlobalParameters globalParameters;
-
-
-		/////////////////
 		// Methods
 		/////////////////
 		
 		void InitListenerAmbisonicIR(){
 			std::lock_guard<std::mutex> l(mutex);
 			listenerAmbisonicIR->BeginSetup(ambisonicOrder, ambisonicNormalization);
-			bool control = listenerAmbisonicIR->AddImpulseResponsesFromHRTF(listenerHRTF);
+			bool control = listenerAmbisonicIR->AddImpulseResponsesFromHRIR(listenerHRTF);
 			if (control) {
 				listenerAmbisonicIR->EndSetup();
 			}
@@ -461,6 +479,15 @@ namespace BRTListenerModel {
 		template <typename T>
 		bool ConnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
 			std::lock_guard<std::mutex> l(mutex);
+			
+			// Get listener pointer
+			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(GetIDEntryPoint("listenerID")->GetData());
+			if (_listener == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This listener Model has not been connected to a listener.");
+				return false;
+			}
+
+			// Make connection
 			CSourceToBeProcessed _newSourceProcessors(_source->GetID(), brtManager);
 			_newSourceProcessors.bilateralAmbisonicEncoderProcessor->SetAmbisonicOrder(ambisonicOrder);
 			_newSourceProcessors.bilateralAmbisonicEncoderProcessor->SetAmbisonicNormalization(ambisonicNormalization);
@@ -469,10 +496,10 @@ namespace BRTListenerModel {
 			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "sourceID");			
 			
 			if (sourceNeedsListenerPosition) {
-				control = control && brtManager->ConnectModuleTransform(this, _source, "listenerPosition");
+				control = control && brtManager->ConnectModuleTransform(_listener, _source, "listenerPosition");
 			}
 
-			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerPosition");
+			control = control && brtManager->ConnectModuleTransform(_listener, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerPosition");
 			control = control && brtManager->ConnectModuleHRTF(this, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerHRTF");
 			control = control && brtManager->ConnectModuleILD(this, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerILD");
 			control = control && brtManager->ConnectModuleID(this, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerID");
@@ -501,6 +528,14 @@ namespace BRTListenerModel {
 		template <typename T>
 		bool DisconnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
 			std::lock_guard<std::mutex> l(mutex);
+			
+			// Get listener pointer
+			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(GetIDEntryPoint("listenerID")->GetData());
+			if (_listener == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This listener Model has not been connected to a listener.");
+				return false;
+			}
+			// Make disconnection
 			std::string _sourceID = _source->GetID();
 			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSourceToBeProcessed& sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
 			if (it != sourcesConnectedProcessors.end()) {
@@ -515,10 +550,10 @@ namespace BRTListenerModel {
 				control = control && brtManager->DisconnectModuleID(this, it->bilateralAmbisonicEncoderProcessor, "listenerID");
 				control = control && brtManager->DisconnectModuleILD(this, it->bilateralAmbisonicEncoderProcessor, "listenerILD");
 				control = control && brtManager->DisconnectModuleHRTF(this, it->bilateralAmbisonicEncoderProcessor, "listenerHRTF");
-				control = control && brtManager->DisconnectModuleTransform(this, it->bilateralAmbisonicEncoderProcessor, "listenerPosition");
+				control = control && brtManager->DisconnectModuleTransform(_listener, it->bilateralAmbisonicEncoderProcessor, "listenerPosition");
 
 				if (sourceNeedsListenerPosition) {
-					control = control && brtManager->DisconnectModuleTransform(this, _source, "listenerPosition");
+					control = control && brtManager->DisconnectModuleTransform(_listener, _source, "listenerPosition");
 				}
 
 				control = control && brtManager->DisconnectModuleID(_source, it->bilateralAmbisonicEncoderProcessor, "sourceID");
@@ -530,6 +565,29 @@ namespace BRTListenerModel {
 			}
 			return false;
 		}
+
+		/////////////////
+		// Attributes
+		/////////////////		
+		mutable std::mutex mutex;													// To avoid access collisions
+		std::string listenerID;														// Store unique listener ID
+		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;							// HRTF of listener														
+		std::shared_ptr<BRTServices::CNearFieldCompensationFilters> listenerNFCFilters;								// ILD of listener				
+		std::shared_ptr<BRTServices::CAmbisonicBIR> listenerAmbisonicIR;			// AmbisonicIR related to the listener				
+
+		int ambisonicOrder;															// Store the Ambisonic order
+		Common::TAmbisonicNormalization ambisonicNormalization;						// Store the Ambisonic normalization
+		bool enableNearFieldEffect;													// Enables/Disables the Near Field Effect
+		bool enableParallaxCorrection;												// Enable parallax correction
+		bool enableITDSimulation;													// Enable ITD simulation 
+
+		std::vector< CSourceToBeProcessed> sourcesConnectedProcessors;				// List of sources connected to this listener model
+
+		std::shared_ptr <BRTProcessing::CAmbisonicDomainConvolverProcessor> leftAmbisonicDomainConvolverProcessor;
+		std::shared_ptr <BRTProcessing::CAmbisonicDomainConvolverProcessor> rightAmbisonicDomainConvolverProcessor;
+
+		BRTBase::CBRTManager* brtManager;
+		Common::CGlobalParameters globalParameters;
 	};
 }
 #endif

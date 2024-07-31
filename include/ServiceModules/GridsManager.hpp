@@ -27,7 +27,6 @@
 #include <unordered_map>
 #include <vector>
 #include <ServiceModules/InterpolationAuxiliarMethods.hpp>
-
 #include <ServiceModules/HRTFDefinitions.hpp>
 
 namespace BRTServices
@@ -113,7 +112,7 @@ namespace BRTServices
 	class CQuasiUniformSphereDistribution {
 	public:
 		template <typename T, typename U>
-		void CreateGrid(T& table, std::unordered_map<orientation, float>& stepVector, int _resamplingStep) {
+		static void CreateGrid(T& table, std::unordered_map<orientation, float>& stepVector, int _resamplingStep) {
 			int n_divisions_by_elev;
 
 			double elevationInRange;
@@ -160,7 +159,7 @@ namespace BRTServices
 		}
 
 		template <typename T, typename U>
-		U FindNearest(const T& table, /*std::vector<CMonoBuffer<float>>& _outData,*/ const std::unordered_map<orientation, float>& stepMap, /*Common::T_ear ear,*/ float _azimuth, float _elevation) const
+		static U FindNearest(const T& table, const std::unordered_map<orientation, float>& stepMap, /*Common::T_ear ear,*/ float _azimuth, float _elevation)
 		{
 			U emptyData;
 			float eleStep = stepMap.find(orientation(-1, -1))->second;
@@ -238,7 +237,7 @@ namespace BRTServices
 
 		friend class CHRTFTester;
 	private:
-		double AdjustElevationRange(double elev) {
+		static double AdjustElevationRange(double elev) {
 
 			if (elev < 0) { 
 				elev = elev + 360; 
@@ -246,7 +245,7 @@ namespace BRTServices
 			return elev;
 		}
 
-		double d2r(double d) {
+		static double d2r(double d) {
 			return (d / 180.0) * ((double)M_PI);
 		}
 	};

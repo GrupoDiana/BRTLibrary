@@ -23,16 +23,17 @@
 #ifndef _NEAR_FIELD_EFFECT_PROCESSOR_HPP
 #define _NEAR_FIELD_EFFECT_PROCESSOR_HPP
 
-#include <Base/ProcessorBase.hpp>
-#include <Base/EntryPoint.hpp>
-#include <Common/Buffer.hpp>
-#include <ProcessingModules/NearFieldEffect.hpp>
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <Base/AdvancedEntryPointManager.hpp>
+#include <Base/ExitPointManager.hpp>
+#include <Common/Buffer.hpp>
+#include <ProcessingModules/NearFieldEffect.hpp>
+
 
 namespace BRTProcessing {
-    class CNearFieldEffectProcessor : public BRTBase::CProcessorBase, public CNearFieldEffect {
+    class CNearFieldEffectProcessor : public BRTBase::CAdvancedEntryPointManager, public BRTBase::CExitPointManager, public CNearFieldEffect {
 		
     public:
 		CNearFieldEffectProcessor() {
@@ -60,10 +61,10 @@ namespace BRTProcessing {
 
 				Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
 				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();												
-				std::weak_ptr<BRTServices::CNearFieldCompensationFilters> listenerILD = GetILDPtrEntryPoint("listenerILD")->GetData();
+				std::weak_ptr<BRTServices::CNearFieldCompensationFilters> listenerNFCFilters = GetILDPtrEntryPoint("listenerILD")->GetData();
 				
 				if (leftBuffer.size() != 0  || rightBuffer.size() !=0)  {
-					Process(leftBuffer, rightBuffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerILD);
+					Process(leftBuffer, rightBuffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerNFCFilters);
 					GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
 					GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);
 				}				

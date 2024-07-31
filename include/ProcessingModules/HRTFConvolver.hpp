@@ -27,7 +27,8 @@
 #include <Common/Buffer.hpp>
 #include <Common/AddDelayExpansionMethod.hpp>
 #include <Common/SourceListenerRelativePositionCalculation.hpp>
-#include <ServiceModules/HRTF.hpp>
+//#include <ServiceModules/HRTF.hpp>
+
 
 #include <memory>
 #include <vector>
@@ -40,21 +41,48 @@
 namespace BRTProcessing {
 	class CHRTFConvolver  {
 	public:
-		CHRTFConvolver() : enableInterpolation{ true }, enableSpatialization{ true }, enableITDSimulation{ true }, enableParallaxCorrection { true }, convolutionBuffersInitialized{false} { }
+		CHRTFConvolver() : enableProcessor{true}, enableInterpolation{true}, enableSpatialization{true}, enableITDSimulation{true}, enableParallaxCorrection{true}, convolutionBuffersInitialized{false} { }
 
-
-		///Enable spatialization process for this source	
+		/**
+		 * @brief Enable processor
+		 */
+		void EnableProcessor() { enableProcessor = true; }
+		/**
+		 * @brief Disable processor
+		 */
+		void DisableProcessor() { enableProcessor = false; }
+		/**
+		 * @brief Get the flag to know if the processor is enabled.
+		 * @return true if the processor is enabled, false otherwise
+		 */
+		bool IsProcessorEnabled() { return enableProcessor; }
+						
+		/**
+		 * @brief Enable spatialization process for this source
+		 */
 		void EnableSpatialization() { enableSpatialization = true; }
-		///Disable spatialization process for this source	
+		/**
+		 * @brief Disable spatialization process for this source
+		 */
 		void DisableSpatialization() { enableSpatialization = false; }
-		///Get the flag for spatialization process enabling
+		/**
+		 * @brief Get the flag to know if spatialization is enabled.
+		 * @return true if spatialization is enabled, false otherwise
+		 */
 		bool IsSpatializationEnabled() { return enableSpatialization; }
 		
-		///Enable HRTF interpolation method	
-		void EnableInterpolation() { enableInterpolation = true; }
-		///Disable HRTF interpolation method
+		/**
+		 * @brief Enable HRTF interpolation method
+		 */
+		void EnableInterpolation() { enableInterpolation = true; }		
+		/**
+		 * @brief Disable HRTF interpolation method
+		 */
 		void DisableInterpolation() { enableInterpolation = false; }
-		///Get the flag for HRTF interpolation method
+		/**
+		 * @brief Get the flag to know if HRTF interpolation is enabled.
+		 * @return true if HRTF interpolation is enabled, false otherwise
+		 */
 		bool IsInterpolationEnabled() { return enableInterpolation; }
 		
 		/**
@@ -96,11 +124,17 @@ namespace BRTProcessing {
 		*	\param [out] outRightBuffer output mono buffer with spatialized audio for the right channel
 		*   \eh The error handler is informed if the size of the input buffer differs from that stored in the global
 		*       parameters and if the HRTF of the listener is null.		   
-		*/
-		void Process(CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CHRTF>& _listenerHRTFWeak) {
-
+		*/		
+		void Process(CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CServicesBase>& _listenerHRTFWeak) {
 			ASSERT(_inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");
-						
+			
+			// Check processor flag
+			if (!enableProcessor) { 
+				outLeftBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
+				outRightBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
+				return; 
+			} 
+
 			// Check process flag
 			if (!enableSpatialization)
 			{
@@ -110,7 +144,8 @@ namespace BRTProcessing {
 			}
 
 			// Check listener HRTF
-			std::shared_ptr<BRTServices::CHRTF> _listenerHRTF = _listenerHRTFWeak.lock();
+			//std::shared_ptr<BRTServices::CHRTF> _listenerHRTF = _listenerHRTFWeak.lock();
+			std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF = _listenerHRTFWeak.lock();
 			if (!_listenerHRTF) {
 				SET_RESULT(RESULT_ERROR_NULLPOINTER, "HRTF listener pointer is null when trying to use in HRTFConvolver");
 				outLeftBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
@@ -146,8 +181,8 @@ namespace BRTProcessing {
 			std::vector<CMonoBuffer<float>>  leftHRIR_partitioned;
 			std::vector<CMonoBuffer<float>>  rightHRIR_partitioned;
 
-			leftHRIR_partitioned = _listenerHRTF->GetHRIR_partitioned(Common::T_ear::LEFT, leftAzimuth, leftElevation, enableInterpolation);
-			rightHRIR_partitioned = _listenerHRTF->GetHRIR_partitioned(Common::T_ear::RIGHT, rightAzimuth, rightElevation, enableInterpolation);
+			leftHRIR_partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::LEFT, leftAzimuth, leftElevation, enableInterpolation, listenerTransform);
+			rightHRIR_partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::RIGHT, rightAzimuth, rightElevation, enableInterpolation, listenerTransform);
 						
 			// DO CONVOLUTION			
 			CMonoBuffer<float> leftChannel_withoutDelay;
@@ -161,7 +196,7 @@ namespace BRTProcessing {
 			uint64_t rightDelay;				///< Delay, in number of samples
 
 			if (enableITDSimulation){
-				BRTServices::THRIRPartitionedStruct delays = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, centerAzimuth, centerElevation, enableInterpolation);
+				BRTServices::THRIRPartitionedStruct delays = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, centerAzimuth, centerElevation, enableInterpolation, listenerTransform);
 				leftDelay = delays.leftDelay;
 				rightDelay = delays.rightDelay;
 			}
@@ -195,6 +230,7 @@ namespace BRTProcessing {
 		CMonoBuffer<float> leftChannelDelayBuffer;			// To store the delay of the left channel of the expansion method
 		CMonoBuffer<float> rightChannelDelayBuffer;			// To store the delay of the right channel of the expansion method
 
+		bool enableProcessor;								// Flag to enable the processor
 		bool enableSpatialization;							// Flags for independent control of processes
 		bool enableInterpolation;							// Enables/Disables the interpolation on run time
 		bool enableITDSimulation;							// Enables/Disables the ITD on run time
@@ -205,90 +241,9 @@ namespace BRTProcessing {
 		/// PRIVATE Methods        
 		/////////////////////
 
-		// Apply doppler effect simulation
-		//void ProcessAddDelay_ExpansionMethod(CMonoBuffer<float>& input, CMonoBuffer<float>& output, CMonoBuffer<float>& delayBuffer, int newDelay)
-		//{
-		//	//Prepare the outbuffer		
-		//	if (output.size() != input.size()) { output.resize(input.size()); }
-
-		//	//Prepare algorithm variables
-		//	float position = 0;
-		//	float numerator = input.size() - 1;
-		//	float denominator = input.size() - 1 + newDelay - delayBuffer.size();
-		//	float compressionFactor = numerator / denominator;
-
-		//	//Add samples to the output from buffer
-		//	for (int i = 0; i < delayBuffer.size(); i++)
-		//	{
-		//		output[i] = delayBuffer[i];
-		//	}
-
-		//	//Fill the others buffers
-		//	//if the delay is the same one as the previous frame use a simplification of the algorithm
-		//	if (newDelay == delayBuffer.size())
-		//	{
-		//		//Copy input to output
-		//		int j = 0;
-		//		for (int i = delayBuffer.size(); i < input.size(); i++)
-		//		{
-		//			output[i] = input[j++];
-		//		}
-		//		//Fill delay buffer
-		//		for (int i = 0; i < newDelay; i++)
-		//		{
-		//			delayBuffer[i] = input[j++];
-		//		}
-		//	}
-		//	//else, apply the expansion/compression algorihtm
-		//	else
-		//	{
-		//		int j;
-		//		float rest;
-		//		int forLoop_end;
-		//		//The last loop iteration must be addressed in a special way if newDelay = 0 (part 1)
-		//		if (newDelay == 0) { forLoop_end = input.size() - 1; }
-		//		else { forLoop_end = input.size(); }
-
-		//		//Fill the output buffer with the new values 
-		//		for (int i = delayBuffer.size(); i < forLoop_end; i++)
-		//		{
-		//			j = static_cast<int>(position);
-		//			rest = position - j;
-		//			output[i] = input[j] * (1 - rest) + input[j + 1] * rest;
-		//			position += compressionFactor;
-		//		}
-
-		//		//The last loop iteration must be addressed in a special way if newDelay = 0 (part 2)
-		//		if (newDelay == 0)
-		//		{
-		//			output[input.size() - 1] = input[input.size() - 1];
-		//			delayBuffer.clear();
-		//		}
-
-		//		//if newDelay!=0 fill out the delay buffer
-		//		else
-		//		{
-		//			//Fill delay buffer 			
-		//			CMonoBuffer<float> temp;
-		//			temp.reserve(newDelay);
-		//			for (int i = 0; i < newDelay - 1; i++)
-		//			{
-		//				int j = int(position);
-		//				float rest = position - j;
-		//				temp.push_back(input[j] * (1 - rest) + input[j + 1] * rest);
-		//				position += compressionFactor;
-		//			}
-		//			//Last element of the delay buffer that must be addressed in a special way
-		//			temp.push_back(input[input.size() - 1]);
-		//			//delayBuffer.swap(temp);				//To use in C++03
-		//			delayBuffer = std::move(temp);			//To use in C++11
-		//		}
-		//	}
-		//}//End ProcessAddDelay_ExpansionMethod
-
-
+				
 		/// Initialize convolvers and convolition buffers		
-		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF) {
+		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CServicesBase>& _listenerHRTF) {
 
 			int numOfSubfilters = _listenerHRTF->GetHRIRNumberOfSubfilters();
 			int subfilterLength = _listenerHRTF->GetHRIRSubfilterLength();
@@ -302,89 +257,7 @@ namespace BRTProcessing {
 
 			// Declare variable
 			convolutionBuffersInitialized = true;
-		}
-
-
-		///// Calculates the parameters derived from the source and listener position
-		//void CalculateSourceCoordinates(Common::CTransform& _sourceTransform, Common::CTransform& _listenerTransform, std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF, float& leftElevation, float& leftAzimuth, float& rightElevation, float& rightAzimuth, float& centerElevation, float& centerAzimuth, float& interauralAzimuth)
-		//{
-
-		//	//Get azimuth and elevation between listener and source
-		//	Common::CVector3 _vectorToListener = _listenerTransform.GetVectorTo(_sourceTransform);
-		//	float _distanceToListener = _vectorToListener.GetDistance();
-
-		//	//Check listener and source are in the same position
-		//	if (_distanceToListener <= MINIMUM_DISTANCE_SOURCE_LISTENER) {				
-		//		SET_RESULT(RESULT_WARNING, "The sound source is too close to the centre of the listener's head in BRTProcessing::CHRTFConvolver");
-		//		_distanceToListener = MINIMUM_DISTANCE_SOURCE_LISTENER;
-		//	}
-
-		//	Common::CVector3 leftEarLocalPosition = _listenerHRTF->GetEarLocalPosition(Common::T_ear::LEFT);
-		//	Common::CVector3 rightEarLocalPosition = _listenerHRTF->GetEarLocalPosition(Common::T_ear::RIGHT);
-		//	Common::CTransform leftEarTransform = _listenerTransform.GetLocalTranslation(leftEarLocalPosition);
-		//	Common::CTransform rightEarTransform = _listenerTransform.GetLocalTranslation(rightEarLocalPosition);
-
-		//	Common::CVector3 leftVectorTo = leftEarTransform.GetVectorTo(_sourceTransform);
-		//	Common::CVector3 rightVectorTo = rightEarTransform.GetVectorTo(_sourceTransform);
-		//	Common::CVector3 leftVectorTo_sphereProjection = GetSphereProjectionPosition(leftVectorTo, leftEarLocalPosition, _listenerHRTF->GetHRTFDistanceOfMeasurement());
-		//	Common::CVector3 rightVectorTo_sphereProjection = GetSphereProjectionPosition(rightVectorTo, rightEarLocalPosition, _listenerHRTF->GetHRTFDistanceOfMeasurement());
-
-		//	leftElevation = leftVectorTo_sphereProjection.GetElevationDegrees();	//Get left elevation
-		//	if (!Common::AreSame(ELEVATION_SINGULAR_POINT_UP, leftElevation, EPSILON) && !Common::AreSame(ELEVATION_SINGULAR_POINT_DOWN, leftElevation, EPSILON))
-		//	{
-		//		leftAzimuth = leftVectorTo_sphereProjection.GetAzimuthDegrees();	//Get left azimuth
-		//	}
-
-		//	rightElevation = rightVectorTo_sphereProjection.GetElevationDegrees();	//Get right elevation	
-		//	if (!Common::AreSame(ELEVATION_SINGULAR_POINT_UP, rightElevation, EPSILON) && !Common::AreSame(ELEVATION_SINGULAR_POINT_DOWN, rightElevation, EPSILON))
-		//	{
-		//		rightAzimuth = rightVectorTo_sphereProjection.GetAzimuthDegrees();		//Get right azimuth
-		//	}
-
-
-		//	centerElevation = _vectorToListener.GetElevationDegrees();		//Get elevation from the head center
-		//	if (!Common::AreSame(ELEVATION_SINGULAR_POINT_UP, centerElevation, EPSILON) && !Common::AreSame(ELEVATION_SINGULAR_POINT_DOWN, centerElevation, EPSILON))
-		//	{
-		//		centerAzimuth = _vectorToListener.GetAzimuthDegrees();		//Get azimuth from the head center
-		//	}
-
-		//	interauralAzimuth = _vectorToListener.GetInterauralAzimuthDegrees();	//Get Interaural Azimuth
-
-		//}
-
-
-		//// In orther to obtain the position where the HRIR is needed, this method calculate the projection of each ear in the sphere where the HRTF has been measured
-		//const Common::CVector3 GetSphereProjectionPosition(Common::CVector3 vectorToEar, Common::CVector3 earLocalPosition, float distance) const
-		//{
-		//	//get axis according to the defined convention
-		//	float rightAxis = vectorToEar.GetAxis(RIGHT_AXIS);
-		//	float forwardAxis = vectorToEar.GetAxis(FORWARD_AXIS);
-		//	float upAxis = vectorToEar.GetAxis(UP_AXIS);
-		//	// Error handler:
-		//	if ((rightAxis == 0.0f) && (forwardAxis == 0.0f) && (upAxis == 0.0f)) {
-		//		ASSERT(false, RESULT_ERROR_DIVBYZERO, "Axes are not correctly set. Please, check axis conventions", "Azimuth computed from vector succesfully");
-		//	}
-		//	//get ear position in right axis
-		//	float earRightAxis = earLocalPosition.GetAxis(RIGHT_AXIS);
-
-		//	//Resolve a quadratic equation to get lambda, which is the parameter that define the line between the ear and the sphere, passing by the source
-		//	// (x_sphere, y_sphere, z_sphere) = earLocalPosition + lambda * vectorToEar 
-		//	// x_sphere^2 + y_sphere^2 + z_sphere^2 = distance^2
-
-
-		//	float a = forwardAxis * forwardAxis + rightAxis * rightAxis + upAxis * upAxis;
-		//	float b = 2.0f * earRightAxis * rightAxis;
-		//	float c = earRightAxis * earRightAxis - distance * distance;
-		//	float lambda = (-b + sqrt(b * b - 4.0f * a * c)) * 0.5f * (1 / a);
-
-		//	Common::CVector3 cartesianposition;
-
-		//	cartesianposition.SetAxis(FORWARD_AXIS, lambda * forwardAxis);
-		//	cartesianposition.SetAxis(RIGHT_AXIS, (earRightAxis + lambda * rightAxis));
-		//	cartesianposition.SetAxis(UP_AXIS, lambda * upAxis);
-
-		//	return cartesianposition;
-		//}		
+		}		
 	};
 }
 #endif

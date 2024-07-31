@@ -27,7 +27,7 @@
 
 namespace Common {
 
-	enum TAmbisonicNormalization { N3D, SN3D, maxN };
+	enum TAmbisonicNormalization { none, N3D, SN3D, maxN };
 
 	class CAmbisonicEncoder {
 	public:

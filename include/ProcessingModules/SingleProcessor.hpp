@@ -22,13 +22,14 @@
 
 #pragma once
 
-#include <Base/ProcessorBase.hpp>
+#include <Base/AdvancedEntryPointManager.hpp>
+#include <Base/ExitPointManager.hpp>
 #include <memory>
 #include <vector>
 #include <algorithm>
  
 namespace BRTProcessing {
-    class CSingleProcessor : public BRTBase::CProcessorBase
+    class CSingleProcessor : public BRTBase::CAdvancedEntryPointManager, public BRTBase::CExitPointManager
     {
     public:
         CSingleProcessor() : gain{ 1.0f } {

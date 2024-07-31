@@ -29,7 +29,7 @@
 #include <Common/ErrorHandler.hpp>
 #include <Common/GlobalParameters.hpp>
 #include <Common/CommonDefinitions.hpp>
-#include <ServiceModules/ServiceModuleInterfaces.hpp>
+#include <ServiceModules/ServicesBase.hpp>
 #include <ServiceModules/DirectivityTFDefinitions.hpp>
 #include <ServiceModules/DirectivityTFAuxiliarMethods.hpp>
 #include <ServiceModules/Extrapolation.hpp>
@@ -94,7 +94,7 @@ namespace BRTServices
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
-		void BeginSetup(int32_t _directivityTFPartLength, std::string _extrapolationMethod){
+		void BeginSetup(int32_t _directivityTFPartLength, TEXTRAPOLATION_METHOD _extrapolationMethod){
 			//Update parameters			
 			elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
 			elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
@@ -102,6 +102,7 @@ namespace BRTServices
 			if (_directivityTFPartLength != globalParameters.GetBufferSize()) //
 			{
 				SET_RESULT(RESULT_ERROR_BADSIZE, "Number of frequency samples (N) in SOFA file is different from Buffer Size");
+				return;
 			}
 
 			bufferSize = globalParameters.GetBufferSize();
@@ -376,7 +377,7 @@ namespace BRTServices
 
 	private:
 
-		enum TExtrapolationMethod { zeroInsertion, nearestPoint };
+		//enum TExtrapolationMethod { zeroInsertion, nearestPoint };
 
 		std::string title;
 		std::string databaseName;
@@ -388,7 +389,7 @@ namespace BRTServices
 		int32_t directivityTF_length;	
 		int32_t directivityTFPart_length;
 		int32_t directivityTF_numberOfSubfilters;	
-		TExtrapolationMethod extrapolationMethod;						// Methods that is going to be used to extrapolate
+		TEXTRAPOLATION_METHOD extrapolationMethod;						// Methods that is going to be used to extrapolate
 		
 		T_DirectivityTFTable					t_DirectivityTF_DataBase;
 		std::vector<orientation>				t_DirectivityTF_DataBase_ListOfOrientations;
@@ -450,9 +451,10 @@ namespace BRTServices
 		 * @brief Set the extrapolation method that is going to be used
 		 * @param _extrapolationMethod
 		*/
-		void SetExtrapolationMethod(std::string _extrapolationMethod) {
+		void SetExtrapolationMethod(TEXTRAPOLATION_METHOD _extrapolationMethod) {
 
-			if (_extrapolationMethod == EXTRAPOLATION_METHOD_ZEROINSERTION_STRING) {
+			extrapolationMethod = _extrapolationMethod;
+			/*if (_extrapolationMethod == EXTRAPOLATION_METHOD_ZEROINSERTION_STRING) {
 				extrapolationMethod = TExtrapolationMethod::zeroInsertion;
 			}
 			else if (_extrapolationMethod == EXTRAPOLATION_METHOD_NEARESTPOINT_STRING) {
@@ -461,8 +463,7 @@ namespace BRTServices
 			else {
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Extrapolation Method not identified.");
 				extrapolationMethod = TExtrapolationMethod::nearestPoint;
-			}
-
+			}*/
 		}
 		/**
 		 * @brief Call the extrapolation method
@@ -470,11 +471,11 @@ namespace BRTServices
 		void CalculateExtrapolation() {
 			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.
 
-			if (extrapolationMethod == TExtrapolationMethod::zeroInsertion) {
+			if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::zero_insertion) {
 				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded DirectivityTF sofa file, an extrapolation with zeros will be performed to fill it.");
 				extrapolation.Process<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_DataBase_ListOfOrientations, directivityTFPart_length, DEFAULT_EXTRAPOLATION_STEP, CDirectivityTFAuxiliarMethods::GetZerosDirectivityTF());			
 			}
-			else if (extrapolationMethod == TExtrapolationMethod::nearestPoint) {
+			else if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::nearest_point) {
 				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded DirectivityTF sofa file, an extrapolation will be made to the nearest point to fill it.");
 				extrapolation.Process<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_DataBase_ListOfOrientations, directivityTFPart_length, DEFAULT_EXTRAPOLATION_STEP, CDirectivityTFAuxiliarMethods::GetNearestPointDirectivityTF());
 			}

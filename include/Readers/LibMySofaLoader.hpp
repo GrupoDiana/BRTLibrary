@@ -34,7 +34,7 @@ namespace BRTReaders {
 
 	public:
 
-		enum class TSofaConvention { SimpleFreeFieldHRIR, SimpleFreeFieldHRSOS, FreeFieldDirectivityTF};
+		enum class TSofaConvention { SimpleFreeFieldHRIR, SimpleFreeFieldHRSOS, FreeFieldDirectivityTF, SingleRoomMIMOSRIR};
 		const char* SofaConventioToString(TSofaConvention e) noexcept
 		{
 			switch (e)
@@ -42,7 +42,7 @@ namespace BRTReaders {
 			case TSofaConvention::SimpleFreeFieldHRIR: return "SimpleFreeFieldHRIR";
 			case TSofaConvention::SimpleFreeFieldHRSOS: return "SimpleFreeFieldHRSOS";
 			case TSofaConvention::FreeFieldDirectivityTF: return "FreeFieldDirectivityTF";
-
+			case TSofaConvention::SingleRoomMIMOSRIR: return "SingleRoomMIMOSRIR";
 			}
 		}
 
@@ -83,8 +83,28 @@ namespace BRTReaders {
 
 			return mysofa_getVariable(hrtf->hrtf->variables, "Data.Imag");
 		}
+	
+		char* GetSourcePositionType() {
+			return mysofa_getAttribute(hrtf->hrtf->SourcePosition.attributes, "Type");
+		}
+		
+		char* GetSourceViewType() {
 
+			if (mysofa_getSourceView()== NULL) { return "cartesian"; }
+			return mysofa_getAttribute(mysofa_getSourceView()->attributes, "Type");
+		}
 
+		char* GetReceiverPositionType() {
+			return mysofa_getAttribute(hrtf->hrtf->ReceiverPosition.attributes, "Type");
+		}
+
+		std::string GetDataType() {
+			return mysofa_getAttribute(hrtf->hrtf->attributes, "DataType");
+		}
+
+		std::string GetSofaConvention(){
+			return mysofa_getAttribute(hrtf->hrtf->attributes, "SOFAConventions");
+		}
 
 		bool CheckSofaConvention(TSofaConvention sofaConvention) {
 			
@@ -132,24 +152,93 @@ namespace BRTReaders {
 			}
 		}
 
-		Common::CVector3 GetListenerView() {	
-			if (error == -1) return Common::CVector3();
-			Common::CVector3 _listenerView(hrtf->hrtf->ListenerView.values[0], hrtf->hrtf->ListenerView.values[1], hrtf->hrtf->ListenerView.values[2]);
+		int GetListenerViewSize(){
+			if (error == -1) return -1;
+			return hrtf->hrtf->ListenerView.elements;
+		}		
+		std::vector<double> GetListenerView() {
+			if (error == -1) return std::vector< double >();
+			std::vector< double > _listenerView(hrtf->hrtf->ListenerView.values, hrtf->hrtf->ListenerView.values + hrtf->hrtf->ListenerView.elements);
 			return _listenerView;
 		}
 
-		Common::CVector3 GetListenerUp() {			
-			if (error == -1) return Common::CVector3();			
-			Common::CVector3 _listenerUp(hrtf->hrtf->ListenerUp.values[0], hrtf->hrtf->ListenerUp.values[1], hrtf->hrtf->ListenerUp.values[2]);						
+		std::vector<double> GetListenerUp() {
+			if (error == -1) return std::vector< double >();
+			std::vector< double > _listenerUp(hrtf->hrtf->ListenerUp.values, hrtf->hrtf->ListenerUp.values + hrtf->hrtf->ListenerUp.elements);
 			return _listenerUp;
 		}
-		
+
 		std::vector<double> GetReceiverPosition() {
 			std::vector<double> _receiverPositions(hrtf->hrtf->ReceiverPosition.values, hrtf->hrtf->ReceiverPosition.values + hrtf->hrtf->ReceiverPosition.elements);
 			return _receiverPositions;
 		}
 
+		// Source Positions
+		std::vector<double> GetSourcePositionVector() {
+			if (error == -1) return std::vector< double >();
+			std::vector<double> _sourcePositions(hrtf->hrtf->SourcePosition.values, hrtf->hrtf->SourcePosition.values + hrtf->hrtf->SourcePosition.elements);
+			return _sourcePositions;
+		}
+		
+		//Source View
+		int GetSourceViewSize() {
+			if (error == -1) return -1;
+			return mysofa_getSourceView()->elements;
+		}
 
+		std::vector<double> GetSourceViewVector() {
+			if (error == -1) return std::vector< double >();	
+			if (mysofa_getSourceView() == NULL) { return std::vector< double >();}
+			std::vector< double > _sourceView(mysofa_getSourceView()->values, mysofa_getSourceView()->values + mysofa_getSourceView()->elements);			
+			return _sourceView;
+		}
+
+		// Source Up
+		int GetSourceUpSize() {
+			if (error == -1) return -1;
+			return mysofa_getSourceUp()->elements;
+		}
+		Common::CVector3 GetSourceUp() {
+			if (error == -1) return Common::CVector3();
+			Common::CVector3 _sourceUp(mysofa_getSourceUp()->values[0], mysofa_getSourceUp()->values[1], mysofa_getSourceUp()->values[2]);
+			return _sourceUp;
+		}
+		std::vector<double> GetSourceUpVector() {
+			if (error == -1) return std::vector< double >();
+			if (mysofa_getSourceUp() == NULL) { return std::vector< double >(); }
+			std::vector<double> _sourceUp(mysofa_getSourceUp()->values, mysofa_getSourceUp()->values + mysofa_getSourceUp()->elements);
+			return _sourceUp;
+		}
+		
+		
+
+		//Emitter
+		std::vector<double> GetEmitterPositionVector() {	
+			if (error == -1) return std::vector< double >();
+			std::vector<double> _emitterPositions(hrtf->hrtf->EmitterPosition.values, hrtf->hrtf->EmitterPosition.values + hrtf->hrtf->EmitterPosition.elements);			
+			return _emitterPositions;
+		}
+
+		//Listener
+		std::vector<double> GetListenerPositionVector() {
+			if (error == -1) return std::vector< double >();
+			std::vector<double> _listenerPositions(hrtf->hrtf->ListenerPosition.values, hrtf->hrtf->ListenerPosition.values + hrtf->hrtf->ListenerPosition.elements);
+			return _listenerPositions;
+		}
+
+		std::vector<double> GetListenerViewVector() {
+			if (error == -1) return std::vector< double >();
+			std::vector<double> _listenerView(hrtf->hrtf->ListenerView.values, hrtf->hrtf->ListenerView.values + hrtf->hrtf->ListenerView.elements);
+			return _listenerView;
+		}
+
+		std::vector<double> GetListenerUpVector() {
+			if (error == -1) return std::vector< double >();
+			std::vector<double> _listenerUp(hrtf->hrtf->ListenerUp.values, hrtf->hrtf->ListenerUp.values + hrtf->hrtf->ListenerUp.elements);
+			return _listenerUp;
+		}
+
+		// Others methods
 		void Cartesian2Spherical() {
 			if (error == -1) return ;
 			mysofa_tospherical(hrtf->hrtf);			
@@ -227,6 +316,14 @@ namespace BRTReaders {
 				SET_RESULT(RESULT_ERROR_UNKNOWN, "Unknown error when reading samplerate from SOFA");
 				return false;
 			}
+		}
+		
+		MYSOFA_ARRAY* mysofa_getSourceView() {
+			return mysofa_getVariable(hrtf->hrtf->variables, "SourceView");
+		}
+
+		MYSOFA_ARRAY* mysofa_getSourceUp() {
+			return mysofa_getVariable(hrtf->hrtf->variables, "SourceUp");
 		}
 
 		MYSOFA_ARRAY* mysofa_getVariable(struct MYSOFA_VARIABLE* var, char* name) {
