@@ -415,7 +415,7 @@ namespace BRTListenerModel {
 
 		/**
 		 * @brief Connect an environment to this listener model
-		 * @param _listener Pointer to the source
+		 * @param _environmentModel ID
 		 * @return True if the connection success
 		*/
 		bool ConnectEnvironmentModel(const std::string & _environmentModelID) override {
@@ -424,6 +424,19 @@ namespace BRTListenerModel {
 			if (_environmentModel == nullptr) return false;
 
 			return ConnectEnvironmentModel(_environmentModel);
+		};
+
+		/**
+		 * @brief Disconnect an environment from this listener model
+		 * @param _environmentModel ID
+		 * @return True if the disconnection success
+		*/
+		bool DisconnectEnvironmentModel(const std::string & _environmentModelID) override {
+
+			std::shared_ptr<BRTBase::CEnviromentModelBase> _environmentModel = brtManager->GetEnvironmentModel<BRTBase::CEnviromentModelBase>(_environmentModelID);
+			if (_environmentModel == nullptr) return false;
+
+			return DisconnectEnvironmentModel(_environmentModel);
 		};
 
 		/**
@@ -468,14 +481,10 @@ namespace BRTListenerModel {
 		}
 
 	private:
-		/////////////////
-		// Methods
-		/////////////////
-		
+				
 		/**
-		 * @brief Connect listener model to this listener
-		 * @param _listener Pointer to the source
-		 * @param _ear Ear to connect, both by default
+		 * @brief Connect environment model to this listener model
+		 * @param _environment model Pointer
 		 * @return True if the connection success
 		*/
 		bool ConnectEnvironmentModel(std::shared_ptr<BRTBase::CEnviromentModelBase> _environmentModel) {
@@ -493,6 +502,22 @@ namespace BRTListenerModel {
 			return control;
 		};
 
+		/**
+		 * @brief Disconnect environment model to this listener model
+		 * @param _environmentModel Pointer
+		 * @return True if the disconnection success
+		*/
+		bool DisconnectEnvironmentModel(std::shared_ptr<BRTBase::CEnviromentModelBase> _environmentModel) {
+
+			if (_environmentModel == nullptr) return false;
+
+			auto it = find(environmentModelsConnected.begin(), environmentModelsConnected.end(), _environmentModel);
+			if (it == environmentModelsConnected.end()) return false;
+			bool control;
+			control = brtManager->DisconnectModuleID(this, _environmentModel, "listenerModelID");
+			environmentModelsConnected.erase(it);
+			return control;
+		};
 
 		void InitListenerAmbisonicIR(){
 			std::lock_guard<std::mutex> l(mutex);

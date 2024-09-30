@@ -182,7 +182,7 @@ namespace BRTListenerModel {
 		void RemoveNearFierldCompensationFilters() override {
 			listenerNFCFilters = nullptr;
 		}
-
+		
 		/**
 		 * @brief Connect a new source to this listener
 		 * @param _source Pointer to the source
@@ -377,7 +377,7 @@ namespace BRTListenerModel {
 		
 		/**
 		 * @brief Connect an environment to this listener model
-		 * @param _listener Pointer to the source
+		 * @param _environmentModel ID
 		 * @return True if the connection success
 		*/
 		bool ConnectEnvironmentModel(const std::string & _environmentModelID) override {
@@ -387,7 +387,19 @@ namespace BRTListenerModel {
 
 			return ConnectEnvironmentModel(_environmentModel);
 		};
-				
+		
+		/**
+		 * @brief Disconnect an environment from this listener model
+		 * @param _environmentModel ID
+		 * @return True if the disconnection success
+		*/
+		bool DisconnectEnvironmentModel(const std::string & _environmentModelID) override {
+
+			std::shared_ptr<BRTBase::CEnviromentModelBase> _environmentModel = brtManager->GetEnvironmentModel<BRTBase::CEnviromentModelBase>(_environmentModelID);
+			if (_environmentModel == nullptr) return false;
+
+			return DisconnectEnvironmentModel(_environmentModel);
+		};
 
 		/**
 		 * @brief Implementation of the virtual method to process the data received by the entry points.
@@ -448,9 +460,8 @@ namespace BRTListenerModel {
 	private:
 
 		/**
-		 * @brief Connect listener model to this listener
-		 * @param _listener Pointer to the source
-		 * @param _ear Ear to connect, both by default
+		 * @brief Connect environment model to this listener model
+		 * @param _environment model Pointer
 		 * @return True if the connection success
 		*/
 		bool ConnectEnvironmentModel(std::shared_ptr<BRTBase::CEnviromentModelBase> _environmentModel) {
@@ -467,6 +478,39 @@ namespace BRTListenerModel {
 			environmentModelsConnected.push_back(_environmentModel);
 			return control;
 		};
+
+		/**
+		 * @brief Disconnect environment model to this listener model
+		 * @param _environmentModel Pointer
+		 * @return True if the disconnection success
+		*/
+		bool DisconnectEnvironmentModel(std::shared_ptr<BRTBase::CEnviromentModelBase> _environmentModel) {
+
+			if (_environmentModel == nullptr) return false;
+						
+			auto it = find(environmentModelsConnected.begin(), environmentModelsConnected.end(), _environmentModel);	
+			if (it == environmentModelsConnected.end()) return false;																										
+			bool control;
+			control = brtManager->DisconnectModuleID(this, _environmentModel, "listenerModelID");
+			environmentModelsConnected.erase(it);
+			return control;
+		};
+
+		/**
+		 * @brief Find model in a shared_ptr list
+		 * @tparam T base type
+		 * @param _list list of shared_ptr of T objects
+		 * @param _ID ID to find
+		 * @return pointer to the model if found, otherwise nullptr
+		 */
+		template <typename T>
+		std::shared_ptr<T> FindModel(std::vector<std::shared_ptr<T>> _list, const std::string & _ID) {
+			auto it = std::find_if(_list.begin(), _list.end(), [&_ID](std::shared_ptr<T> & item) { return item->GetID() == _ID; });
+			if (it != _list.end()) {
+				return *it;
+			}
+			return nullptr;
+		}
 
 		/**
 		 * @brief Update Configuration in all source processor

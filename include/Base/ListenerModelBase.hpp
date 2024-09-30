@@ -135,15 +135,16 @@ namespace BRTBase {
 		virtual bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) { return false; }
 		virtual bool SetAmbisonicNormalization(std::string _ambisonicNormalization) {return false;}
 		virtual Common::TAmbisonicNormalization GetAmbisonicNormalization() const { return Common::TAmbisonicNormalization::none; }
-
-		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel > _source) = 0;
-		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel > _source) = 0;
+		
+		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) { return false; }
+		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) { return false; }
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _source) { return false; }
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) = 0;
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) = 0;
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _source) { return false; }
 
 		virtual bool ConnectEnvironmentModel(const std::string & _environmentModelID) { return false; };
+		virtual bool DisconnectEnvironmentModel(const std::string & _environmentModelID) { return false; };
 
 		virtual bool ConnectListenerTransform(const std::string _listenerID) {return false; }
 		virtual bool DisconnectListenerTransform(const std::string _listenerID) { return false; }
