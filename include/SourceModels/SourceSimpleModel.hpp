@@ -30,7 +30,8 @@ namespace BRTSourceModel {
 	class CSourceSimpleModel : public BRTBase::CSourceModelBase {
 
 	public:			
-		CSourceSimpleModel(std::string _sourceID) : BRTBase::CSourceModelBase(_sourceID) {			
+		CSourceSimpleModel(std::string _sourceID) : BRTBase::CSourceModelBase(_sourceID) {	
+			SetSourceType(TSourceType::Simple);
 		}
 
 		void Update(std::string _entryPointID) {

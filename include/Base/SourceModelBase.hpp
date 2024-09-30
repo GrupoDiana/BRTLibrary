@@ -38,9 +38,12 @@ namespace BRTBase {
 		virtual void Update(std::string entryPointID) = 0;
 		virtual void UpdateCommand() = 0;
 
-		enum TSourceType {Real, Virtual};
-
-		CSourceModelBase(std::string _sourceID) : dataReady{ false }, sourceID{ _sourceID }, sourceType{ TSourceType::Real } {
+		enum TSourceType {Simple, Directivity, Virtual};
+		
+		CSourceModelBase(std::string _sourceID)
+			: dataReady { false }
+			, sourceID { _sourceID }
+			, sourceType {Simple} {
 			
 			CreateSamplesExitPoint("samples");
 			CreateTransformExitPoint();
@@ -114,7 +117,7 @@ namespace BRTBase {
 		}
 
 	private:
-		std::string sourceID;
+		std::string sourceID;		
 		TSourceType sourceType;
 
 		bool dataReady;

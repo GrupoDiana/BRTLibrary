@@ -33,7 +33,7 @@ namespace BRTSourceModel {
 
 	public:			
 		CSourceDirectivityModel(std::string _sourceID) : BRTBase::CSourceModelBase(_sourceID) {
-			//CreateListenerTransformEntryPoint("listenerPosition");
+			SetSourceType(TSourceType::Directivity);
 			CreatePositionEntryPoint("listenerPosition");
 		}
 
