@@ -23,6 +23,7 @@
 #define _COMMON_DEFINITIONS_HPP_
 
 #include <cmath>
+#include <Common/Vector3.hpp>
 
 namespace Common {
 
