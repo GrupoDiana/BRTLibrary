@@ -24,61 +24,30 @@
 #define _SOUND_SOURCE_VIRTUAL_MODEL_HPP
 
 #include <Base/SourceModelBase.hpp>
+#include <SourceModels/SourceSimpleModel.hpp>
 #include <vector>
 
 namespace BRTSourceModel {
-	class CVirtualSourceModel : public BRTBase::CSourceModelBase {
+	class CVirtualSourceModel : public CSourceSimpleModel {
 
 	public:			
-		CVirtualSourceModel(std::string _sourceID) : BRTBase::CSourceModelBase(_sourceID) {		
+
+		CVirtualSourceModel(std::string _sourceID)
+			: CSourceSimpleModel(_sourceID)
+			, originSourceID {""} {
 			SetSourceType(TSourceType::Virtual);
-		}
-
+		}		
+									
 		void SetOriginSourceID(std::string _originSourceID) {
-			originSourceID = _originSourceID;
+			if (originSourceID == "") {
+				originSourceID = _originSourceID;
+			}			
 		}
 
-		void Update(std::string _entryPointID) {
-			std::lock_guard<std::mutex> l(mutex);
-
-			if (_entryPointID == "samples") {
-				CMonoBuffer<float> buffer = GetBuffer();
-				SendData(buffer);
-			}
+		std::string GetOriginSourceID() {
+			return originSourceID;
 		}
-			
-		void UpdateCommand() {
-			std::lock_guard<std::mutex> l(mutex);
-			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
-
-			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
-				if (command.GetCommand() == "/source/location") {
-					Common::CVector3 location = command.GetVector3Parameter("location");
-					Common::CTransform sourceTransform = GetCurrentSourceTransform();
-					sourceTransform.SetPosition(location);
-					SetSourceTransform(sourceTransform);
-				}
-				else if (command.GetCommand() == "/source/orientation") {
-					Common::CVector3 orientationYawPitchRoll = command.GetVector3Parameter("orientation");
-					Common::CQuaternion orientation;
-					orientation = orientation.FromYawPitchRoll(orientationYawPitchRoll.x, orientationYawPitchRoll.y, orientationYawPitchRoll.z);
-
-					Common::CTransform sourceTransform = GetCurrentSourceTransform();
-					sourceTransform.SetOrientation(orientation);
-					SetSourceTransform(sourceTransform);
-				}
-				else if (command.GetCommand() == "/source/orientationQuaternion") {
-					Common::CQuaternion orientation = command.GetQuaternionParameter("orientation");
-					Common::CTransform sourceTransform = GetCurrentSourceTransform();
-					sourceTransform.SetOrientation(orientation);
-					SetSourceTransform(sourceTransform);
-				}
-			}
-		}
-
-	private:		
-		mutable std::mutex mutex;
-
+	private:				
 		std::string originSourceID;
 	};
 }

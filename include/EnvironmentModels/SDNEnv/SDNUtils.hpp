@@ -6,7 +6,7 @@
 #include <unsupported/Eigen/Polynomials>
 #include <unsupported/Eigen/FFT>
 
-using namespace Eigen;
+using namespace Eigen; //TODO delete me
 
 class SDNUtils
 {

@@ -54,9 +54,9 @@ namespace BRTProcessing {
         }
 
 		/**
-		 * @brief Implementation of CProcessorBase virtual method
+		 * @brief Implementation of CAdvancedEntryPointManager virtual method
 		*/
-		void AllEntryPointsAllDataReady() {
+		void AllEntryPointsAllDataReady() override {
 
 			std::lock_guard<std::mutex> l(mutex);
 
@@ -94,7 +94,7 @@ namespace BRTProcessing {
 			GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);				
         }
 
-		void UpdateCommand() {					
+		void UpdateCommand() override {					
 			
 			std::lock_guard<std::mutex> l(mutex);
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();

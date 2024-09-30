@@ -27,6 +27,7 @@
 #include "SourceModelBase.hpp"
 #include "ListenerBase.hpp"
 #include "ListenerModelBase.hpp"
+#include "EnvironmentModelBase.hpp"
 #include "third_party_libraries/nlohmann/json.hpp"
 
 namespace BRTBase {
@@ -212,13 +213,15 @@ namespace BRTBase {
 		 * @return Pointer to listener if exist, if not returns nullptr
 		*/
 		template <typename T>
-		std::shared_ptr<T> GetListenerModel(const std::string& _listenerID) { 		
-			for (auto& it : listenerModels) {
-				if (it->GetID() == _listenerID) {
+		std::shared_ptr<T> GetListenerModel(const std::string& _listenerModelID) { 		
+			/*for (auto& it : listenerModels) {
+				if (it->GetID() == _listenerModelID) {
 					return it;
 				}
 			}
-			return nullptr;
+			return nullptr;*/
+
+			return FindModel(listenerModels, _listenerModelID);
 		}
 
 		/**
@@ -231,6 +234,66 @@ namespace BRTBase {
 				listenerIDs.push_back(it->GetID());
 			}
 			return listenerIDs;
+		}
+
+		bool IsListenerModel(const std::string & _listenerModelID) {	
+			if (FindModel(listenerModels, _listenerModelID) != nullptr) {
+				return true;
+			}
+			return false;
+		}
+		
+	
+
+		
+		/**
+		 * @brief Creates a new environment and returns a pointer to it. The brtmanager does NOT save the pointer.
+		 * @tparam T It must be a environment module, i.e. a class that inherits from the CEnvironmentBase class.
+		 * @return Returns the pointer to the environment if it could be created, otherwise returns a null pointer.
+		*/
+		template <typename T>
+		std::shared_ptr<T> CreateEnvironment(const std::string & _environmentID) {
+			
+			try {
+				if (!setupModeActivated) {
+					SET_RESULT(RESULT_ERROR_NOTALLOWED, "BRT library is not in configuration mode");
+					return nullptr;
+				}
+				auto it = std::find_if(environmentModels.begin(), environmentModels.end(), 
+					[&_environmentID](std::shared_ptr<CEnviromentModelBase> & environmentItem) { return environmentItem->GetID() == _environmentID; });
+				if (it != environmentModels.end()) {
+					SET_RESULT(RESULT_ERROR_NOTALLOWED, "A environment with such an ID already exists.");
+					return nullptr;
+				}
+
+				std::shared_ptr<T> newEnvironment = std::make_shared<T>(_environmentID, this);
+				ConnectModulesCommand(newEnvironment);
+				environmentModels.push_back(newEnvironment);
+				SET_RESULT(RESULT_OK, "Environment created succesfully");
+				return newEnvironment;
+			} catch (std::bad_alloc & ba) {
+				ASSERT(false, RESULT_ERROR_BADALLOC, ba.what(), "");
+				return nullptr;
+			}
+		}
+
+		template <typename T>
+		std::shared_ptr<T> GetEnvironmentModel(const std::string & _environmentModelID) {
+			/*for (auto & it : environmentModels) {
+				if (it->GetID() == _environmentModelID) {
+					return it;
+				}
+			}
+			return nullptr;*/
+
+			return FindModel(environmentModels, _environmentModelID);
+		}
+
+		bool IsEnvironmentModel(const std::string & _environmentModelID) {
+			if (FindModel(environmentModels, _environmentModelID) != nullptr) {
+				return true;
+			}
+			return false;
 		}
 
 		/**
@@ -277,7 +340,7 @@ namespace BRTBase {
 				return nullptr;
 			}
 		}
-
+		
 		/**
 		 * @brief Delete a source
 		 * @param _sourceID Identifier of the source to be deleted
@@ -543,6 +606,12 @@ namespace BRTBase {
 			module2->connectIDEntryTo(module1->GetIDExitPoint(), entryPointID);
 			return true;
 		}
+		template <typename T, typename U>
+		bool ConnectModuleID(std::shared_ptr<T> module1, U* module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectIDEntryTo(module1->GetIDExitPoint(), entryPointID);
+			return true;
+		}
 		/**
 		 * @brief Disconnects the ID ExitPoint of one module with the ID EntryPoint of another.
 		 * @tparam T
@@ -710,6 +779,8 @@ namespace BRTBase {
 		std::vector<std::shared_ptr<CSourceModelBase>>		audioSources;		// List of audio sources 
 		std::vector<std::shared_ptr<CListenerBase>>			listeners;			// List of listeners		
 		std::vector<std::shared_ptr<CListenerModelBase>>	listenerModels;		// List of listener Models
+		std::vector<std::shared_ptr<CEnviromentModelBase>>	environmentModels; // List of virtual sources environments
+
 		bool initialized;
 		bool setupModeActivated;
 
@@ -722,6 +793,22 @@ namespace BRTBase {
 		*/
 		void ProcessAllThread() {
 			for (auto it = audioSources.begin(); it != audioSources.end(); it++) (*it)->SetDataReady();
+		}
+
+		/**
+		 * @brief Find model in a shared_ptr list
+		 * @tparam T base type
+		 * @param _list list of shared_ptr of T objects
+		 * @param _ID ID to find
+		 * @return pointer to the model if found, otherwise nullptr
+		 */
+		template <typename T>
+		std::shared_ptr<T> FindModel(std::vector<std::shared_ptr<T>> _list, const std::string & _ID) {
+			auto it = std::find_if(_list.begin(), _list.end(), [&_ID](std::shared_ptr<T> & item) { return item->GetID() == _ID; });
+			if (it != _list.end()) {
+				return *it;
+			}
+			return nullptr;
 		}
 	};
 }

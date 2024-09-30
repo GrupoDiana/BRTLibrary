@@ -71,7 +71,8 @@ namespace BRTBase {
 		 * @return Return listener identificator
 		*/
 		std::string GetID() { return listenerID; }		
-							
+			
+		void SendID() { GetIDExitPoint()->sendData(listenerID); }
 		/**
 		 * @brief Get output sample buffers from the listener
 		 * @param _leftBuffer Left ear sample buffer

@@ -28,6 +28,7 @@
 #include <Base/CommandEntryPointManager.hpp>
 #include <Base/ExitPointManager.hpp>
 #include <Base/ListenerModelBase.hpp>
+#include <Base/EnvironmentModelBase.hpp>
 #include <ListenerModels/ListenerHRTFModel.hpp>
 #include <Base/ListenerBase.hpp>
 #include <Base/BRTManager.hpp>
@@ -78,6 +79,7 @@ namespace BRTBase {
 			}
 						
 			listenerModelsConnected.push_back(_listenerModel);
+			SendID();			
 			return control;
 		};
 
@@ -128,6 +130,41 @@ namespace BRTBase {
 			listenerModelsConnected.push_back(_listenerModel);
 			return control;
 		};
+
+
+		///**
+		// * @brief Connect listener model to this listener
+		// * @param _listener Pointer to the source
+		// * @param _ear Ear to connect, both by default
+		// * @return True if the connection success
+		//*/
+		//bool ConnectEnvironmentModel(std::shared_ptr<CEnviromentModelBase> _environmentModel) {
+
+		//	if (_environmentModel == nullptr) return false;
+		//	if (_environmentModel->IsConnectedToListener()) {
+		//		return false;
+		//	};
+
+		//	bool control;
+		//	control = brtManager->ConnectModuleID(this, _environmentModel, "listenerID");
+		//	_environmentModel->ConnectListenerTransform(GetID());
+
+		//	environmentModelsConnected.push_back(_environmentModel);			
+		//	return control;
+		//};
+
+		///**
+		// * @brief Connect listener model to this listener
+		// * @param _listener Pointer to the source
+		// * @return True if the connection success
+		//*/
+		//bool ConnectEnvironmentModel(const std::string & _environmentModelID) {
+
+		//	std::shared_ptr<CEnviromentModelBase> _environmentModel = brtManager->GetEnvironmentModel<CEnviromentModelBase>(_environmentModelID);
+		//	if (_environmentModel == nullptr) return false;
+
+		//	return ConnectEnvironmentModel(_environmentModel);
+		//};
 
 
 
@@ -462,7 +499,7 @@ namespace BRTBase {
 		/////////////////////////
 		CBRTManager* brtManager;							// Pointer to the BRT Manager			
 		std::vector<std::shared_ptr<CListenerModelBase>> listenerModelsConnected;		// Listener models connected to the listener
-		
+		//std::vector<std::shared_ptr<CEnviromentModelBase>> environmentModelsConnected; // Listener models connected to the listener
 	};
 }
 #endif

@@ -39,7 +39,8 @@ namespace BRTServices {
 namespace BRTSourceModel {
 	class CSourceSimpleModel;
 	class CSourceDirectivityModel;
-}
+	class CVirtualSourceModel;
+	}
 
 namespace BRTBase {
 
@@ -90,7 +91,7 @@ namespace BRTBase {
 
 		virtual ~CListenerModelBase() {}
 		virtual void Update(std::string entryPointID) = 0;
-		virtual void UpdateCommand() = 0;		
+		//virtual void UpdateCommand() = 0;		
 		
 		virtual bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) { return false; };				
 		virtual std::shared_ptr < BRTServices::CHRTF> GetHRTF() const { return nullptr; }
@@ -103,8 +104,6 @@ namespace BRTBase {
 		virtual bool SetHRBRIR(std::shared_ptr< BRTServices::CHRBRIR > _listenerBRIR) { return false; };		        
 		virtual std::shared_ptr < BRTServices::CHRBRIR> GetHRBRIR() const { return nullptr; };
 		virtual void RemoveHRBRIR() {};		
-
-
 		
 		virtual void EnableModel() {  };
 		virtual void DisableModel() {};
@@ -139,21 +138,27 @@ namespace BRTBase {
 
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel > _source) = 0;
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel > _source) = 0;
+		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _source) { return false; }//	= 0;
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) = 0;
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) = 0;
+		
+		virtual bool ConnectEnvironmentModel(const std::string & _environmentModelID) { return false; };
 
 		virtual bool ConnectListenerTransform(const std::string _listenerID) {return false; }
 		virtual bool DisconnectListenerTransform(const std::string _listenerID) { return false; }
+		
+		virtual std::string GetListenerID() { return GetIDEntryPoint("listenerID")->GetData(); }
 
 		// Class Methods
 
 		CListenerModelBase(std::string _listenerModelID, TListenerModelcharacteristics _listenerCharacteristics) : listenerModelID {_listenerModelID},
-			listenerCharacteristics{ _listenerCharacteristics },
-			leftDataReady{ false }, rightDataReady{ false } {
+			listenerCharacteristics{ _listenerCharacteristics }, leftDataReady { false }
+			, rightDataReady { false }
+			, enableModel {true} {
 												
-			CreateSamplesEntryPoint("leftEar");
-			CreateSamplesEntryPoint("rightEar");									
-			CreateTransformExitPoint();			
+			CreateSamplesEntryPoint("leftEar");		// TODO is this necessary?
+			CreateSamplesEntryPoint("rightEar");	// TODO is this necessary?								
+			CreateTransformExitPoint();				// TODO is this necessary?
 			CreateIDExitPoint();
 			
 			CreateSamplesExitPoint("leftEar");
@@ -170,11 +175,8 @@ namespace BRTBase {
 		*/
 		std::string GetID() { return listenerModelID; }
 			
-		/**
-		* @brief Set listener type
-		* @param _listenerType Listener type
-		*/
-		//TListenerType GetListenerModelType() const { return listenerModelType; }		
+		void SendMyID() { GetIDExitPoint()->sendData(listenerModelID); }
+		
 		
 		/**
 		* @brief Get listener model characteristics
@@ -200,7 +202,7 @@ namespace BRTBase {
 		 * @param _entryPointId entryPoint ID
 		*/
 		
-		void OneEntryPointOneDataReceived(std::string _entryPointId) {
+		void OneEntryPointOneDataReceived(std::string _entryPointId) override{
 						
 			if (_entryPointId == "leftEar") {				
 				if (!leftDataReady) { InitBuffer(leftBuffer); }				
@@ -211,13 +213,17 @@ namespace BRTBase {
 				if (!rightDataReady) { InitBuffer(rightBuffer); }
 				CMonoBuffer<float> newBuffer = GetSamplesEntryPoint("rightEar")->GetData();				
 				rightDataReady = MixEarBuffers(rightBuffer, newBuffer);				
-			}			
+			} else {			
+				//nothing
+			}
+
+
 		}
 
 		/**
 		 * @brief Implementation of CAdvancedEntryPointManager virtual method
 		*/
-		void AllEntryPointsAllDataReady() {
+		void AllEntryPointsAllDataReady() override{
 			
 			GetSamplesExitPoint("leftEar")->sendData(leftBuffer);
 			GetSamplesExitPoint("rightEar")->sendData(rightBuffer);
@@ -226,8 +232,19 @@ namespace BRTBase {
 						           
 		}
 		
-		
 
+		void UpdateCommand() override {
+			// TODO
+
+			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
+			if (command.isNull() || command.GetCommand() == "") {
+				return;
+			}
+			std::string a = command.GetStringParameter("listenerID");
+				
+		}
+
+		
 	private:
 		//TListenerType listenerModelType;
 		TListenerModelcharacteristics listenerCharacteristics;
@@ -240,8 +257,8 @@ namespace BRTBase {
 		
 		bool leftDataReady;
 		bool rightDataReady;	
+				
 
-		
 		//////////////////////////
 		// Private Methods
 		/////////////////////////
