@@ -126,7 +126,7 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) {
+		bool SetHRTF(std::shared_ptr<BRTServices::CHRTF> _listenerHRTF) override {
 
 			if (_listenerHRTF->GetSamplingRate() != globalParameters.GetSampleRate()) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "This HRTF has not been assigned to the listener. The sample rate of the HRTF does not match the one set in the library Global Parameters.");
@@ -146,7 +146,7 @@ namespace BRTListenerModel {
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr < BRTServices::CHRTF> GetHRTF() const
+		std::shared_ptr<BRTServices::CHRTF> GetHRTF() const override
 		{
 			return listenerHRTF;
 		}
@@ -154,7 +154,7 @@ namespace BRTListenerModel {
 		/** \brief Remove the HRTF of thelistener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void RemoveHRTF() {
+		void RemoveHRTF() override {
 			listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// Empty HRTF			
 			listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicBIR>();	// Empty AmbisonicIR class
 		}
@@ -258,7 +258,7 @@ namespace BRTListenerModel {
 		/** \brief Enable near field effect for this source
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableNearFieldEffect() {
+		void EnableNearFieldEffect() override {
 			enableNearFieldEffect = true;
 			SetConfigurationInALLSourcesProcessors();			
 		}
@@ -266,7 +266,7 @@ namespace BRTListenerModel {
 		/** \brief Disable near field effect for this source
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void DisableNearFieldEffect() {
+		void DisableNearFieldEffect() override {
 			enableNearFieldEffect = false;
 			SetConfigurationInALLSourcesProcessors();			
 		}
@@ -275,12 +275,12 @@ namespace BRTListenerModel {
 		*	\retval nearFieldEffectEnabled if true, near field effect is enabled for this listener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		bool IsNearFieldEffectEnabled() { return enableNearFieldEffect; }
+		bool IsNearFieldEffectEnabled() override { return enableNearFieldEffect; }
 
 		/** \brief Enable bilaterality for all source connected to this listener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableITDSimulation() {
+		void EnableITDSimulation() override {
 			enableITDSimulation = true;
 			SetConfigurationInALLSourcesProcessors();
 		}
@@ -288,7 +288,7 @@ namespace BRTListenerModel {
 		/** \brief Disable bilaterality for all source connected to this listener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void DisableITDSimulation() {
+		void DisableITDSimulation() override {
 			enableITDSimulation = false;
 			SetConfigurationInALLSourcesProcessors();
 		}
@@ -297,12 +297,12 @@ namespace BRTListenerModel {
 		 * @brief Check if ITD simulation is enabled
 		 * @return
 		 */
-		bool IsITDSimulationEnabled() { return enableITDSimulation; }
+		bool IsITDSimulationEnabled() override { return enableITDSimulation; }
 
 		/**
 		 * @brief Enable Parallax Correction
 		*/
-		void EnableParallaxCorrection() { 
+		void EnableParallaxCorrection() override { 
 			enableParallaxCorrection = true; 
 			SetConfigurationInALLSourcesProcessors();
 		}
@@ -310,7 +310,7 @@ namespace BRTListenerModel {
 		/**
 		 * @brief Disable Parallax Correction
 		*/
-		void DisableParallaxCorrection() { 
+		void DisableParallaxCorrection() override { 
 			enableParallaxCorrection = false; 
 			SetConfigurationInALLSourcesProcessors();
 		}
@@ -318,12 +318,12 @@ namespace BRTListenerModel {
 		/**
 		* @brief Get Parallax Correction state
 		*/
-		bool IsParallaxCorrectionEnabled() { return enableParallaxCorrection; }
+		bool IsParallaxCorrectionEnabled() override { return enableParallaxCorrection; }
 
 		/**
 		 * @brief Enable model
 		 */
-		void EnableModel() {
+		void EnableModel() override {
 			std::lock_guard<std::mutex> l(mutex);
 			enableModel = true;
 			for (auto& it : sourcesConnectedProcessors) {
@@ -336,7 +336,7 @@ namespace BRTListenerModel {
 		/**
 		 * @brief Disable model
 		 */
-		void DisableModel() {
+		void DisableModel() override {
 			std::lock_guard<std::mutex> l(mutex);
 			enableModel = false;
 			for (auto& it : sourcesConnectedProcessors) {
@@ -351,7 +351,7 @@ namespace BRTListenerModel {
 		 * @param _source Pointer to the source
 		 * @return True if the connection success
 		*/
-		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel > _source) {			
+		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) override {			
 			return ConnectAnySoundSource(_source, false);
 		};
 		/**
@@ -359,16 +359,25 @@ namespace BRTListenerModel {
 		 * @param _source Pointer to the source
 		 * @return True if the connection success
 		*/
-		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel > _source) {
+		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) override {
 			return ConnectAnySoundSource(_source, true);
 		};
+
+		/**
+		 * @brief Connect a virtual source to this listener
+		 * @param _source Pointer to the source
+		 * @return True if the connection success
+		*/
+		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _source) override {
+			return ConnectAnySoundSource(_source, false);
+		}
 
 		/**
 		 * @brief Disconnect a new source to this listener
 		 * @param _source Pointer to the source
 		 * @return True if the disconnection success
 		*/
-		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) {
+		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) override {
 			return DisconnectAnySoundSource(_source, false);
 		};
 
@@ -377,10 +386,19 @@ namespace BRTListenerModel {
 		 * @param _source Pointer to the source
 		 * @return True if the disconnection success
 		*/
-		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) {
+		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) override {
 			return DisconnectAnySoundSource(_source, true);
 		};
-					
+				
+		/**
+		 * @brief Disconnect a new source to this listener
+		 * @param _source Pointer to the source
+		 * @return True if the disconnection success
+		*/
+		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _source) override {
+			return DisconnectAnySoundSource(_source, false);
+		};
+
 		/**
 		 * @brief Reset all processor buffers
 		*/
@@ -396,49 +414,86 @@ namespace BRTListenerModel {
 		}
 
 		/**
+		 * @brief Connect an environment to this listener model
+		 * @param _listener Pointer to the source
+		 * @return True if the connection success
+		*/
+		bool ConnectEnvironmentModel(const std::string & _environmentModelID) override {
+
+			std::shared_ptr<BRTBase::CEnviromentModelBase> _environmentModel = brtManager->GetEnvironmentModel<BRTBase::CEnviromentModelBase>(_environmentModelID);
+			if (_environmentModel == nullptr) return false;
+
+			return ConnectEnvironmentModel(_environmentModel);
+		};
+
+		/**
 		 * @brief Implementation of the virtual method to process the data received by the entry points.
 		 * @param entryPointID ID of the entry point
 		*/
-		void Update(std::string entryPointID) {
+		void Update(std::string entryPointID) override {
 			// Nothing to do
 		}
 
 		/**
 		 * @brief Implementation of the virtual method for processing the received commands
 		*/
-		void UpdateCommand() {
+		void UpdateCommand() override {
 			//std::lock_guard<std::mutex> l(mutex);
 			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
-			if (command.isNull() || command.GetAddress() == "") { return; }
+			if (command.isNull() || command.GetAddress() == "") {
+				return;
+			}
 
 			if (listenerID == command.GetStringParameter("listenerID")) {
 				if (command.GetCommand() == "/listener/setAmbisonicsOrder") {
-					SetAmbisonicOrder(command.GetIntParameter("ambisonicsOrder"));					
-				}
-				else if (command.GetCommand() == "/listener/setAmbisonicsNormalization") {
-					SetAmbisonicNormalization(command.GetStringParameter("ambisonicsNormalization"));					
-				}
-				else if (command.GetCommand() == "/listener/enableNearFieldEffect") {
-					if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
-					else { DisableNearFieldEffect(); }
-				}
-				else if (command.GetCommand() == "/listener/enableITD") {
-					if (command.GetBoolParameter("enable")) { EnableITDSimulation(); }
-					else { DisableITDSimulation(); }
-				}			
-				else if (command.GetCommand() == "/listener/resetBuffers") {
+					SetAmbisonicOrder(command.GetIntParameter("ambisonicsOrder"));
+				} else if (command.GetCommand() == "/listener/setAmbisonicsNormalization") {
+					SetAmbisonicNormalization(command.GetStringParameter("ambisonicsNormalization"));
+				} else if (command.GetCommand() == "/listener/enableNearFieldEffect") {
+					if (command.GetBoolParameter("enable")) {
+						EnableNearFieldEffect();
+					} else {
+						DisableNearFieldEffect();
+					}
+				} else if (command.GetCommand() == "/listener/enableITD") {
+					if (command.GetBoolParameter("enable")) {
+						EnableITDSimulation();
+					} else {
+						DisableITDSimulation();
+					}
+				} else if (command.GetCommand() == "/listener/resetBuffers") {
 					ResetProcessorBuffers();
 				}
 			}
 		}
 
-
 	private:
-
 		/////////////////
 		// Methods
 		/////////////////
 		
+		/**
+		 * @brief Connect listener model to this listener
+		 * @param _listener Pointer to the source
+		 * @param _ear Ear to connect, both by default
+		 * @return True if the connection success
+		*/
+		bool ConnectEnvironmentModel(std::shared_ptr<BRTBase::CEnviromentModelBase> _environmentModel) {
+
+			if (_environmentModel == nullptr) return false;
+			if (_environmentModel->IsConnectedToListenerModel()) {
+				return false;
+			};
+
+			bool control;
+			control = brtManager->ConnectModuleID(this, _environmentModel, "listenerModelID");
+			SendMyID();
+
+			environmentModelsConnected.push_back(_environmentModel);
+			return control;
+		};
+
+
 		void InitListenerAmbisonicIR(){
 			std::lock_guard<std::mutex> l(mutex);
 			listenerAmbisonicIR->BeginSetup(ambisonicOrder, ambisonicNormalization);
@@ -588,6 +643,8 @@ namespace BRTListenerModel {
 
 		BRTBase::CBRTManager* brtManager;
 		Common::CGlobalParameters globalParameters;
+
+		std::vector<std::shared_ptr<BRTBase::CEnviromentModelBase>> environmentModelsConnected; // Listener models connected to the listener
 	};
 }
 #endif

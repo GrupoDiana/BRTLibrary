@@ -225,7 +225,15 @@ namespace BRTListenerModel {
 		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) override { 
 			return DisconnectAnySoundSource(_source, true);
 		};
-	
+		
+		/**
+		 * @brief Disconnect a new source to this listener
+		 * @param _source Pointer to the source
+		 * @return True if the disconnection success
+		*/
+		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _source) override {
+			return DisconnectAnySoundSource(_source, false);
+		};
 		/** \brief Enable binaural spatialization based in HRTF convolution
 		*   \eh Nothing is reported to the error handler.
 		*/
@@ -365,7 +373,21 @@ namespace BRTListenerModel {
 			for (auto& it : sourcesConnectedProcessors) {
 				it.ResetBuffers();
 			}
-		}
+		}		
+		
+		/**
+		 * @brief Connect an environment to this listener model
+		 * @param _listener Pointer to the source
+		 * @return True if the connection success
+		*/
+		bool ConnectEnvironmentModel(const std::string & _environmentModelID) override {
+
+			std::shared_ptr<BRTBase::CEnviromentModelBase> _environmentModel = brtManager->GetEnvironmentModel<BRTBase::CEnviromentModelBase>(_environmentModelID);
+			if (_environmentModel == nullptr) return false;
+
+			return ConnectEnvironmentModel(_environmentModel);
+		};
+				
 
 		/**
 		 * @brief Implementation of the virtual method to process the data received by the entry points.
@@ -378,44 +400,52 @@ namespace BRTListenerModel {
 		/**
 		 * @brief Implementation of the virtual method for processing the received commands
 		*/
-		void UpdateCommand() override{
+		void UpdateCommand() override {
 			//std::lock_guard<std::mutex> l(mutex);
-			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();						
-			if (command.isNull() || command.GetCommand() == "") { return; }
+			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
+			if (command.isNull() || command.GetCommand() == "") {
+				return;
+			}
 
 			std::string listenerID = GetIDEntryPoint("listenerID")->GetData();
 
-			if (listenerID == command.GetStringParameter("listenerID")) {				
+			if (listenerID == command.GetStringParameter("listenerID")) {
 				if (command.GetCommand() == "/listener/enableSpatialization") {
-						if (command.GetBoolParameter("enable")) { EnableSpatialization(); }
-						else { DisableSpatialization(); }
-				}
-				else if (command.GetCommand() == "/listener/enableInterpolation") {
-					if (command.GetBoolParameter("enable")) { EnableInterpolation(); }
-					else { DisableInterpolation(); }
-				}
-				else if (command.GetCommand() == "/listener/enableNearFieldEffect") {
-					if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
-					else { DisableNearFieldEffect(); }
-				}
-				else if (command.GetCommand() == "/listener/enableITD") {
-					if (command.GetBoolParameter("enable")) { EnableITDSimulation(); }
-					else { DisableITDSimulation(); }
-				}
-				else if (command.GetCommand() == "/listener/enableParallaxCorrection") {
-					if (command.GetBoolParameter("enable")) { EnableParallaxCorrection(); }
-					else { DisableParallaxCorrection(); }
-				}
-				else if (command.GetCommand() == "/listener/resetBuffers") {
+					if (command.GetBoolParameter("enable")) {
+						EnableSpatialization();
+					} else {
+						DisableSpatialization();
+					}
+				} else if (command.GetCommand() == "/listener/enableInterpolation") {
+					if (command.GetBoolParameter("enable")) {
+						EnableInterpolation();
+					} else {
+						DisableInterpolation();
+					}
+				} else if (command.GetCommand() == "/listener/enableNearFieldEffect") {
+					if (command.GetBoolParameter("enable")) {
+						EnableNearFieldEffect();
+					} else {
+						DisableNearFieldEffect();
+					}
+				} else if (command.GetCommand() == "/listener/enableITD") {
+					if (command.GetBoolParameter("enable")) {
+						EnableITDSimulation();
+					} else {
+						DisableITDSimulation();
+					}
+				} else if (command.GetCommand() == "/listener/enableParallaxCorrection") {
+					if (command.GetBoolParameter("enable")) {
+						EnableParallaxCorrection();
+					} else {
+						DisableParallaxCorrection();
+					}
+				} else if (command.GetCommand() == "/listener/resetBuffers") {
 					ResetProcessorBuffers();
 				}
-			}		
+			}
 		}
-
-
-		////////////////////////////////////////////
-		// Environment Connect/Disconnect Methods
-		////////////////////////////////////////////
+	private:
 
 		/**
 		 * @brief Connect listener model to this listener
@@ -433,26 +463,10 @@ namespace BRTListenerModel {
 			bool control;
 			control = brtManager->ConnectModuleID(this, _environmentModel, "listenerModelID");
 			SendMyID();
-			//_environmentModel->ConnectListenerTransform(GetID());
 
-			environmentModelsConnected.push_back(_environmentModel);			
+			environmentModelsConnected.push_back(_environmentModel);
 			return control;
 		};
-
-		/**
-		 * @brief Connect an environment to this listener model
-		 * @param _listener Pointer to the source
-		 * @return True if the connection success
-		*/
-		bool ConnectEnvironmentModel(const std::string & _environmentModelID) override {
-
-			std::shared_ptr<BRTBase::CEnviromentModelBase> _environmentModel = brtManager->GetEnvironmentModel<BRTBase::CEnviromentModelBase>(_environmentModelID);
-			if (_environmentModel == nullptr) return false;
-
-			return ConnectEnvironmentModel(_environmentModel);
-		};
-
-	private:
 
 		/**
 		 * @brief Update Configuration in all source processor

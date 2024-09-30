@@ -138,10 +138,11 @@ namespace BRTBase {
 
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel > _source) = 0;
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel > _source) = 0;
-		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _source) { return false; }//	= 0;
+		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _source) { return false; }
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) = 0;
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) = 0;
-		
+		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _source) { return false; }
+
 		virtual bool ConnectEnvironmentModel(const std::string & _environmentModelID) { return false; };
 
 		virtual bool ConnectListenerTransform(const std::string _listenerID) {return false; }
