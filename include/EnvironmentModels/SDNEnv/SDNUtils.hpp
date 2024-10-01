@@ -6,7 +6,7 @@
 #include <unsupported/Eigen/Polynomials>
 #include <unsupported/Eigen/FFT>
 
-using namespace Eigen; //TODO delete me
+//using namespace Eigen; //TODO delete me
 
 class SDNUtils
 {
@@ -27,10 +27,10 @@ public:
 		std::vector<double> aMirror(a.size());
 		std::reverse_copy(a.begin(), a.end(), aMirror.begin());
 
-		PolynomialSolver<double, Dynamic> solver;
-		VectorXd aV = Map<VectorXd>(aMirror.data(), a.size());
+		Eigen::PolynomialSolver<double, Eigen::Dynamic> solver;
+		Eigen::VectorXd aV = Eigen::Map<Eigen::VectorXd>(aMirror.data(), a.size());
 		solver.compute(aV);
-		VectorXcd v = solver.roots();
+		Eigen::VectorXcd v = solver.roots();
 
 		int non0index = -1;
 
@@ -46,10 +46,10 @@ public:
 				}
 			}
 		}
-		VectorXcd polCoeffs;
+		Eigen::VectorXcd polCoeffs;
 		roots_to_monicPolynomial(v, polCoeffs);
 
-		VectorXd b = (a[non0index] * polCoeffs).real();
+		Eigen::VectorXd b = (a[non0index] * polCoeffs).real();
 
 		std::vector<double> out(b.size());
 
@@ -78,33 +78,33 @@ public:
 		int nm = std::max(numOrder, denOrder);
 		numOrder++;
 
-		MatrixXd OM_m = VectorXd::LinSpaced(nm + 1, 0, nm) * Map<MatrixXd>(w, 1, wSize);
+		Eigen::MatrixXd OM_m = Eigen::VectorXd::LinSpaced(nm + 1, 0, nm) * Eigen::Map<Eigen::MatrixXd>(w, 1, wSize);
 
 		std::complex<double> c(0, -1);
 
-		MatrixXcd OM = OM_m * c;
+		Eigen::MatrixXcd OM = OM_m * c;
 		OM = OM.array().exp();
 
 
-		MatrixXcd Dva_a = OM.block(1, 0, denOrder, OM.cols()).transpose();
-		MatrixXcd h_t = Map<MatrixXcd>(h, 1, wSize).transpose();
-		MatrixXcd Dva_b = h_t * MatrixXd::Ones(1, denOrder);
+		Eigen::MatrixXcd Dva_a = OM.block(1, 0, denOrder, OM.cols()).transpose();
+		Eigen::MatrixXcd h_t = Eigen::Map<Eigen::MatrixXcd>(h, 1, wSize).transpose();
+		Eigen::MatrixXcd Dva_b = h_t * Eigen::MatrixXd::Ones(1, denOrder);
 
-		MatrixXcd Dva = Dva_a.array() * Dva_b.array();
-		MatrixXcd Dvb = -(OM.block(0, 0, numOrder, OM.cols()).transpose());
+		Eigen::MatrixXcd Dva = Dva_a.array() * Dva_b.array();
+		Eigen::MatrixXcd Dvb = -(OM.block(0, 0, numOrder, OM.cols()).transpose());
 
-		MatrixXcd D(Dva.rows(), Dva.cols() + Dvb.cols());
+		Eigen::MatrixXcd D(Dva.rows(), Dva.cols() + Dvb.cols());
 		D << Dva, Dvb;
 
-		MatrixXd wf = (Map<MatrixXd>(weights, 1, wSize).transpose()).cwiseSqrt();
-		MatrixXd D_b = wf * MatrixXd::Ones(1, numOrder + denOrder);
+		Eigen::MatrixXd wf = (Eigen::Map<Eigen::MatrixXd>(weights, 1, wSize).transpose()).cwiseSqrt();
+		Eigen::MatrixXd D_b = wf * Eigen::MatrixXd::Ones(1, numOrder + denOrder);
 
 		D = D.array() * D_b.array();
 
-		MatrixXd R = (D.adjoint() * D).real();
-		MatrixXd Vd = (D.adjoint() * (-h_t.array() * wf.array()).matrix()).real();
+		Eigen::MatrixXd R = (D.adjoint() * D).real();
+		Eigen::MatrixXd Vd = (D.adjoint() * (-h_t.array() * wf.array()).matrix()).real();
 
-		MatrixXd th = R.partialPivLu().solve(Vd).eval();
+		Eigen::MatrixXd th = R.partialPivLu().solve(Vd).eval();
 		th = th.transpose();
 
 		std::vector<double> a;
@@ -125,41 +125,41 @@ public:
 
 		a = polystab(a);
 
-		VectorXd bV = Map<VectorXd>(b.data(), b.size());
-		VectorXd aV = Map<VectorXd>(a.data(), a.size());
-
-		MatrixXcd GC_b = bV.transpose() * OM.block(0, 0, numOrder, OM.cols());
-		MatrixXcd GC_a = aV.transpose() * OM.block(0, 0, denOrder + 1, OM.cols());
-
-		MatrixXcd GC = (GC_b.array() / GC_a.array()).transpose();
-		MatrixXcd e = (GC - h_t).array() * wf.array();
-		MatrixXcd Vcap = e.adjoint() * e;
-
-		MatrixXd t(a.size() - 1 + b.size(), 1);
-		t << Map<VectorXd>(&a.data()[1], a.size() - 1), bV;
+		Eigen::VectorXd bV = Eigen::Map<Eigen::VectorXd>(b.data(), b.size());
+		Eigen::VectorXd aV = Eigen::Map<Eigen::VectorXd>(a.data(), a.size());
+		
+		Eigen::MatrixXcd GC_b = bV.transpose() * OM.block(0, 0, numOrder, OM.cols());
+		Eigen::MatrixXcd GC_a = aV.transpose() * OM.block(0, 0, denOrder + 1, OM.cols());
+		
+		Eigen::MatrixXcd GC = (GC_b.array() / GC_a.array()).transpose();
+		Eigen::MatrixXcd e = (GC - h_t).array() * wf.array();
+		Eigen::MatrixXcd Vcap = e.adjoint() * e;
+		
+		Eigen::MatrixXd t(a.size() - 1 + b.size(), 1);
+		t << Eigen::Map<Eigen::VectorXd>(&a.data()[1], a.size() - 1), bV;
 
 		double gndir = 2 * tol + 1;
 		int l = 0;
 		int st = 0;
-		MatrixXd gndirMat;
+		Eigen::MatrixXd gndirMat;
 
 		while (gndir > tol && l < iter && st != 1)
 		{
 			l++;
 
-			MatrixXcd D31_a = OM.block(1, 0, denOrder, OM.cols()).transpose();
-			MatrixXcd D31_b = -GC.array() / (aV.transpose() * OM.block(0, 0, denOrder + 1, OM.cols())).transpose().array();
-			MatrixXd D31_c = MatrixXd::Ones(1, denOrder);
-			MatrixXcd D31 = D31_a.array() * (D31_b * D31_c).array();
-
-			MatrixXcd D32_a = OM.block(0, 0, numOrder, OM.cols()).transpose();
-			MatrixXcd D32_b = (aV.transpose() * OM.block(0, 0, denOrder + 1, OM.cols())).transpose();
-			MatrixXd D32_c = MatrixXd::Ones(1, numOrder);
-			MatrixXcd D32 = D32_a.array() / (D32_b * D32_c).array();
-
-			MatrixXcd D3(D31.rows(), D31.cols() + D32.cols());
+			Eigen::MatrixXcd D31_a = OM.block(1, 0, denOrder, OM.cols()).transpose();
+			Eigen::MatrixXcd D31_b = -GC.array() / (aV.transpose() * OM.block(0, 0, denOrder + 1, OM.cols())).transpose().array();
+			Eigen::MatrixXd D31_c = Eigen::MatrixXd::Ones(1, denOrder);
+			Eigen::MatrixXcd D31 = D31_a.array() * (D31_b * D31_c).array();
+			
+			Eigen::MatrixXcd D32_a = OM.block(0, 0, numOrder, OM.cols()).transpose();
+			Eigen::MatrixXcd D32_b = (aV.transpose() * OM.block(0, 0, denOrder + 1, OM.cols())).transpose();
+			Eigen::MatrixXd D32_c = Eigen::MatrixXd::Ones(1, numOrder);
+			Eigen::MatrixXcd D32 = D32_a.array() / (D32_b * D32_c).array();
+			
+			Eigen::MatrixXcd D3(D31.rows(), D31.cols() + D32.cols());
 			D3 << D31, D32;
-			MatrixXd D3_b = wf * MatrixXd::Ones(1, numOrder + denOrder);
+			Eigen::MatrixXd D3_b = wf * Eigen::MatrixXd::Ones(1, numOrder + denOrder);
 			D3 = D3.array() * D3_b.array();
 
 			e = (GC - h_t).array() * wf.array();
@@ -169,8 +169,8 @@ public:
 			gndirMat = R.partialPivLu().solve(Vd).eval();
 			int ll = 0;
 			double k = 1.0;
-			MatrixXcd V1 = Vcap.array() + 1;
-			MatrixXd t1;
+			Eigen::MatrixXcd V1 = Vcap.array() + 1;
+			Eigen::MatrixXd t1;
 
 			while (V1(0, 0).real() > Vcap(0, 0).real() && ll < 20)
 			{
@@ -186,8 +186,8 @@ public:
 				std::copy(a.begin() + 1, a.end(), t1_v.begin());
 				std::copy(t1_v.begin() + denOrder, t1_v.end(), b.begin());
 
-				bV = Map<VectorXd>(b.data(), b.size());
-				aV = Map<VectorXd>(a.data(), a.size());
+				bV = Eigen::Map<Eigen::VectorXd>(b.data(), b.size());
+				aV = Eigen::Map<Eigen::VectorXd>(a.data(), a.size());
 
 				GC_b = bV.transpose() * OM.block(0, 0, numOrder, OM.cols());
 				GC_a = aV.transpose() * OM.block(0, 0, denOrder + 1, OM.cols());
@@ -196,7 +196,7 @@ public:
 
 				V1 = (GC - h_t).array() * wf.array();
 				V1 = V1.adjoint() * V1;
-				t1 = Map<VectorXd>(t1_v.data(), t1_v.size());
+				t1 = Eigen::Map<Eigen::VectorXd>(t1_v.data(), t1_v.size());
 
 				k /= 2;
 				ll++;
@@ -231,7 +231,7 @@ public:
 	* @param interpPoints Vector of the new sample points to find the value of
 	* @param out Vector to save the interpolated values in
 	*/
-	static void util_interp1(VectorXd& x, VectorXd& v, VectorXd& interpPoints, VectorXd& out)
+	static void util_interp1(Eigen::VectorXd & x, Eigen::VectorXd & v, Eigen::VectorXd & interpPoints, Eigen::VectorXd & out)
 	{
 		if (interpPoints.size() == out.size())
 		{
@@ -293,14 +293,14 @@ public:
 		std::copy(freq, &freq[SDNParameters::NUM_FREQ], &freqExtended[1]);
 
 		//find interpolated reflectance values over the space [0, fs/2]
-		VectorXd interpPoints = VectorXd::LinSpaced((sizeFFT / 2) + 1, 0, sizeFFT / 2);
+		Eigen::VectorXd interpPoints = Eigen::VectorXd::LinSpaced((sizeFFT / 2) + 1, 0, sizeFFT / 2);
 		interpPoints *= (Fs / sizeFFT);
 		int nSamples = interpPoints.size();
 
-		VectorXd ampEV = Map<VectorXd>(ampExtended, SDNParameters::NUM_FREQ + 2);
-		VectorXd freqEV = Map<VectorXd>(freqExtended, SDNParameters::NUM_FREQ + 2);
+		Eigen::VectorXd ampEV = Eigen::Map<Eigen::VectorXd>(ampExtended, SDNParameters::NUM_FREQ + 2);
+		Eigen::VectorXd freqEV = Eigen::Map<Eigen::VectorXd>(freqExtended, SDNParameters::NUM_FREQ + 2);
 
-		VectorXd hInterp(nSamples);
+		Eigen::VectorXd hInterp(nSamples);
 
 		util_interp1(freqEV, ampEV, interpPoints, hInterp);
 
@@ -310,27 +310,27 @@ public:
 		//
 
 		//install negative prequencies on the spectrum
-		VectorXcd logSpectrum(nSamples + nSamples - 2);
+		Eigen::VectorXcd logSpectrum(nSamples + nSamples - 2);
 		logSpectrum << hInterp, hInterp.segment(1, nSamples - 2).reverse();
 
 		//find the real cepstrum 
-		FFT<double> fft;
-		VectorXcd cepstrum((int)sizeFFT);
+		Eigen::FFT<double> fft;
+		Eigen::VectorXcd cepstrum((int)sizeFFT);
 		fft.inv(cepstrum, logSpectrum);
 
 		//fold the cepstrum to reflect the non minimum phase zeros inside the unit circle
-		VectorXcd foldedCep((int)sizeFFT);
+		Eigen::VectorXcd foldedCep((int)sizeFFT);
 		foldedCep << cepstrum(0),
 			cepstrum.segment(1, nSamples - 2) + cepstrum.segment(nSamples, nSamples - 2).reverse(),
 			cepstrum(nSamples - 1),
-			ArrayXcd::Zero((int)sizeFFT - nSamples);
+			Eigen::ArrayXcd::Zero((int)sizeFFT - nSamples);
 
 		//find the minimum phase spectrum
-		VectorXcd minPhLogSpectrum((int)sizeFFT);
+		Eigen::VectorXcd minPhLogSpectrum((int)sizeFFT);
 		fft.fwd(minPhLogSpectrum, foldedCep);
 		
 		//select only the positive frequency portion
-		VectorXcd hVec = minPhLogSpectrum.segment(0, nSamples);
+		Eigen::VectorXcd hVec = minPhLogSpectrum.segment(0, nSamples);
 		std::vector<std::complex<double>> h(hVec.data(), &hVec.data()[nSamples]);
 
 		for (std::complex<double>& val : h)
@@ -343,10 +343,10 @@ public:
 		// 
 		
 		//angular frequencies
-		VectorXd w = (interpPoints / Fs) * _2PI;
+		Eigen::VectorXd w = (interpPoints / Fs) * _2PI;
 
 		//ERB scale weights
-		VectorXd wWeights = 1.0 / (24.7 * (4.37 * (interpPoints * 0.001).array() + 1));
+		Eigen::VectorXd wWeights = 1.0 / (24.7 * (4.37 * (interpPoints * 0.001).array() + 1));
 
 		return invfreqz(h.data(), w.data(), N, N, w.size(), wWeights.data(), 10);
 
