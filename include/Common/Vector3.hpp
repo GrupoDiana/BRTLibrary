@@ -467,6 +467,12 @@ namespace Common {
 			return CVector3(x + _rightHand.x, y + _rightHand.y, z + _rightHand.z);
 		}
 
+		/** \brief Component-wise multiplication
+		*/
+		const CVector3 operator*(float _scalar) const {
+			return CVector3(x * _scalar, y * _scalar, z * _scalar);
+		}
+
 		/** \brief Component-wise equal to 
 		*/
 		bool operator==(CVector3 const _rightHand) 
