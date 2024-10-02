@@ -38,11 +38,11 @@ namespace BRTEnvironmentModel {
 		class CSDNProcessors {
 		public:
 			
-			CSDNProcessors(std::string _sourceID, Common::CVector3 _roomDimensions, BRTBase::CBRTManager * brtManager)
+			CSDNProcessors(std::string _sourceID, BRTBase::CBRTManager * brtManager)
 				: sourceID { _sourceID } {
 				
 				SDNProcessor = brtManager->CreateProcessor<BRTEnvironmentModel::CSDNEnvironmentProcessor>(brtManager);					
-				SDNProcessor->Setup(_sourceID, _roomDimensions);
+				SDNProcessor->Setup(_sourceID);
 			}	
 
 			///**
@@ -53,11 +53,11 @@ namespace BRTEnvironmentModel {
 				sourceID = "";
 				brtManager->RemoveProcessor(SDNProcessor);				
 			}
-		
-			void SetRoomDimensions(float _newValue, TAxis _axis) {
-				SDNProcessor->SetRoomDimensions(_newValue, _axis);
+			
+			void SetupRoom(Common::CVector3 _roomDimensions, Common::CVector3 _roomCentre) {
+				SDNProcessor->SetupRoom(_roomDimensions, _roomCentre);
 			}
-
+				
 			void MuteDirectPath(bool mute) {
 				SDNProcessor->MuteLOS(mute);
 			}
@@ -66,29 +66,10 @@ namespace BRTEnvironmentModel {
 				return (SDNProcessor->ConnectToListenerModel(_listener));
 			}
 
-			///**
-			// * @brief Set proccesor configuration
-			// * @param enableSpatialization Spatialization state
-			// * @param enableInterpolation Interpolation state
-			// * @param enableNearFieldEffect Nearfield state
-			//*/
-			/*void SetConfiguration(bool enableSpatialization, bool enableInterpolation, bool enableNearFieldEffect, bool enableITD, bool enableParallaxCorrection) {
-				if (enableSpatialization) { binauralConvolverProcessor->EnableSpatialization(); }
-				else { binauralConvolverProcessor->DisableSpatialization(); }
-
-				if (enableInterpolation) { binauralConvolverProcessor->EnableInterpolation(); }
-				else { binauralConvolverProcessor->DisableInterpolation(); }
-
-				if (enableNearFieldEffect) { nearFieldEffectProcessor->EnableNearFieldEffect(); }
-				else { nearFieldEffectProcessor->DisableNearFieldEffect(); }	
-
-				if (enableITD) {binauralConvolverProcessor->EnableITDSimulation();}
-				else {binauralConvolverProcessor->DisableITDSimulation();}
-
-				if (enableParallaxCorrection) {binauralConvolverProcessor->EnableParallaxCorrection();}
-				else {binauralConvolverProcessor->DisableParallaxCorrection();}
-			}*/
-
+			bool DisconnectToListenerModel(std::shared_ptr<BRTBase::CListenerModelBase> _listener) {
+				return (SDNProcessor->DisconnectToListenerModel(_listener));
+			}
+			
 			///**
 			// * @brief Set processor enable or disable
 			// * @param _enableProcessor
@@ -185,14 +166,18 @@ namespace BRTEnvironmentModel {
 		};
 	
 		
+		
+				
+
+
 		/**
 		 * @brief Reset all processor buffers
 		*/
 		void ResetProcessorBuffers() {
-			std::lock_guard<std::mutex> l(mutex);
-			for (auto& it : sourcesConnectedProcessors) {
-				//it.ResetBuffers();
-			}
+			//std::lock_guard<std::mutex> l(mutex);
+			//for (auto& it : sourcesConnectedProcessors) {
+			//	//it.ResetBuffers();
+			//}
 		}
 
 		/**
@@ -243,23 +228,19 @@ namespace BRTEnvironmentModel {
 
 	private:
 
-		/**
-		 * @brief Update Configuration in all source processor
-		*/
-		void SetConfigurationInALLSourcesProcessors() {
+		void UpdatedRoom() override {
 			std::lock_guard<std::mutex> l(mutex);
-			for (auto& it : sourcesConnectedProcessors) {								
-				SetSourceProcessorsConfiguration(it);				
-			}			
-		}
-		/**
-		 * @brief Update configuration just in one source processor
-		 * @param sourceProcessor 
-		*/
-		void SetSourceProcessorsConfiguration(CSDNProcessors& sourceProcessor) {			
-			//sourceProcessor.SetConfiguration(enableSpatialization, enableInterpolation, enableNearFieldEffect, enableITDSimulation, enableParallaxCorrection);
+
+			//Get Room dimensions and Room Centre from CRoom object
+			Common::CVector3 roomDimensions = GetRoom().GetShoeBoxRoomSize();
+			Common::CVector3 roomCentre = GetRoom().GetCenter();
+			// Update Room dimensions and Room Centre in all sources processors
+			for (auto & it : sourcesConnectedProcessors) {
+				it.SetupRoom(roomDimensions, roomCentre);
+			}
 		}
 
+		
 		/**
 		 * @brief Connect a new source to this listener
 		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
@@ -285,7 +266,12 @@ namespace BRTEnvironmentModel {
 			}
 			
 			// Create a new SDN Processor
-			CSDNProcessors _newSDNProcessors(_source->GetID(), Common::CVector3 { 10, 10, 10 }, brtManager);
+			Common::CVector3 roomDimensions = (GetRoom().GetShoeBoxRoomSize());
+			if (roomDimensions == Common::CVector3::ZERO()) {
+				roomDimensions = Common::CVector3(1.0f, 1.0f, 1.0f);
+				SET_RESULT(RESULT_ERROR_NOTSET, "Room dimensions are not set.");				
+			}
+			CSDNProcessors _newSDNProcessors(_source->GetID(), brtManager);
 
 			// Make connections
 			bool control = brtManager->ConnectModuleTransform(_source, _newSDNProcessors.SDNProcessor, "sourcePosition");			
@@ -301,10 +287,11 @@ namespace BRTEnvironmentModel {
 			control = control && brtManager->ConnectModulesSamples(_source, "samples", _newSDNProcessors.SDNProcessor, "inputSamples");
 			control = control && _newSDNProcessors.ConnectToListenerModel(_listenerModel);
 
+			_newSDNProcessors.SetupRoom(GetRoom().GetShoeBoxRoomSize(), GetRoom().GetCenter());
 			_newSDNProcessors.MuteDirectPath(false);
 			
 			if (control) {				
-				SetSourceProcessorsConfiguration(_newSDNProcessors);
+				//SetSourceProcessorsConfiguration(_newSDNProcessors);
 				sourcesConnectedProcessors.push_back(std::move(_newSDNProcessors));
 				return true;
 			}
@@ -318,62 +305,49 @@ namespace BRTEnvironmentModel {
 		*  @return True if the disconnection success
 		*/
 		template <typename T>
-		bool DisconnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
+		bool DisconnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {						
 			std::lock_guard<std::mutex> l(mutex);
+
+			// Get listener Model pointer
+			std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTBase::CListenerModelBase>(GetIDEntryPoint("listenerModelID")->GetData());
+			if (_listenerModel == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This environment has not been connected to a listener Model.");
+				return false;
+			}
+
+			// Get listener pointer
+			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(_listenerModel->GetListenerID());
+			if (_listener == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This environment has not been connected to a listener.");
+				return false;
+			}
 			
-			//// Get listener pointer
-			//std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(GetIDEntryPoint("listenerID")->GetData());
-			//if (_listener == nullptr) {
-			//	SET_RESULT(RESULT_ERROR_NOTSET, "This listener Model has not been connected to a listener.");
-			//	return false;
-			//}			
-			//// Get source			
-			//std::string _sourceID = _source->GetID();
-			//auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSourceProcessors& sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
-			//if (it != sourcesConnectedProcessors.end()) {
-			//	bool control = brtManager->DisconnectModulesSamples(it->nearFieldEffectProcessor, "leftEar", this, "leftEar");
-			//	control = control && brtManager->DisconnectModulesSamples(it->nearFieldEffectProcessor, "rightEar", this, "rightEar");
-			//	control = control && brtManager->DisconnectModulesSamples(it->binauralConvolverProcessor, "leftEar", it->nearFieldEffectProcessor, "leftEar");
-			//	control = control && brtManager->DisconnectModulesSamples(it->binauralConvolverProcessor, "rightEar", it->nearFieldEffectProcessor, "rightEar");
-			//	control = control && brtManager->DisconnectModulesSamples(_source, "samples", it->binauralConvolverProcessor, "inputSamples");
-
-			//	control = control && brtManager->DisconnectModuleID(this, it->binauralConvolverProcessor, "listenerID");
-			//	control = control && brtManager->DisconnectModuleILD(this, it->nearFieldEffectProcessor, "listenerILD");
-			//	control = control && brtManager->DisconnectModuleHRTF(this, it->binauralConvolverProcessor, "listenerHRTF");
-			//	control = control && brtManager->DisconnectModuleTransform(_listener, it->nearFieldEffectProcessor, "listenerPosition");
-			//	control = control && brtManager->DisconnectModuleTransform(_listener, it->binauralConvolverProcessor, "listenerPosition");
-
-			//	if (sourceNeedsListenerPosition) {
-			//		control = control && brtManager->DisconnectModuleTransform(_listener, _source, "listenerPosition");
-			//	}
-			//	control = control && brtManager->DisconnectModuleID(_source, it->nearFieldEffectProcessor, "sourceID");
-			//	control = control && brtManager->DisconnectModuleID(_source, it->binauralConvolverProcessor, "sourceID");
-			//	control = control && brtManager->DisconnectModuleTransform(_source, it->nearFieldEffectProcessor, "sourcePosition");
-			//	control = control && brtManager->DisconnectModuleTransform(_source, it->binauralConvolverProcessor, "sourcePosition");
-
-			//	it->Clear(brtManager);
-			//	sourcesConnectedProcessors.erase(it);
-			//	return true;
-			//}
+			std::string _sourceID = _source->GetID();
+			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSDNProcessors & sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
+			if (it != sourcesConnectedProcessors.end()) {
+				bool control = it->DisconnectToListenerModel(_listenerModel);
+				control = control && brtManager->DisconnectModulesSamples(_source, "samples", it->SDNProcessor, "inputSamples");
+				control = control && brtManager->DisconnectModuleID(this, it->SDNProcessor, "listenerID");
+				control = control && brtManager->DisconnectModuleTransform(_listener, it->SDNProcessor, "listenerPosition");
+				if (sourceNeedsListenerPosition) {
+					control = control && brtManager->DisconnectModuleTransform(_listener, _source, "listenerPosition");
+				}
+				control = control && brtManager->DisconnectModuleID(_source, it->SDNProcessor, "sourceID");
+				control = control && brtManager->DisconnectModuleTransform(_source, it->SDNProcessor, "sourcePosition");
+				it->Clear(brtManager);
+				sourcesConnectedProcessors.erase(it);
+				return true;
+			}
 			return false;
 		}
 
 		/////////////////
 		// Attributes
 		/////////////////
-		mutable std::mutex mutex;									// To avoid access collisions
-		//std::string listenerID;										// Store unique listener ID
-		//std::shared_ptr<BRTServices::CHRTF>		listenerHRTF;		// HRTF of listener			
-		//std::shared_ptr<BRTServices::CNearFieldCompensationFilters> listenerNFCFilters;		// ILD of listener						
+		mutable std::mutex mutex;									// To avoid access collisions		
 		std::vector< CSDNProcessors> sourcesConnectedProcessors;
 		BRTBase::CBRTManager* brtManager;
-		Common::CGlobalParameters globalParameters;
-
-		//bool enableSpatialization;		// Flags for independent control of processes
-		//bool enableInterpolation;		// Enables/Disables the interpolation on run time
-		//bool enableNearFieldEffect;     // Enables/Disables the Near Field Effect
-		//bool enableParallaxCorrection;	// Enable parallax correction
-		//bool enableITDSimulation;		// Enable ITD simulation 				
+		Common::CGlobalParameters globalParameters;		
 	};
 }
 #endif

@@ -16,7 +16,8 @@ namespace BRTEnvironmentModel {
 	
 	public:
 
-		SDNEnvironment() {
+		SDNEnvironment()
+			: dimensions { Common::CVector3(1,1,1) } {
 			int numConnectionsPerNode = SDNParameters::NUM_WALLS - 1;
 
 			wallNodes = std::vector<ScatteringNode>(SDNParameters::NUM_WALLS);
@@ -71,7 +72,6 @@ namespace BRTEnvironmentModel {
 			}
 
 			hasChanged = false;
-
 		}
 
 
@@ -116,7 +116,7 @@ namespace BRTEnvironmentModel {
 			this->samplerate = samplerate;
 		}
 
-		Common::CVector3 dimensions = { 0.0f, 0.0f, 0.0f };
+		Common::CVector3 dimensions;
 		bool hasChanged = false;
 		std::vector<ScatteringNode> wallNodes;
 

@@ -68,6 +68,21 @@ namespace BRTEnvironmentModel {
 			return control;
 		}
 
+		/**
+		 * @brief Disconnect all the virtual sources from a listener model
+		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
+		 * @param _source Pointer to the source
+		 * @return True if the disconnection success
+		*/
+		template <typename T>
+		bool DisconnectVirtualSourcesToListenerModel(std::shared_ptr<T> _listenerModel) {
+			bool control = true;
+			for (auto _virtualSource : virtualSources) {
+				control = control && _listenerModel->DisconnectSoundSource(_virtualSource);
+			}
+			return control;
+		}
+
 		void SetOriginSourceID(std::string _originSourceID) {
 			for (auto it : virtualSources) {
 				it->SetOriginSourceID(_originSourceID);

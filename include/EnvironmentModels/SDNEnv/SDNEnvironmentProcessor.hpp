@@ -29,15 +29,13 @@ namespace BRTEnvironmentModel {
 		}
 
 		~CSDNEnvironmentProcessor() {};
-
-		
+				
 		/**
 		 * @brief Setup the environment processor
 		 * @param _orinalSourceID ID of the original source
-		 * @param _roomDimensions Dimensions of the room
 		 * @return True if the setup was successful
 		 */
-		bool Setup(std::string _orinalSourceID, Common::CVector3 _roomDimensions)
+		bool Setup(std::string _orinalSourceID)
 		{
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			if (initialized) {
@@ -45,16 +43,40 @@ namespace BRTEnvironmentModel {
 				return false;
 			}
 
-			if (_orinalSourceID == "" || _roomDimensions == Common::CVector3::ZERO()) {
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The source ID and the room dimensions must be defined", "");
+			if (_orinalSourceID == "" ) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The source ID must be defined", "");
 				return false;
 			}
 							
 			originalSourceID = _orinalSourceID;
 
-			CreateBRTVirtualSources();
-			InitSDNEnvironment(_roomDimensions);
+			CreateBRTVirtualSources();	
+			InitSDNEnvironment(Common::CVector3(1,1,1));
+			globalCoordinatesRoomCentre = Common::CVector3::ZERO();
 			initialized = true;
+			return true;
+		}
+
+		/**
+		 * @brief Setup the room
+		 * @param _roomDimensionsInGlobalCoordinates Dimensions of the room in global coordinates
+		 * @param _globalCoordinatesRoomCentre Centre of the room in global coordinates
+		 * @return True if the setup was successful
+		 */
+		bool SetupRoom(Common::CVector3 _roomDimensionsInGlobalCoordinates, Common::CVector3 _globalCoordinatesRoomCentre) {
+			if (!initialized) {
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "The SDN environment processor is not initialized", "");
+				return false;
+			}
+			if (_roomDimensionsInGlobalCoordinates == Common::CVector3::ZERO()) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The room dimensions must be defined", "");
+				return false;
+			}
+			SetRoomDimensions(_roomDimensionsInGlobalCoordinates.x, AXIS_X);
+			SetRoomDimensions(_roomDimensionsInGlobalCoordinates.y, AXIS_Y);
+			SetRoomDimensions(_roomDimensionsInGlobalCoordinates.z, AXIS_Z);
+
+			globalCoordinatesRoomCentre = _globalCoordinatesRoomCentre;
 			return true;
 		}
 
@@ -72,40 +94,14 @@ namespace BRTEnvironmentModel {
 		 */
 		bool IsProcessorEnabled() { return enableProcessor; }
 
-
-
+		
 		bool ConnectToListenerModel(std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel) {
 			return ConnectVirtualSourcesToListenerModel<BRTBase::CListenerModelBase>(_listenerModel);
 		}
-				
-
-		/**
-		* @brief Change the room dimensions along one axis
-		* @param newValue New dimension in meters
-		* @param _axis Axis whose dimension needs to be updated
-		*/
-		void SetRoomDimensions(float newValue, TAxis _axis)
-		{
-			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
-			switch (_axis)
-			{
-			case AXIS_X: dimensions.x = newValue; break;
-			case AXIS_Y: dimensions.y = newValue; break;
-			case AXIS_Z: dimensions.z = newValue; break;
-			case AXIS_MINUS_X: dimensions.x = -newValue;	break;
-			case AXIS_MINUS_Y: dimensions.y = -newValue;	break;
-			case AXIS_MINUS_Z: dimensions.z = -newValue;	break;
-			default: SET_RESULT(RESULT_ERROR_CASENOTDEFINED, "Trying to set an axis which name is not defined");
-			}
-
-			hasChanged = true;
+								
+		bool DisconnectToListenerModel(std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel) {
+			return DisconnectVirtualSourcesToListenerModel<BRTBase::CListenerModelBase>(_listenerModel);
 		}
-
-		/**
-		 * @brief 
-		 * @return 
-		 */
-		Common::CVector3 GetRoomDimensions() { return dimensions; }
 
 		/**
 		* @brief Mute or unmute line of sight component
@@ -145,9 +141,9 @@ namespace BRTEnvironmentModel {
 			
 			// Get data from entry points
 			CMonoBuffer<float> inBuffer = GetSamplesEntryPoint("inputSamples")->GetData();
-			Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
-			Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
-
+			Common::CTransform sourcePosition = CalculateLocalPosition(GetPositionEntryPoint("sourcePosition")->GetData());
+			Common::CTransform listenerPosition = CalculateLocalPosition(GetPositionEntryPoint("listenerPosition")->GetData());
+						
 			if (inBuffer.size() == 0) {
 				return;
 			}
@@ -172,6 +168,74 @@ namespace BRTEnvironmentModel {
 		
 
 	private:
+		
+		/**
+		* @brief Change the room dimensions along one axis
+		* @param newValue New dimension in meters
+		* @param _axis Axis whose dimension needs to be updated
+		*/
+		void SetRoomDimensions(float newValue, TAxis _axis) {
+			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
+			switch (_axis) {
+			case AXIS_X:
+				dimensions.x = newValue;
+				break;
+			case AXIS_Y:
+				dimensions.y = newValue;
+				break;
+			case AXIS_Z:
+				dimensions.z = newValue;
+				break;
+			case AXIS_MINUS_X:
+				dimensions.x = -newValue;
+				break;
+			case AXIS_MINUS_Y:
+				dimensions.y = -newValue;
+				break;
+			case AXIS_MINUS_Z:
+				dimensions.z = -newValue;
+				break;
+			default:
+				SET_RESULT(RESULT_ERROR_CASENOTDEFINED, "Trying to set an axis which name is not defined");
+			}
+
+			hasChanged = true;
+		}
+
+		/**
+		 * @brief Transform a position from global to SDN local
+		 * @param _globalLocation global location
+		 * @return local location
+		 */
+		Common::CTransform CalculateLocalPosition(const Common::CTransform& _globalPosition) {
+			
+			
+			// Calculate parameter
+			Common::CVector3 localCentre = (dimensions * 0.5f);
+			Common::CVector3 transformParameter = localCentre - globalCoordinatesRoomCentre;
+			// Calculate new position						
+			Common::CTransform localPosition = _globalPosition;
+			localPosition.SetPosition(_globalPosition.GetPosition() + transformParameter);
+
+			return localPosition;
+		}
+		
+		/**
+		 * @brief Transform a position from SDN local to global
+		 * @param _globalLocation global location
+		 * @return local location
+		 */
+		Common::CTransform CalculateGlobalPosition(const Common::CTransform & _globalPosition) { 
+			// Calculate parameter
+			Common::CVector3 localCentre = (dimensions * 0.5f);
+			Common::CVector3 transformParameter = globalCoordinatesRoomCentre - localCentre;
+			// Calculate new position
+			Common::CTransform globalPosition = _globalPosition;
+			globalPosition.SetPosition(_globalPosition.GetPosition() + transformParameter);
+
+			return globalPosition;
+		}
+
 
 
 		/**
@@ -202,36 +266,7 @@ namespace BRTEnvironmentModel {
 
 			Prepare(globalParameters.GetSampleRate(), roomDimensions, sourcePosition, listenerPosition, virtualSourcePositions);
 		}
-		
-		/**
-		 * @brief Sync the virtual sources to the model
-		 */
-		/*void SyncVirtualSourcesToModel()
-		{
-			
-			SetVirtualSourceBuffer("WallX0", virtualSourceBuffers[0]);
-			SetVirtualSourcePosition("WallX0", virtualSourcePositions[0]);
-
-			SetVirtualSourceBuffer("WallX1", virtualSourceBuffers[1]);
-			SetVirtualSourcePosition("WallX1", virtualSourcePositions[1]);
-
-			SetVirtualSourceBuffer("WallY0", virtualSourceBuffers[2]);
-			SetVirtualSourcePosition("WallY0", virtualSourcePositions[2]);
-
-			SetVirtualSourceBuffer("WallY1", virtualSourceBuffers[3]);
-			SetVirtualSourcePosition("WallY1", virtualSourcePositions[3]);
-
-			SetVirtualSourceBuffer("WallZ0", virtualSourceBuffers[4]);
-			SetVirtualSourcePosition("WallZ0", virtualSourcePositions[4]);
-
-			SetVirtualSourceBuffer("WallZ1", virtualSourceBuffers[5]);
-			SetVirtualSourcePosition("WallZ1", virtualSourcePositions[5]);
-
-			if (muteLoS)
-				std::fill(virtualSourceBuffers[6].begin(), virtualSourceBuffers[6].end(), 0);
-			SetVirtualSourceBuffer("DirectPath", virtualSourceBuffers[6]);
-			SetVirtualSourcePosition("DirectPath", virtualSourcePositions[6]);
-		}*/
+				
 		/**
 		 * @brief Sync the virtual sources to the model
 		 */
@@ -251,7 +286,7 @@ namespace BRTEnvironmentModel {
 				std::fill(virtualSourceBuffers[index].begin(), virtualSourceBuffers[index].end(), 0);
 
 			SetVirtualSourceBuffer(GetBRTVirtualSourceID(index), virtualSourceBuffers[index]);
-			SetVirtualSourcePosition(GetBRTVirtualSourceID(index), virtualSourcePositions[index]);
+			SetVirtualSourcePosition(GetBRTVirtualSourceID(index), CalculateGlobalPosition(virtualSourcePositions[index]));
 		}
 		
 		/**
@@ -293,6 +328,7 @@ namespace BRTEnvironmentModel {
 		std::string originalSourceID;
 		bool initialized;
 		bool enableProcessor;
+		Common::CVector3 globalCoordinatesRoomCentre; 
 	};
 
 
