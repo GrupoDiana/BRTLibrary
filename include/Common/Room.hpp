@@ -136,7 +136,17 @@ namespace Common {
 			walls.at(wallIndex).SetAbsortion(absortion);
 		}
 
-		/** \brief sets the absortion coeficient (frequency dependent) of one wall
+		/** \brief sets the absortion coeficient (frequency independent) of all walls
+		*/
+		void SetAllWallsAbsortion(float _absortion) {
+
+			int wallsNumber = walls.size();
+			for (int i = 0; i < wallsNumber; i++) {
+				walls.at(i).SetAbsortion(_absortion);
+			}
+		}
+		
+		/** \brief Sets the absortion coeficient (frequency dependent) of one wall
 		*	\details Overloads the previous one. Sets the absortion coeficient (absorved energy / incident energy) of 
 		*            each of the nine bands for the i-th wall of the room.
 		*	\param [in] index of the wall.
@@ -145,6 +155,15 @@ namespace Common {
 		void SetWallAbsortion(int wallIndex, std::vector<float> absortionPerBand) {
 			walls.at(wallIndex).SetAbsortion(absortionPerBand);
 		};
+
+		/** \brief Sets the absortion coeficient (frequency dependent) of all walls
+		*/
+		void SetAllWallsAbsortion(std::vector<float> absortionPerBand) {
+			int wallsNumber = walls.size();
+			for (int i = 0; i < wallsNumber; i++) {
+				walls.at(i).SetAbsortion(absortionPerBand);
+			}
+		}
 
 		/** \brief Returns a vector of walls containing all the walls of the room.
 		*	\param [out] Walls: vector of walls with all the walls of the room.
