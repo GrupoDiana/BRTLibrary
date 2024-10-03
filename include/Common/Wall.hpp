@@ -63,6 +63,8 @@ public:
 			if (polygon.size() == 3) {
 				Calculate_ABCD();
 				return 1;
+			} else {
+				return 0;
 			}
 		} else {
 			double diff = _x * A + _y * B + _z * C + D;
@@ -76,7 +78,7 @@ public:
 				polygon.push_back(tempCorner);
 				return 0;
 			}
-		}
+		}		
 	}
 	
 	/** \brief Returns the corners of the wall
@@ -103,7 +105,7 @@ public:
 	/** \brief Returns the vector with absortion coeficients of the wall. 
 	*	\param [out] Absortion: absortion of the wall. Vector with the absorption coefficients of each band.
 	*/
-	std::vector<float> GetAbsortionB() {
+	std::vector<float> GetAbsortionBand() {
 		return absortionBands;
 	}
 
