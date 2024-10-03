@@ -80,7 +80,18 @@ public:
 		absorption[index] = newValue;
 		newAbsorption = true;
 	}
-
+	
+	/**
+	 * @brief Set the frequency absorption values array
+	 * @param newValues New frequency absorption values array
+	 */
+	void SetFreqAbsortion(std::vector<float> _newValues) {		
+		if (_newValues.size() != SDNParameters::NUM_FREQ) {
+			return;
+		}
+		std::copy(_newValues.begin(), _newValues.end(), absorption);
+		newAbsorption = true;
+	}
 
 	/**
 	* @brief Calculate filter coefficients from local absorption values array

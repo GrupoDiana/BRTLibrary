@@ -122,6 +122,20 @@ namespace BRTEnvironmentModel {
 		{
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			wallNodes[wallIndex].SetFreqAbsorption(newValue, freqIndex);
+		}		
+		
+		/**
+		 * @brief Set the frequency absorption values array of a wall
+		 * @param wallIndex Wall index
+		 * @param newValues Absorption values vector, 8 values are expected, the centre frequencies 
+			of which are as follows: [125, 250, 500, 1000, 2000, 4000, 8000, 16000]Hz
+		 */
+		void SetWallFreqAbsorption(int _wallIndex, std::vector<float> _newValues) {
+			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
+			if (_newValues.size() != SDNParameters::NUM_FREQ) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The number of values must be equal to the number of frequencies", "");
+			}
+			wallNodes[_wallIndex].SetFreqAbsortion(_newValues);
 		}
 
 
