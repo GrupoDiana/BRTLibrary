@@ -61,7 +61,9 @@ namespace BRTBase {
 		//virtual bool ConnectListenerTransform(const std::string _listenerID) { return false; }
 		//virtual bool DisconnectListenerTransform(const std::string _listenerID) { return false; }
 
-		virtual void UpdatedRoom() = 0;
+		virtual void UpdateRoomGeometry() = 0;
+		virtual void UpdateRoomWallAbsortion(int wallIndex) = 0;
+		virtual void UpdateRoomAllWallsAbsortion() = 0;
 
 		CEnviromentModelBase(const std::string & _environmentModelID)
 			: environmentModelID { _environmentModelID }
@@ -99,13 +101,63 @@ namespace BRTBase {
 		 */
 		void SetupShoeBoxRoom(float length, float width, float height) {
 			roomDefinition.SetupShoeBox(length, width, height);
-			UpdatedRoom();
+			UpdateRoomGeometry();
 		}
 
+		/**
+		 * @brief Get room definition
+		 * @return Room defined
+		 */
 		Common::CRoom GetRoom() {
 			return roomDefinition;
 		}
-				
+
+		/**
+		 * @brief Sets the absortion coeficient (frequency independent) of one wall
+		 *	\details Sets the absortion coeficient (absorved energy / incident energy) of the i-th wall of the room.
+		 *			Absortion coeficient of the wall (expressed as a number between 0 (no absortion) and 1 (total absortion).
+		 * @param wallIndex index of the wall
+		 * @param absortion absortion coeficient (frequency independent)
+		 */
+		void SetRoomWallAbsortion(int wallIndex, float absortion) {
+			roomDefinition.SetWallAbsortion(wallIndex, absortion);
+			UpdateRoomWallAbsortion(wallIndex);
+		}
+
+		/**
+		 * @brief Sets the absortion coeficient (frequency independent) of all walls
+		 *	\details Sets the absortion coeficient (absorved energy / incident energy) of each of the nine bands for the i-th wall of the room
+		 * @param absortion absortion coeficient (frequency independent)
+		 */ 
+		void SetRoomAllWallsAbsortion(float _absortion) {
+			roomDefinition.SetAllWallsAbsortion(_absortion);
+			UpdateRoomAllWallsAbsortion();
+		}
+
+		/**
+		 * @brief Sets the absortion coeficient (frequency dependent) of one wall
+		 *	\details Sets the absortion coeficient (absorved energy / incident energy) of each of the nine bands for the i-th wall of the room
+		 * @param wallIndex index of the wall
+		 * @param absortionPerBand absortion coeficients for each band (frequency dependent). 9 bands are expected, 
+								the centre frequencies of which are as follows:	[62.5, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]Hz
+		 */
+		void SetRoomWallAbsortion(int wallIndex, std::vector<float> absortionPerBand) {
+			roomDefinition.SetWallAbsortion(wallIndex, absortionPerBand);
+			UpdateRoomWallAbsortion(wallIndex);
+		}
+		
+		/**
+		 * @brief Sets the absortion coeficient (frequency dependent) of all walls
+		 *	\details Sets the absortion coeficient (absorved energy / incident energy) of each of the nine bands for the i-th wall of the room
+		 * @param absortionPerBand absortion coeficients for each band (frequency dependent). 9 bands are expected, 
+								the centre frequencies of which are as follows:	[62.5, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]Hz
+		 */
+		void SetRoomAllWallsAbsortion(std::vector<float> absortionPerBand) {
+			roomDefinition.SetAllWallsAbsortion(absortionPerBand);
+			UpdateRoomAllWallsAbsortion();
+		}
+
+
 		/////////////////////
 		// Update Callbacks
 		/////////////////////		

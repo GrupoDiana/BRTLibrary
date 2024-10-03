@@ -57,7 +57,11 @@ namespace BRTEnvironmentModel {
 			void SetupRoom(Common::CVector3 _roomDimensions, Common::CVector3 _roomCentre) {
 				SDNProcessor->SetupRoom(_roomDimensions, _roomCentre);
 			}
-				
+			
+			void SetWallAbsortion(int _wallIndex, std::vector<float> _wallAbsortions) {									
+				SDNProcessor->SetWallFreqAbsorption(_wallIndex, _wallAbsortions);				
+			}
+			
 			void MuteDirectPath(bool mute) {
 				SDNProcessor->MuteLOS(mute);
 			}
@@ -228,7 +232,10 @@ namespace BRTEnvironmentModel {
 
 	private:
 
-		void UpdatedRoom() override {
+		/**
+		 * @brief Update room geometry. Called from father class
+		*/
+		void UpdateRoomGeometry() override {
 			std::lock_guard<std::mutex> l(mutex);
 
 			//Get Room dimensions and Room Centre from CRoom object
@@ -240,7 +247,58 @@ namespace BRTEnvironmentModel {
 			}
 		}
 
+		/**
+		 * @brief Update room wall absortion. Called from father class
+		 * @param _wallIndex Pointer to the source
+		*/
+		void UpdateRoomWallAbsortion(int _wallIndex) override {
+			std::lock_guard<std::mutex> l(mutex);			
+			std::vector<float> absortionBands = GetRoom().GetWalls().at(_wallIndex).GetAbsortionBand();			
+			
+			//The SDN has one less band, it does not have the lowest frequency band.
+			std::vector<float> _sdnWallAbsortion(absortionBands.begin() + 1, absortionBands.end());
+			for (auto& it : sourcesConnectedProcessors) {
+				it.SetWallAbsortion(ToSDNWallIndex(_wallIndex), _sdnWallAbsortion);
+			}
+		}
 		
+		/**
+		 * @brief Update room all walls absortion. Called from father class
+		 */
+		void UpdateRoomAllWallsAbsortion() override {			
+			std::vector<Common::CWall> walls = GetRoom().GetWalls();
+			for (int _wallIndex = 0; _wallIndex < walls.size(); _wallIndex++) {
+				UpdateRoomWallAbsortion(ToSDNWallIndex(_wallIndex));				
+			}
+		}
+
+		/**
+		 * @brief 
+		 * @param _wallIndex 
+		 * @return 
+		 */
+		int ToSDNWallIndex(int _wallIndex) {
+			// BRT [front, left, right, back, floor, ceiling]
+			// SDN [X0, XSize, Y0, YSize, Z0, ZSize]
+						
+			switch (_wallIndex) {
+			case 0:
+				return 1; // front -> XSize
+			case 1:
+				return 3; // left -> YSize
+			case 2:
+				return 2; // right -> Y0
+			case 3:
+				return 0; // back -> X0
+			case 4:
+				return 4; // floor -> Z0
+			case 5:
+				return 5; // ceiling -> ZSize
+			default:
+				return -1;
+			}
+		}
+
 		/**
 		 * @brief Connect a new source to this listener
 		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
