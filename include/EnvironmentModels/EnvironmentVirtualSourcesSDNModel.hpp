@@ -101,10 +101,9 @@ namespace BRTEnvironmentModel {
 			///**
 			// * @brief Reset processor buffers
 			//*/
-			//void ResetBuffers() {
-			//	binauralConvolverProcessor->ResetSourceConvolutionBuffers();
-			//	nearFieldEffectProcessor->ResetProcessBuffers();
-			//}
+			void ResetBuffers() {			
+				SDNProcessor->ResetProcessBuffers();
+			}
 
 			std::string sourceID;
 			std::shared_ptr<BRTEnvironmentModel::CSDNEnvironmentProcessor> SDNProcessor;			
@@ -212,10 +211,10 @@ namespace BRTEnvironmentModel {
 		 * @brief Reset all processor buffers
 		*/
 		void ResetProcessorBuffers() {
-			//std::lock_guard<std::mutex> l(mutex);
-			//for (auto& it : sourcesConnectedProcessors) {
-			//	//it.ResetBuffers();
-			//}
+			std::lock_guard<std::mutex> l(mutex);
+			for (auto& it : sourcesConnectedProcessors) {
+				it.ResetBuffers();
+			}
 		}
 
 		/**
@@ -235,32 +234,28 @@ namespace BRTEnvironmentModel {
 			if (command.isNull() || command.GetCommand() == "") { return; }
 
 			std::string listenerID = GetIDEntryPoint("listenerID")->GetData();
+			//std::string listenerModelID = GetIDEntryPoint("listenerModelID")->GetData();
 
-			/*if (listenerID == command.GetStringParameter("listenerID")) {				
-				if (command.GetCommand() == "/listener/enableSpatialization") {
-						if (command.GetBoolParameter("enable")) { EnableSpatialization(); }
-						else { DisableSpatialization(); }
-				}
-				else if (command.GetCommand() == "/listener/enableInterpolation") {
-					if (command.GetBoolParameter("enable")) { EnableInterpolation(); }
-					else { DisableInterpolation(); }
-				}
-				else if (command.GetCommand() == "/listener/enableNearFieldEffect") {
-					if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
-					else { DisableNearFieldEffect(); }
-				}
-				else if (command.GetCommand() == "/listener/enableITD") {
-					if (command.GetBoolParameter("enable")) { EnableITDSimulation(); }
-					else { DisableITDSimulation(); }
-				}
-				else if (command.GetCommand() == "/listener/enableParallaxCorrection") {
-					if (command.GetBoolParameter("enable")) { EnableParallaxCorrection(); }
-					else { DisableParallaxCorrection(); }
-				}
-				else if (command.GetCommand() == "/listener/resetBuffers") {
+			if (this->GetID() == command.GetStringParameter("environmentModelID")) {
+				if (command.GetCommand() == "/environment/enableModel") {
+					if (command.GetBoolParameter("enable")) { EnableModel();} 
+					else {	DisableModel();	}
+				} else if (command.GetCommand() == "/environment/enableDirectPath") {
+					if (command.GetBoolParameter("enable")) { EnableDirectPath(); } 
+					else {	DisableDirectPath(); }
+				} else if (command.GetCommand() == "/environment/enableReverbPath") {
+					if (command.GetBoolParameter("enable")) {	EnableReverbPath();	} 
+					else {	DisableReverbPath();}
+				} else if (command.GetCommand() == "/environment/resetBuffers") {
 					ResetProcessorBuffers();
 				}
-			}	*/	
+			}
+
+			if (listenerID == command.GetStringParameter("listenerID")) {								
+				if (command.GetCommand() == "/listener/resetBuffers") {
+					ResetProcessorBuffers();
+				}
+			}	
 		}
 
 

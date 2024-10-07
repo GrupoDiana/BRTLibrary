@@ -189,6 +189,10 @@ namespace BRTEnvironmentModel {
 			SyncAllVirtualSourcesToModel();
 		}
 
+		void ResetProcessBuffers() {
+			//DO Something
+		}
+
 		/**
 		 * @brief Implementation of CAdvancedEntryPointManager virtual method
 		*/
