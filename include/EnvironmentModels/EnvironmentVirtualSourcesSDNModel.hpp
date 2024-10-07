@@ -111,10 +111,10 @@ namespace BRTEnvironmentModel {
 
 	public:
 		CEnvironmentVirtualSourcesSDNModel(const std::string& _environmentModelID, BRTBase::CBRTManager * _brtManager)
-			: 
-			BRTBase::CEnviromentModelBase(_environmentModelID), 
-			brtManager{ _brtManager }  {								
-		}
+			: BRTBase::CEnviromentModelBase(_environmentModelID)
+			, brtManager { _brtManager }
+			, enableDirectPath { true }
+			, enableReverbPath { true } { }
 
 		/**
 		 * @brief Destructor
@@ -370,12 +370,7 @@ namespace BRTEnvironmentModel {
 				return false;
 			}
 			
-			// Create a new SDN Processor
-			Common::CVector3 roomDimensions = (GetRoom().GetShoeBoxRoomSize());
-			if (roomDimensions == Common::CVector3::ZERO()) {
-				roomDimensions = Common::CVector3(1.0f, 1.0f, 1.0f);
-				SET_RESULT(RESULT_ERROR_NOTSET, "Room dimensions are not set.");				
-			}
+			// Create a new SDN Processor			
 			CSDNProcessors _newSDNProcessors(_source->GetID(), brtManager);
 
 			// Make connections
@@ -392,8 +387,13 @@ namespace BRTEnvironmentModel {
 			control = control && brtManager->ConnectModulesSamples(_source, "samples", _newSDNProcessors.SDNProcessor, "inputSamples");
 			control = control && _newSDNProcessors.ConnectToListenerModel(_listenerModel);
 									
-			if (control) {				
-				_newSDNProcessors.SetupRoom(GetRoom().GetShoeBoxRoomSize(), GetRoom().GetCenter());
+			if (control) {	
+				Common::CVector3 roomDimensions = GetRoom().GetShoeBoxRoomSize();
+				Common::CVector3 roomCentre = GetRoom().GetCenter();
+				if (roomDimensions == Common::CVector3::ZERO()) {
+					roomDimensions = Common::CVector3(1.0f, 1.0f, 1.0f);				
+				}
+				_newSDNProcessors.SetupRoom(roomDimensions, roomCentre);
 				SetSourceProcessorsConfiguration(_newSDNProcessors);
 				sourcesConnectedProcessors.push_back(std::move(_newSDNProcessors));
 				return true;

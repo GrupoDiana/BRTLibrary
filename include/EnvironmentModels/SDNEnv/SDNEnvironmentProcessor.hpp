@@ -65,6 +65,7 @@ namespace BRTEnvironmentModel {
 		 * @return True if the setup was successful
 		 */
 		bool SetupRoom(Common::CVector3 _roomDimensionsInGlobalCoordinates, Common::CVector3 _globalCoordinatesRoomCentre) {
+			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			if (!initialized) {
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "The SDN environment processor is not initialized", "");
 				return false;
@@ -157,32 +158,34 @@ namespace BRTEnvironmentModel {
 		/**
 		 * @brief Implementation of CAdvancedEntryPointManager virtual method
 		*/
-		void AllEntryPointsAllDataReady() override {
-			
+		void AllEntryPointsAllDataReady() override {			
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
-			if (!initialized) {	return;	}
-			
+			if (!initialized) {	
+				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "The SDN environment processor is not initialized", "");
+				return;	
+			}
+
 			if (!enableProcessor) {
 				virtualSourceBuffers = std::vector<CMonoBuffer<float>>(SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT, CMonoBuffer<float>(globalParameters.GetBufferSize()));
 				SyncAllVirtualSourcesToModel();
 				return;
-			}
-			
+			}			
 			// Get data from entry points
 			CMonoBuffer<float> inBuffer = GetSamplesEntryPoint("inputSamples")->GetData();
 			Common::CTransform sourcePosition = CalculateLocalPosition(GetPositionEntryPoint("sourcePosition")->GetData());
 			Common::CTransform listenerPosition = CalculateLocalPosition(GetPositionEntryPoint("listenerPosition")->GetData());
 						
 			if (inBuffer.size() == 0) {
+				std::cout << "Buffer Size = 0" << std::endl;
+				SET_RESULT(RESULT_ERROR_BADSIZE, "The input buffer size is 0", "");
 				return;
 			}
 
 			ASSERT(inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");
 
 			// If the source or listener position exceed the size of the room silence the output			
-			if (IsInBounds(sourcePosition.GetPosition()) && IsInBounds(listenerPosition.GetPosition())) {
-				Process(inBuffer, sourcePosition, listenerPosition, virtualSourceBuffers, virtualSourcePositions);
-				
+			if (IsInBounds(sourcePosition.GetPosition()) && IsInBounds(listenerPosition.GetPosition())) {				
+				Process(inBuffer, sourcePosition, listenerPosition, virtualSourceBuffers, virtualSourcePositions);				
 			} else {		
 				virtualSourceBuffers = std::vector<CMonoBuffer<float>>(SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT, CMonoBuffer<float>(inBuffer.size()));			
 			}
@@ -208,7 +211,7 @@ namespace BRTEnvironmentModel {
 		* @param _axis Axis whose dimension needs to be updated
 		*/
 		void SetRoomDimensions(float newValue, TAxis _axis) {
-			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
+			//std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			switch (_axis) {
 			case AXIS_X:
 				dimensions.x = newValue;
@@ -316,7 +319,7 @@ namespace BRTEnvironmentModel {
 		void SyncVirtualSourceToModel(int index) {
 
 			if ((index < 6 && muteReverbPath) || (index == 6 && muteLoS)) {
-				std::fill(virtualSourceBuffers[index].begin(), virtualSourceBuffers[index].end(), 0);			
+				std::fill(virtualSourceBuffers[index].begin(), virtualSourceBuffers[index].end(), 0);				
 			} 
 
 			SetVirtualSourceBuffer(GetBRTVirtualSourceID(index), virtualSourceBuffers[index]);
