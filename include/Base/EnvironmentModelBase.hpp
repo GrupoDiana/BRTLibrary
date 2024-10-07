@@ -53,6 +53,14 @@ namespace BRTBase {
 		virtual void DisableModel() {};
 		virtual bool IsModelEnabled() { return enableModel; }
 
+		virtual void EnableDirectPath() = 0;
+		virtual void DisableDirectPath() = 0;
+		virtual bool IsDirectPathEnabled() = 0;
+
+		virtual void EnableReverbPath() = 0;
+		virtual void DisableReverbPath() = 0;
+		virtual bool IsReverbPathEnabled() = 0;		
+
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) = 0;
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) = 0;
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) = 0;
@@ -99,9 +107,12 @@ namespace BRTBase {
 		 * @param width extension of the room along the Y axis.
 		 * @param height extension of the room along the Z axis
 		 */
-		void SetupShoeBoxRoom(float length, float width, float height) {
-			roomDefinition.SetupShoeBox(length, width, height);
-			UpdateRoomGeometry();
+		bool SetupShoeBoxRoom(float length, float width, float height) {
+			if (roomDefinition.SetupShoeBox(length, width, height)) {
+				UpdateRoomGeometry();
+				return true;
+			}
+			return false;
 		}
 
 		/**
@@ -119,31 +130,40 @@ namespace BRTBase {
 		 * @param wallIndex index of the wall
 		 * @param absortion absortion coeficient (frequency independent)
 		 */
-		void SetRoomWallAbsortion(int wallIndex, float absortion) {
-			roomDefinition.SetWallAbsortion(wallIndex, absortion);
-			UpdateRoomWallAbsortion(wallIndex);
+		bool SetRoomWallAbsortion(int wallIndex, float absortion) {
+			if (roomDefinition.SetWallAbsortion(wallIndex, absortion)) {				
+				UpdateRoomWallAbsortion(wallIndex);
+				return true;
+			} 
+			return false;
 		}
 
 		/**
-		 * @brief Sets the absortion coeficient (frequency independent) of all walls
-		 *	\details Sets the absortion coeficient (absorved energy / incident energy) of each of the nine bands for the i-th wall of the room
+		 * @brief Sets the absorption coeficient (frequency independent) of all walls
+		 *	\details Sets the absorption coeficient (absorved energy / incident energy) of each of the nine bands for the i-th wall of the room
 		 * @param absortion absortion coeficient (frequency independent)
 		 */ 
-		void SetRoomAllWallsAbsortion(float _absortion) {
-			roomDefinition.SetAllWallsAbsortion(_absortion);
-			UpdateRoomAllWallsAbsortion();
+		bool SetRoomAllWallsAbsortion(float _absortion) {
+			if (roomDefinition.SetAllWallsAbsortion(_absortion)) {
+				UpdateRoomAllWallsAbsortion();
+				return true;
+			}
+			return false;			
 		}
 
 		/**
-		 * @brief Sets the absortion coeficient (frequency dependent) of one wall
-		 *	\details Sets the absortion coeficient (absorved energy / incident energy) of each of the nine bands for the i-th wall of the room
+		 * @brief Sets the absorption coeficient (frequency dependent) of one wall
+		 *	\details Sets the absorption coeficient (absorved energy / incident energy) of each of the nine bands for the i-th wall of the room
 		 * @param wallIndex index of the wall
 		 * @param absortionPerBand absortion coeficients for each band (frequency dependent). 9 bands are expected, 
 								the centre frequencies of which are as follows:	[62.5, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]Hz
 		 */
-		void SetRoomWallAbsortion(int wallIndex, std::vector<float> absortionPerBand) {
-			roomDefinition.SetWallAbsortion(wallIndex, absortionPerBand);
-			UpdateRoomWallAbsortion(wallIndex);
+		bool SetRoomWallAbsortion(int wallIndex, std::vector<float> absortionPerBand) {
+			if (roomDefinition.SetWallAbsortion(wallIndex, absortionPerBand)) {
+				UpdateRoomWallAbsortion(wallIndex);
+				return true;
+			}
+			return false;
 		}
 		
 		/**
@@ -152,9 +172,12 @@ namespace BRTBase {
 		 * @param absortionPerBand absortion coeficients for each band (frequency dependent). 9 bands are expected, 
 								the centre frequencies of which are as follows:	[62.5, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]Hz
 		 */
-		void SetRoomAllWallsAbsortion(std::vector<float> absortionPerBand) {
-			roomDefinition.SetAllWallsAbsortion(absortionPerBand);
-			UpdateRoomAllWallsAbsortion();
+		bool SetRoomAllWallsAbsortion(std::vector<float> absortionPerBand) {
+			if (roomDefinition.SetAllWallsAbsortion(absortionPerBand)) {
+				UpdateRoomAllWallsAbsortion();
+				return true;
+			}
+			return false;
 		}
 
 

@@ -18,7 +18,8 @@ namespace BRTEnvironmentModel {
 			: CVirtualSourceList(_brtManager)
 			, brtManager { _brtManager }
 			, initialized { false }
-			, muteLoS { true }
+			, muteLoS { false }
+			, muteReverbPath { false }
 			, enableProcessor { true } {
 
 			CreateSamplesEntryPoint("inputSamples");
@@ -111,6 +112,20 @@ namespace BRTEnvironmentModel {
 		{
 			muteLoS = mute;
 		}
+		bool GetMuteLOS() {
+			return muteLoS;
+		}
+
+		/**
+		* @brief Mute or unmute reverb path component
+		* @param mute True to mute the reverb path, False to unmute
+		*/
+		void MuteReverbPath(bool mute) {
+			muteReverbPath = mute;
+		}
+		bool GetMuteReverbPath() {
+			return muteReverbPath;
+		}		
 
 		/**
 		* @brief Set a new absortion value for a frequency of a wall in the room
@@ -296,8 +311,9 @@ namespace BRTEnvironmentModel {
 		 */
 		void SyncVirtualSourceToModel(int index) {
 
-			if (index == 6 && muteLoS)
-				std::fill(virtualSourceBuffers[index].begin(), virtualSourceBuffers[index].end(), 0);
+			if ((index < 6 && muteReverbPath) || (index == 6 && muteLoS)) {
+				std::fill(virtualSourceBuffers[index].begin(), virtualSourceBuffers[index].end(), 0);			
+			} 
 
 			SetVirtualSourceBuffer(GetBRTVirtualSourceID(index), virtualSourceBuffers[index]);
 			SetVirtualSourcePosition(GetBRTVirtualSourceID(index), CalculateGlobalPosition(virtualSourcePositions[index]));
@@ -328,7 +344,7 @@ namespace BRTEnvironmentModel {
 				return "";
 			}
 		}
-
+		
 		/////////////////
 		// Attributes
 		/////////////////
@@ -338,7 +354,10 @@ namespace BRTEnvironmentModel {
 		std::vector<CMonoBuffer<float>> virtualSourceBuffers;
 		std::vector<Common::CTransform> virtualSourcePositions;		
 		BRTBase::CBRTManager * brtManager;		
-		bool muteLoS;
+		
+		bool muteLoS;			// Direct Path mute
+		bool muteReverbPath; // Reverb Path mute
+
 		std::string originalSourceID;
 		bool initialized;
 		bool enableProcessor;

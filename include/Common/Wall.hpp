@@ -91,15 +91,23 @@ public:
 	/** \brief set the absortion coeficient (frequency independent) of the wall
 	*   \param [in] Absortion: absortion coeficient of the wall (expressed as a number between 0 (no absortion) and 1 (total absortion).
 	*/
-	void SetAbsortion(float _absortion) {		
+	bool SetAbsortion(float _absortion) {		
+		if (_absortion < 0 || _absortion > 1) {
+			return false;
+		}
 		absortionBands = std::vector<float> (NUM_BAND_ABSORTION, _absortion);
+		return true;
 	}
 
 	/** \brief set the absortion coeficients for each band of the wall
 	*	\param [in] Absortion: Vector with absortion coeficients of the wall (expressed as a number between 0 (no absortion) and 1 (total absortion).
 	*/
-	void SetAbsortion(std::vector<float> _absortionPerBand) { 
-		absortionBands = _absortionPerBand;
+	bool SetAbsortion(std::vector<float> _absortionPerBand) { 
+		if (IsValidAbsortionsCoefficientsVector(_absortionPerBand)) {
+			absortionBands = _absortionPerBand;
+			return true;
+		}
+		return false;
 	}
 	
 	/** \brief Returns the vector with absortion coeficients of the wall. 
@@ -430,6 +438,18 @@ private:
 		D = -(A * polygon.at(2).x + B * polygon.at(2).y + C * polygon.at(2).z);
 	}
 	
+	bool IsValidAbsortionsCoefficientsVector(const std::vector<float>& _absortionPerBand) {		
+		if (_absortionPerBand.size() != NUM_BAND_ABSORTION) return false;
+
+		for (int i = 0; i < _absortionPerBand.size(); i++) {
+			if (_absortionPerBand.at(i) < 0 || _absortionPerBand.at(i) > 1) {
+				return false;
+				break;
+			}
+		}
+		return true;
+	}
+
 	///////////////
 	// Attributes
 	///////////////

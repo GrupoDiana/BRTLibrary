@@ -62,10 +62,21 @@ namespace BRTEnvironmentModel {
 				SDNProcessor->SetWallFreqAbsorption(_wallIndex, _wallAbsortions);				
 			}
 			
-			void MuteDirectPath(bool mute) {
-				SDNProcessor->MuteLOS(mute);
-			}
 
+			void SetConfiguration(bool _enableDirectPath, bool _enableReverbPath) {
+				if (_enableDirectPath) {
+					SDNProcessor->MuteLOS(false);
+				} else {
+					SDNProcessor->MuteLOS(true);
+				}
+
+				if (_enableReverbPath) {
+					SDNProcessor->MuteReverbPath(false);
+				} else {
+					SDNProcessor->MuteReverbPath(true);
+				}										
+			}
+			
 			bool ConnectToListenerModel(std::shared_ptr<BRTBase::CListenerModelBase> _listener) {
 				return (SDNProcessor->ConnectToListenerModel(_listener));
 			}
@@ -134,6 +145,34 @@ namespace BRTEnvironmentModel {
 				it.SetEnableProcessor(false);
 			}
 		};
+				
+		void EnableDirectPath() override {
+			enableDirectPath = true;
+			SetConfigurationInALLSourcesProcessors();
+		}
+
+		void DisableDirectPath() override {
+			enableDirectPath = false;
+			SetConfigurationInALLSourcesProcessors();
+		}
+
+		bool IsDirectPathEnabled() override {
+			return enableDirectPath;
+		}
+
+		void EnableReverbPath() override {
+			enableReverbPath = true;
+			SetConfigurationInALLSourcesProcessors();
+		}
+
+		void DisableReverbPath() override {
+			enableReverbPath = false;
+			SetConfigurationInALLSourcesProcessors();
+		}
+		
+		bool IsReverbPathEnabled() override {
+			return enableReverbPath;
+		}
 
 		/**
 		 * @brief Connect a new source to this listener
@@ -169,11 +208,6 @@ namespace BRTEnvironmentModel {
 			return DisconnectAnySoundSource(_source, true);
 		};
 	
-		
-		
-				
-
-
 		/**
 		 * @brief Reset all processor buffers
 		*/
@@ -300,6 +334,24 @@ namespace BRTEnvironmentModel {
 		}
 
 		/**
+		 * @brief Update Configuration in all source processor
+		*/
+		void SetConfigurationInALLSourcesProcessors() {
+			std::lock_guard<std::mutex> l(mutex);
+			for (auto & it : sourcesConnectedProcessors) {
+				SetSourceProcessorsConfiguration(it);
+			}
+		}
+		/**
+		 * @brief Update configuration just in one source processor
+		 * @param sourceProcessor 
+		*/
+		void SetSourceProcessorsConfiguration(CSDNProcessors & sourceProcessor) {
+			sourceProcessor.SetConfiguration(enableDirectPath, enableReverbPath);
+		}
+
+
+		/**
 		 * @brief Connect a new source to this listener
 		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
 		 * @param _source Pointer to the source
@@ -344,12 +396,10 @@ namespace BRTEnvironmentModel {
 
 			control = control && brtManager->ConnectModulesSamples(_source, "samples", _newSDNProcessors.SDNProcessor, "inputSamples");
 			control = control && _newSDNProcessors.ConnectToListenerModel(_listenerModel);
-
-			_newSDNProcessors.SetupRoom(GetRoom().GetShoeBoxRoomSize(), GetRoom().GetCenter());
-			_newSDNProcessors.MuteDirectPath(false);
-			
+									
 			if (control) {				
-				//SetSourceProcessorsConfiguration(_newSDNProcessors);
+				_newSDNProcessors.SetupRoom(GetRoom().GetShoeBoxRoomSize(), GetRoom().GetCenter());
+				SetSourceProcessorsConfiguration(_newSDNProcessors);
 				sourcesConnectedProcessors.push_back(std::move(_newSDNProcessors));
 				return true;
 			}
@@ -406,6 +456,10 @@ namespace BRTEnvironmentModel {
 		std::vector< CSDNProcessors> sourcesConnectedProcessors;
 		BRTBase::CBRTManager* brtManager;
 		Common::CGlobalParameters globalParameters;		
+
+		bool enableDirectPath; // Enable direct path
+		bool enableReverbPath; // Enable reverb path
+
 	};
 }
 #endif

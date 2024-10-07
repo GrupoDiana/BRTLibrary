@@ -27,7 +27,10 @@ namespace Common {
 		*	\param [in] width: extension of the room along the Y axis.
 		*	\param [in] height: extension of the room along the Z axis
 		*/
-		void SetupShoeBox(float length, float width, float height) {
+		bool SetupShoeBox(float _length, float _width, float _height) {
+
+			if (_length <= 0 || _width <= 0 || _height <= 0) return false;
+
 			//If the room was previously set up as a shoebox, it will keep the wall properties if it is redifined with a new shoeboxSetup
 			std::vector<CWall> previousWalls;
 			if (shoeBox) {
@@ -37,35 +40,35 @@ namespace Common {
 			// Now we can clear the walls in case there was a previous definition to set the room up from scratch
 			walls.clear();
 			CWall front, back, left, right, ceiling, floor;
-			front.InsertCorner(length / 2, width / 2, -height / 2);
-			front.InsertCorner(length / 2, -width / 2, -height / 2);
-			front.InsertCorner(length / 2, width / 2, height / 2);
-			front.InsertCorner(length / 2, -width / 2, height / 2);
+			front.InsertCorner(_length / 2, _width / 2, -_height / 2);
+			front.InsertCorner(_length / 2, -_width / 2, -_height / 2);
+			front.InsertCorner(_length / 2, _width / 2, _height / 2);
+			front.InsertCorner(_length / 2, -_width / 2, _height / 2);
 			InsertWall(front);
-			left.InsertCorner(-length / 2, width / 2, height / 2);
-			left.InsertCorner(-length / 2, width / 2, -height / 2);
-			left.InsertCorner(length / 2, width / 2, -height / 2);
-			left.InsertCorner(length / 2, width / 2, height / 2);
+			left.InsertCorner(-_length / 2, _width / 2, _height / 2);
+			left.InsertCorner(-_length / 2, _width / 2, -_height / 2);
+			left.InsertCorner(_length / 2, _width / 2, -_height / 2);
+			left.InsertCorner(_length / 2, _width / 2, _height / 2);
 			InsertWall(left);
-			right.InsertCorner(length / 2, -width / 2, height / 2);
-			right.InsertCorner(length / 2, -width / 2, -height / 2);
-			right.InsertCorner(-length / 2, -width / 2, -height / 2);
-			right.InsertCorner(-length / 2, -width / 2, height / 2);
+			right.InsertCorner(_length / 2, -_width / 2, _height / 2);
+			right.InsertCorner(_length / 2, -_width / 2, -_height / 2);
+			right.InsertCorner(-_length / 2, -_width / 2, -_height / 2);
+			right.InsertCorner(-_length / 2, -_width / 2, _height / 2);
 			InsertWall(right);
-			back.InsertCorner(-length / 2, -width / 2, height / 2);
-			back.InsertCorner(-length / 2, -width / 2, -height / 2);
-			back.InsertCorner(-length / 2, width / 2, -height / 2);
-			back.InsertCorner(-length / 2, width / 2, height / 2);
+			back.InsertCorner(-_length / 2, -_width / 2, _height / 2);
+			back.InsertCorner(-_length / 2, -_width / 2, -_height / 2);
+			back.InsertCorner(-_length / 2, _width / 2, -_height / 2);
+			back.InsertCorner(-_length / 2, _width / 2, _height / 2);
 			InsertWall(back);
-			floor.InsertCorner(length / 2, width / 2, -height / 2);
-			floor.InsertCorner(-length / 2, width / 2, -height / 2);
-			floor.InsertCorner(-length / 2, -width / 2, -height / 2);
-			floor.InsertCorner(length / 2, -width / 2, -height / 2);
+			floor.InsertCorner(_length / 2, _width / 2, -_height / 2);
+			floor.InsertCorner(-_length / 2, _width / 2, -_height / 2);
+			floor.InsertCorner(-_length / 2, -_width / 2, -_height / 2);
+			floor.InsertCorner(_length / 2, -_width / 2, -_height / 2);
 			InsertWall(floor);
-			ceiling.InsertCorner(length / 2, -width / 2, height / 2);
-			ceiling.InsertCorner(-length / 2, -width / 2, height / 2);
-			ceiling.InsertCorner(-length / 2, width / 2, height / 2);
-			ceiling.InsertCorner(length / 2, width / 2, height / 2);
+			ceiling.InsertCorner(_length / 2, -_width / 2, _height / 2);
+			ceiling.InsertCorner(-_length / 2, -_width / 2, _height / 2);
+			ceiling.InsertCorner(-_length / 2, _width / 2, _height / 2);
+			ceiling.InsertCorner(_length / 2, _width / 2, _height / 2);
 			InsertWall(ceiling);
 
 			if (shoeBox) {
@@ -76,9 +79,11 @@ namespace Common {
 				}
 			}
 			shoeBox = true;
-			shoeBoxLength = length;
-			shoeBoxWidth = width;
-			shoeBoxHeight = height;
+			shoeBoxLength = _length;
+			shoeBoxWidth = _width;
+			shoeBoxHeight = _height;
+			
+			return true;
 		}
 
 		/** \brief Initializes the object with a arbitrary geometry
@@ -106,6 +111,13 @@ namespace Common {
 			walls.push_back(_newWall);
 		};
 
+		/** \brief Returns a vector of walls containing all the walls of the room.
+		*	\param [out] Walls: vector of walls with all the walls of the room.
+		*/
+		std::vector<CWall> GetWalls() {
+			return walls;
+		}
+
 		/** \brief Makes one of the room's walls active
 		*	\details Sets the i-th wall of the room as active and therefore reflective.
 		*	\param [in] index of the wall to be active.
@@ -132,18 +144,20 @@ namespace Common {
 		*	\param [in] index of the wall.
 		*	\param [in] absortion coeficient (frequency independent)
 		*/
-		void SetWallAbsortion(int wallIndex, float absortion) {
-			walls.at(wallIndex).SetAbsortion(absortion);
+		bool SetWallAbsortion(int wallIndex, float absortion) {
+			if (!IsThereThisWall(wallIndex)) return false;
+			return walls.at(wallIndex).SetAbsortion(absortion);
 		}
 
 		/** \brief sets the absortion coeficient (frequency independent) of all walls
 		*/
-		void SetAllWallsAbsortion(float _absortion) {
-
+		bool SetAllWallsAbsortion(float _absortion) {
+			bool control = true;
 			int wallsNumber = walls.size();
 			for (int i = 0; i < wallsNumber; i++) {
-				walls.at(i).SetAbsortion(_absortion);
+				control = control && walls.at(i).SetAbsortion(_absortion);
 			}
+			return control;
 		}
 		
 		/** \brief Sets the absortion coeficient (frequency dependent) of one wall
@@ -152,25 +166,23 @@ namespace Common {
 		*	\param [in] index of the wall.
 		*	\param [in] absortion coeficients for each band (frequency dependent)
 		*/
-		void SetWallAbsortion(int wallIndex, std::vector<float> absortionPerBand) {
-			walls.at(wallIndex).SetAbsortion(absortionPerBand);
+		bool SetWallAbsortion(int wallIndex, std::vector<float> absortionPerBand) {
+			if (!IsThereThisWall(wallIndex)) return false;
+			return walls.at(wallIndex).SetAbsortion(absortionPerBand);
 		};
 
 		/** \brief Sets the absortion coeficient (frequency dependent) of all walls
 		*/
-		void SetAllWallsAbsortion(std::vector<float> absortionPerBand) {
+		bool SetAllWallsAbsortion(std::vector<float> absortionPerBand) {
+			bool control = true;
 			int wallsNumber = walls.size();
 			for (int i = 0; i < wallsNumber; i++) {
-				walls.at(i).SetAbsortion(absortionPerBand);
+				control = control && walls.at(i).SetAbsortion(absortionPerBand);
 			}
+			return control;
 		}
 
-		/** \brief Returns a vector of walls containing all the walls of the room.
-		*	\param [out] Walls: vector of walls with all the walls of the room.
-		*/
-		std::vector<CWall> GetWalls() {
-			return walls;
-		}
+		
 
 		/** \brief Returns a vector of image rooms
 		*	\details creates an image (specular) room for each wall of this room and returns a vector contoining them.
@@ -276,7 +288,17 @@ namespace Common {
 			return Common::CVector3(shoeBoxLength, shoeBoxWidth, shoeBoxHeight);
 		}
 
+		/** \brief Returns if there is any wall
+		*/
+		bool IsAnyWallDefined() {
+			return walls.size() > 0;
+		}
+
 	private:
+
+		bool IsThereThisWall(int _wallIndex) {
+			return walls.size() > _wallIndex;
+		}
 
 		////////////
 		// Attributes
