@@ -1,5 +1,5 @@
 /**
-* \class CEnviromentVirtualSourceBaseModel
+* \class CEnviromentModelBase
 *
 * \brief Declaration of CEnviromentVirtualSourceBaseModel class
 * \date	July 2023
