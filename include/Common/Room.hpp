@@ -293,13 +293,14 @@ namespace Common {
 		Common::CVector3 GetCenter() {
 			Common::CVector3 center = Common::CVector3::ZERO();
 
-			for (auto i = 0; i < walls.size(); i++) {
-				center = center + walls.at(i).GetCenter();
+			if (walls.size() > 0) {
+				for (auto i = 0; i < walls.size(); i++) {
+					center = center + walls.at(i).GetCenter();
+				}
+				center.x /= walls.size();
+				center.y /= walls.size();
+				center.z /= walls.size();
 			}
-			center.x /= walls.size();
-			center.y /= walls.size();
-			center.z /= walls.size();
-
 			return center;
 		}
 
