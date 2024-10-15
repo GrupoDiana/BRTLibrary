@@ -5,6 +5,20 @@ All notable changes to the Binaural Rendering Toolbox (BRT) will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2024-10-15
+
+### Added
+- New model of virtual source environment based on SDN.
+- Add room definition classes from 3DTI-Toolkit.
+
+### Changed
+- Add environment connection and disconnection methods to HRTF and Ambisonic HRTF models.
+- Update Environment Model Base
+- Update source type options.
+- Update virtual source definition
+- Adds funcionalities to some common clases
+
+
 ## [1.5.0] - 2024-07-30
 
 ### Added
