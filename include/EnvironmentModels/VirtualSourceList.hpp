@@ -24,8 +24,6 @@
 #define _CVIRTUAL_SOURCEs_MODEL_HPP_
 
 #include <memory>
-//#include <Base/AdvancedEntryPointManager.hpp>
-//#include <Base/ExitPointManager.hpp>
 #include <Base/BRTManager.hpp>
 #include <Base/SourceModelBase.hpp>
 #include <Base/EnvironmentModelBase.hpp>
@@ -36,8 +34,7 @@ namespace BRTEnvironmentModel {
 
 	class CVirtualSourceList  {
 	public:
-				
-		// Public Methods
+						
 		CVirtualSourceList(BRTBase::CBRTManager * _brtManager)
 			: brtManager { _brtManager } {												
 		}

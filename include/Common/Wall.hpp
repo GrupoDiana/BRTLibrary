@@ -1,3 +1,28 @@
+/**
+* \class CWall
+*
+* \brief   This class defines a wall as a set of vertex which has to be declared anticlockwise 
+		 as seen from inside the room. Walls are the key component to compute images.
+* \date    July 2021
+* 
+* \authors  Developer's team (University of Malaga), in alphabetical order: F. Arebola-Pérez, M. Cuevas-Rodríguez, D. Gonzalez-Toledo and A. Reyes-Lecuona ||
+* Coordinated by A. Reyes-Lecuona (University of Malaga) ||
+*
+* \b Contact: areyes@uma.es
+*
+* \b Copyright: University of Malaga - 2021
+*
+* \b Contributions: (additional authors/contributors can be added here)
+*
+* \b Project: SAVLab (Spatial Audio Virtual Laboratory) and SONICOM (https://www.sonicom.eu/) ||
+*
+* \b Acknowledgement: This project has received funding from Spanish Ministerio de Ciencia e Innovación under the SAVLab project (PID2019-107854GB-I00) and from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
+* This class is part of the 3DTI Toolkit, coordinated by A. Reyes-Lecuona (areyes@uma.es) and L. Picinali (l.picinali@imperial.ac.uk)
+*
+* \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+*
+*/
+
 #ifndef _CWALL_HPP_
 #define _CWALL_HPP_
 

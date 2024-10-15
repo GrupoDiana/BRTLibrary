@@ -64,10 +64,7 @@ namespace BRTBase {
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) = 0;
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) = 0;
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) = 0;
-		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) = 0;
-		
-		//virtual bool ConnectListenerTransform(const std::string _listenerID) { return false; }
-		//virtual bool DisconnectListenerTransform(const std::string _listenerID) { return false; }
+		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) = 0;		
 
 		virtual void UpdateRoomGeometry() = 0;
 		virtual void UpdateRoomWallAbsortion(int wallIndex) = 0;

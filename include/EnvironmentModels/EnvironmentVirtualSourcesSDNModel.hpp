@@ -1,7 +1,7 @@
 /**
 * \class CEnvironmentVirtualSourcesSDNModel
 *
-* \brief Declaration of CEnvironmentVirtualSourcesSDNModel class
+* \brief This class implements the SDN environment model. It instantiates an SDN processor for each source that connects to it. 
 * \date	Sep 2024
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco ||
@@ -45,24 +45,38 @@ namespace BRTEnvironmentModel {
 				SDNProcessor->Setup(_sourceID);
 			}	
 
-			///**
-			// * @brief Remove processor from BRT
-			// * @param brtManager brtManager pointer
-			//*/
+			/**
+			 * @brief Remove processor from BRT
+			 * @param brtManager brtManager pointer
+			 */
 			void Clear(BRTBase::CBRTManager* brtManager) {
 				sourceID = "";
 				brtManager->RemoveProcessor(SDNProcessor);				
 			}
-			
+
+			/**
+			 * @brief Set Room dimensions and Room Centre
+			 * @param _roomDimensions length, width and height of the room
+			 * @param _roomCentre centre of the room
+			 */
 			void SetupRoom(Common::CVector3 _roomDimensions, Common::CVector3 _roomCentre) {
 				SDNProcessor->SetupRoom(_roomDimensions, _roomCentre);
 			}
 			
+			/**
+			 * @brief Set Wall absortion coefficientes per band
+			 * @param _wallIndex Wall where the coefficients are to be placed. 
+			 * @param _wallAbsortions absortion coefficients per band
+			 */
 			void SetWallAbsortion(int _wallIndex, std::vector<float> _wallAbsortions) {									
 				SDNProcessor->SetWallFreqAbsorption(_wallIndex, _wallAbsortions);				
 			}
 			
-
+			/**
+			 * @brief Update the configuration of the processor
+			 * @param _enableDirectPath enable or disable direct path
+			 * @param _enableReverbPath enable or disable reverb path
+			 */
 			void SetConfiguration(bool _enableDirectPath, bool _enableReverbPath) {
 				if (_enableDirectPath) {
 					SDNProcessor->MuteLOS(false);
@@ -77,18 +91,28 @@ namespace BRTEnvironmentModel {
 				}										
 			}
 			
+			/**
+			 * @brief Connect SDN processor to a listener model
+			 * @param _listener listener model to connect
+			 * @return TRUE if the connection is successful
+			 */
 			bool ConnectToListenerModel(std::shared_ptr<BRTBase::CListenerModelBase> _listener) {
 				return (SDNProcessor->ConnectToListenerModel(_listener));
 			}
-
+			
+			/**
+			 * @brief Disconnect SDN processor to a listener model
+			 * @param _listener listener model to disconnect
+			 * @return TRUE if the disconnection is successful
+			 */
 			bool DisconnectToListenerModel(std::shared_ptr<BRTBase::CListenerModelBase> _listener) {
 				return (SDNProcessor->DisconnectToListenerModel(_listener));
 			}
 			
-			///**
-			// * @brief Set processor enable or disable
-			// * @param _enableProcessor
-			// */
+			/**
+			 * @brief Set processor enable or disable
+			 * @param _enableProcessor
+			 */
 			void SetEnableProcessor(bool _enableProcessor) {
 				if (_enableProcessor) { 
 					SDNProcessor->EnableProcessor(); 					
@@ -98,13 +122,14 @@ namespace BRTEnvironmentModel {
 				}
 			}
 
-			///**
-			// * @brief Reset processor buffers
-			//*/
+			/**
+			 * @brief Reset processor buffers
+			*/
 			void ResetBuffers() {			
 				SDNProcessor->ResetProcessBuffers();
 			}
 
+			// Attributes
 			std::string sourceID;
 			std::shared_ptr<BRTEnvironmentModel::CSDNEnvironmentProcessor> SDNProcessor;			
 		};
@@ -145,30 +170,46 @@ namespace BRTEnvironmentModel {
 			}
 		};
 				
+		/**
+		 * @brief Enable Direct Path
+		 */
 		void EnableDirectPath() override {
 			enableDirectPath = true;
 			SetConfigurationInALLSourcesProcessors();
 		}
-
+		/**
+		 * @brief Disable Direct Path
+		 */
 		void DisableDirectPath() override {
 			enableDirectPath = false;
 			SetConfigurationInALLSourcesProcessors();
-		}
-
+		}		
+		/**
+		 * @brief Check if Direct Path is enabled
+		 * @return True if Direct Path is enabled
+		 */
 		bool IsDirectPathEnabled() override {
 			return enableDirectPath;
 		}
 
+		/**
+		 * @brief Enable Reverb Path
+		 */
 		void EnableReverbPath() override {
 			enableReverbPath = true;
 			SetConfigurationInALLSourcesProcessors();
 		}
-
+		/**
+		 * @brief Disable Reverb Path
+		 */
 		void DisableReverbPath() override {
 			enableReverbPath = false;
 			SetConfigurationInALLSourcesProcessors();
 		}
-		
+		/**
+		 * @brief Check if Reverb Path is enabled
+		 * @return True if Reverb Path is enabled
+		 */
 		bool IsReverbPathEnabled() override {
 			return enableReverbPath;
 		}

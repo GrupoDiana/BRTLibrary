@@ -1,3 +1,26 @@
+/**
+* \class CSDNEnvironmentProcessor
+*
+* \brief  This class allows to connect the SDN-based environment renderer with the rest of the classes in the library. 
+*			Performs SDN rendering for one source.
+* \date Sep 2023
+* 
+* \authors  Developer's team (University of Milan), in alphabetical order: F. Avanzini, D. Fantini , M. Fontana, G. Presti,
+* Coordinated by F. Avanzini (University of Milan) ||
+*
+* \b Contact: federico.avanzini@unimi.it
+*
+* \b Copyright: University of Milan - 2023
+*
+* \b Contributions: D. Gonzalez-Toledo (University of Malaga)
+*
+* \b Project: SONICOM (https://www.sonicom.eu/) ||
+*
+* \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
+*
+* \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+*
+*/
 #ifndef _SDN_ENVIRONMENT_PROCESSOR_HPP_
 #define _SDN_ENVIRONMENT_PROCESSOR_HPP_
 
@@ -96,11 +119,20 @@ namespace BRTEnvironmentModel {
 		 */
 		bool IsProcessorEnabled() { return enableProcessor; }
 
-		
+		/**
+		 * @brief Connect the environment processor to a listener model
+		 * @param _listenerModel Listener model to connect
+		 * @return True if the connection was successful
+		 */
 		bool ConnectToListenerModel(std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel) {
 			return ConnectVirtualSourcesToListenerModel<BRTBase::CListenerModelBase>(_listenerModel);
 		}
-								
+
+		/**
+		 * @brief Disconnect the environment processor from a listener model
+		 * @param _listenerModel Listener model to disconnect
+		 * @return True if the disconnection was successful
+		 */
 		bool DisconnectToListenerModel(std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel) {
 			return DisconnectVirtualSourcesToListenerModel<BRTBase::CListenerModelBase>(_listenerModel);
 		}
@@ -113,6 +145,11 @@ namespace BRTEnvironmentModel {
 		{
 			muteLoS = mute;
 		}
+		
+		/**
+		 * @brief Return the mute status of the line of sight component
+		 * @return True if the line of sight component is muted, False otherwise
+		 */
 		bool GetMuteLOS() {
 			return muteLoS;
 		}
@@ -124,6 +161,11 @@ namespace BRTEnvironmentModel {
 		void MuteReverbPath(bool mute) {
 			muteReverbPath = mute;
 		}
+
+		/**
+		 * @brief Return the mute status of the reverb path component
+		 * @return True if the reverb path component is muted, False otherwise
+		 */
 		bool GetMuteReverbPath() {
 			return muteReverbPath;
 		}		
@@ -193,7 +235,7 @@ namespace BRTEnvironmentModel {
 		}
 
 		void ResetProcessBuffers() {
-			//DO Something
+			//TODO Implement samples buffer cleaning.
 		}
 
 		/**
