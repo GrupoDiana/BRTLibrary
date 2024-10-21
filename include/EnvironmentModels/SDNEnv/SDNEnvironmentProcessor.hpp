@@ -16,7 +16,7 @@
 *
 * \b Project: SONICOM (https://www.sonicom.eu/) ||
 *
-* \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
+* \b Acknowledgement: This project has received funding from the European Unionï¿½s Horizon 2020 research and innovation programme under grant agreement no.101017743
 *
 * \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 *
@@ -30,6 +30,8 @@
 #include <Base/AdvancedEntryPointManager.hpp>
 #include <EnvironmentModels/VirtualSourceList.hpp>
 #include <EnvironmentModels/SDNEnv/SDNEnvironment.hpp>
+
+
 
 
 namespace BRTEnvironmentModel {
@@ -63,12 +65,12 @@ namespace BRTEnvironmentModel {
 		{
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			if (initialized) {
-				SET_RESULT(RESULT_ERROR_NOTALLOWED, "The SDN environment processor is already initialized", "");
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "The SDN environment processor is already initialized");
 				return false;
 			}
 
 			if (_orinalSourceID == "" ) {
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The source ID must be defined", "");
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The source ID must be defined");
 				return false;
 			}
 							
@@ -90,11 +92,11 @@ namespace BRTEnvironmentModel {
 		bool SetupRoom(Common::CVector3 _roomDimensionsInGlobalCoordinates, Common::CVector3 _globalCoordinatesRoomCentre) {
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			if (!initialized) {
-				SET_RESULT(RESULT_ERROR_NOTALLOWED, "The SDN environment processor is not initialized", "");
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "The SDN environment processor is not initialized");
 				return false;
 			}
 			if (_roomDimensionsInGlobalCoordinates == Common::CVector3::ZERO()) {
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The room dimensions must be defined", "");
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The room dimensions must be defined");
 				return false;
 			}
 			SetRoomDimensions(_roomDimensionsInGlobalCoordinates.x, AXIS_X);
@@ -191,7 +193,7 @@ namespace BRTEnvironmentModel {
 		void SetWallFreqAbsorption(int _wallIndex, std::vector<float> _newValues) {
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			if (_newValues.size() != SDNParameters::NUM_FREQ) {
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The number of values must be equal to the number of frequencies", "");
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The number of values must be equal to the number of frequencies");
 			}
 			wallNodes[_wallIndex].SetFreqAbsortion(_newValues);
 		}
@@ -203,8 +205,8 @@ namespace BRTEnvironmentModel {
 		void AllEntryPointsAllDataReady() override {			
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			if (!initialized) {	
-				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "The SDN environment processor is not initialized", "");
-				return;	
+				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "The SDN environment processor is not initialized");
+				return;
 			}
 
 			if (!enableProcessor) {
@@ -219,7 +221,7 @@ namespace BRTEnvironmentModel {
 						
 			if (inBuffer.size() == 0) {
 				std::cout << "Buffer Size = 0" << std::endl;
-				SET_RESULT(RESULT_ERROR_BADSIZE, "The input buffer size is 0", "");
+				SET_RESULT(RESULT_ERROR_BADSIZE, "The input buffer size is 0");
 				return;
 			}
 
