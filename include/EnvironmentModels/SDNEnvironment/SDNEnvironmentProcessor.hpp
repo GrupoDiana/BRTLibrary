@@ -29,7 +29,7 @@
 #include <Base/BRTManager.hpp>
 #include <Base/AdvancedEntryPointManager.hpp>
 #include <EnvironmentModels/VirtualSourceList.hpp>
-#include <EnvironmentModels/SDNEnv/SDNEnvironment.hpp>
+#include <EnvironmentModels/SDNEnvironment/SDNEnvironment.hpp>
 
 
 
@@ -364,10 +364,9 @@ namespace BRTEnvironmentModel {
 
 			if ((index < 6 && muteReverbPath) || (index == 6 && muteLoS)) {
 				std::fill(virtualSourceBuffers[index].begin(), virtualSourceBuffers[index].end(), 0);				
-			} 
-
-			SetVirtualSourceBuffer(GetBRTVirtualSourceID(index), virtualSourceBuffers[index]);
+			} 			
 			SetVirtualSourcePosition(GetBRTVirtualSourceID(index), CalculateGlobalPosition(virtualSourcePositions[index]));
+			SetVirtualSourceBuffer(GetBRTVirtualSourceID(index), virtualSourceBuffers[index]);
 		}
 		
 		/**

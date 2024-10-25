@@ -24,9 +24,9 @@
 #ifndef _SDN_SCATTERING_NODE_HPP_
 #define _SDN_SCATTERING_NODE_HPP_
 
-#include <EnvironmentModels/SDNenv/SDNNode.hpp>
-#include <EnvironmentModels/SDNenv/WaveGuide.hpp>
-#include <EnvironmentModels/SDNEnv/SDNUtils.hpp>
+#include <EnvironmentModels/SDNEnvironment/SDNNode.hpp>
+#include <EnvironmentModels/SDNEnvironment/WaveGuide.hpp>
+#include <EnvironmentModels/SDNEnvironment/SDNUtils.hpp>
 
 // Scattering node in SDN architecture, uses IIR filters to simulate material absorption
 class ScatteringNode : public SDNNode

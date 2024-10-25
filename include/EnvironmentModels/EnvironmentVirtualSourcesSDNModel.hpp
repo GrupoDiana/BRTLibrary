@@ -26,7 +26,7 @@
 #include <memory>
 #include <Base/ListenerModelBase.hpp>
 #include <Base/EnvironmentModelBase.hpp>
-#include <EnvironmentModels/SDNenv/SDNEnvironmentProcessor.hpp>
+#include <EnvironmentModels/SDNEnvironment/SDNEnvironmentProcessor.hpp>
 #include <Base/SourceModelBase.hpp>
 #include <Base/BRTManager.hpp>
 #include <third_party_libraries/nlohmann/json.hpp>

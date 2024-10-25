@@ -28,8 +28,8 @@
 #include <algorithm>
 #include <Common/Buffer.hpp>
 #include <Common/ErrorHandler.hpp>
-#include <EnvironmentModels/SDNenv/WaveGuide.hpp>
-#include <EnvironmentModels/SDNenv/ScatteringNode.hpp>
+#include <EnvironmentModels/SDNEnvironment/WaveGuide.hpp>
+#include <EnvironmentModels/SDNEnvironment/ScatteringNode.hpp>
 
 namespace BRTEnvironmentModel {
 

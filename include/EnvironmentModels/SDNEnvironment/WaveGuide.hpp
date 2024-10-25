@@ -23,9 +23,9 @@
 #ifndef _SDN_WAVEGUIDE_HPP_
 #define _SDN_WAVEGUIDE_HPP_
 
-#include <EnvironmentModels/SDNenv/SDNParameters.hpp>
-#include <EnvironmentModels/SDNenv/SDNNode.hpp>
-#include <EnvironmentModels/SDNenv/SDNDelayLine.hpp>
+#include <EnvironmentModels/SDNEnvironment/SDNParameters.hpp>
+#include <EnvironmentModels/SDNEnvironment/SDNNode.hpp>
+#include <EnvironmentModels/SDNEnvironment/SDNDelayLine.hpp>
 
 class WaveGuide
 {
