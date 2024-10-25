@@ -49,26 +49,26 @@ namespace BRTBase {
 		//virtual void UpdateCommand() = 0;
 
 
-		virtual void EnableModel() {};
-		virtual void DisableModel() {};
+		virtual void EnableModel() = 0;
+		virtual void DisableModel() = 0;
 		virtual bool IsModelEnabled() { return enableModel; }
 
-		virtual void EnableDirectPath() = 0;
-		virtual void DisableDirectPath() = 0;
-		virtual bool IsDirectPathEnabled() = 0;
+		virtual void EnableDirectPath() {};
+		virtual void DisableDirectPath() {};
+		virtual bool IsDirectPathEnabled() { return false; };
 
-		virtual void EnableReverbPath() = 0;
-		virtual void DisableReverbPath() = 0;
-		virtual bool IsReverbPathEnabled() = 0;		
+		virtual void EnableReverbPath() {};
+		virtual void DisableReverbPath() {};
+		virtual bool IsReverbPathEnabled() { return false; };		
 
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) = 0;
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) = 0;
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) = 0;
 		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) = 0;		
 
-		virtual void UpdateRoomGeometry() = 0;
-		virtual void UpdateRoomWallAbsortion(int wallIndex) = 0;
-		virtual void UpdateRoomAllWallsAbsortion() = 0;
+		virtual void UpdateRoomGeometry() { };
+		virtual void UpdateRoomWallAbsortion(int wallIndex) { };
+		virtual void UpdateRoomAllWallsAbsortion() { };
 
 		CEnviromentModelBase(const std::string & _environmentModelID)
 			: environmentModelID { _environmentModelID }

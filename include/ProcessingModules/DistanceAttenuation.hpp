@@ -39,25 +39,25 @@ namespace BRTProcessing {
     class CDistanceAttenuation
     {
     public:
-        CDistanceAttenuation() : previousAttenuation_Channel{ 0.0f }, referenceDistance{ REFERENCE_DISTANCE_ATTENUATION }, enabledDistanceAttenuation {true} {
+        CDistanceAttenuation() : previousAttenuation_Channel{ 0.0f }, referenceDistance{ REFERENCE_DISTANCE_ATTENUATION }, enableProcessor {true} {
         }
                         
         ///Enable distance attenuation 	
-        void EnabledDistanceAttenuation() { enabledDistanceAttenuation = true; }
+        void EnableProcessor() { enableProcessor = true; }
         ///Disable distance attenuation 	
-        void DisableDistanceAttenuation() { enabledDistanceAttenuation = false; }
+        void DisableProcessor() { enableProcessor = false; }
         ////Get the flag for distance attenuation process enabling 	
-        bool IsEnabledDistanceAttenuation() { return enabledDistanceAttenuation; };
+        bool IsProcessorEnabled() { return enableProcessor; };
 
 
         // Methods        
-        void Process(CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outBuffer, Common::CTransform sourceTransform, Common::CTransform listenerTransform) {
+        void Process(const CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outBuffer, Common::CTransform sourceTransform, Common::CTransform listenerTransform) {
             
             ASSERT(_inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");
 
             outBuffer = _inBuffer;
 
-            if (!enabledDistanceAttenuation) {                                
+            if (!enableProcessor) {                                
                 return;
             }
 
@@ -76,7 +76,7 @@ namespace BRTProcessing {
         }
 
     private:        
-        bool enabledDistanceAttenuation;
+        bool enableProcessor;
         Common::CGlobalParameters globalParameters;
         float referenceDistance;                        // Distance at which the attenuation is 0 dB, in meters.
         float previousAttenuation_Channel;

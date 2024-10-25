@@ -47,5 +47,6 @@
 #include "third_party_libraries/nlohmann/json.hpp"
 #include "Common/EnvelopeDetector.hpp"
 #include "EnvironmentModels/EnvironmentVirtualSourcesSDNModel.hpp"
+#include "EnvironmentModels/FreeFieldEnvironmentModel.hpp"
 
 #endif

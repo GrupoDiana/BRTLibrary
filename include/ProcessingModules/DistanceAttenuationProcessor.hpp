@@ -29,7 +29,7 @@
 namespace BRTProcessing {
     
 
-    class CDistanceAttenuationProcessor : public BRTBase::CAdvancedEntryPointManager, public BRTBase::CExitPointManager, CDistanceAttenuation
+    class CDistanceAttenuationProcessor : public BRTBase::CAdvancedEntryPointManager, public BRTBase::CExitPointManager, public CDistanceAttenuation
     {
     public:
         CDistanceAttenuationProcessor(){
@@ -46,16 +46,16 @@ namespace BRTProcessing {
         */
         void AllEntryPointsAllDataReady() {
             std::lock_guard<std::mutex> l(mutex);
-            //if (_entryPointId == "inputSamples") {
-                CMonoBuffer<float> inBuffer = GetSamplesEntryPoint("inputSamples")->GetData();
-                Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
-                Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();               
-                CMonoBuffer<float> outBuffer;
-                if (inBuffer.size() != 0) {
-                    Process(inBuffer, outBuffer, sourcePosition, listenerPosition);                    
-                    GetSamplesExitPoint("outputSamples")->sendData(outBuffer);          // Send output buffer to next module
-                }                                            
-            //}            
+           
+            CMonoBuffer<float> inBuffer = GetSamplesEntryPoint("inputSamples")->GetData();
+            Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
+            Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();               
+            CMonoBuffer<float> outBuffer;
+            if (inBuffer.size() != 0) {
+                Process(inBuffer, outBuffer, sourcePosition, listenerPosition);                    
+                GetSamplesExitPoint("outputSamples")->sendData(outBuffer);          // Send output buffer to next module
+            }                                            
+           
         }
 
         void UpdateCommand() {
