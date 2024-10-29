@@ -45,7 +45,7 @@
 #include "Readers/SofaReader.hpp"
 #include "third_party_libraries/nlohmann/json.hpp"
 #include "Common/EnvelopeDetector.hpp"
-#include "EnvironmentModels/EnvironmentVirtualSourcesSDNModel.hpp"
+#include "EnvironmentModels/SDNEnvironmentModel.hpp"
 #include "EnvironmentModels/FreeFieldEnvironmentModel.hpp"
 
 #endif

@@ -20,8 +20,8 @@
 * \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 
-#ifndef _C_ENVIRONMENT_VIRTUALSOURCES_SDN_MODEL_HPP_
-#define _C_ENVIRONMENT_VIRTUALSOURCES_SDN_MODEL_HPP_
+#ifndef _C_SDN_ENVIRONMENT_MODEL_HPP_
+#define _C_SDN_ENVIRONMENT_MODEL_HPP_
 
 #include <memory>
 #include <Base/ListenerModelBase.hpp>
@@ -33,7 +33,7 @@
 
 namespace BRTEnvironmentModel {
 	
-	class CEnvironmentVirtualSourcesSDNModel : public BRTBase::CEnviromentModelBase {
+	class CSDNEnvironmentModel : public BRTBase::CEnviromentModelBase {
 		
 		class CSDNProcessors {
 		public:
@@ -135,7 +135,7 @@ namespace BRTEnvironmentModel {
 		};
 
 	public:
-		CEnvironmentVirtualSourcesSDNModel(const std::string& _environmentModelID, BRTBase::CBRTManager * _brtManager)
+		CSDNEnvironmentModel(const std::string& _environmentModelID, BRTBase::CBRTManager * _brtManager)
 			: BRTBase::CEnviromentModelBase(_environmentModelID)
 			, brtManager { _brtManager }
 			, enableDirectPath { true }
@@ -144,7 +144,7 @@ namespace BRTEnvironmentModel {
 		/**
 		 * @brief Destructor
 		*/
-		~CEnvironmentVirtualSourcesSDNModel() {
+		~CSDNEnvironmentModel() {
 			sourcesConnectedProcessors.clear();
 		}
 		
