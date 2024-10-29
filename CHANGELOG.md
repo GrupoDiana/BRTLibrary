@@ -5,6 +5,18 @@ All notable changes to the Binaural Rendering Toolbox (BRT) will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2024-10-29
+
+### Added
+- New free field environment model. This is a preliminary version of a free-field environment model, so far it only implements distance attenuation. It will soon include propagation delay and long-distance filtering of the signal.
+- A couple of classes, BRTConnectivity and ModelBase, have been created to simplify the architecture of inheritance between classes.
+
+### Changed
+- Classes and folders of the SDN environment model have been renamed for a simpler and more understandable architecture.
+
+### Removed
+- Outdated example classes
+
 ## [1.6.0] - 2024-10-15
 
 ### Added
