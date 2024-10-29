@@ -259,14 +259,6 @@ namespace BRTEnvironmentModel {
 		}
 
 		/**
-		 * @brief Implementation of the virtual method to process the data received by the entry points.
-		 * @param entryPointID ID of the entry point
-		*/
-		void Update(std::string entryPointID) override {
-			// Nothing to do
-		}
-
-		/**
 		 * @brief Implementation of the virtual method for processing the received commands
 		*/
 		void UpdateCommand() override{
@@ -277,7 +269,7 @@ namespace BRTEnvironmentModel {
 			std::string listenerID = GetIDEntryPoint("listenerID")->GetData();
 			//std::string listenerModelID = GetIDEntryPoint("listenerModelID")->GetData();
 
-			if (this->GetID() == command.GetStringParameter("environmentModelID")) {
+			if (this->GetModelID() == command.GetStringParameter("environmentModelID")) {
 				if (command.GetCommand() == "/environment/enableModel") {
 					if (command.GetBoolParameter("enable")) { EnableModel();} 
 					else {	DisableModel();	}

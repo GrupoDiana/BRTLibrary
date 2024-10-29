@@ -181,7 +181,7 @@ namespace BRTBase {
 					control = true;
 				}
 				else {
-					SET_RESULT(RESULT_ERROR_NOTSET, "ERROR: Unknown error when trying to set the HRTF in the listener model with ID " + _listenerModel->GetID());
+					SET_RESULT(RESULT_ERROR_NOTSET, "ERROR: Unknown error when trying to set the HRTF in the listener model with ID " + _listenerModel->GetModelID());
 				}				
 			}
 			return control;
@@ -228,7 +228,7 @@ namespace BRTBase {
 						control = true;
 					}
 					else {
-						SET_RESULT(RESULT_ERROR_NOTSET, "ERROR: Unknown error when trying to set the BRIR in the listener model with ID " + _listenerModel->GetID());
+						SET_RESULT(RESULT_ERROR_NOTSET, "ERROR: Unknown error when trying to set the BRIR in the listener model with ID " + _listenerModel->GetModelID());
 					}
 				}
 			}

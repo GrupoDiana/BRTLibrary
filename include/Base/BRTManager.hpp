@@ -187,7 +187,7 @@ namespace BRTBase {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "BRT library is not in configuration mode");
 					return nullptr;
 				}
-				auto it = std::find_if(listenerModels.begin(), listenerModels.end(), [&_listenerID](std::shared_ptr<CListenerModelBase>& listenerItem) { return listenerItem->GetID() == _listenerID; });
+				auto it = std::find_if(listenerModels.begin(), listenerModels.end(), [&_listenerID](std::shared_ptr<CListenerModelBase>& listenerItem) { return listenerItem->GetModelID() == _listenerID; });
 				if (it != listenerModels.end()) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "A listener with such an ID already exists.");
 					return nullptr;
@@ -231,7 +231,7 @@ namespace BRTBase {
 		std::vector<std::string> GetListenerModelIDs() {
 			std::vector<std::string> listenerIDs;
 			for (auto& it : listenerModels) {
-				listenerIDs.push_back(it->GetID());
+				listenerIDs.push_back(it->GetModelID());
 			}
 			return listenerIDs;
 		}
@@ -260,7 +260,7 @@ namespace BRTBase {
 					return nullptr;
 				}
 				auto it = std::find_if(environmentModels.begin(), environmentModels.end(), 
-					[&_environmentID](std::shared_ptr<CEnviromentModelBase> & environmentItem) { return environmentItem->GetID() == _environmentID; });
+					[&_environmentID](std::shared_ptr<CEnviromentModelBase> & environmentItem) { return environmentItem->GetModelID() == _environmentID; });
 				if (it != environmentModels.end()) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "A environment with such an ID already exists.");
 					return nullptr;
@@ -365,7 +365,7 @@ namespace BRTBase {
 		*/
 		bool RemoveListener(std::string _listenerID) {
 			if (!setupModeActivated) { return false; }
-			auto it = std::find_if(listenerModels.begin(), listenerModels.end(), [&_listenerID](std::shared_ptr<CListenerModelBase>& listenerItem) { return listenerItem->GetID() == _listenerID; });
+			auto it = std::find_if(listenerModels.begin(), listenerModels.end(), [&_listenerID](std::shared_ptr<CListenerModelBase>& listenerItem) { return listenerItem->GetModelID() == _listenerID; });
 			if (it != listenerModels.end()) {
 				DisconnectModulesCommand(*it);
 				listenerModels.erase(it);
@@ -804,7 +804,7 @@ namespace BRTBase {
 		 */
 		template <typename T>
 		std::shared_ptr<T> FindModel(std::vector<std::shared_ptr<T>> _list, const std::string & _ID) {
-			auto it = std::find_if(_list.begin(), _list.end(), [&_ID](std::shared_ptr<T> & item) { return item->GetID() == _ID; });
+			auto it = std::find_if(_list.begin(), _list.end(), [&_ID](std::shared_ptr<T> & item) { return item->GetModelID() == _ID; });
 			if (it != _list.end()) {
 				return *it;
 			}

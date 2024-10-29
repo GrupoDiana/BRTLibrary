@@ -24,7 +24,7 @@
 #define _CENVIRONMENT_MODEL_BASE_HPP_
 
 #include <memory>
-#include <Base/BRTConnectivity.hpp>
+#include <Base/ModelBase.hpp>
 #include <Base/SourceModelBase.hpp>
 #include <SourceModels/VirtualSourceModel.hpp>
 #include <Common/Room.hpp>
@@ -37,20 +37,11 @@ namespace BRTSourceModel {
 namespace BRTBase {
 
 
-	class CEnviromentModelBase : public CBRTConnectivity{
+	class CEnviromentModelBase : public CModelBase {
 	public:
-		// Public Attributes
-		bool enableModel;
-
+		
 		// Virtual Methods
-		virtual ~CEnviromentModelBase() { }
-		virtual void Update(std::string entryPointID) = 0;
-		//virtual void UpdateCommand() = 0;
-
-
-		virtual void EnableModel() = 0;
-		virtual void DisableModel() = 0;
-		virtual bool IsModelEnabled() { return enableModel; }
+		virtual ~CEnviromentModelBase() { }		
 
 		virtual void EnableDirectPath() {};
 		virtual void DisableDirectPath() {};
@@ -60,34 +51,21 @@ namespace BRTBase {
 		virtual void DisableReverbPath() {};
 		virtual bool IsReverbPathEnabled() { return false; };		
 
-		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) = 0;
-		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) = 0;
-		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) = 0;
-		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) = 0;		
-
 		virtual void UpdateRoomGeometry() { };
 		virtual void UpdateRoomWallAbsortion(int wallIndex) { };
 		virtual void UpdateRoomAllWallsAbsortion() { };
 
 		CEnviromentModelBase(const std::string & _environmentModelID)
-			: environmentModelID { _environmentModelID }
-			, enableModel { true } {
+			: CModelBase(_environmentModelID) {
 
 			
 			CreateIDExitPoint();
 			CreateIDEntryPoint("listenerID");
 			CreateIDEntryPoint("listenerModelID");
-			GetIDExitPoint()->sendData(environmentModelID);
+			GetIDExitPoint()->sendData(modelID);
 			CreateCommandEntryPoint();
 		}
-
-
-		/**
-		 * @brief Get listener ID
-		 * @return Return listener identificator
-		*/
-		std::string GetID() { return environmentModelID; }
-
+		
 		/**
 		 * @brief Check if this environment is already connected to a listener model
 		 * @return 
@@ -193,7 +171,7 @@ namespace BRTBase {
 		}		
 
 	private:
-		std::string environmentModelID;															// Store unique enviroment ID	
+		//std::string environmentModelID;															// Store unique enviroment ID	
 		Common::CRoom roomDefinition;
 	};
 }

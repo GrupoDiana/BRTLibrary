@@ -24,7 +24,7 @@
 #define _CLISTENER_MODEL_BASE_H_
 
 #include <memory>
-#include <Base/BRTConnectivity.hpp>
+#include <Base/ModelBase.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/NFCFilters.hpp>
@@ -33,16 +33,7 @@ namespace BRTServices {
 	class CHRTF;
 }
 
-namespace BRTSourceModel {
-	class CSourceSimpleModel;
-	class CSourceDirectivityModel;
-	class CVirtualSourceModel;
-	}
-
-namespace BRTBase {
-
-	//enum class TListenerType { ListenerHRFTModel, ListenerAmbisonicHRTFModel, ListenerEnviromentBRIRModel };
-
+namespace BRTBase {	
 	/**
 	 * @brief This class looks for a method of identifying each model, so that we can then know which methods are called. 
 	 * It is actually a provisional solution.
@@ -78,18 +69,12 @@ namespace BRTBase {
 	};
 
 
-	class CListenerModelBase: public CBRTConnectivity {
+	class CListenerModelBase : public CModelBase {
 	public:
-
-		// Public Attributes
-		bool enableModel;
-		float gain;
+		
 
 		// Virtual Methods
-
-		virtual ~CListenerModelBase() {}
-		virtual void Update(std::string entryPointID) = 0;
-		//virtual void UpdateCommand() = 0;		
+		virtual ~CListenerModelBase() {}		
 		
 		virtual bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) { return false; };				
 		virtual std::shared_ptr < BRTServices::CHRTF> GetHRTF() const { return nullptr; }
@@ -103,11 +88,6 @@ namespace BRTBase {
 		virtual std::shared_ptr < BRTServices::CHRBRIR> GetHRBRIR() const { return nullptr; };
 		virtual void RemoveHRBRIR() {};		
 		
-		virtual void EnableModel() {  };
-		virtual void DisableModel() {};
-		virtual bool IsModelEnabled() { return enableModel; }
-
-
 		virtual void EnableITDSimulation() {};
 		virtual void DisableITDSimulation() {};
 		virtual bool IsITDSimulationEnabled() { return false; }
@@ -133,14 +113,7 @@ namespace BRTBase {
 		virtual bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) { return false; }
 		virtual bool SetAmbisonicNormalization(std::string _ambisonicNormalization) {return false;}
 		virtual Common::TAmbisonicNormalization GetAmbisonicNormalization() const { return Common::TAmbisonicNormalization::none; }
-		
-		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) { return false; }
-		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) { return false; }
-		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _source) { return false; }
-		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) = 0;
-		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) = 0;
-		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _source) { return false; }
-
+				
 		virtual bool ConnectEnvironmentModel(const std::string & _environmentModelID) { return false; };
 		virtual bool DisconnectEnvironmentModel(const std::string & _environmentModelID) { return false; };
 
@@ -151,10 +124,10 @@ namespace BRTBase {
 
 		// Class Methods
 
-		CListenerModelBase(std::string _listenerModelID, TListenerModelcharacteristics _listenerCharacteristics) : listenerModelID {_listenerModelID},
-			listenerCharacteristics{ _listenerCharacteristics }, leftDataReady { false }
-			, rightDataReady { false }
-			, enableModel {true} {
+		CListenerModelBase(std::string _listenerModelID, TListenerModelcharacteristics _listenerCharacteristics) 
+			: CModelBase(_listenerModelID)
+			, listenerCharacteristics{ _listenerCharacteristics }, leftDataReady { false }
+			, rightDataReady { false } {
 												
 			CreateSamplesEntryPoint("leftEar");		// TODO is this necessary?
 			CreateSamplesEntryPoint("rightEar");	// TODO is this necessary?								
@@ -164,18 +137,14 @@ namespace BRTBase {
 			CreateSamplesExitPoint("leftEar");
 			CreateSamplesExitPoint("rightEar");
 			CreateIDEntryPoint("listenerID");
-			GetIDExitPoint()->sendData(listenerModelID);						
+			GetIDExitPoint()->sendData(modelID);						
 			CreateCommandEntryPoint();
 		}
 						
-
 		/**
-		 * @brief Get listener ID
-		 * @return Return listener identificator
-		*/
-		std::string GetID() { return listenerModelID; }
-			
-		void SendMyID() { GetIDExitPoint()->sendData(listenerModelID); }
+		 * @brief Send the model ID by the ID exit point
+		 */			
+		void SendMyID() { GetIDExitPoint()->sendData(modelID); }
 		
 		
 		/**
@@ -245,12 +214,9 @@ namespace BRTBase {
 		}
 
 		
-	private:
-		//TListenerType listenerModelType;
+	private:		
 		TListenerModelcharacteristics listenerCharacteristics;
-		std::string listenerModelID;						// Store unique listener ID		
-		
-		
+						
 		Common::CGlobalParameters globalParameters;		
 		CMonoBuffer<float> leftBuffer;
 		CMonoBuffer<float> rightBuffer;
@@ -258,7 +224,6 @@ namespace BRTBase {
 		bool leftDataReady;
 		bool rightDataReady;	
 				
-
 		//////////////////////////
 		// Private Methods
 		/////////////////////////

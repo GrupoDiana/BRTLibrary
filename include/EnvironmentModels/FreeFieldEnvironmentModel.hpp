@@ -160,15 +160,7 @@ namespace BRTEnvironmentModel {
 		/*bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _source) override {
 			return ConnectAnySoundSource(_source, false);
 		}*/
-		
-		/**
-		 * @brief Implementation of the virtual method to process the data received by the entry points.
-		 * @param entryPointID ID of the entry point
-		*/
-		void Update(std::string entryPointID) override {
-			// Nothing to do
-		}
-
+						
 		/**
 		 * @brief Implementation of the virtual method for processing the received commands
 		*/
