@@ -24,8 +24,7 @@
 #define _CENVIRONMENT_MODEL_BASE_HPP_
 
 #include <memory>
-#include <Base/AdvancedEntryPointManager.hpp>
-#include <Base/ExitPointManager.hpp>
+#include <Base/BRTConnectivity.hpp>
 #include <Base/SourceModelBase.hpp>
 #include <SourceModels/VirtualSourceModel.hpp>
 #include <Common/Room.hpp>
@@ -38,7 +37,7 @@ namespace BRTSourceModel {
 namespace BRTBase {
 
 
-	class CEnviromentModelBase : public CAdvancedEntryPointManager, public CExitPointManager{
+	class CEnviromentModelBase : public CBRTConnectivity{
 	public:
 		// Public Attributes
 		bool enableModel;

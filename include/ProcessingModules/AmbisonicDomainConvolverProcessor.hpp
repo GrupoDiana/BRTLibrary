@@ -25,15 +25,14 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
-#include <Base/AdvancedEntryPointManager.hpp>
-#include <Base/ExitPointManager.hpp>
+#include <Base/BRTConnectivity.hpp>
 #include <Common/UPCAnechoic.hpp>
 #include <Common/Buffer.hpp>
 #include <ProcessingModules/AmbisonicDomainConvolver.hpp>
 
 
 namespace BRTProcessing {
-    class CAmbisonicDomainConvolverProcessor : public BRTBase::CAdvancedEntryPointManager, public BRTBase::CExitPointManager, public CAmbisonicDomainConvolver {
+    class CAmbisonicDomainConvolverProcessor : public BRTBase::CBRTConnectivity, public CAmbisonicDomainConvolver {
 		
     public:
 		CAmbisonicDomainConvolverProcessor(Common::T_ear _earToProcess) : CAmbisonicDomainConvolver(_earToProcess) {

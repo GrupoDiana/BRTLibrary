@@ -26,14 +26,13 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
-#include <Base/AdvancedEntryPointManager.hpp>
-#include <Base/ExitPointManager.hpp>
+#include <Base/BRTConnectivity.hpp>
 #include <Common/Buffer.hpp>
 #include <ProcessingModules/NearFieldEffect.hpp>
 
 
 namespace BRTProcessing {
-    class CNearFieldEffectProcessor : public BRTBase::CAdvancedEntryPointManager, public BRTBase::CExitPointManager, public CNearFieldEffect {
+    class CNearFieldEffectProcessor : public BRTBase::CBRTConnectivity, public CNearFieldEffect {
 		
     public:
 		CNearFieldEffectProcessor() {

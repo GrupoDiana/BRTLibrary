@@ -24,10 +24,7 @@
 #define _CLISTENER_MODEL_BASE_H_
 
 #include <memory>
-//#include <Base/EntryPointManager.hpp>
-//#include <Base/CommandEntryPointManager.hpp>
-#include <Base/AdvancedEntryPointManager.hpp>
-#include <Base/ExitPointManager.hpp>
+#include <Base/BRTConnectivity.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/NFCFilters.hpp>
@@ -81,11 +78,12 @@ namespace BRTBase {
 	};
 
 
-	class CListenerModelBase: public CAdvancedEntryPointManager, public CExitPointManager/*, public CCommandEntryPointManager, public CEntryPointManager */{
+	class CListenerModelBase: public CBRTConnectivity {
 	public:
 
 		// Public Attributes
 		bool enableModel;
+		float gain;
 
 		// Virtual Methods
 

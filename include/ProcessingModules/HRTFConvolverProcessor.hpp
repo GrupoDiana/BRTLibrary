@@ -25,8 +25,7 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
-#include <Base/AdvancedEntryPointManager.hpp>
-#include <Base/ExitPointManager.hpp>
+#include <Base/BRTConnectivity.hpp>
 #include <Common/UPCAnechoic.hpp>
 #include <Common/Buffer.hpp>
 #include <ServiceModules/ServicesBase.hpp>
@@ -35,7 +34,7 @@
 
 
 namespace BRTProcessing {
-    class CHRTFConvolverProcessor : public BRTBase::CAdvancedEntryPointManager, public BRTBase::CExitPointManager, public CHRTFConvolver {
+    class CHRTFConvolverProcessor : public BRTBase::CBRTConnectivity, public CHRTFConvolver {
 		
     public:
 		CHRTFConvolverProcessor() {

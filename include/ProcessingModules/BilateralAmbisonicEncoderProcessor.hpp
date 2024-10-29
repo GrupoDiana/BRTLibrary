@@ -33,7 +33,7 @@
 
 
 namespace BRTProcessing {
-    class CBilateralAmbisonicEncoderProcessor : public BRTBase::CAdvancedEntryPointManager, public BRTBase::CExitPointManager,  public CBilateralAmbisonicEncoder {
+    class CBilateralAmbisonicEncoderProcessor : public BRTBase::CBRTConnectivity,  public CBilateralAmbisonicEncoder {
 		
     public:
 		CBilateralAmbisonicEncoderProcessor() {

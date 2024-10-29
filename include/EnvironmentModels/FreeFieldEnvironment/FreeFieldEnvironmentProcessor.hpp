@@ -23,14 +23,14 @@
 #include <memory>
 #include <Common/ErrorHandler.hpp>
 #include <Base/BRTManager.hpp>
-#include <Base/AdvancedEntryPointManager.hpp>
+#include <Base/BRTConnectivity.hpp>
 #include <EnvironmentModels/FreeFieldEnvironment/FreeFieldEnvironment.hpp>
 
 #ifndef _C_FREE_FIELD_ENVIRONMENT_PROCESSOR_HPP_
 #define _C_FREE_FIELD_ENVIRONMENT_PROCESSOR_HPP_
 namespace BRTEnvironmentModel { 
 
-	class CFreeFieldEnvironmentProcessor : public BRTBase::CAdvancedEntryPointManager, public BRTBase::CExitPointManager, public CFreeFieldEnvironment  {
+	class CFreeFieldEnvironmentProcessor : public BRTBase::CBRTConnectivity, public CFreeFieldEnvironment  {
 	
 	public:
 		CFreeFieldEnvironmentProcessor(BRTBase::CBRTManager * _brtManager)			

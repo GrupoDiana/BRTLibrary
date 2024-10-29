@@ -27,7 +27,7 @@
 #include <memory>
 #include <Common/ErrorHandler.hpp>
 #include <Base/BRTManager.hpp>
-#include <Base/AdvancedEntryPointManager.hpp>
+#include <Base/BRTConnectivity.hpp>
 #include <EnvironmentModels/VirtualSourceList.hpp>
 #include <EnvironmentModels/SDNEnvironment/SDNEnvironment.hpp>
 
@@ -36,7 +36,7 @@
 
 namespace BRTEnvironmentModel {
 
-	class CSDNEnvironmentProcessor : public BRTBase::CAdvancedEntryPointManager, public BRTBase::CExitPointManager, public CVirtualSourceList, SDNEnvironment {
+	class CSDNEnvironmentProcessor : public BRTBase::CBRTConnectivity, public CVirtualSourceList, SDNEnvironment {
 	public:
 
 		CSDNEnvironmentProcessor(BRTBase::CBRTManager * _brtManager)
