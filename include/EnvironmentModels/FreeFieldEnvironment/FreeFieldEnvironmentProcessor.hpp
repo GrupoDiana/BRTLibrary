@@ -65,15 +65,6 @@ namespace BRTEnvironmentModel {
 			}
 
 			originalSourceID = _orinalSourceID;
-			
-			/*std::shared_ptr<BRTBase::CSourceModelBase> _source = brtManager->GetSoundSource<BRTBase::CSourceModelBase>(originalSourceID);
-			if (_source == nullptr) {
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The source ID does not exist");
-				return false;
-			}
-			if (_source->GetSourceType() == BRTBase::CSourceModelBase::TSourceType::Simple) {
-				source = 
-			}*/			
 
 			virtualSource = brtManager->CreateSoundSource<BRTSourceModel::CVirtualSourceModel>("FreeField_" + originalSourceID);						
 			virtualSource->SetOriginSourceID(originalSourceID);
@@ -123,8 +114,7 @@ namespace BRTEnvironmentModel {
 
 			CMonoBuffer<float> outBuffer;
 			Process(inBuffer, outBuffer, sourcePosition, listenerPosition);
-			
-			
+						
 			virtualSource->SetSourceTransform(sourcePosition);
 			virtualSource->SetBuffer(outBuffer);													
 		}
@@ -149,12 +139,7 @@ namespace BRTEnvironmentModel {
 		Common::CGlobalParameters globalParameters;		
 		std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource;
 		BRTBase::CBRTManager * brtManager;
-		
-		//CWaveGuide waveGuide;
-		std::shared_ptr<BRTProcessing::CDistanceAttenuation> distanceAttenuation;
-		//CLongDistanceFilter longDistanceFilter;
-		
-
+						
 		std::string originalSourceID;
 		bool initialized;		
 	};

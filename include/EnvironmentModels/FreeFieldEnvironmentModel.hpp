@@ -28,7 +28,6 @@
 #include <Base/EnvironmentModelBase.hpp>
 #include <Base/ListenerModelBase.hpp>
 #include <Base/SourceModelBase.hpp>
-#include <ProcessingModules/DistanceAttenuationProcessor.hpp>
 #include <EnvironmentModels/FreeFieldEnvironment/FreeFieldEnvironmentProcessor.hpp>
 #include <third_party_libraries/nlohmann/json.hpp>
 
@@ -100,16 +99,30 @@ namespace BRTEnvironmentModel {
 			: BRTBase::CEnviromentModelBase(_environmentModelID)
 			, brtManager { _brtManager }
 		{ 
-			//CreateSamplesExitPoint("outputSamples");			
+			
 		}
 
 		
-		virtual void EnableModel() override {
-		
+		/**
+		 * @brief Enable model
+		 */
+		void EnableModel() override {
+			std::lock_guard<std::mutex> l(mutex);
+			enableModel = true;
+			for (auto & it : sourcesConnectedProcessors) {
+				it.SetEnableProcessor(true);
+			}
 		};
-		
-		virtual void DisableModel() override {
-		
+
+		/**
+		 * @brief Disable model
+		 */
+		void DisableModel() override {
+			std::lock_guard<std::mutex> l(mutex);
+			enableModel = false;
+			for (auto & it : sourcesConnectedProcessors) {
+				it.SetEnableProcessor(false);
+			}
 		};
 		
 
@@ -131,8 +144,12 @@ namespace BRTEnvironmentModel {
 		};
 
 		
-		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) override { return false; };
-		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) override { return false; };
+		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) override { 
+			return DisconnectAnySoundSource(_source, false);
+		};
+		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) override { 
+			return DisconnectAnySoundSource(_source, true);
+		};
 
 
 		/**
@@ -198,8 +215,6 @@ namespace BRTEnvironmentModel {
 
 
 	private:
-
-
 		/**
 		 * @brief Connect a new source to this listener
 		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
@@ -209,9 +224,6 @@ namespace BRTEnvironmentModel {
 		template <typename T>
 		bool ConnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
 			std::lock_guard<std::mutex> l(mutex);
-
-
-
 
 			// Get listener Model pointer
 			std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTBase::CListenerModelBase>(GetIDEntryPoint("listenerModelID")->GetData());
@@ -252,6 +264,49 @@ namespace BRTEnvironmentModel {
 			return false;
 		}
 
+
+		/**
+		 * @brief Disconnect a new source to this listener
+		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
+		 * @param _source Pointer to the source
+		*  @return True if the disconnection success
+		*/
+		template <typename T>
+		bool DisconnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
+			
+			std::lock_guard<std::mutex> l(mutex);
+
+			// Get listener Model pointer
+			std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTBase::CListenerModelBase>(GetIDEntryPoint("listenerModelID")->GetData());
+			if (_listenerModel == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This environment has not been connected to a listener Model.");
+				return false;
+			}
+
+			// Get listener pointer
+			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(_listenerModel->GetListenerID());
+			if (_listener == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This environment has not been connected to a listener.");
+				return false;
+			}
+
+			// Make connections
+			std::string _sourceID = _source->GetID();
+			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSourceProcessors & sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
+			if (it != sourcesConnectedProcessors.end()) {				
+				bool control = it->DisconnectToListenerModel(_listenerModel);
+				control = control && brtManager->DisconnectModulesSamples(_source, "samples", it->freeFieldProcessor, "inputSamples");
+				control = control && brtManager->DisconnectModuleTransform(_listener, it->freeFieldProcessor, "listenerPosition");
+				if (sourceNeedsListenerPosition) {
+					control = control && brtManager->DisconnectModuleTransform(_listener, _source, "listenerPosition");
+				}
+				control = brtManager->DisconnectModuleTransform(_source, it->freeFieldProcessor, "sourcePosition");
+				it->Clear(brtManager);
+				sourcesConnectedProcessors.erase(it);
+				return true;
+			}
+			return false;			
+		}
 
 		/////////////////
 		// Attributes

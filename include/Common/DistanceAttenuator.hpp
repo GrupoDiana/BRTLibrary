@@ -1,5 +1,5 @@
 /**
-* \class CDistanceAttenuation
+* \class CDistanceAttenuator
 *
 * \brief Declaration of CDistanceAttenuation class
 * \date	June 2023
@@ -36,10 +36,10 @@
 namespace BRTProcessing {
     
 
-    class CDistanceAttenuation
+    class CDistanceAttenuator
     {
     public:
-        CDistanceAttenuation() : previousAttenuation_Channel{ 0.0f }, referenceDistance{ REFERENCE_DISTANCE_ATTENUATION }, enableProcessor {true} {
+        CDistanceAttenuator() : previousAttenuation_Channel{ 0.0f }, referenceDistance{ REFERENCE_DISTANCE_ATTENUATION }, enableProcessor {true} {
         }
                         
         ///Enable distance attenuation 	

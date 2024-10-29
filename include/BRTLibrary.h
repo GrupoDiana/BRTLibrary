@@ -36,7 +36,6 @@
 #include "SourceModels/SourceDirectivityModel.hpp"
 #include "ProcessingModules/SingleProcessor.hpp"
 #include "ProcessingModules/SingleBinauralProcessor.hpp"
-#include "ProcessingModules/DistanceAttenuationProcessor.hpp"
 #include "ProcessingModules//HRTFConvolverProcessor.hpp"
 #include "ProcessingModules/DirectivityTFConvolver.hpp"
 #include "ServiceModules/HRTF.hpp"

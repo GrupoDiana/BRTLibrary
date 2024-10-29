@@ -23,8 +23,8 @@
 #include <memory>
 #include <Common/ErrorHandler.hpp>
 #include <Common/GlobalParameters.hpp>
+#include <Common/DistanceAttenuator.hpp>
 #include <Base/BRTManager.hpp>
-#include <ProcessingModules/DistanceAttenuation.hpp>
 
 
 #ifndef _C_FREE_FIELD_ENVIRONMENT_HPP_
@@ -61,15 +61,7 @@ namespace BRTEnvironmentModel {
 			
 			std::lock_guard<std::mutex> l(mutex);
 			ASSERT(_inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");
-
-
-			// Check if the processor is enabled
-			/*if (!enableProcessor) {
-				ambisonicEncoder.EncodedIR(CMonoBuffer<float>(globalParameters.GetBufferSize(), 0.0f), leftChannelsBuffers, 0, 0);
-				ambisonicEncoder.EncodedIR(CMonoBuffer<float>(globalParameters.GetBufferSize(), 0.0f), rightChannelsBuffers, 0, 0);
-				return;
-			}*/
-			//CMonoBuffer<float> outBuffer;
+			
 			if (_inBuffer.size() != 0) {
 				distanceAttenuation.Process(_inBuffer, _outBuffer, _sourceTransform, _listenerTransform);				
 			}  
@@ -79,10 +71,9 @@ namespace BRTEnvironmentModel {
 	
 	private:
 		/// Atributes
-		mutable std::mutex mutex; // Thread management
-		Common::CGlobalParameters globalParameters; // Get access to global render parameters
-		
-		BRTProcessing::CDistanceAttenuation distanceAttenuation; // Distance attenuation processor
+		mutable std::mutex mutex;								// Thread management
+		Common::CGlobalParameters globalParameters;				// Get access to global render parameters		
+		BRTProcessing::CDistanceAttenuator distanceAttenuation; // Distance attenuation processor
 		//CWaveGuide waveGuide;		
 		//CLongDistanceFilter longDistanceFilter;
 		
