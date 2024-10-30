@@ -119,6 +119,12 @@ namespace BRTEnvironmentModel {
 			virtualSource->SetBuffer(outBuffer);													
 		}
 
+		void Clear() {
+			brtManager->RemoveSoundSource("FreeField_" + originalSourceID);
+			originalSourceID = "";
+			initialized = false;
+		}
+
 		void ResetProcessBuffers() {
 		
 		}

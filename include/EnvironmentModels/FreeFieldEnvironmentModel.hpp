@@ -50,6 +50,7 @@ namespace BRTEnvironmentModel {
 			*/
 			void Clear(BRTBase::CBRTManager * brtManager) {
 				sourceID = "";
+				freeFieldProcessor->Clear();
 				brtManager->RemoveProcessor(freeFieldProcessor);				
 			}
 			
