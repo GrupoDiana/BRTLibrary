@@ -32,68 +32,15 @@ namespace BRTSourceModel {
 	class CSourceDirectivityModel : public BRTBase::CSourceModelBase, BRTProcessing::CDirectivityTFConvolver {
 
 	public:			
-		CSourceDirectivityModel(std::string _sourceID) : BRTBase::CSourceModelBase(_sourceID) {
-			SetSourceType(TSourceType::Directivity);
+		CSourceDirectivityModel(std::string _sourceID)
+			: BRTBase::CSourceModelBase(_sourceID, TSourceType::Directivity) {			
 			CreatePositionEntryPoint("listenerPosition");
 		}
 
-		/**
-		 * @brief Update method of the Source directivity model
-		 * @param _entryPointID ID of the entry ponint to do the update
-		*/
-		void Update(std::string _entryPointID) {
-			std::lock_guard<std::mutex> l(mutex);
-
-			if (_entryPointID == "samples") {
-
-				CMonoBuffer<float> outBuffer;
-				CMonoBuffer<float> inBuffer = GetBuffer();
-				Common::CTransform sourcePosition = GetCurrentSourceTransform();
-				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
-				if (inBuffer.size() != 0) {
-					Process(inBuffer, outBuffer, sourcePosition, listenerPosition, sourceDirectivityTF);
-					SendData(outBuffer);
-				}
-			}			
-		}
 		
-		/**
-		 * @brief Update to check to internal OSC commands
-		*/
-		void UpdateCommand() {
-			std::lock_guard<std::mutex> l(mutex);
-			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
-			
-			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
-				if (command.GetCommand() == "/source/location") {
-					Common::CVector3 location = command.GetVector3Parameter("location");										
-					Common::CTransform sourceTransform = GetCurrentSourceTransform();
-					sourceTransform.SetPosition(location);
-					SetSourceTransform(sourceTransform);
-				}
-				else if (command.GetCommand() == "/source/orientation") {
-					Common::CVector3 orientationYawPitchRoll = command.GetVector3Parameter("orientation");										
-					Common::CQuaternion orientation;
-					orientation = orientation.FromYawPitchRoll(orientationYawPitchRoll.x, orientationYawPitchRoll.y, orientationYawPitchRoll.z);
-					
-					Common::CTransform sourceTransform = GetCurrentSourceTransform();
-					sourceTransform.SetOrientation(orientation);
-					SetSourceTransform(sourceTransform);
-				}
-				else if (command.GetCommand() == "/source/orientationQuaternion") {
-					Common::CQuaternion orientation = command.GetQuaternionParameter("orientation");
-					Common::CTransform sourceTransform = GetCurrentSourceTransform();
-					sourceTransform.SetOrientation(orientation);
-					SetSourceTransform(sourceTransform);
-				}
-				else if(command.GetCommand() == "/source/enableDirectivity") {
-					if (command.GetBoolParameter("enable")) { EnableSourceDirectionality(); }
-					else { DisableSourceDirectionality(); }
-				} else if (command.GetCommand() == "/source/resetBuffers") {
-					ResetSourceConvolutionBuffers();
-				}
-			}
-		}
+		
+		
+		
 
 		/** \brief SET DirectivityTF of source
 		*	\param[in] pointer to DirectivityTF to be stored
@@ -138,8 +85,50 @@ namespace BRTSourceModel {
 			ResetSourceConvolutionBuffers();
 		}
 
+
+		/**
+		 * @brief Update method of the Source directivity model
+		 * @param _entryPointID ID of the entry ponint to do the update
+		*/
+		void Update(std::string _entryPointID) override {
+			std::lock_guard<std::mutex> l(mutex);
+
+			if (_entryPointID == "samples") {
+
+				CMonoBuffer<float> outBuffer;
+				CMonoBuffer<float> inBuffer = GetBuffer();
+				Common::CTransform sourcePosition = GetCurrentSourceTransform();
+				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
+				if (inBuffer.size() != 0) {
+					Process(inBuffer, outBuffer, sourcePosition, listenerPosition, sourceDirectivityTF);
+					SendData(outBuffer);
+				}
+			}
+		}
+
+
+		/**
+		* @brief Implementation of the virtual method for processing the received commands
+		* The SourceModelBase class already handles the common commands. Here you have to manage the specific ones.
+		*/
+		void UpdateCommandSource() override {			
+			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
+
+			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {				
+				if (command.GetCommand() == "/source/enableDirectivity") {
+					if (command.GetBoolParameter("enable")) {
+						EnableSourceDirectionality();
+					} else {
+						DisableSourceDirectionality();
+					}
+				} else if (command.GetCommand() == "/source/resetBuffers") {
+					ResetSourceConvolutionBuffers();
+				}
+			}
+		}
+
 	private:		
-		mutable std::mutex mutex;
+		//mutable std::mutex mutex;
 		std::shared_ptr<BRTServices::CDirectivityTF> sourceDirectivityTF;			// Directivity of the source
 		Common::CGlobalParameters globalParameters;
 		

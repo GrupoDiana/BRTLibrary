@@ -27,8 +27,31 @@
 #include <Base/ExitPointManager.hpp>
 
 namespace BRTBase {
-	class CBRTConnectivity: public CAdvancedEntryPointManager, public CExitPointManager { 
+	class CBRTConnectivity : public CAdvancedEntryPointManager, public CExitPointManager, public CCommandEntryPointManager { 
 	
+	public:
+
+		CBRTConnectivity() {
+			CreateCommandEntryPoint();
+		}
+
+		/**
+         * @brief This method shall be called whenever a command is received at the command entry point.
+        */
+		virtual void UpdateCommand() = 0;
+
+	private:
+		/**
+         * @brief In this method, notification is received that a new command is received at command entry point
+         * @param entryPointID 
+        */
+		void UpdateFromCommandEntryPoint(std::string entryPointID) override {
+			BRTBase::CCommand _command = GetCommandEntryPoint()->GetData();
+			if (!_command.isNull()) {
+				UpdateCommand();
+			}
+		}
+
 	};
 }
 #endif

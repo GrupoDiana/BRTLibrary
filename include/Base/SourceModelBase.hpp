@@ -24,26 +24,26 @@
 #define _SOUND_SOURCE_MODEL_BASE_HPP
 
 
-#include <Base/EntryPointManager.hpp>
-#include <Base/CommandEntryPointManager.hpp>
-#include <Base/ExitPointManager.hpp>
-
+//#include <Base/EntryPointManager.hpp>
+//#include <Base/CommandEntryPointManager.hpp>
+//#include <Base/ExitPointManager.hpp>
 #include <vector>
+#include <Base/BRTConnectivity.hpp>
 
 namespace BRTBase {
 
-	class CSourceModelBase : public CCommandEntryPointManager, public CExitPointManager, public CEntryPointManager {
+	class CSourceModelBase : public CBRTConnectivity /*public CCommandEntryPointManager, public CExitPointManager, public CEntryPointManager*/ {
 	public:		
 		virtual ~CSourceModelBase() {}						
 		virtual void Update(std::string entryPointID) = 0;
-		virtual void UpdateCommand() = 0;
+		virtual void UpdateCommandSource() = 0;
 
 		enum TSourceType {Simple, Directivity, Virtual};
 		
-		CSourceModelBase(std::string _sourceID)
+		CSourceModelBase(std::string _sourceID, TSourceType _sourceType)
 			: dataReady { false }
 			, sourceID { _sourceID }
-			, sourceType {Simple} {
+			, sourceType { _sourceType } {
 			
 			CreateSamplesExitPoint("samples");
 			CreateTransformExitPoint();
@@ -53,7 +53,9 @@ namespace BRTBase {
 
 			CreateCommandEntryPoint();
 		}
-
+		
+		
+		
 		void SetBuffer(const CMonoBuffer<float>& _buffer) { 
 			samplesBuffer = _buffer; 
 			dataReady = true;
@@ -101,22 +103,61 @@ namespace BRTBase {
 		
 		std::string GetID() { return sourceID; }
 
-		// Update callback
-		void UpdateEntryPointData(std::string entryPointID) {
+
+
+
+		
+		/**
+		* @brief Manages the reception of new data by an entry point. 
+		* Only entry points that have a notification make a call to this method.
+		*/
+		void UpdateEntryPointData(std::string entryPointID) override {
 			Update(entryPointID);
 		}
-		void updateFromCommandEntryPoint(std::string entryPointID) {			   
+
+
+		void UpdateCommand() override {
+			
+			std::lock_guard<std::mutex> l(mutex);
+			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
+
+			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
+				if (command.GetCommand() == "/source/location") {
+					Common::CVector3 location = command.GetVector3Parameter("location");
+					Common::CTransform sourceTransform = GetCurrentSourceTransform();
+					sourceTransform.SetPosition(location);
+					SetSourceTransform(sourceTransform);
+				} else if (command.GetCommand() == "/source/orientation") {
+					Common::CVector3 orientationYawPitchRoll = command.GetVector3Parameter("orientation");
+					Common::CQuaternion orientation;
+					orientation = orientation.FromYawPitchRoll(orientationYawPitchRoll.x, orientationYawPitchRoll.y, orientationYawPitchRoll.z);
+
+					Common::CTransform sourceTransform = GetCurrentSourceTransform();
+					sourceTransform.SetOrientation(orientation);
+					SetSourceTransform(sourceTransform);
+				} else if (command.GetCommand() == "/source/orientationQuaternion") {
+					Common::CQuaternion orientation = command.GetQuaternionParameter("orientation");
+					Common::CTransform sourceTransform = GetCurrentSourceTransform();
+					sourceTransform.SetOrientation(orientation);
+					SetSourceTransform(sourceTransform);
+				}
+			}
+			
+			UpdateCommandSource();
+		}
+
+		/*void updateFromCommandEntryPoint(std::string entryPointID) {			   
 			BRTBase::CCommand _command = GetCommandEntryPoint()->GetData();
 			if (!_command.isNull()) {
 				UpdateCommand();
 			}
-		}
+		}*/
 						
 		bool IsToMySoundSource(std::string _sourceID) {
 			return GetID() == _sourceID;
 		}
 
-	private:
+	private:		
 		std::string sourceID;		
 		TSourceType sourceType;
 
@@ -124,6 +165,9 @@ namespace BRTBase {
 		Common::CTransform sourceTransform;
 		CMonoBuffer<float> samplesBuffer;			
 		Common::CGlobalParameters globalParameters;
+
+	protected:
+		mutable std::mutex mutex;		// To avoid access collisions
 	};
 }
 #endif

@@ -40,10 +40,9 @@ namespace BRTBase {
         bool received;
     };
 
-    class CAdvancedEntryPointManager : public CEntryPointManager, public CCommandEntryPointManager {
+    class CAdvancedEntryPointManager : public CEntryPointManager {
     public:
-        CAdvancedEntryPointManager() {
-            CreateCommandEntryPoint();
+        CAdvancedEntryPointManager() {        
         }
 
         virtual ~CAdvancedEntryPointManager() {}
@@ -52,7 +51,7 @@ namespace BRTBase {
          * @brief This method will be called when data has been received at all input points with notification.
          * @param entryPointID 
         */
-        virtual void AllEntryPointsAllDataReady() = 0;
+		virtual void AllEntryPointsAllDataReady() { };
         
         /**
          * @brief This method will be called when all expected data is present at an entry point. 
@@ -65,33 +64,16 @@ namespace BRTBase {
          * @param entryPointID 
         */
         virtual void OneEntryPointOneDataReceived(std::string entryPointID) {};                      
-        
-        /**
-         * @brief This method shall be called whenever a command is received at the command entry point.
-        */
-        virtual void UpdateCommand() = 0;
+                
        
-
-        ////////////////////////////////////////////////////////////////
-        /// Implementation of EntryPointManager virtual methods
-        ///////////////////////////////////////////////////////////////
-        /**
-         * @brief In this method, notification is received that a new command is received at command entry point
-         * @param entryPointID 
-        */
-        void updateFromCommandEntryPoint(std::string entryPointID) {
-
-            BRTBase::CCommand _command = GetCommandEntryPoint()->GetData();
-            if (!_command.isNull()) {
-                UpdateCommand();
-            }
-        }
+    private:                                                 
+        /// Implementation of EntryPointManager virtual methods                
 
         /**
          * @brief In this method, notification is received that new data has been received at any entry point with multiplicity greater than zero.
          * @param entryPointID 
         */
-        void UpdateEntryPointData(std::string entryPointID) {                        
+        void UpdateEntryPointData(std::string entryPointID) override {                        
             UpdateEntryPointWaitingList(entryPointID);                
         }
 
@@ -100,14 +82,19 @@ namespace BRTBase {
          * @param _id  EntryPoint ID
          * @param _multiplicity EntryPoint multiplicity
         */
-        void EntryPointCreated(std::string _entryPointID, bool _notify) {
+        void EntryPointCreated(std::string _entryPointID, bool _notify) override {
             if (_notify) {
                 CDataWaitingEntryPoint temp(_entryPointID);
                 entryPointsWaitingList.push_back(temp);
             }
         }
-
-        void UpdateEntryPointConnections(std::string _entryPointID, int _numberOfConnections) {
+        
+        /**
+         * @brief A call to this method is received when an entry point connection is added
+         * @param _entryPointID Entry point referred to.
+         * @param _numberOfConnections New number of connections to this entry point
+         */
+        void UpdateEntryPointConnections(std::string _entryPointID, int _numberOfConnections) override {
             std::vector<CDataWaitingEntryPoint>::iterator it;
             it = std::find_if(entryPointsWaitingList.begin(), entryPointsWaitingList.end(), [&_entryPointID](CDataWaitingEntryPoint const& obj) {
                 return obj.id == _entryPointID;
@@ -117,14 +104,12 @@ namespace BRTBase {
             }
         };
                 
-
-        
-        
-    private:                                       
-
-        std::vector< CDataWaitingEntryPoint> entryPointsWaitingList;  
-        
-       
+                    
+        /// Waiting list mangement methods
+		/**
+		 * @brief Update the waiting list of entry points
+		 * @param _entryPointID 
+		*/
         void UpdateEntryPointWaitingList(std::string _entryPointID) {
             std::vector<CDataWaitingEntryPoint>::iterator it;
             it = std::find_if(entryPointsWaitingList.begin(), entryPointsWaitingList.end(), [&_entryPointID](CDataWaitingEntryPoint const& obj) {
@@ -149,8 +134,7 @@ namespace BRTBase {
             else {
                 // TODO error, why are we receiving this?
                 SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There is no entre point registered with this ID: " + _entryPointID);
-            }
-            //return false;
+            }            
         }
 
         /**
@@ -166,6 +150,9 @@ namespace BRTBase {
             return ready;
         }
 
+        /**
+		 * @brief Reset the waiting list of entry points
+		*/
         void ResetEntryPointWaitingList() {
             typename std::vector<CDataWaitingEntryPoint>::iterator it;
             for (it = entryPointsWaitingList.begin(); it != entryPointsWaitingList.end(); it++) {
@@ -173,6 +160,10 @@ namespace BRTBase {
                 it->timesReceived = 0;
             }
         }
+		
+        // Attributes
+		std::vector<CDataWaitingEntryPoint> entryPointsWaitingList;    
+
     };
 }
 #endif

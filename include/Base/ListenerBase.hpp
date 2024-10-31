@@ -24,9 +24,10 @@
 #define _CLISTENER_BASE_H_
 
 #include <memory>
-#include <Base/EntryPointManager.hpp>
-#include <Base/CommandEntryPointManager.hpp>
-#include <Base/ExitPointManager.hpp>
+//#include <Base/EntryPointManager.hpp>
+//#include <Base/CommandEntryPointManager.hpp>
+//#include <Base/ExitPointManager.hpp>
+#include <Base/BRTConnectivity.hpp>
 #include <Base/ListenerModelBase.hpp>
 #include <Common/CommonDefinitions.hpp>
 
@@ -36,7 +37,7 @@ namespace BRTServices {
 
 namespace BRTBase {
 	
-	class CListenerBase: public CCommandEntryPointManager, public CExitPointManager, public CEntryPointManager {
+	class CListenerBase: public CBRTConnectivity/*CCommandEntryPointManager, public CExitPointManager, public CEntryPointManager*/ {
 	public:
 		
 		CListenerBase(std::string _listenerID) : listenerID{ _listenerID }, 
@@ -101,7 +102,7 @@ namespace BRTBase {
 		// Update Callbacks
 		/////////////////////
 		
-		void UpdateEntryPointData(std::string id) {
+		void UpdateEntryPointData(std::string id) override {
 			if (id == "leftEar") {
 				UpdateLeftBuffer();
 			}
@@ -110,12 +111,15 @@ namespace BRTBase {
 			}
 		}
 		
-		void updateFromCommandEntryPoint(std::string entryPointID) {
-			BRTBase::CCommand _command = GetCommandEntryPoint()->GetData();
-			if (!_command.isNull()) {
-				//UpdateCommand();
-			}
-		}						
+		void UpdateCommand() override {
+			//Do nothing		
+		}
+		//void UpdateFromCommandEntryPoint(std::string entryPointID) override {
+		//	BRTBase::CCommand _command = GetCommandEntryPoint()->GetData();
+		//	if (!_command.isNull()) {
+		//		//UpdateCommand();
+		//	}
+		//}						
 
 	private:
 				

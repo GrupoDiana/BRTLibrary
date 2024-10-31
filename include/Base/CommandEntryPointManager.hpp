@@ -31,13 +31,18 @@
 namespace BRTBase {
     class CCommandEntryPointManager {
     public:
+		
+        /**
+         * @brief This method will be called when a command has been received at command entry point
+         * @param entryPointID Not needed
+        */
+        virtual void UpdateFromCommandEntryPoint(std::string entryPointID) = 0;
 
-        virtual void updateFromCommandEntryPoint(std::string entryPointID) = 0;
 
         void CreateCommandEntryPoint(/*std::string entryPointID = "command", int _multiplicity = 1*/) {
             std::string entryPointID = static_cast<std::string>(Common::COMMAND_ENTRY_POINT_ID);
             int _multiplicity = 1;
-            commandsEntryPoint = std::make_shared<BRTBase::CEntryPointCommand>(std::bind(&CCommandEntryPointManager::updateFromCommandEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+            commandsEntryPoint = std::make_shared<BRTBase::CEntryPointCommand>(std::bind(&CCommandEntryPointManager::UpdateFromCommandEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
         }
 
         void connectCommandEntryTo(std::shared_ptr<BRTBase::CExitPointCommand> _exitPoint) {

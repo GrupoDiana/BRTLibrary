@@ -30,11 +30,14 @@ namespace BRTSourceModel {
 	class CSourceSimpleModel : public BRTBase::CSourceModelBase {
 
 	public:			
-		CSourceSimpleModel(std::string _sourceID) : BRTBase::CSourceModelBase(_sourceID) {	
-			SetSourceType(TSourceType::Simple);
+		CSourceSimpleModel(std::string _sourceID)
+			: BRTBase::CSourceModelBase(_sourceID, TSourceType::Simple) {			
 		}
 
-		void Update(std::string _entryPointID) {
+		
+		
+		
+		void Update(std::string _entryPointID) override{
 			std::lock_guard<std::mutex> l(mutex);
 
 			if (_entryPointID == "samples") {
@@ -43,37 +46,16 @@ namespace BRTSourceModel {
 			}
 		}
 			
-		void UpdateCommand() {
-			std::lock_guard<std::mutex> l(mutex);
-			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
-
-			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
-				if (command.GetCommand() == "/source/location") {
-					Common::CVector3 location = command.GetVector3Parameter("location");
-					Common::CTransform sourceTransform = GetCurrentSourceTransform();
-					sourceTransform.SetPosition(location);
-					SetSourceTransform(sourceTransform);
-				}
-				else if (command.GetCommand() == "/source/orientation") {
-					Common::CVector3 orientationYawPitchRoll = command.GetVector3Parameter("orientation");
-					Common::CQuaternion orientation;
-					orientation = orientation.FromYawPitchRoll(orientationYawPitchRoll.x, orientationYawPitchRoll.y, orientationYawPitchRoll.z);
-
-					Common::CTransform sourceTransform = GetCurrentSourceTransform();
-					sourceTransform.SetOrientation(orientation);
-					SetSourceTransform(sourceTransform);
-				}
-				else if (command.GetCommand() == "/source/orientationQuaternion") {
-					Common::CQuaternion orientation = command.GetQuaternionParameter("orientation");
-					Common::CTransform sourceTransform = GetCurrentSourceTransform();
-					sourceTransform.SetOrientation(orientation);
-					SetSourceTransform(sourceTransform);
-				}
-			}
+		/**
+		* @brief Implementation of the virtual method for processing the received commands
+		* The SourceModelBase class already handles the common commands. Here you have to manage the specific ones.
+		*/
+		void UpdateCommandSource() override {			
+			// Nothing extra to do
 		}
 
 	private:		
-		mutable std::mutex mutex;
+		//mutable std::mutex mutex;
 
 
 	};
