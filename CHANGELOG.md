@@ -5,6 +5,11 @@ All notable changes to the Binaural Rendering Toolbox (BRT) will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unrealease]
+
+### Fixed
+- Audio sources will not be erased properly when using the free field environment model.
+
 ## [1.7.0] - 2024-10-29
 
 ### Added
@@ -40,7 +45,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The BRIR charger supports truncation of the impulse responses both at the beginning and at the end. That is, you can fade-in and fade-out the impulse responses.
 
 ### Fixed
-
 - The source directivity file is not loaded if the buffer size does not match the set buffer size.
 
 ### Changed
