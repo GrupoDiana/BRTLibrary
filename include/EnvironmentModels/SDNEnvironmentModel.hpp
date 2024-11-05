@@ -263,7 +263,7 @@ namespace BRTEnvironmentModel {
 		*/
 		void UpdateCommand() override{
 			//std::lock_guard<std::mutex> l(mutex);
-			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();						
+			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();						
 			if (command.isNull() || command.GetCommand() == "") { return; }
 
 			std::string listenerID = GetIDEntryPoint("listenerID")->GetData();

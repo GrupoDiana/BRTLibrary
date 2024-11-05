@@ -24,9 +24,9 @@
 #define _EXIT_POINT_MANAGER_
 
 #include <Common/ErrorHandler.hpp>
-#include <Base/ExitPoint.hpp>
+#include <Connectivity/ExitPoint.hpp>
 
-namespace BRTBase {
+namespace BRTConnectivity {
     class CExitPointManager {
     public:
         /////////////////////
@@ -47,7 +47,7 @@ namespace BRTBase {
         *	\retval A pointer to this type of exit point or null if not found.
         *   \eh On error, an error code is reported to the error handler.
         */
-        std::shared_ptr<BRTBase::CExitPointTransform> GetTransformExitPoint() {
+		std::shared_ptr<BRTConnectivity::CExitPointTransform> GetTransformExitPoint() {
             if (transformExitPoint != nullptr)  { return transformExitPoint; }
             ASSERT(false, RESULT_ERROR_NOTINITIALIZED, "The exit point of type Transform has not been initialised.", "Call CExitPointManager::CreateTransformExitPoint() in your constructor.");
             return nullptr;
@@ -62,7 +62,7 @@ namespace BRTBase {
         *   \eh On error, an error code is reported to the error handler.
         */
         void CreateSamplesExitPoint(std::string exitPointID) {
-            std::shared_ptr<BRTBase::CExitPointSamplesVector> _newExitPoint = std::make_shared<BRTBase::CExitPointSamplesVector>(exitPointID);
+			std::shared_ptr<BRTConnectivity::CExitPointSamplesVector> _newExitPoint = std::make_shared<BRTConnectivity::CExitPointSamplesVector>(exitPointID);
             samplesExitPoints.push_back(_newExitPoint);
         }
         
@@ -71,7 +71,7 @@ namespace BRTBase {
         *	\retval A pointer to this type of exit point or null if not found.
         *   \eh On error, an error code is reported to the error handler.
         */
-        std::shared_ptr<BRTBase::CExitPointSamplesVector > GetSamplesExitPoint(std::string exitPointID) {
+		std::shared_ptr<BRTConnectivity::CExitPointSamplesVector> GetSamplesExitPoint(std::string exitPointID) {
             for (auto& it : samplesExitPoints) {
                 if (it->GetID() == exitPointID) { return it; }
             }
@@ -81,11 +81,11 @@ namespace BRTBase {
 
 
         void CreateMultipleSamplesExitPoint(std::string exitPointID) {
-            std::shared_ptr<BRTBase::CExitPointMultipleSamplesVector> _newExitPoint = std::make_shared<BRTBase::CExitPointMultipleSamplesVector>(exitPointID);
+			std::shared_ptr<BRTConnectivity::CExitPointMultipleSamplesVector> _newExitPoint = std::make_shared<BRTConnectivity::CExitPointMultipleSamplesVector>(exitPointID);
             multipleSamplesVectorExitPoints.push_back(_newExitPoint);
         }
 
-        std::shared_ptr<BRTBase::CExitPointMultipleSamplesVector > GetMultipleSamplesVectorExitPoint(std::string exitPointID) {
+        std::shared_ptr<BRTConnectivity::CExitPointMultipleSamplesVector> GetMultipleSamplesVectorExitPoint(std::string exitPointID) {
             for (auto& it : multipleSamplesVectorExitPoints) {
                 if (it->GetID() == exitPointID) { return it; }
             }
@@ -110,7 +110,7 @@ namespace BRTBase {
         *	\retval A pointer to this type of exit point or null if not found.
         *   \eh On error, an error code is reported to the error handler.
         */
-        std::shared_ptr<BRTBase::CExitPointID> GetIDExitPoint() {
+		std::shared_ptr<BRTConnectivity::CExitPointID> GetIDExitPoint() {
             if (moduleIDExitPoint!=nullptr) { return moduleIDExitPoint; }
             ASSERT(false, RESULT_ERROR_NOTINITIALIZED, "The exit point of type ID has not been initialised.", "Call CExitPointManager::CreateIDExitPoint() in your constructor.");
             return nullptr;
@@ -162,8 +162,8 @@ namespace BRTBase {
     
     private:
         std::shared_ptr<CExitPointTransform> transformExitPoint;
-        std::vector<std::shared_ptr<BRTBase::CExitPointSamplesVector >> samplesExitPoints;
-        std::vector<std::shared_ptr<BRTBase::CExitPointMultipleSamplesVector >> multipleSamplesVectorExitPoints;
+		std::vector<std::shared_ptr<BRTConnectivity::CExitPointSamplesVector>> samplesExitPoints;
+		std::vector<std::shared_ptr<BRTConnectivity::CExitPointMultipleSamplesVector>> multipleSamplesVectorExitPoints;
         std::shared_ptr<CExitPointID> moduleIDExitPoint;
         
         std::shared_ptr<CExitPointHRTFPtr>  hrtfExitPoint;

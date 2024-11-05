@@ -24,9 +24,9 @@
 #define _CLISTENER_H_
 
 #include <memory>
-#include <Base/EntryPointManager.hpp>
-#include <Base/CommandEntryPointManager.hpp>
-#include <Base/ExitPointManager.hpp>
+#include <Connectivity/EntryPointManager.hpp>
+#include <Connectivity/CommandEntryPointManager.hpp>
+#include <Connectivity/ExitPointManager.hpp>
 #include <Base/ListenerModelBase.hpp>
 #include <Base/EnvironmentModelBase.hpp>
 #include <ListenerModels/ListenerHRTFModel.hpp>

@@ -24,15 +24,12 @@
 #define _SOUND_SOURCE_MODEL_BASE_HPP
 
 
-//#include <Base/EntryPointManager.hpp>
-//#include <Base/CommandEntryPointManager.hpp>
-//#include <Base/ExitPointManager.hpp>
 #include <vector>
-#include <Base/BRTConnectivity.hpp>
+#include <Connectivity/BRTConnectivity.hpp>
 
 namespace BRTBase {
 
-	class CSourceModelBase : public CBRTConnectivity /*public CCommandEntryPointManager, public CExitPointManager, public CEntryPointManager*/ {
+	class CSourceModelBase : public BRTConnectivity::CBRTConnectivity /*public CCommandEntryPointManager, public CExitPointManager, public CEntryPointManager*/ {
 	public:		
 		virtual ~CSourceModelBase() {}						
 		virtual void Update(std::string entryPointID) = 0;
@@ -46,8 +43,7 @@ namespace BRTBase {
 			, sourceType { _sourceType } {
 			
 			CreateSamplesExitPoint("samples");
-			CreateTransformExitPoint();
-			
+			CreateTransformExitPoint();			
 			CreateIDExitPoint();
 			GetIDExitPoint()->sendData(sourceID);
 
@@ -119,7 +115,7 @@ namespace BRTBase {
 		void UpdateCommand() override {
 			
 			std::lock_guard<std::mutex> l(mutex);
-			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
+			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
 
 			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
 				if (command.GetCommand() == "/source/location") {

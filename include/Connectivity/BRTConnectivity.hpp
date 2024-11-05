@@ -23,10 +23,11 @@
 #ifndef _C_BRT_CONNECTIVITY_HPP_
 #define _C_BRT_CONNECTIVITY_HPP_
 
-#include <Base/AdvancedEntryPointManager.hpp>
-#include <Base/ExitPointManager.hpp>
+#include <Connectivity/AdvancedEntryPointManager.hpp>
+#include <Connectivity/ExitPointManager.hpp>
+#include <Connectivity/CommandEntryPointManager.hpp>
 
-namespace BRTBase {
+namespace BRTConnectivity {
 	class CBRTConnectivity : public CAdvancedEntryPointManager, public CExitPointManager, public CCommandEntryPointManager { 
 	
 	public:
@@ -46,7 +47,7 @@ namespace BRTBase {
          * @param entryPointID 
         */
 		void UpdateFromCommandEntryPoint(std::string entryPointID) override {
-			BRTBase::CCommand _command = GetCommandEntryPoint()->GetData();
+			BRTConnectivity::CCommand _command = GetCommandEntryPoint()->GetData();
 			if (!_command.isNull()) {
 				UpdateCommand();
 			}

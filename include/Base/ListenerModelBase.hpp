@@ -126,7 +126,8 @@ namespace BRTBase {
 
 		CListenerModelBase(std::string _listenerModelID, TListenerModelcharacteristics _listenerCharacteristics) 
 			: CModelBase(_listenerModelID)
-			, listenerCharacteristics{ _listenerCharacteristics }, leftDataReady { false }
+			, listenerCharacteristics{ _listenerCharacteristics }
+			, leftDataReady { false }
 			, rightDataReady { false } {
 												
 			CreateSamplesEntryPoint("leftEar");		// TODO is this necessary?
@@ -205,7 +206,7 @@ namespace BRTBase {
 		void UpdateCommand() override {
 			// TODO
 
-			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
+			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
 			if (command.isNull() || command.GetCommand() == "") {
 				return;
 			}

@@ -24,15 +24,15 @@
 #define _ENTRY_POINT_
 
 #include <functional>
-#include <Base/ExitPoint.hpp>
-#include <Base/ObserverBase.hpp>
+#include <Connectivity/ExitPoint.hpp>
+#include <Connectivity/ObserverBase.hpp>
 #include <Common/Buffer.hpp>
 #include <Common/Transform.hpp>
-#include <Base/Command.hpp>
+#include <Connectivity/Command.hpp>
 #include <ServiceModules/AmbisonicBIR.hpp>
 
 
-namespace BRTBase {
+namespace BRTConnectivity {
    
     template <class T>
     class CEntryPointBase : public Observer {
@@ -79,7 +79,7 @@ namespace BRTBase {
     using CEntryPointSamplesVector = CEntryPointBase<CMonoBuffer<float>>;
     using CEntryPointMultipleSamplesVector = CEntryPointBase<std::vector<CMonoBuffer<float>>>;
     using CEntryPointTransform = CEntryPointBase<Common::CTransform>;     
-    using CEntryPointCommand = CEntryPointBase<BRTBase::CCommand>;
+    using CEntryPointCommand = CEntryPointBase<BRTConnectivity::CCommand>;
     using CEntryPointID = CEntryPointBase<std::string>;
 
     using CEntryPointHRTFPtr = CEntryPointBase< std::weak_ptr<BRTServices::CHRTF> >;

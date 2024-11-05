@@ -24,12 +24,12 @@
 #define _CADVANCED_ENTRY_POINT_MANAGER_
 
 #include <Common/CommonDefinitions.hpp>
-#include <Base/EntryPointManager.hpp>
-#include <Base/CommandEntryPointManager.hpp>
-#include <Base/ExitPointManager.hpp>
+#include <Connectivity/EntryPointManager.hpp>
+#include <Connectivity/CommandEntryPointManager.hpp>
+#include <Connectivity/ExitPointManager.hpp>
 
 
-namespace BRTBase {    
+namespace BRTConnectivity {    
     class CDataWaitingEntryPoint {
     public:
         CDataWaitingEntryPoint(std::string _id) : id{ _id }, connections{ 0 }, received{ false }, timesReceived { 0} {}

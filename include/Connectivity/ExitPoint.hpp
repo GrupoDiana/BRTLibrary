@@ -25,15 +25,15 @@
 
 #include <iostream>
 #include <memory>
-#include <Base/ObserverBase.hpp>
+#include <Connectivity/ObserverBase.hpp>
 #include <Common/Buffer.hpp>
 #include <Common/Transform.hpp>
-#include <Base/Command.hpp>
+#include <Connectivity/Command.hpp>
 #include <ServiceModules/AmbisonicBIR.hpp>
 
 namespace BRTServices { class CHRTF; class CNearFieldCompensationFilters; class CDirectivityTF; class CHRBRIR; }
 
-namespace BRTBase {          
+namespace BRTConnectivity {          
     template <class T>
     class CExitPointBase : public Subject/*, public CEntryExitPointData<T>*/
     {
@@ -62,7 +62,7 @@ namespace BRTBase {
     using CExitPointSamplesVector = CExitPointBase<CMonoBuffer<float> >;
     using CExitPointMultipleSamplesVector = CExitPointBase<std::vector<CMonoBuffer<float>>>;
     using CExitPointTransform = CExitPointBase<Common::CTransform >;
-    using CExitPointCommand = CExitPointBase<BRTBase::CCommand>;
+    using CExitPointCommand = CExitPointBase<BRTConnectivity::CCommand>;
     using CExitPointID = CExitPointBase<std::string>;
 
     using CExitPointHRTFPtr = CExitPointBase< std::weak_ptr<BRTServices::CHRTF> >;

@@ -24,6 +24,7 @@
 #define _BRT_MANAGER_
 
 #include <thread>
+#include <Connectivity/ExitPoint.hpp>
 #include "SourceModelBase.hpp"
 #include "ListenerBase.hpp"
 #include "ListenerModelBase.hpp"
@@ -38,7 +39,7 @@ namespace BRTBase {
 	public:
 
 		CBRTManager() : initialized{ false }, setupModeActivated{ false } {
-			commandsExitPoint = std::make_shared<BRTBase::CExitPointCommand>(static_cast<std::string>(Common::COMMAND_EXIT_POINT_ID));
+			commandsExitPoint = std::make_shared<BRTConnectivity::CExitPointCommand>(static_cast<std::string>(Common::COMMAND_EXIT_POINT_ID));
 		}
 
 		/**
@@ -769,12 +770,12 @@ namespace BRTBase {
 		 * @param commandJson The command to execute following a json format.
 		*/
 		void ExecuteCommand(std::string commandJson) {			
-			BRTBase::CCommand command(commandJson);
+			BRTConnectivity::CCommand command(commandJson);
 			commandsExitPoint->sendData(command);																		
 		}
 
 	private:
-		std::shared_ptr<BRTBase::CExitPointCommand>			commandsExitPoint;	// Exit point to emit control commands
+		std::shared_ptr<BRTConnectivity::CExitPointCommand> commandsExitPoint; // Exit point to emit control commands
 		
 		std::vector<std::shared_ptr<CSourceModelBase>>		audioSources;		// List of audio sources 
 		std::vector<std::shared_ptr<CListenerBase>>			listeners;			// List of listeners		

@@ -23,14 +23,14 @@
 #ifndef _C_MODEL_BASE_HPP_
 #define _C_MODEL_BASE_HPP_
 
-#include <Base/BRTConnectivity.hpp>
+#include <Connectivity/BRTConnectivity.hpp>
 #include <SourceModels/SourceSimpleModel.hpp>
 #include <SourceModels/SourceDirectivityModel.hpp>
 #include <SourceModels/VirtualSourceModel.hpp>
 
 
 namespace BRTBase {
-	class CModelBase : public CBRTConnectivity {
+class CModelBase : public BRTConnectivity::CBRTConnectivity {
 	
 	protected:		
 		std::string modelID; // Store unique model ID	

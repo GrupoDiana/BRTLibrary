@@ -109,10 +109,14 @@ namespace BRTListenerModel {
 		};
 
 	public:
-		CListenerHRTFModel(std::string _listenerModelID, BRTBase::CBRTManager* _brtManager) : 
-			BRTBase::CListenerModelBase(_listenerModelID, BRTBase::TListenerModelcharacteristics(true, false, false, true, true, true, true, true)), 
-			brtManager{ _brtManager }, enableSpatialization{ true }, enableInterpolation{ true }, enableNearFieldEffect{ false }, enableParallaxCorrection{ true },
-			enableITDSimulation{ true }  {
+		CListenerHRTFModel(std::string _listenerModelID, BRTBase::CBRTManager* _brtManager) 
+			: BRTBase::CListenerModelBase(_listenerModelID, BRTBase::TListenerModelcharacteristics(true, false, false, true, true, true, true, true))
+			, brtManager{ _brtManager }
+			, enableSpatialization{ true }
+			, enableInterpolation{ true }
+			, enableNearFieldEffect{ false }
+			, enableParallaxCorrection{ true }
+			, enableITDSimulation{ true }  {
 			
 			
 			//listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// Create a empty HRTF		
@@ -414,7 +418,7 @@ namespace BRTListenerModel {
 		*/
 		void UpdateCommand() override {
 			//std::lock_guard<std::mutex> l(mutex);
-			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
+			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
 			if (command.isNull() || command.GetCommand() == "") {
 				return;
 			}

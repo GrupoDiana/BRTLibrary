@@ -25,14 +25,14 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
-#include <Base/BRTConnectivity.hpp>
+#include <Connectivity/BRTConnectivity.hpp>
 #include <Common/UPCAnechoic.hpp>
 #include <Common/Buffer.hpp>
 #include <ProcessingModules/AmbisonicDomainConvolver.hpp>
 
 
 namespace BRTProcessing {
-    class CAmbisonicDomainConvolverProcessor : public BRTBase::CBRTConnectivity, public CAmbisonicDomainConvolver {
+	class CAmbisonicDomainConvolverProcessor : public BRTConnectivity::CBRTConnectivity, public CAmbisonicDomainConvolver {
 		
     public:
 		CAmbisonicDomainConvolverProcessor(Common::T_ear _earToProcess) : CAmbisonicDomainConvolver(_earToProcess) {
@@ -77,7 +77,7 @@ namespace BRTProcessing {
 		void UpdateCommand() {					
 			
 			std::lock_guard<std::mutex> l(mutex);
-			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
+			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
 			if (command.isNull() || command.GetCommand() == "") { return; }
 
 			if (IsToMyListener(command.GetStringParameter("listenerID"))) { 				
@@ -131,7 +131,7 @@ namespace BRTProcessing {
 		 * @return true if yes
 		*/
 		bool IsToMyListener(std::string _listenerID) {						
-			std::shared_ptr<BRTBase::CEntryPointID> _listenerIDEntryPoint= GetIDEntryPoint("listenerID");
+			std::shared_ptr<BRTConnectivity::CEntryPointID> _listenerIDEntryPoint = GetIDEntryPoint("listenerID");
 			if (_listenerIDEntryPoint != nullptr) {
 				std::string myListenerID = _listenerIDEntryPoint->GetData();
 				return myListenerID == _listenerID;

@@ -25,10 +25,10 @@
 
 #include <vector>
 #include <memory>
-#include <Base/EntryPoint.hpp>
+#include <Connectivity/EntryPoint.hpp>
 #include <Common/CommonDefinitions.hpp>
 
-namespace BRTBase {
+namespace BRTConnectivity {
     class CCommandEntryPointManager {
     public:
 		
@@ -42,10 +42,10 @@ namespace BRTBase {
         void CreateCommandEntryPoint(/*std::string entryPointID = "command", int _multiplicity = 1*/) {
             std::string entryPointID = static_cast<std::string>(Common::COMMAND_ENTRY_POINT_ID);
             int _multiplicity = 1;
-            commandsEntryPoint = std::make_shared<BRTBase::CEntryPointCommand>(std::bind(&CCommandEntryPointManager::UpdateFromCommandEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+			commandsEntryPoint = std::make_shared<BRTConnectivity::CEntryPointCommand>(std::bind(&CCommandEntryPointManager::UpdateFromCommandEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
         }
 
-        void connectCommandEntryTo(std::shared_ptr<BRTBase::CExitPointCommand> _exitPoint) {
+        void connectCommandEntryTo(std::shared_ptr<BRTConnectivity::CExitPointCommand> _exitPoint) {
             std::string entryPointID = static_cast<std::string>(Common::COMMAND_ENTRY_POINT_ID);
             //if (_entryPoint) {
             _exitPoint->attach(*commandsEntryPoint.get());
@@ -56,7 +56,7 @@ namespace BRTBase {
             //}
         }
 
-        void disconnectCommandEntryTo(std::shared_ptr<BRTBase::CExitPointCommand> _exitPoint) {
+        void disconnectCommandEntryTo(std::shared_ptr<BRTConnectivity::CExitPointCommand> _exitPoint) {
             std::string entryPointID = static_cast<std::string>(Common::COMMAND_ENTRY_POINT_ID);
             //if (_entryPoint) {
             _exitPoint->detach(commandsEntryPoint.get());
@@ -67,12 +67,12 @@ namespace BRTBase {
             //}
         }
 
-        std::shared_ptr<BRTBase::CEntryPointCommand >  GetCommandEntryPoint() {
+        std::shared_ptr<BRTConnectivity::CEntryPointCommand> GetCommandEntryPoint() {
             return commandsEntryPoint;
         }
     
     private:
-        std::shared_ptr<BRTBase::CEntryPointCommand> commandsEntryPoint;
+		std::shared_ptr<BRTConnectivity::CEntryPointCommand> commandsEntryPoint;
 
     };
 }

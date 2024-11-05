@@ -24,10 +24,7 @@
 #define _CLISTENER_BASE_H_
 
 #include <memory>
-//#include <Base/EntryPointManager.hpp>
-//#include <Base/CommandEntryPointManager.hpp>
-//#include <Base/ExitPointManager.hpp>
-#include <Base/BRTConnectivity.hpp>
+#include <Connectivity/BRTConnectivity.hpp>
 #include <Base/ListenerModelBase.hpp>
 #include <Common/CommonDefinitions.hpp>
 
@@ -37,7 +34,7 @@ namespace BRTServices {
 
 namespace BRTBase {
 	
-	class CListenerBase: public CBRTConnectivity/*CCommandEntryPointManager, public CExitPointManager, public CEntryPointManager*/ {
+	class CListenerBase : public BRTConnectivity::CBRTConnectivity /*CCommandEntryPointManager, public CExitPointManager, public CEntryPointManager*/ {
 	public:
 		
 		CListenerBase(std::string _listenerID) : listenerID{ _listenerID }, 

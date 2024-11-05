@@ -26,7 +26,7 @@
 #include <vector>
 #include <iostream>
 
-namespace BRTBase {
+namespace BRTConnectivity {
 
     class Subject;
 

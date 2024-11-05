@@ -25,15 +25,15 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
-#include <Base/AdvancedEntryPointManager.hpp>
-#include <Base/ExitPointManager.hpp>
+#include <Connectivity/AdvancedEntryPointManager.hpp>
+#include <Connectivity/ExitPointManager.hpp>
 #include <Common/UPCAnechoic.hpp>
 #include <Common/Buffer.hpp>
 #include <ProcessingModules/BilateralAmbisonicEncoder.hpp>
 
 
 namespace BRTProcessing {
-    class CBilateralAmbisonicEncoderProcessor : public BRTBase::CBRTConnectivity,  public CBilateralAmbisonicEncoder {
+class CBilateralAmbisonicEncoderProcessor : public BRTConnectivity::CBRTConnectivity, public CBilateralAmbisonicEncoder {
 		
     public:
 		CBilateralAmbisonicEncoderProcessor() {
@@ -91,7 +91,7 @@ namespace BRTProcessing {
 		*/
 		void UpdateCommand() {					
 						
-			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
+			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
 			if (command.isNull() || command.GetCommand() == "") { return; }
 
 			if (IsToMyListener(command.GetStringParameter("listenerID"))) {

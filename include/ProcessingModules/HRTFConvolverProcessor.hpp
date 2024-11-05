@@ -25,7 +25,7 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
-#include <Base/BRTConnectivity.hpp>
+#include <Connectivity/BRTConnectivity.hpp>
 #include <Common/UPCAnechoic.hpp>
 #include <Common/Buffer.hpp>
 #include <ServiceModules/ServicesBase.hpp>
@@ -34,7 +34,7 @@
 
 
 namespace BRTProcessing {
-    class CHRTFConvolverProcessor : public BRTBase::CBRTConnectivity, public CHRTFConvolver {
+class CHRTFConvolverProcessor : public BRTConnectivity::CBRTConnectivity, public CHRTFConvolver {
 		
     public:
 		CHRTFConvolverProcessor() {
@@ -96,7 +96,7 @@ namespace BRTProcessing {
 		void UpdateCommand() override {					
 			
 			std::lock_guard<std::mutex> l(mutex);
-			BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
+			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
 			if (command.isNull() || command.GetCommand() == "") { return; }
 
 			if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
