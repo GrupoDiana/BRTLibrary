@@ -29,6 +29,7 @@
 #include "ListenerBase.hpp"
 #include "ListenerModelBase.hpp"
 #include "EnvironmentModelBase.hpp"
+#include <BinauralFilter/BinauralFilterBase.hpp>
 #include "third_party_libraries/nlohmann/json.hpp"
 
 namespace BRTBase {
@@ -214,14 +215,7 @@ namespace BRTBase {
 		 * @return Pointer to listener if exist, if not returns nullptr
 		*/
 		template <typename T>
-		std::shared_ptr<T> GetListenerModel(const std::string& _listenerModelID) { 		
-			/*for (auto& it : listenerModels) {
-				if (it->GetID() == _listenerModelID) {
-					return it;
-				}
-			}
-			return nullptr;*/
-
+		std::shared_ptr<T> GetListenerModel(const std::string& _listenerModelID) { 					
 			return FindModel(listenerModels, _listenerModelID);
 		}
 
@@ -243,10 +237,7 @@ namespace BRTBase {
 			}
 			return false;
 		}
-		
-	
-
-		
+					
 		/**
 		 * @brief Creates a new environment and returns a pointer to it. The brtmanager does NOT save the pointer.
 		 * @tparam T It must be a environment module, i.e. a class that inherits from the CEnvironmentBase class.
@@ -390,7 +381,59 @@ namespace BRTBase {
 			return true;
 		}
 
+		/**
+		 * @brief Creates a new binaural filter and returns a pointer to it. This binaural filter pointer is also saved in a vector.
+		 * @tparam T It must be a binaural filter, i.e. a class that inherits from the CBinauralFilterBase class.
+		 * @param _binauralFilterID ID to be assigned to the binaural filter. It must be unique and cannot be changed.
+		 * @return Returns the pointer to the binaural filter if it could be created, otherwise returns a null pointer.
+		*/
+		template <typename T>
+		std::shared_ptr<T> CreateBinauralFilter(const std::string & _binauralFilterID) {
+			try {
+				if (!setupModeActivated) {
+					SET_RESULT(RESULT_ERROR_NOTALLOWED, "BRT library is not in configuration mode");
+					return nullptr;
+				}
+				auto it = std::find_if(binauralFilters.begin(), binauralFilters.end(), [&_binauralFilterID](std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase> & binauralFilterItem) { return binauralFilterItem->GetModelID() == _binauralFilterID; });
+				if (it != binauralFilters.end()) {
+					SET_RESULT(RESULT_ERROR_NOTALLOWED, "A binaural filter with such an ID already exists.");
+					return nullptr;
+				}
+
+				std::shared_ptr<T> newBinauralFilter = std::make_shared<T>(_binauralFilterID, this);
+				ConnectModulesCommand(newBinauralFilter);
+				binauralFilters.push_back(newBinauralFilter);
+				SET_RESULT(RESULT_OK, "Binaural filter created succesfully");
+				return newBinauralFilter;
+			} catch (std::bad_alloc & ba) {
+				ASSERT(false, RESULT_ERROR_BADALLOC, ba.what(), "");
+				return nullptr;
+			}
+		}
 		
+		/**
+		 * @brief Returns pointer to a listener found by its ID
+		 * @tparam T Listener class model
+		 * @param _listenerID listenerID
+		 * @return Pointer to listener if exist, if not returns nullptr
+		*/
+		template <typename T>
+		std::shared_ptr<T> GetBinauralFilter(const std::string & _binauralFilterID) {
+			return FindModel(binauralFilters, _binauralFilterID);
+		}
+
+		/**
+		 * @brief Returns true if the binaural filter exists
+		 * @param _binauralFilterID ID of the binaural filter to be checked
+		 * @return true if the binaural filter exists, false otherwise
+		 */
+		bool IsBinauraFilter(const std::string & _binauralFilterID) {
+			if (FindModel(binauralFilters, _binauralFilterID) != nullptr) {
+				return true;
+			}
+			return false;
+		}
+
 		///////////////////////////////////////////
 		// MODULES CONNECTIONs
 		///////////////////////////////////////////
@@ -780,7 +823,8 @@ namespace BRTBase {
 		std::vector<std::shared_ptr<CSourceModelBase>>		audioSources;		// List of audio sources 
 		std::vector<std::shared_ptr<CListenerBase>>			listeners;			// List of listeners		
 		std::vector<std::shared_ptr<CListenerModelBase>>	listenerModels;		// List of listener Models
-		std::vector<std::shared_ptr<CEnviromentModelBase>>	environmentModels; // List of virtual sources environments
+		std::vector<std::shared_ptr<CEnviromentModelBase>>	environmentModels;  // List of virtual sources environments
+		std::vector<std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase>> binauralFilters;		// List of binaural filters
 
 		bool initialized;
 		bool setupModeActivated;

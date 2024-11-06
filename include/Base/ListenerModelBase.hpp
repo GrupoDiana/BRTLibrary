@@ -138,6 +138,7 @@ namespace BRTBase {
 			CreateSamplesExitPoint("leftEar");
 			CreateSamplesExitPoint("rightEar");
 			CreateIDEntryPoint("listenerID");
+			CreateIDEntryPoint("binauralFilterID");
 			GetIDExitPoint()->sendData(modelID);						
 			CreateCommandEntryPoint();
 		}
@@ -155,15 +156,11 @@ namespace BRTBase {
 		TListenerModelcharacteristics GetListenerModelCharacteristics() const { return listenerCharacteristics; }
 		
 		/**
-		 * @brief Check if this listener model is connected to a listener
+		 * @brief Check if this listener model is already connected to a listener or a binaural filter
 		 * @return True if connected, false otherwise
-		 */
-		bool IsConnectedToListener() { 
-			std::string _listenerID = GetIDEntryPoint("listenerID")->GetData();
-			if (_listenerID != "") {
-				return true;
-			}
-			return false; 
+		 */ 
+		bool IsAlreadyConnected() {
+			return IsConnectedToListener() || IsConnectedToBinauralFilter();
 		}
 
 		/////////////////////		
@@ -231,7 +228,29 @@ namespace BRTBase {
 		//////////////////////////
 		// Private Methods
 		/////////////////////////
-				
+		/**
+		 * @brief Check if this listener model is connected to a listener
+		 * @return True if connected, false otherwise
+		 */
+		bool IsConnectedToListener() {
+			std::string _listenerID = GetIDEntryPoint("listenerID")->GetData();
+			if (_listenerID != "") {
+				return true;
+			}
+			return false;
+		}
+
+		/**
+		 * @brief Check if this listener model is connected to a binaural filter
+		 * @return True if connected, false otherwise
+		 */
+		bool IsConnectedToBinauralFilter() {
+			std::string _binauralFilterID = GetIDEntryPoint("binauralFilterID")->GetData();
+			if (_binauralFilterID != "") {
+				return true;
+			}
+			return false;
+		}
 		
 		///**
 		// * @brief Mix the new buffer received with the contents of the buffer.

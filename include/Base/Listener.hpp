@@ -57,7 +57,7 @@ namespace BRTBase {
 		bool ConnectListenerModel(std::shared_ptr<CListenerModelBase> _listenerModel, Common::T_ear _ear = Common::T_ear::BOTH) {
 			
 			if (_listenerModel == nullptr) return false;
-			if (_listenerModel->IsConnectedToListener()) { return false; };
+			if (_listenerModel->IsAlreadyConnected()) return false;
 			
 			bool control;
 			control = brtManager->ConnectModuleID(this, _listenerModel, "listenerID");
@@ -79,7 +79,7 @@ namespace BRTBase {
 			}
 						
 			listenerModelsConnected.push_back(_listenerModel);
-			SendID();			
+			SendMyID();			
 			return control;
 		};
 
@@ -106,7 +106,7 @@ namespace BRTBase {
 		bool DisconnectListenerModel(std::shared_ptr<CListenerModelBase> _listenerModel, Common::T_ear _ear = Common::T_ear::BOTH) {
 
 			if (_listenerModel == nullptr) return false;
-			if (_listenerModel->IsConnectedToListener()) { return false; };
+			if (_listenerModel->IsAlreadyConnected()) { return false; };
 
 			bool control;
 			control = brtManager->DisconnectModuleID(this, _listenerModel, "listenerID");
@@ -127,45 +127,60 @@ namespace BRTBase {
 				return false;
 			}
 
-			listenerModelsConnected.push_back(_listenerModel);
+			//listenerModelsConnected.push_back(_listenerModel);
+			AddListenerModelConnected(_listenerModel);
 			return control;
 		};
 
+		void AddListenerModelConnected(std::shared_ptr<CListenerModelBase> _listenerModel) {
+			listenerModelsConnected.push_back(_listenerModel);
+		}
 
-		///**
-		// * @brief Connect listener model to this listener
-		// * @param _listener Pointer to the source
-		// * @param _ear Ear to connect, both by default
-		// * @return True if the connection success
-		//*/
-		//bool ConnectEnvironmentModel(std::shared_ptr<CEnviromentModelBase> _environmentModel) {
+		/**
+		 * @brief Connect listener model to this listener
+		 * @param _listener Pointer to the source
+		 * @return True if the connection success
+		*/
+		bool ConnectBinauralFilter(const std::string & _binauralFilterID, Common::T_ear _ear = Common::T_ear::BOTH) {
 
-		//	if (_environmentModel == nullptr) return false;
-		//	if (_environmentModel->IsConnectedToListener()) {
-		//		return false;
-		//	};
+			std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase> _binauralFilter = brtManager->GetBinauralFilter<BRTBinauralFilter::CBinauralFilterBase>(_binauralFilterID);
+			if (_binauralFilter == nullptr) return false;
 
-		//	bool control;
-		//	control = brtManager->ConnectModuleID(this, _environmentModel, "listenerID");
-		//	_environmentModel->ConnectListenerTransform(GetID());
+			return ConnectBinauralFilter(_binauralFilter, _ear);
+		};
 
-		//	environmentModelsConnected.push_back(_environmentModel);			
-		//	return control;
-		//};
+		/**
+		 * @brief Connect listener model to this listener
+		 * @param _listener Pointer to the source
+		 * @param _ear Ear to connect, both by default
+		 * @return True if the connection success
+		*/
+		bool ConnectBinauralFilter(std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase> _binauralFilter, Common::T_ear _ear = Common::T_ear::BOTH) {
 
-		///**
-		// * @brief Connect listener model to this listener
-		// * @param _listener Pointer to the source
-		// * @return True if the connection success
-		//*/
-		//bool ConnectEnvironmentModel(const std::string & _environmentModelID) {
+			if (_binauralFilter == nullptr) return false;
+			if (_binauralFilter->IsConnectedToListener()) {
+				return false;
+			};
 
-		//	std::shared_ptr<CEnviromentModelBase> _environmentModel = brtManager->GetEnvironmentModel<CEnviromentModelBase>(_environmentModelID);
-		//	if (_environmentModel == nullptr) return false;
+			bool control;
+			control = brtManager->ConnectModuleID(this, _binauralFilter, "listenerID");
+			//_binauralFilterID->ConnectListenerTransform(GetID());
 
-		//	return ConnectEnvironmentModel(_environmentModel);
-		//};
+			if (_ear == Common::T_ear::LEFT) {
+				control = control && brtManager->ConnectModulesSamples(_binauralFilter, "leftEar", this, "leftEar");
+			} else if (_ear == Common::T_ear::RIGHT) {
+				control = control && brtManager->ConnectModulesSamples(_binauralFilter, "rightEar", this, "rightEar");
+			} else if (_ear == Common::T_ear::BOTH) {
+				control = control && brtManager->ConnectModulesSamples(_binauralFilter, "leftEar", this, "leftEar");
+				control = control && brtManager->ConnectModulesSamples(_binauralFilter, "rightEar", this, "rightEar");
+			} else {
+				return false;
+			}
 
+			binauralFiltersConnected.push_back(_binauralFilter);
+			SendMyID();
+			return control;
+		};
 
 
 		/** \brief SET HRTF of listener
@@ -498,8 +513,8 @@ namespace BRTBase {
 		// Private Attributes
 		/////////////////////////
 		CBRTManager* brtManager;							// Pointer to the BRT Manager			
-		std::vector<std::shared_ptr<CListenerModelBase>> listenerModelsConnected;		// Listener models connected to the listener
-		//std::vector<std::shared_ptr<CEnviromentModelBase>> environmentModelsConnected; // Listener models connected to the listener
+		std::vector<std::shared_ptr<CListenerModelBase>> listenerModelsConnected;						// Listener models connected to the listener
+		std::vector<std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase>> binauralFiltersConnected; // Binaural filters connected to the listener
 	};
 }
 #endif
