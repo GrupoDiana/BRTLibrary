@@ -323,52 +323,7 @@ namespace BRTServices {
 			float sign = value > 0 ? 1 : -1;			
 			return roundStep * (int)((value + sign * ((float)roundStep) / 2) / roundStep);
 		}
-
-
-		/** \brief Get IIR filter coefficients for ILD Spatialization, for one ear
-		*	\param [in] ear ear for which we want to get the coefficients
-		*	\param [in] distance_m distance, in meters
-		*	\param [in] azimuth azimuth angle, in degrees
-		*	\retval std::vector<float> contains the coefficients following this order [f1_b0, f1_b1, f1_b2, f1_a1, f1_a2, f2_b0, f2_b1, f2_b2, f2_a1, f2_a2]
-		*   \eh On error, an error code is reported to the error handler.
-		*/
-		//std::vector<float> GetILDSpatializationCoefficients(Common::T_ear ear, float distance_m, float azimuth)
-		//{
-		//	if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
-		//	{
-		//		SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get High Performance Spatialization ILD coefficients for a wrong ear (BOTH or NONE)");
-		//		std::vector<float> temp;
-		//		return temp;
-		//	}
-
-		//	ASSERT(distance_m > 0, RESULT_ERROR_OUTOFRANGE, "Distance must be greater than zero when processing ILD", "");
-		//	ASSERT(azimuth >= -90.0 && azimuth <= 90, RESULT_ERROR_OUTOFRANGE, "Azimuth must be between -90 deg and 90 deg when processing ILD", "");
-		//	ASSERT(ILDSpatializationTable_AzimuthStep > 0 && ILDSpatializationTable_DistanceStep > 0, RESULT_ERROR_INVALID_PARAM, "Step values of ILD hash table are not valid", "");
-
-		//	float distance_mm = distance_m * 1000.0f;
-
-		//	float distSign = distance_mm > 0 ? 1 : -1;
-		//	float azimSign = azimuth > 0 ? 1 : -1;
-
-		//	int q_distance_mm = ILDSpatializationTable_DistanceStep * (int)((distance_mm + distSign * ((float)ILDSpatializationTable_DistanceStep) / 2) / ILDSpatializationTable_DistanceStep);
-		//	int q_azimuth = ILDSpatializationTable_AzimuthStep * (int)((azimuth + azimSign * ((float)ILDSpatializationTable_AzimuthStep) / 2) / ILDSpatializationTable_AzimuthStep);
-		//	if (ear == Common::T_ear::RIGHT)
-		//		q_azimuth = -q_azimuth;
-
-		//	auto itEar = t_ILDSpatialization.find(CILD_Key(q_distance_mm, q_azimuth));
-
-		//	if (itEar != t_ILDSpatialization.end())
-		//	{
-		//		//std::vector<float> temp(itEar->second.coefs, itEar->second.coefs + 10);
-		//		//return temp;
-		//	}
-		//	else {
-		//		SET_RESULT(RESULT_ERROR_INVALID_PARAM, "{Distance-Azimuth} key value was not found in the High Performance Spatialization ILD look up table");
-		//		std::vector<float> temp;
-		//		return temp;
-		//	}
-		//}
-
+		
 	private:
 		
 		int CalculateTableAzimuthStep() {			

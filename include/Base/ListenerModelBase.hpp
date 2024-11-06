@@ -154,7 +154,10 @@ namespace BRTBase {
 		*/
 		TListenerModelcharacteristics GetListenerModelCharacteristics() const { return listenerCharacteristics; }
 		
-		
+		/**
+		 * @brief Check if this listener model is connected to a listener
+		 * @return True if connected, false otherwise
+		 */
 		bool IsConnectedToListener() { 
 			std::string _listenerID = GetIDEntryPoint("listenerID")->GetData();
 			if (_listenerID != "") {

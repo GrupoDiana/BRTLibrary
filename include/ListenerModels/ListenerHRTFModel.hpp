@@ -634,7 +634,7 @@ namespace BRTListenerModel {
 		mutable std::mutex mutex;									// To avoid access collisions
 		std::string listenerID;										// Store unique listener ID
 		std::shared_ptr<BRTServices::CHRTF>		listenerHRTF;		// HRTF of listener			
-		std::shared_ptr<BRTServices::CNearFieldCompensationFilters> listenerNFCFilters;		// ILD of listener						
+		std::shared_ptr<BRTServices::CNearFieldCompensationFilters> listenerNFCFilters;		// SOS Filter of listener						
 		std::vector< CSourceProcessors> sourcesConnectedProcessors;
 		BRTBase::CBRTManager* brtManager;
 		Common::CGlobalParameters globalParameters;
