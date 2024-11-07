@@ -38,7 +38,9 @@ namespace BRTBinauralFilter {
 
 
 		CBinauralFilterBase(const std::string & _binauraFilterID)
-				: CModelBase(_binauraFilterID) {
+			: CModelBase(_binauraFilterID)
+			, leftDataReady { false }
+			, rightDataReady { false } {
 			
 
 			CreateSamplesEntryPoint("leftEar");

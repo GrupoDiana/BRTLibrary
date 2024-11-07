@@ -26,6 +26,7 @@
 #include <Base/BRTManager.hpp>
 #include <BinauralFilter/BinauralFilterBase.hpp>
 #include <Base/ListenerModelBase.hpp>
+#include <Common/BinauralFilter.hpp>
 
 namespace BRTBinauralFilter { 
 
@@ -61,11 +62,14 @@ namespace BRTBinauralFilter {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		/*bool SetSOSFilter(std::shared_ptr<BRTServices::CNearFieldCompensationFilters> _listenerILD) override {
+		bool SetSOSFilter(std::shared_ptr<BRTServices::CNearFieldCompensationFilters> _listenerILD) override {
 			SOSFilter = _listenerILD;
-			GetILDExitPoint()->sendDataPtr(SOSFilter);
+			
+			FilterSetup(SOSFilter);
+			
+			//GetILDExitPoint()->sendDataPtr(SOSFilter);
 			return true;
-		}*/
+		}
 
 		/** \brief Get HRTF of listener
 		*	\retval HRTF pointer to current listener HRTF
@@ -149,9 +153,10 @@ namespace BRTBinauralFilter {
 
 			CMonoBuffer<float> outLeftBuffer;
 			CMonoBuffer<float> outRightBuffer;
+			if (leftBuffer.size() == 0 || rightBuffer.size() == 0) return;
 
-			if (enableModel) {
-				//Process(leftBuffer, rightBuffer, outLeftBuffer, outRightBuffer);
+			if (enableModel) {				
+				binauralFilter.Process(leftBuffer, rightBuffer, outLeftBuffer, outRightBuffer);
 			} else {
 				outLeftBuffer = leftBuffer;
 				outRightBuffer = rightBuffer;
@@ -168,13 +173,24 @@ namespace BRTBinauralFilter {
 		
 		}
 		
+
+		void FilterSetup(std::shared_ptr<BRTServices::CNearFieldCompensationFilters> _filterSOSData) {
+			std::vector<float> coefficientsLeft = _filterSOSData->GetILDNearFieldEffectCoefficients(Common::T_ear::LEFT, 0.1, 0);
+			std::vector<float> coefficientsRight = _filterSOSData->GetILDNearFieldEffectCoefficients(Common::T_ear::RIGHT, 0.1, 0);
+
+			int numberOfStages = coefficientsLeft.size() / 6;
+			binauralFilter.Setup(numberOfStages);
+			binauralFilter.SetCoefficients(coefficientsLeft, coefficientsRight);		
+		}
+
 		/////////////////
 		// Attributes
 		/////////////////
 		mutable std::mutex mutex;												// To avoid access collisions
-		BRTBase::CBRTManager * brtManager;		
-		
+		BRTBase::CBRTManager * brtManager;										// Pointer to the BRT Manager
 		std::shared_ptr<BRTServices::CNearFieldCompensationFilters> SOSFilter; // SOS Filter of listener
+
+		Common::CBinauralFilter binauralFilter; // Binaural filter
 
 	};
 }

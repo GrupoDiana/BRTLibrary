@@ -277,6 +277,20 @@ namespace BRTBase {
 			return false;
 		}
 
+		/** \brief SET NFCFilters of listener
+		*	\param[in] pointer to NFCFilters to be stored
+		*   \eh On error, NO error code is reported to the error handler.
+		*/
+		bool SetSOSFilter(std::shared_ptr<BRTServices::CNearFieldCompensationFilters> _SOSFilter) {
+
+			for (auto & _binauralFilter : binauralFiltersConnected) {
+				//if (_binauralFilter->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {
+				return _binauralFilter->SetSOSFilter(_SOSFilter);
+				//}
+			}
+			return false;
+		}
+
 
 		/** \brief SET NFCFilters of listener
 		*	\param[in] pointer to NFCFilters to be stored
