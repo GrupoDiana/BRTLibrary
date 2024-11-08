@@ -164,7 +164,7 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerILD) {
+		bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CSOSFilters > _listenerILD) {
 			listenerNFCFilters = _listenerILD;
 			GetILDExitPoint()->sendDataPtr(listenerNFCFilters);
 			return true;
@@ -174,7 +174,7 @@ namespace BRTListenerModel {
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr <BRTServices::CNearFieldCompensationFilters> GetNearFieldCompensationFilters() const
+		std::shared_ptr <BRTServices::CSOSFilters> GetNearFieldCompensationFilters() const
 		{
 			return listenerNFCFilters;
 		}
@@ -183,7 +183,7 @@ namespace BRTListenerModel {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void RemoveNearFierldCompensationFilters() {
-			listenerNFCFilters = std::make_shared<BRTServices::CNearFieldCompensationFilters>();	// empty HRTF			
+			listenerNFCFilters = std::make_shared<BRTServices::CSOSFilters>();	// empty HRTF			
 		}
 
 		/**
@@ -652,7 +652,7 @@ namespace BRTListenerModel {
 		mutable std::mutex mutex;													// To avoid access collisions
 		std::string listenerID;														// Store unique listener ID
 		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;							// HRTF of listener														
-		std::shared_ptr<BRTServices::CNearFieldCompensationFilters> listenerNFCFilters;								// ILD of listener				
+		std::shared_ptr<BRTServices::CSOSFilters> listenerNFCFilters;								// ILD of listener				
 		std::shared_ptr<BRTServices::CAmbisonicBIR> listenerAmbisonicIR;			// AmbisonicIR related to the listener				
 
 		int ambisonicOrder;															// Store the Ambisonic order

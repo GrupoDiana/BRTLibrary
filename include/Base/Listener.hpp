@@ -281,7 +281,7 @@ namespace BRTBase {
 		*	\param[in] pointer to NFCFilters to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetSOSFilter(std::shared_ptr<BRTServices::CNearFieldCompensationFilters> _SOSFilter) {
+		bool SetSOSFilter(std::shared_ptr<BRTServices::CSOSFilters> _SOSFilter) {
 
 			for (auto & _binauralFilter : binauralFiltersConnected) {
 				//if (_binauralFilter->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {
@@ -296,7 +296,7 @@ namespace BRTBase {
 		*	\param[in] pointer to NFCFilters to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerNFC) {
+		bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CSOSFilters > _listenerNFC) {
 			
 			for (auto& _listenerModel : listenerModelsConnected) {
 				if (_listenerModel->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {
@@ -310,7 +310,7 @@ namespace BRTBase {
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr <BRTServices::CNearFieldCompensationFilters> GetNearFieldCompensationFilters() const
+		std::shared_ptr <BRTServices::CSOSFilters> GetNearFieldCompensationFilters() const
 		{
 			for (auto& _listenerModel : listenerModelsConnected) {
 				if (_listenerModel->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {

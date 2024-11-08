@@ -24,7 +24,7 @@
 
 
 #include <Common/Buffer.hpp>
-#include <ServiceModules/NFCFilters.hpp>
+#include <ServiceModules/SOSFilters.hpp>
 #include <Common/GlobalParameters.hpp>
 #include <Common/SourceListenerRelativePositionCalculation.hpp>
 
@@ -103,7 +103,7 @@ namespace Common {
 		 * @param listenerTransform 
 		 * @param _listenerILDWeak 
 		 */
-		void Process(CMonoBuffer<float>& _inLeftBuffer, CMonoBuffer<float>& _inRightBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CNearFieldCompensationFilters>& _listenerILDWeak)
+		void Process(CMonoBuffer<float>& _inLeftBuffer, CMonoBuffer<float>& _inRightBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CSOSFilters>& _listenerILDWeak)
 		{
 			outLeftBuffer = _inLeftBuffer;
 			outRightBuffer = _inRightBuffer;
@@ -119,7 +119,7 @@ namespace Common {
 			ASSERT(_inLeftBuffer.size() == globalParameters.GetBufferSize() || _inRightBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");			
 			
 			// Check listener ILD
-			std::shared_ptr<BRTServices::CNearFieldCompensationFilters> _listenerILD = _listenerILDWeak.lock();
+			std::shared_ptr<BRTServices::CSOSFilters> _listenerILD = _listenerILDWeak.lock();
 			if (!_listenerILD) {
 				SET_RESULT(RESULT_ERROR_NULLPOINTER, "ILD listener pointer is null when trying to use in BRTProcessing::CNearFieldEffect");
 				outLeftBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
@@ -130,8 +130,8 @@ namespace Common {
 			float interauralAzimuth = CalculateInterauralAzimuth(sourceTransform, listenerTransform);
 
 			//Get coefficients from the ILD table
-			std::vector<float> coefficientsLeft = _listenerILD->GetILDNearFieldEffectCoefficients(Common::T_ear::LEFT, distance, interauralAzimuth);
-			std::vector<float> coefficientsRight = _listenerILD->GetILDNearFieldEffectCoefficients(Common::T_ear::RIGHT, distance, interauralAzimuth);
+			std::vector<float> coefficientsLeft = _listenerILD->GetSOSFilterCoefficients(Common::T_ear::LEFT, distance, interauralAzimuth);
+			std::vector<float> coefficientsRight = _listenerILD->GetSOSFilterCoefficients(Common::T_ear::RIGHT, distance, interauralAzimuth);
 			
 			if (coefficientsLeft.size() != 12 || coefficientsRight.size() != 12) {
 				SET_RESULT(RESULT_ERROR_BADSIZE, "Twelve coefficients were expected in order to be able to set up the filters in BRTProcessing::CNearFieldEffect");

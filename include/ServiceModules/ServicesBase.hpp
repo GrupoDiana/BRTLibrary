@@ -183,7 +183,7 @@ namespace BRTServices {
 		THRIRPartitionedStruct() : leftDelay{ 0 }, rightDelay{ 0 } {}
 	};
 
-	struct TNFCFilterStruct {
+	struct TSOSFilterStruct {
 		CMonoBuffer<float> leftCoefs;	///< Left filters coefs
 		CMonoBuffer<float> rightCoefs;	///< Right filters coefs
 	};
@@ -218,7 +218,7 @@ namespace BRTServices {
 
 		virtual void AddHRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRIR) {};
 		//virtual void AddHRBRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRBRIR) {}
-		virtual void AddCoefficients(float azimuth, float distance, TNFCFilterStruct&& newCoefs) {}
+		virtual void AddCoefficients(float azimuth, float distance, TSOSFilterStruct&& newCoefs) {}
 		virtual void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF) {}
 		
 		virtual void AddImpulseResponse(int channel, const THRIRStruct&& newIR) {}		

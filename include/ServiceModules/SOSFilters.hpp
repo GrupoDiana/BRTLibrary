@@ -1,7 +1,7 @@
 /**
-* \class CILD
+* \class CSOSFilters
 *
-* \brief Declaration of CILD class
+* \brief Declaration of CSOSFilters class
 * \date	June 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
@@ -20,8 +20,8 @@
 * \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 
-#ifndef _CILD_H_
-#define _CILD_H_
+#ifndef _CSOS_FILTER_HPP_
+#define _CSOS_FILTER_HPP_
 
 #include <unordered_map>
 #include <Common/FiltersChain.hpp>
@@ -30,19 +30,19 @@
 #include <ServiceModules/ServicesBase.hpp>
 
 
-	/** \brief Class to be used as Key in the hash table used by CILD
+	/** \brief Class to be used as Key in the hash table used by CSOSFilters
 	*/
-	class CNFCFilter_Key
+	class CSOSFilter_Key
 	{
 	public:
 		int distance;      ///< Distance to the center of the head, in millimeters 
 		int azimuth;       ///< Azimuth angle of interaural coordinates, in degrees
 
-		CNFCFilter_Key() :CNFCFilter_Key{ 0,0 } {}
+		CSOSFilter_Key() :CSOSFilter_Key{ 0,0 } {}
 
-		CNFCFilter_Key(int _distance, int _azimuth) :distance{ _distance }, azimuth{ _azimuth } {}
+		CSOSFilter_Key(int _distance, int _azimuth) :distance{ _distance }, azimuth{ _azimuth } {}
 
-		bool operator==(const CNFCFilter_Key& key) const
+		bool operator==(const CSOSFilter_Key& key) const
 		{
 			return (this->azimuth == key.azimuth && this->distance == key.distance);
 		}
@@ -51,10 +51,10 @@
 	namespace std
 	{
 		template<>
-		struct hash<CNFCFilter_Key>
+		struct hash<CSOSFilter_Key>
 		{
 			// adapted from http://en.cppreference.com/w/cpp/utility/hash
-			size_t operator()(const CNFCFilter_Key & key) const
+			size_t operator()(const CSOSFilter_Key & key) const
 			{
 				size_t h1 = std::hash<int>()(key.distance);
 				size_t h2 = std::hash<int>()(key.azimuth);
@@ -66,13 +66,13 @@
 
 	/** \brief Hash table that contains a set of coefficients for two biquads filters that are indexed through a pair of distance
 	 and azimuth values (interaural coordinates). */	
-	typedef std::unordered_map<CNFCFilter_Key, BRTServices::TNFCFilterStruct> T_NFCFilter_HashTable;
+	typedef std::unordered_map<CSOSFilter_Key, BRTServices::TSOSFilterStruct> T_SOSFilter_HashTable;
 
 namespace BRTServices {
 
 	/** \details This class models the effect of frequency-dependent Interaural Level Differences when the sound source is close to the listener
 	*/
-	class CNearFieldCompensationFilters : public CServicesBase
+	class CSOSFilters : public CServicesBase
 	{
 
 	public:
@@ -81,10 +81,10 @@ namespace BRTServices {
 		/////////////
 
 		/** \brief Default constructor.
-		*	\details Leaves ILD Table empty. Use SetILDNearFieldEffectTable to load.
+		*	\details Leaves SOS Filter Table empty. Use SetSOSFilterTable to load.
 		*   \eh Nothing is reported to the error handler.
 		*/
-		CNearFieldCompensationFilters() : setupInProgress{ false }, NFCFiltersLoaded{ false }, numberOfEars{ -1 },azimuthStep{-1}, distanceStep{-1}, fileTitle{""}, fileName{""}
+		CSOSFilters() : setupInProgress{ false }, NFCFiltersLoaded{ false }, numberOfEars{ -1 },azimuthStep{-1}, distanceStep{-1}, fileTitle{""}, fileName{""}
 		{					
 		}
 
@@ -94,7 +94,7 @@ namespace BRTServices {
 			NFCFiltersLoaded = false;			
 			Clear();
 
-			SET_RESULT(RESULT_OK, "NFC Filter Setup started");
+			SET_RESULT(RESULT_OK, "SOS Filter Setup started");
 		}
 
 		bool EndSetup()
@@ -107,18 +107,18 @@ namespace BRTServices {
 
 				if (numberOfEars != -1 && azimuthStep != -1 && distanceStep != -1) {															
 					NFCFiltersLoaded = true;
-					SET_RESULT(RESULT_OK, "NFC Filter Setup finished");
+					SET_RESULT(RESULT_OK, "SOS Filter Setup finished");
 					azimuthList.clear();
 					distanceList.clear();
 					return true;
 				}								
 			}
-			SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Some parameter is missing in order to finish the data upload in BRTServices::CILD.");
+			SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Some parameter is missing in order to finish the data upload in BRTServices::CSOSFilters.");
 			return false;
 		}
 
 		void Clear() {
-			t_ILDNearFieldEffect.clear();
+			t_SOSFilter.clear();
 			azimuthList.clear();
 			distanceList.clear();			
 			numberOfEars = -1;
@@ -213,13 +213,13 @@ namespace BRTServices {
 			}
 		}
 
-		/** \brief Add the hash table for computing ILD Near Field Effect
+		/** \brief Add the hash table for computing SOS Filter
 		*	\param [in] newTable data for hash table
 		*   \eh Nothing is reported to the error handler.
 		*/					
-		void AddILDNearFieldEffectTable(T_NFCFilter_HashTable && newTable)
+		void AddSOSFilterTable(T_SOSFilter_HashTable && newTable)
 		{
-			t_ILDNearFieldEffect = newTable;
+			t_SOSFilter = newTable;
 		}
 
 		/** \brief Add a new HRIR to the HRTF table
@@ -228,20 +228,20 @@ namespace BRTServices {
 		*	\param [in] newHRIR HRIR data for both ears
 		*   \eh Warnings may be reported to the error handler.
 		*/
-		void AddCoefficients(float azimuth, float distance, TNFCFilterStruct&& newCoefs)
+		void AddCoefficients(float azimuth, float distance, TSOSFilterStruct&& newCoefs)
 		{
 			if (setupInProgress) {
 				int iAzimuth = static_cast<int> (round(azimuth));
 				int iDistance = static_cast<int> (round(GetDistanceInMM(distance)));
 
-				auto returnValue = t_ILDNearFieldEffect.emplace(CNFCFilter_Key(iDistance, iAzimuth), std::forward<TNFCFilterStruct>(newCoefs));
+				auto returnValue = t_SOSFilter.emplace(CSOSFilter_Key(iDistance, iAzimuth), std::forward<TSOSFilterStruct>(newCoefs));
 				//Error handler
 				if (returnValue.second) { 
 					/*SET_RESULT(RESULT_OK, "ILD Coefficients emplaced into t_ILDNearFieldEffect succesfully"); */ 
 					azimuthList.push_back(iAzimuth);
 					distanceList.push_back(iDistance);
 				}
-				else { SET_RESULT(RESULT_WARNING, "Error emplacing ILD Cofficients"); }
+				else { SET_RESULT(RESULT_WARNING, "Error emplacing SOS Filter Cofficients"); }
 			}
 		}
 
@@ -255,11 +255,11 @@ namespace BRTServices {
 			t_ILDSpatialization = newTable;
 		}*/
 
-		/** \brief Get the internal hash table used for computing ILD Near Field Effect
+		/** \brief Get the internal hash table used for computing SOS Filter
 		*	\retval hashTable data from the hash table
 		*   \eh Nothing is reported to the error handler.
 		*/
-		const T_NFCFilter_HashTable & GetILDNearFieldEffectTable() { return t_ILDNearFieldEffect; }
+		const T_SOSFilter_HashTable & GetSOSFilterTable() { return t_SOSFilter; }
 		
 		/** \brief Get the internal hash table used for computing ILD Spatialization
 		*	\retval hashTable data from the hash table
@@ -267,29 +267,29 @@ namespace BRTServices {
 		*/
 		//const T_ILD_HashTable & GetILDSpatializationTable() { return t_ILDSpatialization; }
 		
-		/** \brief Get IIR filter coefficients for ILD Near Field Effect, for one ear
+		/** \brief Get IIR filter coefficients for SOS Filter, for one ear
 		*	\param [in] ear ear for which we want to get the coefficients
 		*	\param [in] distance_m distance, in meters
 		*	\param [in] azimuth azimuth angle, in degrees
 		*	\retval std::vector<float> contains the coefficients following this order [f1_b0, f1_b1, f1_b2, f1_a1, f1_a2, f2_b0, f2_b1, f2_b2, f2_a1, f2_a2]
 		*   \eh On error, an error code is reported to the error handler.
 		*/				
-		std::vector<float> GetILDNearFieldEffectCoefficients(Common::T_ear ear, float distance_m, float azimuth)
+		std::vector<float> GetSOSFilterCoefficients(Common::T_ear ear, float distance_m, float azimuth)
 		{
 			if (!NFCFiltersLoaded) {
-				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "ILD table was not initialized in BRTServices::CILD::GetILDNearFieldEffectCoefficients()");
+				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "SOS Filter table was not initialized in BRTServices::CILD::GetSOSFilterCoefficients()");
 				return std::vector<float>();
 			}
 
 			if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
 			{
-				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get Near Field ILD coefficients for a wrong ear (BOTH or NONE)");
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get SOS Filter coefficients for a wrong ear (BOTH or NONE)");
 				std::vector<float> temp;
 				return temp;
 			} 
 			
 			if  ((ear == Common::T_ear::RIGHT) && numberOfEars == 1) {
-				return GetILDNearFieldEffectCoefficients(Common::LEFT, distance_m, -azimuth);
+				return GetSOSFilterCoefficients(Common::LEFT, distance_m, -azimuth);
 			}
 
 			ASSERT(distance_m > 0, RESULT_ERROR_OUTOFRANGE, "Distance must be greater than zero when processing ILD", "");
@@ -301,19 +301,19 @@ namespace BRTServices {
 			int q_distance_mm	= GetRoundUp(distance_mm, distanceStep);
 			int q_azimuth		= GetRoundUp(azimuth, azimuthStep);
 
-			auto itEar = t_ILDNearFieldEffect.find(CNFCFilter_Key(q_distance_mm, q_azimuth));
-			if (itEar != t_ILDNearFieldEffect.end())
+			auto itEar = t_SOSFilter.find(CSOSFilter_Key(q_distance_mm, q_azimuth));
+			if (itEar != t_SOSFilter.end())
 			{					
 				if (ear == Common::T_ear::LEFT)			{	return itEar->second.leftCoefs;	} 
 				else if (ear == Common::T_ear::RIGHT) {		return itEar->second.rightCoefs; }
 				else { // Should never get here but keep compiler happy
-					SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get Near Field ILD coefficients for a wrong ear (BOTH or NONE)");
+					SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get SOS Filter coefficients for a wrong ear (BOTH or NONE)");
 					return std::vector<float>();
 				}
 			}
 			else
 			{
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "{Distance-Azimuth} key value was not found in the Near Field ILD look up table");					
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "{Distance-Azimuth} key value was not found in the SOS Filter look up table");					
 				return std::vector<float>();
 			}						
 		}
@@ -332,7 +332,7 @@ namespace BRTServices {
 			azimuthList.erase(unique(azimuthList.begin(), azimuthList.end()), azimuthList.end());
 
 			// Calculate the minimum azimuth
-			int azimuthStep = 999999;
+			int azimuthStep = 999999;	//TODO Why this number?
 			for (int i = 0; i < azimuthList.size() - 1; i++) {
 				if (azimuthList[i + 1] - azimuthList[i] < azimuthStep) {
 					azimuthStep = azimuthList[i + 1] - azimuthList[i];
@@ -348,54 +348,56 @@ namespace BRTServices {
 			distanceList.erase(unique(distanceList.begin(), distanceList.end()), distanceList.end());
 
 			// Calculate the minimum d
-			double distanceStep = 999999;
+			double distanceStep = 999999; //TODO Why this number?
 			for (int i = 0; i < distanceList.size() - 1; i++) {
 				if (distanceList[i + 1] - distanceList[i] < distanceStep) {
 					distanceStep = distanceList[i + 1] - distanceList[i];
 				}
 			}
-			// Rounding the result, to millimetres and back to metres
-			//float distenceStepMM = distanceStep * 1000;
-			//return std::round(distenceStepMM) * 0.001f;
+						
 			return distanceStep;
 		}
 
+		/**
+		 * @brief Transform distance in meters to distance in milimetres
+		 * @param _distanceInMetres distance in meters
+		 * @return 
+		 */
 		float GetDistanceInMM(float _distanceInMetres) {
 			return _distanceInMetres * 1000.0f;
 		}
-
+		
+		/**
+		 * @brief Transform distance in milimetres to distance in meters
+		 * @param _distanceInMilimetres distance in milimetres
+		 * @return 
+		 */
 		float GetDistanceInMetres(float _distanceInMilimetres) {
 			return _distanceInMilimetres * 0.001f;
 		}
-
 
 
 		///////////////
 		// ATTRIBUTES
 		///////////////	
 
-		bool setupInProgress;						// Variable that indicates the ILD load is in process
-		bool NFCFiltersLoaded;								// Variable that indicates if the ILD has been loaded correctly
+		bool setupInProgress;						// Variable that indicates the SOS Filter load is in process
+		bool NFCFiltersLoaded;						// Variable that indicates if the SOS Filter has been loaded correctly
 
-		T_NFCFilter_HashTable t_ILDNearFieldEffect;
+		T_SOSFilter_HashTable t_SOSFilter;
 		int azimuthStep;							// In degress
 		int distanceStep;							// In milimeters
 		std::vector<double> azimuthList;
 		std::vector<double> distanceList;
 
-		//T_ILD_HashTable t_ILDSpatialization;	  
-		//int ILDSpatializationTable_AzimuthStep;			// In degress
-		//int ILDSpatializationTable_DistanceStep;		// In milimeters
-
-		Common::CVector3 leftEarLocalPosition;			// Listener left ear relative position
-		Common::CVector3 rightEarLocalPosition;			// Listener right ear relative position
+		Common::CVector3 leftEarLocalPosition;		// Listener left ear relative position
+		Common::CVector3 rightEarLocalPosition;		// Listener right ear relative position
 
 		std::string fileName;
 		std::string fileTitle;				
 		std::string databaseName;
 		std::string listenerShortName;
-		
-		//int samplingRate;
+				
 		int numberOfEars;
 	};
 }

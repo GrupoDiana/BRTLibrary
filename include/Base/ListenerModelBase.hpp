@@ -27,7 +27,7 @@
 #include <Base/ModelBase.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/HRTF.hpp>
-#include <ServiceModules/NFCFilters.hpp>
+#include <ServiceModules/SOSFilters.hpp>
 
 namespace BRTServices {
 	class CHRTF;
@@ -80,8 +80,8 @@ namespace BRTBase {
 		virtual std::shared_ptr < BRTServices::CHRTF> GetHRTF() const { return nullptr; }
 		virtual void RemoveHRTF() {};
 		
-		virtual bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CNearFieldCompensationFilters > _listenerILD) { return false; };
-		virtual std::shared_ptr < BRTServices::CNearFieldCompensationFilters> GetNearFieldCompensationFilters() const { return nullptr; }
+		virtual bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CSOSFilters > _listenerILD) { return false; };
+		virtual std::shared_ptr < BRTServices::CSOSFilters> GetNearFieldCompensationFilters() const { return nullptr; }
 		virtual void RemoveNearFierldCompensationFilters() {};
 				
 		virtual bool SetHRBRIR(std::shared_ptr< BRTServices::CHRBRIR > _listenerBRIR) { return false; };		        

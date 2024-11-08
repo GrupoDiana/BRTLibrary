@@ -29,8 +29,8 @@ namespace BRTBinauralFilter {
 	class CBinauralFilterBase : public BRTBase::CModelBase {
 	public:
 
-		virtual bool SetSOSFilter(std::shared_ptr<BRTServices::CNearFieldCompensationFilters> _listenerILD) { return false; };
-		virtual std::shared_ptr<BRTServices::CNearFieldCompensationFilters> GetSOSFilter() const { return nullptr; }
+		virtual bool SetSOSFilter(std::shared_ptr<BRTServices::CSOSFilters> _listenerILD) { return false; };
+		virtual std::shared_ptr<BRTServices::CSOSFilters> GetSOSFilter() const { return nullptr; }
 		virtual void RemoveSOSFilter() {};
 		
 		virtual bool ConnectListenerModel(const std::string & _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) { return false; };

@@ -62,7 +62,7 @@ class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity, publ
 
 			Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
 			Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();												
-			std::weak_ptr<BRTServices::CNearFieldCompensationFilters> listenerNFCFilters = GetILDPtrEntryPoint("listenerILD")->GetData();
+			std::weak_ptr<BRTServices::CSOSFilters> listenerNFCFilters = GetILDPtrEntryPoint("listenerILD")->GetData();
 				
 			if (leftBuffer.size() != 0  || rightBuffer.size() !=0)  {
 				CMonoBuffer<float> outLeftBuffer;

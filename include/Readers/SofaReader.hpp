@@ -86,7 +86,7 @@ namespace BRTReaders {
 		*	\param [out] listener affected by the hrtf
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		bool ReadNFCFiltersFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CNearFieldCompensationFilters>& listenerNFCFilters)
+		bool ReadNFCFiltersFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CSOSFilters>& listenerNFCFilters)
 		{
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerNFCFilters;
 			
@@ -219,7 +219,7 @@ namespace BRTReaders {
 			// This outtermost loop iterates over HRIRs
 			for (std::size_t measure = 0; measure < numberOfMeasurements; measure++)
 			{
-				BRTServices::TNFCFilterStruct coefficients;
+				BRTServices::TSOSFilterStruct coefficients;
 				coefficients.leftCoefs.resize(numberOfSamples);
 				
 				double azimuth, elevation, distance;
