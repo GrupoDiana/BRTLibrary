@@ -28,24 +28,24 @@
 #include <Common/AmbisonicEncoder.hpp>
 #include <Common/AddDelayExpansionMethod.hpp>
 #include <Common/SourceListenerRelativePositionCalculation.hpp>
+#include <Common/BinauralFilter.hpp>
 #include <ServiceModules/HRTF.hpp>
-#include <ProcessingModules/NearFieldEffect.hpp>
 
 #include <memory>
 #include <vector>
 #include <algorithm>
 
-//#define EPSILON 0.0001f
-//#define ELEVATION_SINGULAR_POINT_UP 90.0
-//#define ELEVATION_SINGULAR_POINT_DOWN 270.0
-
 namespace BRTProcessing {
 	class CBilateralAmbisonicEncoder {
 	public:
-		CBilateralAmbisonicEncoder() : enableProcessor{ true }, ambisonicOrder { 1 }, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }, enableInterpolation{ true }, enableITDSimulation{ false }, enableParallaxCorrection{ true } {
-		
-			//leftAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
-			//rightAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
+		CBilateralAmbisonicEncoder() 
+			: enableProcessor{ true }
+			, ambisonicOrder { 1 }
+			, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }
+			, enableInterpolation{ true }
+			, enableITDSimulation{ false }
+			, enableParallaxCorrection{ true } {
+					
 			ambisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
 		}
 
@@ -99,11 +99,11 @@ namespace BRTProcessing {
 		bool IsITDSimulationEnabled() { return enableITDSimulation; };
 
 		///Enable near field effect for this source
-		void EnableNearFieldEffect() { nearFieldEffectProcess.EnableNearFieldEffect(); };
+		void EnableNearFieldEffect() { nearFieldEffectProcess.EnableProcessor(); };
 		///Disable near field effect for this source
-		void DisableNearFieldEffect() { nearFieldEffectProcess.DisableNearFieldEffect(); };
+		void DisableNearFieldEffect() { nearFieldEffectProcess.DisableProcessor(); };
 		///Get the flag for near field effect enabling
-		bool IsNearFieldEffectEnabled() { return nearFieldEffectProcess.IsNearFieldEffectEnabled(); };
+		bool IsNearFieldEffectEnabled() { return nearFieldEffectProcess.IsProcessorEnabled(); };
 
 		void EnableParallaxCorrection() { enableParallaxCorrection = true; };
 		void DisableParallaxCorrection() { enableParallaxCorrection = false; };
@@ -206,7 +206,7 @@ namespace BRTProcessing {
 		/// Atributes
 		mutable std::mutex mutex;								// Thread management
 		Common::CGlobalParameters globalParameters;				// Get access to global render parameters
-		CNearFieldEffect nearFieldEffectProcess;				// NearField effect processor instance
+		Common::CBinauralFilter nearFieldEffectProcess;				// NearField effect processor instance
 		//Common::CAmbisonicEncoder leftAmbisonicEncoder;			// Left ear encoder
 		//Common::CAmbisonicEncoder rightAmbisonicEncoder;		// Right ear enconder
 		Common::CAmbisonicEncoder ambisonicEncoder;				// Ambisonic encoder

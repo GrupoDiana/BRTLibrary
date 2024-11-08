@@ -70,8 +70,11 @@ namespace BRTListenerModel {
 				if (enableInterpolation) { binauralConvolverProcessor->EnableInterpolation(); }
 				else { binauralConvolverProcessor->DisableInterpolation(); }
 
-				if (enableNearFieldEffect) { nearFieldEffectProcessor->EnableNearFieldEffect(); }
-				else { nearFieldEffectProcessor->DisableNearFieldEffect(); }	
+				if (enableNearFieldEffect) {
+					nearFieldEffectProcessor->EnableProcessor();
+				} else {
+					nearFieldEffectProcessor->DisableProcessor();
+				}	
 
 				if (enableITD) {binauralConvolverProcessor->EnableITDSimulation();}
 				else {binauralConvolverProcessor->DisableITDSimulation();}

@@ -28,11 +28,11 @@
 #include <algorithm>
 #include <Connectivity/BRTConnectivity.hpp>
 #include <Common/Buffer.hpp>
-#include <ProcessingModules/NearFieldEffect.hpp>
+#include <Common/BinauralFilter.hpp>
 
 
 namespace BRTProcessing {
-class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity, public CNearFieldEffect {
+class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity, public Common::CBinauralFilter {
 		
     public:
 		CNearFieldEffectProcessor() {
@@ -46,32 +46,34 @@ class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity, publ
 			CreateILDPtrEntryPoint("listenerILD");
 
             CreateSamplesExitPoint("leftEar");
-            CreateSamplesExitPoint("rightEar");   									
+            CreateSamplesExitPoint("rightEar");
+
+			Setup(2);
         }
 
-        void AllEntryPointsAllDataReady() {
+		/**
+		 * @brief Implementation of CAdvancedEntryPointManager virtual method
+		*/
+        void AllEntryPointsAllDataReady() override {
 			std::lock_guard<std::mutex> l(mutex);
-			CMonoBuffer<float> outLeftBuffer;
-			CMonoBuffer<float> outRightBuffer;
+						
+			CMonoBuffer<float> leftBuffer = GetSamplesEntryPoint("leftEar")->GetData();
+			CMonoBuffer<float> rightBuffer = GetSamplesEntryPoint("rightEar")->GetData();
 
-			//if (_entryPointId == "leftEar" || _entryPointId == "rightEar") {
-				CMonoBuffer<float> leftBuffer = GetSamplesEntryPoint("leftEar")->GetData();
-				CMonoBuffer<float> rightBuffer = GetSamplesEntryPoint("rightEar")->GetData();
-
-				Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
-				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();												
-				std::weak_ptr<BRTServices::CNearFieldCompensationFilters> listenerNFCFilters = GetILDPtrEntryPoint("listenerILD")->GetData();
+			Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
+			Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();												
+			std::weak_ptr<BRTServices::CNearFieldCompensationFilters> listenerNFCFilters = GetILDPtrEntryPoint("listenerILD")->GetData();
 				
-				if (leftBuffer.size() != 0  || rightBuffer.size() !=0)  {
-					Process(leftBuffer, rightBuffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerNFCFilters);
-					GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
-					GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);
-				}				
-				//this->ResetEntryPointWaitingList();				
-			//}            
+			if (leftBuffer.size() != 0  || rightBuffer.size() !=0)  {
+				CMonoBuffer<float> outLeftBuffer;
+				CMonoBuffer<float> outRightBuffer;
+				Process(leftBuffer, rightBuffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerNFCFilters);
+				GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
+				GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);
+			}							
         }
 
-		void UpdateCommand() {
+		void UpdateCommand() override {
 			std::lock_guard<std::mutex> l(mutex);
 			
 			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
@@ -79,8 +81,10 @@ class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity, publ
 			
 			if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
 				if (command.GetCommand() == "/nearFieldProcessor/enable") {
-					if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
-					else { DisableNearFieldEffect(); }
+					if (command.GetBoolParameter("enable")) {
+						EnableProcessor();
+					}
+					else { DisableProcessor(); }
 				}
 				else if (command.GetCommand() == "/nearFieldProcessor/resetBuffers") {
 					ResetProcessBuffers();
