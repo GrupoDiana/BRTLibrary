@@ -162,6 +162,9 @@ namespace BRTBinauralFilter {
 				outRightBuffer = rightBuffer;
 			}
 
+			outLeftBuffer.ApplyGain(gain);
+			outRightBuffer.ApplyGain(gain);
+
 			GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
 			GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);
 			leftDataReady = false;
