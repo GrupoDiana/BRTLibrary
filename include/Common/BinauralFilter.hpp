@@ -36,6 +36,7 @@ namespace Common {
 		CBinauralFilter()
 			: enableProcessor { true }
 			, initialized { false }
+			, numberOfCoefficientsPerEar { 0 }
 		{
 		
 			//nearFieldEffectFilters.left.AddFilter();		//Initialize the filter to ILD simulation 
@@ -61,14 +62,14 @@ namespace Common {
 				filtersChain.right.AddFilter();	//Initialize the filter
 			}			
 
-			numberOfCoefficientsPerChannel = _numberOfFilterStages * 6;
+			numberOfCoefficientsPerEar = _numberOfFilterStages * 6;
 			initialized = true;
 		}
 		
 		void SetCoefficients(std::vector<float>& _coefficientsLeft, std::vector<float>& _coefficientsRight) {
 			if (!initialized) return;
 
-			if ((_coefficientsLeft.size() != numberOfCoefficientsPerChannel) || (_coefficientsRight.size() != numberOfCoefficientsPerChannel)) {
+			if ((_coefficientsLeft.size() != numberOfCoefficientsPerEar) || (_coefficientsRight.size() != numberOfCoefficientsPerEar)) {
 				SET_RESULT(RESULT_ERROR_BADSIZE, "The number of coefficients has to be equal to the number of filter stages times 6 in Common::CBinauralFilter");
 				return;
 			}
@@ -103,10 +104,11 @@ namespace Common {
 		 * @param _listenerILDWeak 
 		 */
 		void Process(CMonoBuffer<float>& _inLeftBuffer, CMonoBuffer<float>& _inRightBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CNearFieldCompensationFilters>& _listenerILDWeak)
-
 		{
 			outLeftBuffer = _inLeftBuffer;
 			outRightBuffer = _inRightBuffer;
+			
+			if (!initialized) return;
 
 			// Check process flag
 			if (!enableProcessor) { return;	}
@@ -150,7 +152,9 @@ namespace Common {
 		{
 			outLeftBuffer = _inLeftBuffer;
 			outRightBuffer = _inRightBuffer;
-
+			
+			if (!initialized) return;
+			
 			// Check process flag
 			if (!enableProcessor) {
 				return;
@@ -205,7 +209,7 @@ namespace Common {
 		void SetCoefficients(Common::CFiltersChain & _filter, std::vector<float> & cofficients) {
 			
 			Common::TFiltersChainCoefficients filterCoeficientsVector;
-			for (int i = 0; i < numberOfCoefficientsPerChannel; i += 6) {
+			for (int i = 0; i < numberOfCoefficientsPerEar; i += 6) {
 				std::vector<float> stage(cofficients.begin() + i, cofficients.begin() + i + 6);
 				filterCoeficientsVector.push_back(stage);
 			}
@@ -220,7 +224,7 @@ namespace Common {
 		Common::CEarPair<Common::CFiltersChain> filtersChain;		// Computes the Near field effects
 		bool enableProcessor;										// Flag to enable the processor		
 		bool initialized;
-		int numberOfCoefficientsPerChannel;
+		int numberOfCoefficientsPerEar;
 	};
 }
 #endif
