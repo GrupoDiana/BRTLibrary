@@ -58,29 +58,23 @@ namespace BRTBinauralFilter {
 
 
 		///
-		/** \brief SET HRTF of listener
-		*	\param[in] pointer to HRTF to be stored
-		*   \eh On error, NO error code is reported to the error handler.
+		/** \brief SET SOS filters of the Binaural Filter
+		*	\param[in] pointer to SOS filter to be stored		
 		*/
 		bool SetSOSFilter(std::shared_ptr<BRTServices::CSOSFilters> _listenerILD) override {
-			SOSFilter = _listenerILD;
-			
-			FilterSetup(SOSFilter);
-			
-			//GetILDExitPoint()->sendDataPtr(SOSFilter);
+			SOSFilter = _listenerILD;			
+			FilterSetup(SOSFilter);						
 			return true;
 		}
 
-		/** \brief Get HRTF of listener
-		*	\retval HRTF pointer to current listener HRTF
-		*   \eh On error, an error code is reported to the error handler.
+		/** \brief Get the SOS filter of the Binaural Filter
+		*	\retval SOS filter of the listener
 		*/
-		/*std::shared_ptr<BRTServices::CNearFieldCompensationFilters> GetSOSFilter() const override {
+		std::shared_ptr<BRTServices::CSOSFilters> GetSOSFilter() const override {
 			return SOSFilter;
-		}*/
+		}
 
-		/** \brief Remove the HRTF of thelistener
-		*   \eh Nothing is reported to the error handler.
+		/** \brief Remove the SOS filter of the Binaural Filter		
 		*/
 		void RemoveSOSFilter() override {
 			SOSFilter = nullptr;
