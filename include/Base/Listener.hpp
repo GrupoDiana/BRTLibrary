@@ -47,7 +47,20 @@ namespace BRTBase {
 		CListener(std::string _listenerID, CBRTManager* _brtManager) : CListenerBase { _listenerID }, brtManager { _brtManager } {
 																
 		}
-						
+		
+		/**
+		 * @brief Connect listener model to this listener
+		 * @param _listener Pointer to the source
+		 * @return True if the connection success
+		*/
+		bool ConnectListenerModel(const std::string & _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) {
+
+			std::shared_ptr<CListenerModelBase> _listenerModel = brtManager->GetListenerModel<CListenerModelBase>(_listenerModelID);
+			if (_listenerModel == nullptr) return false;
+
+			return ConnectListenerModel(_listenerModel, _ear);
+		};
+
 		/**
 		 * @brief Connect listener model to this listener
 		 * @param _listener Pointer to the source
@@ -77,25 +90,24 @@ namespace BRTBase {
 			else {
 				return false;
 			}
-						
-			listenerModelsConnected.push_back(_listenerModel);
+									
+			AddListenerModelConnected(_listenerModel);
 			SendMyID();			
 			return control;
 		};
 
 		/**
-		 * @brief Connect listener model to this listener
+		 * @brief Disconnect listener model to this listener
 		 * @param _listener Pointer to the source
-		 * @return True if the connection success
+		 * @return True if the disconnection success
 		*/
-		bool ConnectListenerModel(const std::string& _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) {
-			
+		bool DisconnectListenerModel(const std::string & _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) {
+
 			std::shared_ptr<CListenerModelBase> _listenerModel = brtManager->GetListenerModel<CListenerModelBase>(_listenerModelID);
 			if (_listenerModel == nullptr) return false;
-						
-			return ConnectListenerModel(_listenerModel, _ear);			
-		};
 
+			return DisconnectListenerModel(_listenerModel, _ear);
+		};
 
 		/**
 		 * @brief Disconnect listener model to this listener
@@ -109,7 +121,9 @@ namespace BRTBase {
 			if (_listenerModel->IsAlreadyConnected()) { return false; };
 
 			bool control;
-			control = brtManager->DisconnectModuleID(this, _listenerModel, "listenerID");
+			control = RemoveListenerModelConnected(_listenerModel);
+
+			control =  control && brtManager->DisconnectModuleID(this, _listenerModel, "listenerID");
 			_listenerModel->DisconnectListenerTransform(GetID());
 
 
@@ -126,14 +140,30 @@ namespace BRTBase {
 			else {
 				return false;
 			}
-
-			//listenerModelsConnected.push_back(_listenerModel);
-			AddListenerModelConnected(_listenerModel);
+						
 			return control;
 		};
 
+
+		/**
+		 * @brief Add listener model to the list of connected listener models
+		 * @param _listenerModel listener model to add	
+		 */
 		void AddListenerModelConnected(std::shared_ptr<CListenerModelBase> _listenerModel) {
 			listenerModelsConnected.push_back(_listenerModel);
+		}
+
+		/**
+		 * @brief Remove listener model from the list of connected listener models
+		 * @param _listenerModel listener model to remove	
+		 */
+		bool RemoveListenerModelConnected(std::shared_ptr<CListenerModelBase> _listenerModel) {			
+			auto it = std::find(listenerModelsConnected.begin(), listenerModelsConnected.end(), _listenerModel);
+			if (it != listenerModelsConnected.end()) {				
+				listenerModelsConnected.erase(it);
+				return true;
+			}
+			return false;
 		}
 
 		/**
@@ -182,6 +212,61 @@ namespace BRTBase {
 			return control;
 		};
 
+
+		/**
+		 * @brief Disconnect listener model to this listener
+		 * @param _listener Pointer to the source
+		 * @return True if the connection success
+		*/
+		bool DisconnectBinauralFilter(const std::string & _binauralFilterID, Common::T_ear _ear = Common::T_ear::BOTH) {
+
+			std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase> _binauralFilter = brtManager->GetBinauralFilter<BRTBinauralFilter::CBinauralFilterBase>(_binauralFilterID);
+			if (_binauralFilter == nullptr) return false;
+
+			return DisconnectBinauralFilter(_binauralFilter, _ear);
+		};
+
+		/**
+		 * @brief Disconnect listener model to this listener
+		 * @param _listener Pointer to the source
+		 * @param _ear Ear to connect, both by default
+		 * @return True if the connection success
+		*/
+		bool DisconnectBinauralFilter(std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase> _binauralFilter, Common::T_ear _ear = Common::T_ear::BOTH) {
+
+			if (_binauralFilter == nullptr) return false;			
+
+			bool control;
+			control = RemoveBinauralFiltersConnected(_binauralFilter);
+					
+			if (_ear == Common::T_ear::LEFT) {
+				control = control && brtManager->ConnectModulesSamples(_binauralFilter, "leftEar", this, "leftEar");
+			} else if (_ear == Common::T_ear::RIGHT) {
+				control = control && brtManager->ConnectModulesSamples(_binauralFilter, "rightEar", this, "rightEar");
+			} else if (_ear == Common::T_ear::BOTH) {
+				control = control && brtManager->ConnectModulesSamples(_binauralFilter, "leftEar", this, "leftEar");
+				control = control && brtManager->ConnectModulesSamples(_binauralFilter, "rightEar", this, "rightEar");
+			} else {
+				return false;
+			}
+
+			control = brtManager->DisconnectModuleID(this, _binauralFilter, "listenerID");			
+			return control;
+		};
+
+
+		/**
+		 * @brief Remove listener model from the list of connected listener models
+		 * @param _listenerModel listener model to remove	
+		 */
+		bool RemoveBinauralFiltersConnected(std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase> _binauralFilter) {
+			auto it = std::find(binauralFiltersConnected.begin(), binauralFiltersConnected.end(), _binauralFilter);
+			if (it != binauralFiltersConnected.end()) {
+				binauralFiltersConnected.erase(it);
+				return true;
+			}
+			return false;
+		} 
 
 		/** \brief SET HRTF of listener
 		*	\param[in] pointer to HRTF to be stored

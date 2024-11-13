@@ -28,6 +28,8 @@
 #include <Base/ListenerModelBase.hpp>
 #include <Common/BinauralFilter.hpp>
 
+#define NUMBER_OF_COEFFICIENTS_IN_STAGE_SOS 6
+
 namespace BRTBinauralFilter { 
 
 	class CSOSBinauralFilter : public CBinauralFilterBase { 
@@ -45,7 +47,8 @@ namespace BRTBinauralFilter {
 		 */
 		void EnableModel() override {
 			std::lock_guard<std::mutex> l(mutex);
-			enableModel = true;			
+			enableModel = true;	
+			binauralFilter.EnableProcessor();
 		};
 
 		/**
@@ -53,7 +56,8 @@ namespace BRTBinauralFilter {
 		 */
 		void DisableModel() override {
 			std::lock_guard<std::mutex> l(mutex);
-			enableModel = false;			
+			enableModel = false;	
+			binauralFilter.DisableProcessor();
 		};
 
 
@@ -138,6 +142,51 @@ namespace BRTBinauralFilter {
 		};
 		
 
+		bool DisconnectListenerModel(const std::string & _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) override { 
+			std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTBase::CListenerModelBase>(_listenerModelID);
+			if (_listenerModel == nullptr) return false;
+
+			return DisconnectListenerModel(_listenerModel, _ear);		
+		
+		};
+
+		bool DisconnectListenerModel(std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel, Common::T_ear _ear = Common::T_ear::BOTH) {
+			if (_listenerModel == nullptr) return false;
+			
+
+			// Get listener pointer
+			std::string listenerID = GetIDEntryPoint("listenerID")->GetData(); // The ID of the listener I am connected to.
+			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(listenerID);
+			if (_listener == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This Binaural Filter has not been connected to a listener.");
+				return false;
+			}
+
+			//Make disconnections
+			bool control;
+			
+			_listener->RemoveListenerModelConnected(_listenerModel);
+
+			if (_ear == Common::T_ear::LEFT) {
+				control = brtManager->DisconnectModulesSamples(_listenerModel, "leftEar", this, "leftEar");
+			} else if (_ear == Common::T_ear::RIGHT) {
+				control = brtManager->DisconnectModulesSamples(_listenerModel, "rightEar", this, "rightEar");
+			} else if (_ear == Common::T_ear::BOTH) {
+				control =  brtManager->DisconnectModulesSamples(_listenerModel, "leftEar", this, "leftEar");
+				control = control && brtManager->DisconnectModulesSamples(_listenerModel, "rightEar", this, "rightEar");
+			} else {
+				return false;
+			}
+			
+			_listenerModel->DisconnectListenerTransform(listenerID);
+
+			control = control && brtManager->DisconnectModuleID(this, _listenerModel, "binauralFilterID");
+			control = control && brtManager->DisconnectModuleID(_listener, _listenerModel, "listenerID");
+
+			return control;
+
+		}
+
 	private:
 		
 		/**
@@ -148,13 +197,8 @@ namespace BRTBinauralFilter {
 			CMonoBuffer<float> outLeftBuffer;
 			CMonoBuffer<float> outRightBuffer;
 			if (leftBuffer.size() == 0 || rightBuffer.size() == 0) return;
-
-			if (enableModel) {				
-				binauralFilter.Process(leftBuffer, rightBuffer, outLeftBuffer, outRightBuffer);
-			} else {
-				outLeftBuffer = leftBuffer;
-				outRightBuffer = rightBuffer;
-			}
+			
+			binauralFilter.Process(leftBuffer, rightBuffer, outLeftBuffer, outRightBuffer);			
 
 			outLeftBuffer.ApplyGain(gain);
 			outRightBuffer.ApplyGain(gain);
@@ -175,7 +219,7 @@ namespace BRTBinauralFilter {
 			std::vector<float> coefficientsLeft = _filterSOSData->GetSOSFilterCoefficients(Common::T_ear::LEFT, 0.1, 0);
 			std::vector<float> coefficientsRight = _filterSOSData->GetSOSFilterCoefficients(Common::T_ear::RIGHT, 0.1, 0);
 
-			int numberOfStages = coefficientsLeft.size() / 6;
+			int numberOfStages = coefficientsLeft.size() / NUMBER_OF_COEFFICIENTS_IN_STAGE_SOS;
 			binauralFilter.Setup(numberOfStages);
 			binauralFilter.SetCoefficients(coefficientsLeft, coefficientsRight);		
 		}

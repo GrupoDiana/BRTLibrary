@@ -34,7 +34,7 @@ namespace BRTBinauralFilter {
 		virtual void RemoveSOSFilter() {};
 		
 		virtual bool ConnectListenerModel(const std::string & _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) { return false; };
-		virtual bool DisconnectListenerModel(const std::string & _listenerModelID) { return false; };
+		virtual bool DisconnectListenerModel(const std::string & _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) { return false; };
 
 
 		CBinauralFilterBase(const std::string & _binauraFilterID)
