@@ -25,7 +25,7 @@
 
 #include <Base/BRTManager.hpp>
 #include <BinauralFilter/BinauralFilterBase.hpp>
-#include <Base/ListenerModelBase.hpp>
+#include <ListenerModels/ListenerModelBase.hpp>
 #include <Common/BinauralFilter.hpp>
 
 #define NUMBER_OF_COEFFICIENTS_IN_STAGE_SOS 6
@@ -91,7 +91,7 @@ namespace BRTBinauralFilter {
 		 * @param _ear Ear to connect, both by default
 		 * @return True if the connection success
 		*/
-		bool ConnectListenerModel(std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel, Common::T_ear _ear = Common::T_ear::BOTH) {
+		bool ConnectListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel, Common::T_ear _ear = Common::T_ear::BOTH) {
 
 			if (_listenerModel == nullptr) return false;
 			if (_listenerModel->IsAlreadyConnected()) return false;
@@ -135,7 +135,7 @@ namespace BRTBinauralFilter {
 		*/
 		bool ConnectListenerModel(const std::string & _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) override {
 
-			std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTBase::CListenerModelBase>(_listenerModelID);
+			std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModelID);
 			if (_listenerModel == nullptr) return false;
 
 			return ConnectListenerModel(_listenerModel, _ear);
@@ -147,7 +147,7 @@ namespace BRTBinauralFilter {
 		 * @return True if the disconnection success
 		*/
 		bool DisconnectListenerModel(const std::string & _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) override { 
-			std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTBase::CListenerModelBase>(_listenerModelID);
+			std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModelID);
 			if (_listenerModel == nullptr) return false;
 
 			return DisconnectListenerModel(_listenerModel, _ear);		
@@ -159,7 +159,7 @@ namespace BRTBinauralFilter {
 		 * @param _listener Pointer to the source
 		 * @return True if the disconnection success
 		*/
-		bool DisconnectListenerModel(std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel, Common::T_ear _ear = Common::T_ear::BOTH) {
+		bool DisconnectListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel, Common::T_ear _ear = Common::T_ear::BOTH) {
 			if (_listenerModel == nullptr) return false;
 			
 

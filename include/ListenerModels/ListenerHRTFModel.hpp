@@ -24,20 +24,20 @@
 #define _CLISTENER_HRTF_MODEL_HPP_
 
 #include <memory>
-#include <Base/ListenerModelBase.hpp>
-#include <Base/EnvironmentModelBase.hpp>
+#include <ListenerModels/ListenerModelBase.hpp>
+#include <EnvironmentModels/EnvironmentModelBase.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/HRBRIR.hpp>
 #include <ProcessingModules/HRTFConvolverProcessor.hpp>
 #include <ProcessingModules/NearFieldEffectProcessor.hpp>
-#include <Base/SourceModelBase.hpp>
+#include <SourceModels/SourceModelBase.hpp>
 #include <Base/BRTManager.hpp>
 #include <third_party_libraries/nlohmann/json.hpp>
 
 namespace BRTListenerModel {
 
 	
-	class CListenerHRTFModel: public BRTBase::CListenerModelBase {
+	class CListenerHRTFModel : public CListenerModelBase {
 		
 		class CSourceProcessors {
 		public:
@@ -113,7 +113,7 @@ namespace BRTListenerModel {
 
 	public:
 		CListenerHRTFModel(std::string _listenerModelID, BRTBase::CBRTManager* _brtManager) 
-			: BRTBase::CListenerModelBase(_listenerModelID, BRTBase::TListenerModelcharacteristics(true, false, false, true, true, true, true, true))
+			: CListenerModelBase(_listenerModelID, TListenerModelcharacteristics(true, false, false, true, true, true, true, true))
 			, brtManager{ _brtManager }
 			, enableSpatialization{ true }
 			, enableInterpolation{ true }
@@ -389,7 +389,7 @@ namespace BRTListenerModel {
 		*/
 		bool ConnectEnvironmentModel(const std::string & _environmentModelID) override {
 
-			std::shared_ptr<BRTBase::CEnviromentModelBase> _environmentModel = brtManager->GetEnvironmentModel<BRTBase::CEnviromentModelBase>(_environmentModelID);
+			std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase> _environmentModel = brtManager->GetEnvironmentModel<BRTEnvironmentModel::CEnviromentModelBase>(_environmentModelID);
 			if (_environmentModel == nullptr) return false;
 
 			return ConnectEnvironmentModel(_environmentModel);
@@ -402,7 +402,7 @@ namespace BRTListenerModel {
 		*/
 		bool DisconnectEnvironmentModel(const std::string & _environmentModelID) override {
 
-			std::shared_ptr<BRTBase::CEnviromentModelBase> _environmentModel = brtManager->GetEnvironmentModel<BRTBase::CEnviromentModelBase>(_environmentModelID);
+			std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase> _environmentModel = brtManager->GetEnvironmentModel<BRTEnvironmentModel::CEnviromentModelBase>(_environmentModelID);
 			if (_environmentModel == nullptr) return false;
 
 			return DisconnectEnvironmentModel(_environmentModel);
@@ -471,7 +471,7 @@ namespace BRTListenerModel {
 		 * @param _environment model Pointer
 		 * @return True if the connection success
 		*/
-		bool ConnectEnvironmentModel(std::shared_ptr<BRTBase::CEnviromentModelBase> _environmentModel) {
+		bool ConnectEnvironmentModel(std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase> _environmentModel) {
 
 			if (_environmentModel == nullptr) return false;
 			if (_environmentModel->IsConnectedToListenerModel()) {
@@ -491,7 +491,7 @@ namespace BRTListenerModel {
 		 * @param _environmentModel Pointer
 		 * @return True if the disconnection success
 		*/
-		bool DisconnectEnvironmentModel(std::shared_ptr<BRTBase::CEnviromentModelBase> _environmentModel) {
+		bool DisconnectEnvironmentModel(std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase> _environmentModel) {
 
 			if (_environmentModel == nullptr) return false;
 						
@@ -648,7 +648,7 @@ namespace BRTListenerModel {
 		bool enableParallaxCorrection;	// Enable parallax correction
 		bool enableITDSimulation;		// Enable ITD simulation 
 
-		std::vector<std::shared_ptr<BRTBase::CEnviromentModelBase>> environmentModelsConnected; // Listener models connected to the listener
+		std::vector<std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase>> environmentModelsConnected; // Listener models connected to the listener
 	};
 }
 #endif

@@ -27,7 +27,7 @@
 #include <vector>
 #include <Connectivity/BRTConnectivity.hpp>
 
-namespace BRTBase {
+namespace BRTSourceModel {
 
 	class CSourceModelBase : public BRTConnectivity::CBRTConnectivity /*public CCommandEntryPointManager, public CExitPointManager, public CEntryPointManager*/ {
 	public:		

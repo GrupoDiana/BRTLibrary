@@ -24,20 +24,20 @@
 #define _CLISTENER_AMBISONIC_ENVIRONMENT_HRTF_MODEL_HPP_
 
 #include <memory>
-#include <Base/ListenerModelBase.hpp>
+#include <ListenerModels/ListenerModelBase.hpp>
 #include <ServiceModules/HRTFDefinitions.hpp>
 #include <ServiceModules/HRBRIR.hpp>
 #include <ServiceModules/AmbisonicBIR.hpp>
 #include <ProcessingModules/BilateralAmbisonicEncoderProcessor.hpp>
 #include <ProcessingModules/AmbisonicDomainConvolverProcessor.hpp>
-#include <Base/SourceModelBase.hpp>
+#include <SourceModels/SourceModelBase.hpp>
 #include <Base/BRTManager.hpp>
 #include <third_party_libraries/nlohmann/json.hpp>
 
 
 namespace BRTListenerModel {
 
-	class CListenerAmbisonicEnvironmentBRIRModel : public BRTBase::CListenerModelBase {
+	class CListenerAmbisonicEnvironmentBRIRModel : public CListenerModelBase {
 
 		class CSourceToBeProcessed {
 		public:
@@ -93,9 +93,13 @@ namespace BRTListenerModel {
 		};
 
 	public:
-		CListenerAmbisonicEnvironmentBRIRModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) :
-			brtManager{ _brtManager }, BRTBase::CListenerModelBase(_listenerID, BRTBase::TListenerModelcharacteristics(false, true, true, false, false, false, false, false)),
-			ambisonicOrder{ 1 }, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }, enableNearFieldEffect{ false }, enableParallaxCorrection{ true }  {
+		CListenerAmbisonicEnvironmentBRIRModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) 
+			: brtManager{ _brtManager }
+			, CListenerModelBase(_listenerID, TListenerModelcharacteristics(false, true, true, false, false, false, false, false))
+			, ambisonicOrder{ 1 }
+			, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }
+			, enableNearFieldEffect{ false }
+			, enableParallaxCorrection{ true }  {
 			
 			listenerHRBRIR = nullptr;												// Create a empty HRTF	class
 			listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicBIR>();	// Create a empty AmbisonicIR class //TODO CHANGE TO NULLPTR						

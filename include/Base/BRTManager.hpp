@@ -28,7 +28,7 @@
 #include "SourceModelBase.hpp"
 #include "ListenerBase.hpp"
 #include "ListenerModelBase.hpp"
-#include "EnvironmentModelBase.hpp"
+#include <EnvironmentModels/EnvironmentModelBase.hpp>
 #include <BinauralFilter/BinauralFilterBase.hpp>
 #include "third_party_libraries/nlohmann/json.hpp"
 
@@ -156,7 +156,7 @@ namespace BRTBase {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "BRT library is not in configuration mode");
 					return nullptr; 				
 				}
-				auto it = std::find_if(audioSources.begin(), audioSources.end(), [&_sourceID](std::shared_ptr<CSourceModelBase>& sourceItem) { return sourceItem->GetID() == _sourceID; });
+				auto it = std::find_if(audioSources.begin(), audioSources.end(), [&_sourceID](std::shared_ptr<BRTSourceModel::CSourceModelBase> & sourceItem) { return sourceItem->GetID() == _sourceID; });
 				if (it != audioSources.end()) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "A Source with such an ID already exists.");
 					return nullptr;
@@ -189,7 +189,7 @@ namespace BRTBase {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "BRT library is not in configuration mode");
 					return nullptr;
 				}
-				auto it = std::find_if(listenerModels.begin(), listenerModels.end(), [&_listenerID](std::shared_ptr<CListenerModelBase>& listenerItem) { return listenerItem->GetModelID() == _listenerID; });
+				auto it = std::find_if(listenerModels.begin(), listenerModels.end(), [&_listenerID](std::shared_ptr<BRTListenerModel::CListenerModelBase> & listenerItem) { return listenerItem->GetModelID() == _listenerID; });
 				if (it != listenerModels.end()) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "A listener with such an ID already exists.");
 					return nullptr;
@@ -252,7 +252,7 @@ namespace BRTBase {
 					return nullptr;
 				}
 				auto it = std::find_if(environmentModels.begin(), environmentModels.end(), 
-					[&_environmentID](std::shared_ptr<CEnviromentModelBase> & environmentItem) { return environmentItem->GetModelID() == _environmentID; });
+					[&_environmentID](std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase> & environmentItem) { return environmentItem->GetModelID() == _environmentID; });
 				if (it != environmentModels.end()) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "A environment with such an ID already exists.");
 					return nullptr;
@@ -340,7 +340,7 @@ namespace BRTBase {
 		*/
 		bool RemoveSoundSource(std::string _sourceID) {
 			if (!setupModeActivated) { return false; }
-			auto it = std::find_if(audioSources.begin(), audioSources.end(), [&_sourceID](std::shared_ptr<CSourceModelBase>& sourceItem) { return sourceItem->GetID() == _sourceID; });
+			auto it = std::find_if(audioSources.begin(), audioSources.end(), [&_sourceID](std::shared_ptr<BRTSourceModel::CSourceModelBase> & sourceItem) { return sourceItem->GetID() == _sourceID; });
 			if (it != audioSources.end()) { 
 				DisconnectModulesCommand(*it);
 				audioSources.erase(it); 				
@@ -357,7 +357,7 @@ namespace BRTBase {
 		*/
 		bool RemoveListener(std::string _listenerID) {
 			if (!setupModeActivated) { return false; }
-			auto it = std::find_if(listenerModels.begin(), listenerModels.end(), [&_listenerID](std::shared_ptr<CListenerModelBase>& listenerItem) { return listenerItem->GetModelID() == _listenerID; });
+			auto it = std::find_if(listenerModels.begin(), listenerModels.end(), [&_listenerID](std::shared_ptr<BRTListenerModel::CListenerModelBase> & listenerItem) { return listenerItem->GetModelID() == _listenerID; });
 			if (it != listenerModels.end()) {
 				DisconnectModulesCommand(*it);
 				listenerModels.erase(it);
@@ -820,10 +820,10 @@ namespace BRTBase {
 	private:
 		std::shared_ptr<BRTConnectivity::CExitPointCommand> commandsExitPoint; // Exit point to emit control commands
 		
-		std::vector<std::shared_ptr<CSourceModelBase>>		audioSources;		// List of audio sources 
+		std::vector<std::shared_ptr<BRTSourceModel::CSourceModelBase>> audioSources; // List of audio sources 
 		std::vector<std::shared_ptr<CListenerBase>>			listeners;			// List of listeners		
-		std::vector<std::shared_ptr<CListenerModelBase>>	listenerModels;		// List of listener Models
-		std::vector<std::shared_ptr<CEnviromentModelBase>>	environmentModels;  // List of virtual sources environments
+		std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> listenerModels; // List of listener Models
+		std::vector<std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase>> environmentModels; // List of virtual sources environments
 		std::vector<std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase>> binauralFilters;		// List of binaural filters
 
 		bool initialized;

@@ -25,7 +25,7 @@
 
 #include <memory>
 #include <Connectivity/BRTConnectivity.hpp>
-#include <Base/ListenerModelBase.hpp>
+#include <ListenerModels/ListenerModelBase.hpp>
 #include <Common/CommonDefinitions.hpp>
 
 namespace BRTServices {

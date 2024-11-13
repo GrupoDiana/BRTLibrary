@@ -77,7 +77,7 @@ namespace BRTEnvironmentModel {
 		 * @param _listenerModel Listener model to connect
 		 * @return True if the connection was successful
 		 */
-		bool ConnectToListenerModel(std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel) {			
+		bool ConnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {			
 			return _listenerModel->ConnectSoundSource(virtualSource);
 		}
 
@@ -86,7 +86,7 @@ namespace BRTEnvironmentModel {
 		 * @param _listenerModel Listener model to disconnect
 		 * @return True if the disconnection was successful
 		 */
-		bool DisconnectToListenerModel(std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel) {			
+		bool DisconnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {			
 			return _listenerModel->DisconnectSoundSource(virtualSource);
 		}
 

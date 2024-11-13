@@ -24,16 +24,16 @@
 #define _SOUND_SOURCE_DIRECTIVITY_MODEL_HPP
 
 #include <vector>
-#include <Base/SourceModelBase.hpp>
+#include <SourceModels/SourceModelBase.hpp>
 #include <ProcessingModules/DirectivityTFConvolver.hpp>
 #include <ServiceModules/DirectivityTF.hpp>
 
 namespace BRTSourceModel {
-	class CSourceDirectivityModel : public BRTBase::CSourceModelBase, BRTProcessing::CDirectivityTFConvolver {
+	class CSourceDirectivityModel : public CSourceModelBase, BRTProcessing::CDirectivityTFConvolver {
 
 	public:			
 		CSourceDirectivityModel(std::string _sourceID)
-			: BRTBase::CSourceModelBase(_sourceID, TSourceType::Directivity) {			
+			: CSourceModelBase(_sourceID, TSourceType::Directivity) {			
 			CreatePositionEntryPoint("listenerPosition");
 		}
 

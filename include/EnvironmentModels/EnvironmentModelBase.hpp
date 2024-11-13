@@ -25,7 +25,7 @@
 
 #include <memory>
 #include <Base/ModelBase.hpp>
-#include <Base/SourceModelBase.hpp>
+#include <SourceModels/SourceModelBase.hpp>
 #include <SourceModels/VirtualSourceModel.hpp>
 #include <Common/Room.hpp>
 
@@ -34,10 +34,8 @@ namespace BRTSourceModel {
 	class CSourceDirectivityModel;
 }
 
-namespace BRTBase {
-
-
-	class CEnviromentModelBase : public CModelBase {
+namespace BRTEnvironmentModel {
+	class CEnviromentModelBase : public BRTBase::CModelBase {
 	public:
 		
 		// Virtual Methods

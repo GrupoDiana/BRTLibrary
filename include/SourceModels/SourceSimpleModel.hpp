@@ -23,15 +23,15 @@
 #ifndef _SOUND_SOURCE_BASIC_MODEL_HPP
 #define _SOUND_SOURCE_BASIC_MODEL_HPP
 
-#include <Base/SourceModelBase.hpp>
+#include <SourceModels/SourceModelBase.hpp>
 #include <vector>
 
 namespace BRTSourceModel {
-	class CSourceSimpleModel : public BRTBase::CSourceModelBase {
+	class CSourceSimpleModel : public CSourceModelBase {
 
 	public:			
 		CSourceSimpleModel(std::string _sourceID)
-			: BRTBase::CSourceModelBase(_sourceID, TSourceType::Simple) {			
+			: CSourceModelBase(_sourceID, TSourceType::Simple) {			
 		}
 
 		

@@ -23,7 +23,7 @@
 #ifndef _SOUND_SOURCE_VIRTUAL_MODEL_HPP
 #define _SOUND_SOURCE_VIRTUAL_MODEL_HPP
 
-#include <Base/SourceModelBase.hpp>
+//#include <SourceModels/SourceModelBase.hpp>
 #include <SourceModels/SourceSimpleModel.hpp>
 #include <vector>
 

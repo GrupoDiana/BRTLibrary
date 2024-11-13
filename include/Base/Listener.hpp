@@ -27,8 +27,8 @@
 #include <Connectivity/EntryPointManager.hpp>
 #include <Connectivity/CommandEntryPointManager.hpp>
 #include <Connectivity/ExitPointManager.hpp>
-#include <Base/ListenerModelBase.hpp>
-#include <Base/EnvironmentModelBase.hpp>
+#include <ListenerModels/ListenerModelBase.hpp>
+#include <EnvironmentModels/EnvironmentModelBase.hpp>
 #include <ListenerModels/ListenerHRTFModel.hpp>
 #include <Base/ListenerBase.hpp>
 #include <Base/BRTManager.hpp>
@@ -55,7 +55,7 @@ namespace BRTBase {
 		*/
 		bool ConnectListenerModel(const std::string & _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) {
 
-			std::shared_ptr<CListenerModelBase> _listenerModel = brtManager->GetListenerModel<CListenerModelBase>(_listenerModelID);
+			std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModelID);
 			if (_listenerModel == nullptr) return false;
 
 			return ConnectListenerModel(_listenerModel, _ear);
@@ -67,7 +67,7 @@ namespace BRTBase {
 		 * @param _ear Ear to connect, both by default
 		 * @return True if the connection success
 		*/		
-		bool ConnectListenerModel(std::shared_ptr<CListenerModelBase> _listenerModel, Common::T_ear _ear = Common::T_ear::BOTH) {
+		bool ConnectListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel, Common::T_ear _ear = Common::T_ear::BOTH) {
 			
 			if (_listenerModel == nullptr) return false;
 			if (_listenerModel->IsAlreadyConnected()) return false;
@@ -103,7 +103,7 @@ namespace BRTBase {
 		*/
 		bool DisconnectListenerModel(const std::string & _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) {
 
-			std::shared_ptr<CListenerModelBase> _listenerModel = brtManager->GetListenerModel<CListenerModelBase>(_listenerModelID);
+			std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModelID);
 			if (_listenerModel == nullptr) return false;
 
 			return DisconnectListenerModel(_listenerModel, _ear);
@@ -115,7 +115,7 @@ namespace BRTBase {
 		 * @param _ear Ear to disconnect, both by default
 		 * @return True if the disconnection success
 		*/
-		bool DisconnectListenerModel(std::shared_ptr<CListenerModelBase> _listenerModel, Common::T_ear _ear = Common::T_ear::BOTH) {
+		bool DisconnectListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel, Common::T_ear _ear = Common::T_ear::BOTH) {
 
 			if (_listenerModel == nullptr) return false;
 			if (_listenerModel->IsAlreadyConnected()) { return false; };
@@ -149,7 +149,7 @@ namespace BRTBase {
 		 * @brief Add listener model to the list of connected listener models
 		 * @param _listenerModel listener model to add	
 		 */
-		void AddListenerModelConnected(std::shared_ptr<CListenerModelBase> _listenerModel) {
+		void AddListenerModelConnected(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
 			listenerModelsConnected.push_back(_listenerModel);
 		}
 
@@ -157,7 +157,7 @@ namespace BRTBase {
 		 * @brief Remove listener model from the list of connected listener models
 		 * @param _listenerModel listener model to remove	
 		 */
-		bool RemoveListenerModelConnected(std::shared_ptr<CListenerModelBase> _listenerModel) {			
+		bool RemoveListenerModelConnected(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {			
 			auto it = std::find(listenerModelsConnected.begin(), listenerModelsConnected.end(), _listenerModel);
 			if (it != listenerModelsConnected.end()) {				
 				listenerModelsConnected.erase(it);
@@ -612,7 +612,7 @@ namespace BRTBase {
 		// Private Attributes
 		/////////////////////////
 		CBRTManager* brtManager;							// Pointer to the BRT Manager			
-		std::vector<std::shared_ptr<CListenerModelBase>> listenerModelsConnected;						// Listener models connected to the listener
+		std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> listenerModelsConnected;						// Listener models connected to the listener
 		std::vector<std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase>> binauralFiltersConnected; // Binaural filters connected to the listener
 	};
 }

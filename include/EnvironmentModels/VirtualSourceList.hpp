@@ -25,8 +25,8 @@
 
 #include <memory>
 #include <Base/BRTManager.hpp>
-#include <Base/SourceModelBase.hpp>
-#include <Base/EnvironmentModelBase.hpp>
+//#include <SourceModels/SourceModelBase.hpp>
+#include <EnvironmentModels/EnvironmentModelBase.hpp>
 #include <SourceModels/VirtualSourceModel.hpp>
 
 namespace BRTEnvironmentModel {

@@ -25,13 +25,13 @@
 
 #include <memory>
 #include <Common/ErrorHandler.hpp>
-#include <Base/ListenerModelBase.hpp>
+#include <ListenerModels/ListenerModelBase.hpp>
 #include <ServiceModules/HRTFDefinitions.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/AmbisonicBIR.hpp>
 #include <ProcessingModules/BilateralAmbisonicEncoderProcessor.hpp>
 #include <ProcessingModules/AmbisonicDomainConvolverProcessor.hpp>
-#include <Base/SourceModelBase.hpp>
+#include <SourceModels/SourceModelBase.hpp>
 #include <Base/BRTManager.hpp>
 #include <third_party_libraries/nlohmann/json.hpp>
 
@@ -41,7 +41,7 @@ namespace BRTServices {
 
 namespace BRTListenerModel {
 
-	class CListenerAmbisonicHRTFModel : public BRTBase::CListenerModelBase {
+	class CListenerAmbisonicHRTFModel : public CListenerModelBase {
 
 		class CSourceToBeProcessed {
 		public:
@@ -102,10 +102,14 @@ namespace BRTListenerModel {
 		};
 
 	public:
-		CListenerAmbisonicHRTFModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) : 
-			brtManager{ _brtManager }, BRTBase::CListenerModelBase(_listenerID, BRTBase::TListenerModelcharacteristics(true, false, true, true, true, true, false, false)),
-			ambisonicOrder{ 1 }, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }, enableNearFieldEffect{ false }, enableParallaxCorrection{ true },
-			enableITDSimulation{ true } {
+		CListenerAmbisonicHRTFModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) 
+			: brtManager{ _brtManager }
+			, CListenerModelBase(_listenerID, TListenerModelcharacteristics(true, false, true, true, true, true, false, false))
+			, ambisonicOrder{ 1 }
+			, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }
+			, enableNearFieldEffect{ false }
+			, enableParallaxCorrection{ true }
+			, enableITDSimulation{ true } {
 			
 			// TODO Change to nullptr
 			listenerHRTF = std::make_shared<BRTServices::CHRTF>();					// Create a empty HRTF	class 
@@ -420,7 +424,7 @@ namespace BRTListenerModel {
 		*/
 		bool ConnectEnvironmentModel(const std::string & _environmentModelID) override {
 
-			std::shared_ptr<BRTBase::CEnviromentModelBase> _environmentModel = brtManager->GetEnvironmentModel<BRTBase::CEnviromentModelBase>(_environmentModelID);
+			std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase> _environmentModel = brtManager->GetEnvironmentModel<BRTEnvironmentModel::CEnviromentModelBase>(_environmentModelID);
 			if (_environmentModel == nullptr) return false;
 
 			return ConnectEnvironmentModel(_environmentModel);
@@ -433,7 +437,7 @@ namespace BRTListenerModel {
 		*/
 		bool DisconnectEnvironmentModel(const std::string & _environmentModelID) override {
 
-			std::shared_ptr<BRTBase::CEnviromentModelBase> _environmentModel = brtManager->GetEnvironmentModel<BRTBase::CEnviromentModelBase>(_environmentModelID);
+			std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase> _environmentModel = brtManager->GetEnvironmentModel<BRTEnvironmentModel::CEnviromentModelBase>(_environmentModelID);
 			if (_environmentModel == nullptr) return false;
 
 			return DisconnectEnvironmentModel(_environmentModel);
@@ -487,7 +491,7 @@ namespace BRTListenerModel {
 		 * @param _environment model Pointer
 		 * @return True if the connection success
 		*/
-		bool ConnectEnvironmentModel(std::shared_ptr<BRTBase::CEnviromentModelBase> _environmentModel) {
+		bool ConnectEnvironmentModel(std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase> _environmentModel) {
 
 			if (_environmentModel == nullptr) return false;
 			if (_environmentModel->IsConnectedToListenerModel()) {
@@ -507,7 +511,7 @@ namespace BRTListenerModel {
 		 * @param _environmentModel Pointer
 		 * @return True if the disconnection success
 		*/
-		bool DisconnectEnvironmentModel(std::shared_ptr<BRTBase::CEnviromentModelBase> _environmentModel) {
+		bool DisconnectEnvironmentModel(std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase> _environmentModel) {
 
 			if (_environmentModel == nullptr) return false;
 
@@ -669,7 +673,7 @@ namespace BRTListenerModel {
 		BRTBase::CBRTManager* brtManager;
 		Common::CGlobalParameters globalParameters;
 
-		std::vector<std::shared_ptr<BRTBase::CEnviromentModelBase>> environmentModelsConnected; // Listener models connected to the listener
+		std::vector<std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase>> environmentModelsConnected; // Listener models connected to the listener
 	};
 }
 #endif

@@ -24,16 +24,16 @@
 #define _C_SDN_ENVIRONMENT_MODEL_HPP_
 
 #include <memory>
-#include <Base/ListenerModelBase.hpp>
-#include <Base/EnvironmentModelBase.hpp>
+#include <ListenerModels/ListenerModelBase.hpp>
+#include <EnvironmentModels/EnvironmentModelBase.hpp>
 #include <EnvironmentModels/SDNEnvironment/SDNEnvironmentProcessor.hpp>
-#include <Base/SourceModelBase.hpp>
+#include <SourceModels/SourceModelBase.hpp>
 #include <Base/BRTManager.hpp>
 #include <third_party_libraries/nlohmann/json.hpp>
 
 namespace BRTEnvironmentModel {
 	
-	class CSDNEnvironmentModel : public BRTBase::CEnviromentModelBase {
+	class CSDNEnvironmentModel : public CEnviromentModelBase {
 		
 		class CSDNProcessors {
 		public:
@@ -96,7 +96,7 @@ namespace BRTEnvironmentModel {
 			 * @param _listener listener model to connect
 			 * @return TRUE if the connection is successful
 			 */
-			bool ConnectToListenerModel(std::shared_ptr<BRTBase::CListenerModelBase> _listener) {
+			bool ConnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listener) {
 				return (SDNProcessor->ConnectToListenerModel(_listener));
 			}
 			
@@ -105,7 +105,7 @@ namespace BRTEnvironmentModel {
 			 * @param _listener listener model to disconnect
 			 * @return TRUE if the disconnection is successful
 			 */
-			bool DisconnectToListenerModel(std::shared_ptr<BRTBase::CListenerModelBase> _listener) {
+			bool DisconnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listener) {
 				return (SDNProcessor->DisconnectToListenerModel(_listener));
 			}
 			
@@ -136,7 +136,7 @@ namespace BRTEnvironmentModel {
 
 	public:
 		CSDNEnvironmentModel(const std::string& _environmentModelID, BRTBase::CBRTManager * _brtManager)
-			: BRTBase::CEnviromentModelBase(_environmentModelID)
+			: CEnviromentModelBase(_environmentModelID)
 			, brtManager { _brtManager }
 			, enableDirectPath { true }
 			, enableReverbPath { true } { }
@@ -390,7 +390,7 @@ namespace BRTEnvironmentModel {
 			std::lock_guard<std::mutex> l(mutex);
 			
 			// Get listener Model pointer			
-			std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTBase::CListenerModelBase>(GetIDEntryPoint("listenerModelID")->GetData());			
+			std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTListenerModel::CListenerModelBase>(GetIDEntryPoint("listenerModelID")->GetData());			
 			if (_listenerModel == nullptr) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "This environment has not been connected to a listener Model.");
 				return false;
@@ -445,7 +445,7 @@ namespace BRTEnvironmentModel {
 			std::lock_guard<std::mutex> l(mutex);
 
 			// Get listener Model pointer
-			std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTBase::CListenerModelBase>(GetIDEntryPoint("listenerModelID")->GetData());
+			std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTListenerModel::CListenerModelBase>(GetIDEntryPoint("listenerModelID")->GetData());
 			if (_listenerModel == nullptr) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "This environment has not been connected to a listener Model.");
 				return false;

@@ -33,7 +33,7 @@ namespace BRTServices {
 	class CHRTF;
 }
 
-namespace BRTBase {	
+namespace BRTListenerModel {	
 	/**
 	 * @brief This class looks for a method of identifying each model, so that we can then know which methods are called. 
 	 * It is actually a provisional solution.
@@ -69,7 +69,7 @@ namespace BRTBase {
 	};
 
 
-	class CListenerModelBase : public CModelBase {
+	class CListenerModelBase : public BRTBase::CModelBase {
 	public:
 		
 

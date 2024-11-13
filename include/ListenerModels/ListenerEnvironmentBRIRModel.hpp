@@ -24,19 +24,18 @@
 #define _CLISTENER_ENVIRONMENT_BRIR_MODEL_HPP_
 
 #include <memory>
-#include <Base/ListenerModelBase.hpp>
-//#include <ServiceModules/HRTF.hpp>
+#include <ListenerModels/ListenerModelBase.hpp>
 #include <ServiceModules/HRBRIR.hpp>
 #include <ProcessingModules/HRTFConvolverProcessor.hpp>
 #include <ProcessingModules/NearFieldEffectProcessor.hpp>
-#include <Base/SourceModelBase.hpp>
+#include <SourceModels/SourceModelBase.hpp>
 #include <Base/BRTManager.hpp>
 #include <third_party_libraries/nlohmann/json.hpp>
 
 namespace BRTListenerModel {
 
 	
-	class CListenerEnvironmentBRIRModel : public BRTBase::CListenerModelBase {
+	class CListenerEnvironmentBRIRModel : public CListenerModelBase {
 		
 		class CSourceProcessors {
 		public:
@@ -98,9 +97,11 @@ namespace BRTListenerModel {
 		};
 
 	public:
-		CListenerEnvironmentBRIRModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) : 
-			BRTBase::CListenerModelBase(_listenerID, BRTBase::TListenerModelcharacteristics(false, true, false, false, false, false, true, true)),
-			brtManager{ _brtManager }, enableSpatialization{ true }, enableInterpolation{ true } {
+		CListenerEnvironmentBRIRModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) 
+			: CListenerModelBase(_listenerID, TListenerModelcharacteristics(false, true, false, false, false, false, true, true))
+			, brtManager{ _brtManager }
+			, enableSpatialization{ true }
+			, enableInterpolation{ true } {
 									
 			listenerHRBRIR = nullptr;
 			CreateHRBRIRExitPoint();
