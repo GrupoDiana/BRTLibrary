@@ -29,14 +29,15 @@
 
 namespace BRTSourceModel {
 
+	enum TSourceType { Simple,	Directivity, Virtual };
+
+
 	class CSourceModelBase : public BRTConnectivity::CBRTConnectivity /*public CCommandEntryPointManager, public CExitPointManager, public CEntryPointManager*/ {
 	public:		
 		virtual ~CSourceModelBase() {}						
 		virtual void Update(std::string entryPointID) = 0;
 		virtual void UpdateCommandSource() = 0;
-
-		enum TSourceType {Simple, Directivity, Virtual};
-		
+				
 		CSourceModelBase(std::string _sourceID, TSourceType _sourceType)
 			: dataReady { false }
 			, sourceID { _sourceID }
@@ -86,23 +87,27 @@ namespace BRTSourceModel {
 			sourceTransform = _transform;			
 			GetTransformExitPoint()->sendData(sourceTransform);
 		}
+						
+		/**
+		 * @brief Get the current source transform
+		 * @return Source transform
+		 */
+		const Common::CTransform& GetCurrentSourceTransform() const { return sourceTransform; };		
 		
-		void SetSourceType(TSourceType _sourceType) {
-			sourceType = _sourceType;
-		}
-
+		/**
+		 * @brief Get the source ID
+		 * @return Source ID
+		 */ 
+		std::string GetID() { return sourceID; }
+		
+		/**
+		 * @brief Get wich type of source is
+		 * @return Source type
+		 */
 		TSourceType GetSourceType() {
 			return sourceType;
 		}
 
-		const Common::CTransform& GetCurrentSourceTransform() const { return sourceTransform; };		
-		
-		std::string GetID() { return sourceID; }
-
-
-
-
-		
 		/**
 		* @brief Manages the reception of new data by an entry point. 
 		* Only entry points that have a notification make a call to this method.
@@ -111,7 +116,9 @@ namespace BRTSourceModel {
 			Update(entryPointID);
 		}
 
-
+		/**
+		 * @brief Manages the reception of new command by an entry point.
+		 */
 		void UpdateCommand() override {
 			
 			std::lock_guard<std::mutex> l(mutex);
@@ -142,13 +149,11 @@ namespace BRTSourceModel {
 			UpdateCommandSource();
 		}
 
-		/*void updateFromCommandEntryPoint(std::string entryPointID) {			   
-			BRTBase::CCommand _command = GetCommandEntryPoint()->GetData();
-			if (!_command.isNull()) {
-				UpdateCommand();
-			}
-		}*/
-						
+		/**
+		 * @brief Check if the command is for this source
+		 * @param _sourceID Source ID
+		 * @return True if the command is for this source
+		 */						
 		bool IsToMySoundSource(std::string _sourceID) {
 			return GetID() == _sourceID;
 		}
@@ -163,6 +168,14 @@ namespace BRTSourceModel {
 		Common::CGlobalParameters globalParameters;
 
 	protected:
+		/**
+		 * @brief Set the source type
+		 * @param _sourceType 
+		 */
+		void SetSourceType(TSourceType _sourceType) {
+			sourceType = _sourceType;
+		}
+
 		mutable std::mutex mutex;		// To avoid access collisions
 	};
 }
