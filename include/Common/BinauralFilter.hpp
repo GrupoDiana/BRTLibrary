@@ -28,6 +28,7 @@
 #include <Common/GlobalParameters.hpp>
 #include <Common/SourceListenerRelativePositionCalculation.hpp>
 
+#define NUMBER_OF_COEFFICIENTS_IN_STAGE_SOS 6
 
 namespace Common {
 
@@ -38,11 +39,7 @@ namespace Common {
 			, initialized { false }
 			, numberOfCoefficientsPerEar { 0 }
 		{
-		
-			//nearFieldEffectFilters.left.AddFilter();		//Initialize the filter to ILD simulation 
-			//nearFieldEffectFilters.left.AddFilter();		//Initialize the filter to ILD simulation
-			//nearFieldEffectFilters.right.AddFilter();		//Initialize the filter to ILD simulation
-			//nearFieldEffectFilters.right.AddFilter();		//Initialize the filter to ILD simulation
+					
 		}
 
 		/**
@@ -62,10 +59,15 @@ namespace Common {
 				filtersChain.right.AddFilter();	//Initialize the filter
 			}			
 
-			numberOfCoefficientsPerEar = _numberOfFilterStages * 6;
+			numberOfCoefficientsPerEar = _numberOfFilterStages * NUMBER_OF_COEFFICIENTS_IN_STAGE_SOS;
 			initialized = true;
 		}
 		
+		/**
+		 * @brief Store the coefficients of the filter. For a filter independent of the source and listener position.
+		 * @param _coefficientsLeft vector of coefficients for the left ear
+		 * @param _coefficientsRight vector of coefficients for the right ear
+		 */
 		void SetCoefficients(std::vector<float>& _coefficientsLeft, std::vector<float>& _coefficientsRight) {
 			if (!initialized) return;
 
@@ -77,7 +79,6 @@ namespace Common {
 			SetCoefficients(filtersChain.right, _coefficientsRight);	//Set RIGHT coefficients			
 		}
 		
-
 		/**
 		 * @brief Enable processor
 		 */
@@ -94,16 +95,16 @@ namespace Common {
 		
 
 		/**
-		 * @brief 
-		 * @param _inLeftBuffer 
-		 * @param _inRightBuffer 
-		 * @param outLeftBuffer 
-		 * @param outRightBuffer 
-		 * @param sourceTransform 
-		 * @param listenerTransform 
-		 * @param _listenerILDWeak 
+		 * @brief Filter the input signal with the binaural filter taking into account the source and listener position
+		 * @param _inLeftBuffer left ear input buffer
+		 * @param _inRightBuffer right ear input buffer
+		 * @param outLeftBuffer out left ear buffer
+		 * @param outRightBuffer out right ear buffer
+		 * @param sourceTransform source position and orientation
+		 * @param listenerTransform listener position and orientation
+		 * @param _SOSFilterWeakPtr pointer to SOS filter 
 		 */
-		void Process(CMonoBuffer<float>& _inLeftBuffer, CMonoBuffer<float>& _inRightBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CSOSFilters>& _listenerILDWeak)
+		void Process(CMonoBuffer<float>& _inLeftBuffer, CMonoBuffer<float>& _inRightBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CSOSFilters>& _SOSFilterWeakPtr)
 		{
 			outLeftBuffer = _inLeftBuffer;
 			outRightBuffer = _inRightBuffer;
@@ -119,7 +120,7 @@ namespace Common {
 			ASSERT(_inLeftBuffer.size() == globalParameters.GetBufferSize() || _inRightBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");			
 			
 			// Check listener ILD
-			std::shared_ptr<BRTServices::CSOSFilters> _listenerILD = _listenerILDWeak.lock();
+			std::shared_ptr<BRTServices::CSOSFilters> _listenerILD = _SOSFilterWeakPtr.lock();
 			if (!_listenerILD) {
 				SET_RESULT(RESULT_ERROR_NULLPOINTER, "ILD listener pointer is null when trying to use in BRTProcessing::CNearFieldEffect");
 				outLeftBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
@@ -133,10 +134,10 @@ namespace Common {
 			std::vector<float> coefficientsLeft = _listenerILD->GetSOSFilterCoefficients(Common::T_ear::LEFT, distance, interauralAzimuth);
 			std::vector<float> coefficientsRight = _listenerILD->GetSOSFilterCoefficients(Common::T_ear::RIGHT, distance, interauralAzimuth);
 			
-			if (coefficientsLeft.size() != 12 || coefficientsRight.size() != 12) {
+			/*if (coefficientsLeft.size() != 12 || coefficientsRight.size() != 12) {
 				SET_RESULT(RESULT_ERROR_BADSIZE, "Twelve coefficients were expected in order to be able to set up the filters in BRTProcessing::CNearFieldEffect");
 				return;
-			}						
+			}*/						
 			
 			SetCoefficients(filtersChain.left, coefficientsLeft);		//Set LEFT coefficients 			 
 			SetCoefficients(filtersChain.right, coefficientsRight);	//Set RIGHT coefficients
@@ -147,18 +148,20 @@ namespace Common {
 		}
 
 
-		
+		/**
+		 * @brief Filter the input signal with the binaural filter
+		 * @param _inLeftBuffer left ear input buffer
+		 * @param _inRightBuffer right ear input buffer
+		 * @param outLeftBuffer out left ear buffer
+		 * @param outRightBuffer out right ear buffer
+		 */
 		void Process(CMonoBuffer<float> & _inLeftBuffer, CMonoBuffer<float> & _inRightBuffer, CMonoBuffer<float> & outLeftBuffer, CMonoBuffer<float> & outRightBuffer)
 		{
 			outLeftBuffer = _inLeftBuffer;
 			outRightBuffer = _inRightBuffer;
 			
-			if (!initialized) return;
-			
-			// Check process flag
-			if (!enableProcessor) {
-				return;
-			}
+			if (!initialized) return;						
+			if (!enableProcessor) return;			
 			
 			ASSERT(_inLeftBuffer.size() == globalParameters.GetBufferSize() || _inRightBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");
 							
@@ -167,7 +170,9 @@ namespace Common {
 			filtersChain.right.Process(outRightBuffer);
 		}
 
-
+		/**
+		 * @brief Reset the buffers of the process
+		 */
 		void ResetProcessBuffers() {
 			filtersChain.left.ResetBuffers();
 			filtersChain.right.ResetBuffers();			
@@ -195,27 +200,21 @@ namespace Common {
 			return _vectorToListener.GetInterauralAzimuthDegrees();			
 		}
 
-		/*void SetCoefficients(Common::CFiltersChain& _filter, std::vector<float>& cofficients) {
-			Common::TFiltersChainCoefficients filterCoeficientsVector;
-			std::vector<float> firstStage(cofficients.begin(), cofficients.begin() + 6);
-			std::vector<float> secondStage(cofficients.begin() + 6, cofficients.end());
-
-			filterCoeficientsVector.push_back(firstStage);
-			filterCoeficientsVector.push_back(secondStage);
-
-			_filter.SetFromCoefficientsVector(filterCoeficientsVector);		
-		}*/
-
+		
+		/**
+		 * @brief Set the coefficients of the filter
+		 * @param _filter filter to set the coefficients
+		 * @param cofficients vector of coefficients
+		 */	
 		void SetCoefficients(Common::CFiltersChain & _filter, std::vector<float> & cofficients) {
 			
 			Common::TFiltersChainCoefficients filterCoeficientsVector;
-			for (int i = 0; i < numberOfCoefficientsPerEar; i += 6) {
-				std::vector<float> stage(cofficients.begin() + i, cofficients.begin() + i + 6);
+			for (int i = 0; i < numberOfCoefficientsPerEar; i += NUMBER_OF_COEFFICIENTS_IN_STAGE_SOS) {
+				std::vector<float> stage(cofficients.begin() + i, cofficients.begin() + i + NUMBER_OF_COEFFICIENTS_IN_STAGE_SOS);
 				filterCoeficientsVector.push_back(stage);
 			}
 			_filter.SetFromCoefficientsVector(filterCoeficientsVector);			
 		}
-
 
 		///////////////////////
 		// Private Attributes

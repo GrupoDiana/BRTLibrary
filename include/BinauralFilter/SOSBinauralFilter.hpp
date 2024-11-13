@@ -141,7 +141,11 @@ namespace BRTBinauralFilter {
 			return ConnectListenerModel(_listenerModel, _ear);
 		};
 		
-
+		/**
+		 * @brief Disconnect listener model from this listener
+		 * @param _listener Pointer to the source
+		 * @return True if the disconnection success
+		*/
 		bool DisconnectListenerModel(const std::string & _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) override { 
 			std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTBase::CListenerModelBase>(_listenerModelID);
 			if (_listenerModel == nullptr) return false;
@@ -150,6 +154,11 @@ namespace BRTBinauralFilter {
 		
 		};
 
+		/**
+		 * @brief Disconnect listener model from this listener
+		 * @param _listener Pointer to the source
+		 * @return True if the disconnection success
+		*/
 		bool DisconnectListenerModel(std::shared_ptr<BRTBase::CListenerModelBase> _listenerModel, Common::T_ear _ear = Common::T_ear::BOTH) {
 			if (_listenerModel == nullptr) return false;
 			
