@@ -109,10 +109,10 @@ namespace BRTListenerModel {
 		virtual bool IsParallaxCorrectionEnabled() { return false; }
 
 		virtual bool SetAmbisonicOrder(int _ambisonicOrder) { return false; }
-		virtual int GetAmbisonicOrder() const { return 0; }
+		virtual int GetAmbisonicOrder() { return 0; }
 		virtual bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) { return false; }
 		virtual bool SetAmbisonicNormalization(std::string _ambisonicNormalization) {return false;}
-		virtual Common::TAmbisonicNormalization GetAmbisonicNormalization() const { return Common::TAmbisonicNormalization::none; }
+		virtual Common::TAmbisonicNormalization GetAmbisonicNormalization() { return Common::TAmbisonicNormalization::none; }
 				
 		virtual bool ConnectEnvironmentModel(const std::string & _environmentModelID) { return false; };
 		virtual bool DisconnectEnvironmentModel(const std::string & _environmentModelID) { return false; };
@@ -121,9 +121,8 @@ namespace BRTListenerModel {
 		virtual bool DisconnectListenerTransform(const std::string _listenerID) { return false; }
 		
 		virtual std::string GetListenerID() { return GetIDEntryPoint("listenerID")->GetData(); }
-
+		
 		// Class Methods
-
 		CListenerModelBase(std::string _listenerModelID, TListenerModelcharacteristics _listenerCharacteristics) 
 			: CModelBase(_listenerModelID)
 			, listenerCharacteristics{ _listenerCharacteristics }

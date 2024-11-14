@@ -54,18 +54,9 @@ class CModelBase : public BRTConnectivity::CBRTConnectivity {
 
 		virtual void SetGain(float _gain) { gain = _gain; }
 		virtual float GetGain() { return gain; }
-		
-		//TODO Simplify source models, if possible, so that a single call to a base class can be used.
-		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) { return false; }
-		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) { return false; }
-		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _source) { return false; }
-
-		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) { return false; }
-		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) { return false; }
-		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _source) { return false; }
-	
-	
-	
+				
+		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) { return false; }		
+		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) { return false; }					
 	};
 }
 #endif

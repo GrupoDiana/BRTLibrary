@@ -37,16 +37,12 @@ namespace BRTSourceModel {
 			CreatePositionEntryPoint("listenerPosition");
 		}
 
-		
-		
-		
-		
-
+	
 		/** \brief SET DirectivityTF of source
 		*	\param[in] pointer to DirectivityTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetDirectivityTF(std::shared_ptr< BRTServices::CDirectivityTF > _sourceDirectivityTF) {			
+		bool SetDirectivityTF(std::shared_ptr< BRTServices::CDirectivityTF > _sourceDirectivityTF) override {			
 			sourceDirectivityTF = _sourceDirectivityTF;						
 			ResetSourceConvolutionBuffers();
 			return true;
@@ -56,14 +52,14 @@ namespace BRTSourceModel {
 		 * @brief Get the source directivity transfer function
 		 * @return shered pointer to the directivity of the source model
 		*/
-		std::shared_ptr< BRTServices::CDirectivityTF > GetDirectivityTF() {
+		std::shared_ptr<BRTServices::CDirectivityTF> GetDirectivityTF() override {
 			return sourceDirectivityTF;
 		}
 
 		/**
 		 * @brief Remove the shared pointer of the directivity TF
 		*/
-		void RemoveDirectivityTF() {
+		void RemoveDirectivityTF() override {
 			sourceDirectivityTF = std::make_shared<BRTServices::CDirectivityTF>();			
 		}
 
@@ -72,7 +68,7 @@ namespace BRTSourceModel {
 		 * @param _enabled boolean true if you want to enable the directivity, false if disable
 		*/
 		// TODO: Move to command
-		void SetDirectivityEnable(bool _enabled) {
+		void SetDirectivityEnable(bool _enabled) override {
 			if (_enabled) { EnableSourceDirectionality(); }
 			else { DisableSourceDirectionality(); }
 		}
@@ -81,7 +77,7 @@ namespace BRTSourceModel {
 		 * @brief Reset the buffers used in the convolution of the directivity
 		*/
 		// TODO Move to command
-		void ResetBuffers() {
+		void ResetBuffers() override {
 			ResetSourceConvolutionBuffers();
 		}
 

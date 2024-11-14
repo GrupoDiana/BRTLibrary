@@ -121,7 +121,7 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRBRIR to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetHRBRIR(std::shared_ptr< BRTServices::CHRBRIR > _listenerHRBRIR) {
+		bool SetHRBRIR(std::shared_ptr<BRTServices::CHRBRIR> _listenerHRBRIR) override {
 			if (_listenerHRBRIR->GetSamplingRate() != globalParameters.GetSampleRate()) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "This HRBRIR has not been assigned to the listener. The sample rate of the HRBRIR does not match the one set in the library Global Parameters.");
 				return false;
@@ -139,15 +139,14 @@ namespace BRTListenerModel {
 		*	\retval HRBRIR pointer to current listener HRBRIR
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr < BRTServices::CHRBRIR> GetHRBRIR() const
-		{
+		std::shared_ptr<BRTServices::CHRBRIR> GetHRBRIR() const override {
 			return listenerHRBRIR;
 		}
 
 		/** \brief Remove the HRBRIR of thelistener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void RemoveHRBRIR() {
+		void RemoveHRBRIR() override {
 			listenerHRBRIR = nullptr;
 		}
 
@@ -157,7 +156,7 @@ namespace BRTListenerModel {
 		 * @param _ambisonicOrder Ambisonic order to be set up. Currently only orders between 1 to 3 are allowed
 		 * @return true if it is a valid order.
 		*/
-		bool SetAmbisonicOrder(int _ambisonicOrder) {
+		bool SetAmbisonicOrder(int _ambisonicOrder) override {
 			
 			if (_ambisonicOrder < 1 || _ambisonicOrder > 3) { return false; }
 			if (ambisonicOrder == _ambisonicOrder) { return true; }			
@@ -178,7 +177,7 @@ namespace BRTListenerModel {
 		 * @brief Return current established ambisonic order
 		 * @return order
 		*/
-		int GetAmbisonicOrder() {
+		int GetAmbisonicOrder() override {
 			return ambisonicOrder;
 		}
 
@@ -186,7 +185,7 @@ namespace BRTListenerModel {
 		 * @brief Set the ambisonin normalization to be used
 		 * @param _ambisonicNormalization Normalization to be set up. 
 		*/
-		bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) {
+		bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) override {
 			
 			if (ambisonicNormalization == _ambisonicNormalization) { return true; }
 			
@@ -202,7 +201,7 @@ namespace BRTListenerModel {
 		 * @param _ambisonicNormalization Normalization to be set up, valid strings are N3D, SN3D and maxN
 		 * @return true if it is a valid normalization
 		*/
-		bool SetAmbisonicNormalization(std::string _ambisonicNormalization) {
+		bool SetAmbisonicNormalization(std::string _ambisonicNormalization) override {
 			
 			Common::TAmbisonicNormalization temp;
 			if (_ambisonicNormalization == "N3D") {			temp = Common::TAmbisonicNormalization::N3D; }
@@ -216,104 +215,27 @@ namespace BRTListenerModel {
 		 * @brief Return current established ambisonic normalization 
 		 * @return current established ambisonic normalization
 		*/
-		Common::TAmbisonicNormalization GetAmbisonincNormalization() {
+		Common::TAmbisonicNormalization GetAmbisonicNormalization() override {
 			return ambisonicNormalization;
 		}
-		
-
-		/** \brief Enable near field effect for this source
-		*   \eh Nothing is reported to the error handler.
-		*/
-		/*void EnableNearFieldEffect() {
-			enableNearFieldEffect = true;
-			SetConfigurationInALLSourcesProcessors();			
-		}*/
-
-		/** \brief Disable near field effect for this source
-		*   \eh Nothing is reported to the error handler.
-		*/
-		/*void DisableNearFieldEffect() {
-			enableNearFieldEffect = false;
-			SetConfigurationInALLSourcesProcessors();			
-		}*/
-
-		/** \brief Get the flag for near field effect enabling
-		*	\retval nearFieldEffectEnabled if true, near field effect is enabled for this listener
-		*   \eh Nothing is reported to the error handler.
-		*/
-		/*bool IsNearFieldEffectEnabled() { return enableNearFieldEffect; }*/
-
-		///** \brief Enable bilaterality for all source connected to this listener
-		//*   \eh Nothing is reported to the error handler.
-		//*/
-		//void EnableITDSimulation() {
-		//	enableITDSimulation = true;
-		//	SetConfigurationInALLSourcesProcessors();
-		//}
-
-		///** \brief Disable bilaterality for all source connected to this listener
-		//*   \eh Nothing is reported to the error handler.
-		//*/
-		//void DisableITDSimulation() {
-		//	enableITDSimulation = false;
-		//	SetConfigurationInALLSourcesProcessors();
-		//}
-		
-		/**
-		 * @brief Enable Parallax Correction
-		*/
-		//void EnableParallaxCorrection() { 
-		//	enableParallaxCorrection = true; 
-		//	SetConfigurationInALLSourcesProcessors();
-		//}
-
-		///**
-		// * @brief Disable Parallax Correction
-		//*/
-		//void DisableParallaxCorrection() { 
-		//	enableParallaxCorrection = false; 
-		//	SetConfigurationInALLSourcesProcessors();
-		//}
-
-		///**
-		//* @brief Get Parallax Correction state
-		//*/
-		//bool IsParallaxCorrectionEnabled() { return enableParallaxCorrection; }
-
+				
 		/**
 		 * @brief Connect a new source to this listener
 		 * @param _source Pointer to the source
 		 * @return True if the connection success
 		*/
-		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel > _source) {			
-			return ConnectAnySoundSource(_source, false);
+		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) override {
+			return ConnectAnySoundSource(_source);
 		};
-		/**
-		 * @brief Connect a new source to this listener
-		 * @param _source Pointer to the source
-		 * @return True if the connection success
-		*/
-		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel > _source) {
-			return ConnectAnySoundSource(_source, true);
-		};
-
+		
 		/**
 		 * @brief Disconnect a new source to this listener
 		 * @param _source Pointer to the source
 		 * @return True if the disconnection success
 		*/
-		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) {
-			return DisconnectAnySoundSource(_source, false);
-		};
-
-		/**
-		 * @brief Disconnect a new source to this listener
-		 * @param _source Pointer to the source
-		 * @return True if the disconnection success
-		*/
-		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) {
-			return DisconnectAnySoundSource(_source, true);
-		};
+		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) override {
+			return DisconnectAnySoundSource(_source);
+		};		
 				
 		/**
 		 * @brief Connecting to a specific listener transform
@@ -462,13 +384,11 @@ namespace BRTListenerModel {
 
 
 		/**
-		 * @brief Connect a new source to this listener
-		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
+		 * @brief Connect a new source to this listener		 
 		 * @param _source Pointer to the source
 		 * @return True if the connection success
-		*/
-		template <typename T>
-		bool ConnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
+		*/		
+		bool ConnectAnySoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) {
 			std::lock_guard<std::mutex> l(mutex);
 			CSourceToBeProcessed _newSourceProcessors(_source->GetID(), brtManager);
 			_newSourceProcessors.bilateralAmbisonicEncoderProcessor->SetAmbisonicOrder(ambisonicOrder);
@@ -477,7 +397,7 @@ namespace BRTListenerModel {
 			bool control = brtManager->ConnectModuleTransform(_source, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "sourcePosition");
 			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "sourceID");			
 			
-			if (sourceNeedsListenerPosition) {
+			if (_source->GetSourceType() == BRTSourceModel::Directivity) {
 				control = control && brtManager->ConnectModuleTransform(this, _source, "listenerPosition");
 			}
 
@@ -506,9 +426,8 @@ namespace BRTListenerModel {
 		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
 		 * @param _source Pointer to the source
 		*  @return True if the disconnection success
-		*/
-		template <typename T>
-		bool DisconnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
+		*/		
+		bool DisconnectAnySoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) {
 			std::lock_guard<std::mutex> l(mutex);
 			std::string _sourceID = _source->GetID();
 			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSourceToBeProcessed& sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
@@ -526,7 +445,7 @@ namespace BRTListenerModel {
 
 				control = control && brtManager->DisconnectModuleTransform(this, it->bilateralAmbisonicEncoderProcessor, "listenerPosition");
 
-				if (sourceNeedsListenerPosition) {
+				if (_source->GetSourceType() == BRTSourceModel::Directivity) {
 					control = control && brtManager->DisconnectModuleTransform(this, _source, "listenerPosition");
 				}
 

@@ -37,7 +37,13 @@ namespace BRTSourceModel {
 		virtual ~CSourceModelBase() {}						
 		virtual void Update(std::string entryPointID) = 0;
 		virtual void UpdateCommandSource() = 0;
-				
+
+		virtual bool SetDirectivityTF(std::shared_ptr<BRTServices::CDirectivityTF> _sourceDirectivityTF) { return false; }
+		virtual std::shared_ptr<BRTServices::CDirectivityTF> GetDirectivityTF() { return nullptr; }
+		virtual void RemoveDirectivityTF() {};
+		virtual void SetDirectivityEnable(bool _enabled) {};
+		virtual void ResetBuffers() {};
+
 		CSourceModelBase(std::string _sourceID, TSourceType _sourceType)
 			: dataReady { false }
 			, sourceID { _sourceID }

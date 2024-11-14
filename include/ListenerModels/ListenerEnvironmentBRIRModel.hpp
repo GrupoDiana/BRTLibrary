@@ -111,7 +111,7 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRBRIR to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetHRBRIR(std::shared_ptr< BRTServices::CHRBRIR > _listenerBRIR) {			    
+		bool SetHRBRIR(std::shared_ptr<BRTServices::CHRBRIR> _listenerBRIR) override {			    
 			if (_listenerBRIR->GetSamplingRate() != globalParameters.GetSampleRate()) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "This HRTF has not been assigned to the listener. The sample rate of the HRTF does not match the one set in the library Global Parameters.");
 				return false;
@@ -127,7 +127,7 @@ namespace BRTListenerModel {
 		*	\retval HRBRIR pointer to current listener HRBRIR
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr < BRTServices::CHRBRIR> GetHRBRIR() const
+		std::shared_ptr<BRTServices::CHRBRIR> GetHRBRIR() const override
 		{
 			return listenerHRBRIR;
 		}
@@ -135,7 +135,7 @@ namespace BRTListenerModel {
 		/** \brief Remove the HRBRIR of thelistener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void RemoveHRBRIR() {						
+		void RemoveHRBRIR() override {						
 			listenerHRBRIR = nullptr;
 		}
 
@@ -145,54 +145,30 @@ namespace BRTListenerModel {
 		 * @param _source Pointer to the source
 		 * @return True if the connection success
 		*/
-		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel > _source) { 
-			return ConnectAnySoundSource(_source, false);
+		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) override {
+			return ConnectAnySoundSource(_source);
 		};
-		/**
-		 * @brief Connect a new source to this listener
-		 * @param _source Pointer to the source
-		 * @return True if the connection success
-		*/
-		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel > _source) { 			
-			return ConnectAnySoundSource(_source, true);
-		};
-
-		/**
-		 * @brief Disconnect a new source to this listener
-		 * @param _source Pointer to the source
-		 * @return True if the disconnection success
-		*/
-		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) { 
-			return DisconnectAnySoundSource(_source, false);
-		};
-		/**
-		 * @brief Disconnect a new source to this listener
-		 * @param _source Pointer to the source
-		 * @return True if the disconnection success
-		*/
-		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) { 
-			return DisconnectAnySoundSource(_source, true);
-		};
-
 		
-
+		/**
+		 * @brief Disconnect a new source to this listener
+		 * @param _source Pointer to the source
+		 * @return True if the disconnection success
+		*/
+		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) override {
+			return DisconnectAnySoundSource(_source);
+		};
+				
 		/** \brief Enable binaural spatialization based in HRTF convolution
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableSpatialization() { 
+		void EnableSpatialization() override { 
 			enableSpatialization = true;	
 			SetConfigurationInALLSourcesProcessors();
-		}
-		/*	nlohmann::json j;
-			j["command"] = "/listener/enableSpatialization";
-			j["listenerID"] = listenerID;
-			j["enable"] = true;
-			brtManager->ExecuteCommand(j.dump());	*/		
-		//}//
+		}		
 
 		/** \brief Disable binaural spatialization based in HRTF convolution
 		*/
-		void DisableSpatialization()
+		void DisableSpatialization() override
 		{
 			enableSpatialization = false;
 			SetConfigurationInALLSourcesProcessors();			
@@ -202,19 +178,19 @@ namespace BRTListenerModel {
 		//*	\retval IsInterpolationEnabled if true, run-time HRTF interpolation is enabled for this source
 		//*   \eh Nothing is reported to the error handler.
 		//*/
-		bool IsSpatializationEnabled() { return enableSpatialization; }
+		bool IsSpatializationEnabled() override { return enableSpatialization; }
 
 		/** \brief Enable run-time HRTF interpolation
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableInterpolation() {
+		void EnableInterpolation() override {
 			enableInterpolation = true;
 			SetConfigurationInALLSourcesProcessors();			
 		}
 
 		/** \brief Disable run-time HRTF interpolation
 		*/
-		void DisableInterpolation() {
+		void DisableInterpolation() override {
 			enableInterpolation = false;
 			SetConfigurationInALLSourcesProcessors();			
 		}
@@ -223,13 +199,13 @@ namespace BRTListenerModel {
 		*	\retval IsInterpolationEnabled if true, run-time HRTF interpolation is enabled for this source
 		*   \eh Nothing is reported to the error handler.
 		*/
-		bool IsInterpolationEnabled() { return enableInterpolation; }
+		bool IsInterpolationEnabled() override { return enableInterpolation; }
 
 		
 		/**
 		 * @brief Enable model
 		 */
-		void EnableModel() {
+		void EnableModel() override {
 			std::lock_guard<std::mutex> l(mutex);
 			enableModel = true;
 			for (auto& it : sourcesConnectedProcessors) {
@@ -240,7 +216,7 @@ namespace BRTListenerModel {
 		/**
 		 * @brief Disable model
 		 */
-		void DisableModel() {
+		void DisableModel() override {
 			std::lock_guard<std::mutex> l(mutex);
 			enableModel = false;
 			for (auto& it : sourcesConnectedProcessors) {
@@ -258,19 +234,11 @@ namespace BRTListenerModel {
 				it.ResetBuffers();
 			}
 		}
-
-		/**
-		 * @brief Implementation of the virtual method to process the data received by the entry points.
-		 * @param entryPointID ID of the entry point
-		*/
-		void Update(std::string entryPointID) {
-			// Nothing to do
-		}
-
+		
 		/**
 		 * @brief Implementation of the virtual method for processing the received commands
 		*/
-		void UpdateCommand() {
+		void UpdateCommand() override {
 			std::lock_guard<std::mutex> l(mutex);
 			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();						
 			if (command.isNull() || command.GetCommand() == "") { return; }
@@ -321,9 +289,8 @@ namespace BRTListenerModel {
 		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
 		 * @param _source Pointer to the source
 		 * @return True if the connection success
-		*/
-		template <typename T>
-		bool ConnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
+		*/		
+		bool ConnectAnySoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) {
 			std::lock_guard<std::mutex> l(mutex);
 
 			CSourceProcessors _newSourceProcessors(_source->GetID(), brtManager);
@@ -331,7 +298,7 @@ namespace BRTListenerModel {
 			bool control = brtManager->ConnectModuleTransform(_source, _newSourceProcessors.binauralConvolverProcessor, "sourcePosition");			
 			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.binauralConvolverProcessor, "sourceID");
 						
-			if (sourceNeedsListenerPosition) {
+			if (_source->GetSourceType() == BRTSourceModel::Directivity) {
 				control = control && brtManager->ConnectModuleTransform(this, _source, "listenerPosition");
 			}
 
@@ -356,9 +323,8 @@ namespace BRTListenerModel {
 		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
 		 * @param _source Pointer to the source
 		*  @return True if the disconnection success
-		*/
-		template <typename T>
-		bool DisconnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
+		*/		
+		bool DisconnectAnySoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) {
 			std::lock_guard<std::mutex> l(mutex);
 			std::string _sourceID = _source->GetID();
 			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSourceProcessors& sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
@@ -371,7 +337,7 @@ namespace BRTListenerModel {
 				control = control && brtManager->DisconnectModuleHRBRIR(this, it->binauralConvolverProcessor, "listenerHRTF");				
 				control = control && brtManager->DisconnectModuleTransform(this, it->binauralConvolverProcessor, "listenerPosition");
 
-				if (sourceNeedsListenerPosition) {
+				if (_source->GetSourceType() == BRTSourceModel::Directivity) {
 					control = control && brtManager->DisconnectModuleTransform(this, _source, "listenerPosition");								
 				}				
 				control = control && brtManager->DisconnectModuleID(_source, it->binauralConvolverProcessor, "sourceID");				

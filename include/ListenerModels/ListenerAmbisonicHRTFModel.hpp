@@ -350,59 +350,26 @@ namespace BRTListenerModel {
 			rightAmbisonicDomainConvolverProcessor->DisableProcessor();
 		};
 
-		/**
-		 * @brief Connect a new source to this listener
-		 * @param _source Pointer to the source
-		 * @return True if the connection success
-		*/
-		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) override {			
-			return ConnectAnySoundSource(_source, false);
-		};
-		/**
-		 * @brief Connect a new source to this listener
-		 * @param _source Pointer to the source
-		 * @return True if the connection success
-		*/
-		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) override {
-			return ConnectAnySoundSource(_source, true);
-		};
 
 		/**
-		 * @brief Connect a virtual source to this listener
+		 * @brief Connect a new source to this listener
 		 * @param _source Pointer to the source
 		 * @return True if the connection success
 		*/
-		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _source) override {
-			return ConnectAnySoundSource(_source, false);
+		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) override {
+			if (_source == nullptr) return false;
+			return ConnectAnySoundSource(_source);
 		}
-
+		
 		/**
 		 * @brief Disconnect a new source to this listener
 		 * @param _source Pointer to the source
 		 * @return True if the disconnection success
 		*/
-		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) override {
-			return DisconnectAnySoundSource(_source, false);
+		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) override {
+			return DisconnectAnySoundSource(_source);
 		};
-
-		/**
-		 * @brief Disconnect a new source to this listener
-		 * @param _source Pointer to the source
-		 * @return True if the disconnection success
-		*/
-		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) override {
-			return DisconnectAnySoundSource(_source, true);
-		};
-				
-		/**
-		 * @brief Disconnect a new source to this listener
-		 * @param _source Pointer to the source
-		 * @return True if the disconnection success
-		*/
-		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CVirtualSourceModel> _source) override {
-			return DisconnectAnySoundSource(_source, false);
-		};
-
+								
 		/**
 		 * @brief Reset all processor buffers
 		*/
@@ -555,13 +522,11 @@ namespace BRTListenerModel {
 
 
 		/**
-		 * @brief Connect a new source to this listener
-		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
+		 * @brief Connect a new source to this listener		 
 		 * @param _source Pointer to the source
 		 * @return True if the connection success
-		*/
-		template <typename T>
-		bool ConnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
+		*/		
+		bool ConnectAnySoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) {
 			std::lock_guard<std::mutex> l(mutex);
 			
 			// Get listener pointer
@@ -579,7 +544,7 @@ namespace BRTListenerModel {
 			bool control = brtManager->ConnectModuleTransform(_source, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "sourcePosition");
 			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "sourceID");			
 			
-			if (sourceNeedsListenerPosition) {
+			if (_source->GetSourceType()==BRTSourceModel::TSourceType::Directivity) {
 				control = control && brtManager->ConnectModuleTransform(_listener, _source, "listenerPosition");
 			}
 
@@ -608,9 +573,8 @@ namespace BRTListenerModel {
 		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
 		 * @param _source Pointer to the source
 		*  @return True if the disconnection success
-		*/
-		template <typename T>
-		bool DisconnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {
+		*/		
+		bool DisconnectAnySoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) {
 			std::lock_guard<std::mutex> l(mutex);
 			
 			// Get listener pointer
@@ -636,7 +600,7 @@ namespace BRTListenerModel {
 				control = control && brtManager->DisconnectModuleHRTF(this, it->bilateralAmbisonicEncoderProcessor, "listenerHRTF");
 				control = control && brtManager->DisconnectModuleTransform(_listener, it->bilateralAmbisonicEncoderProcessor, "listenerPosition");
 
-				if (sourceNeedsListenerPosition) {
+				if (_source->GetSourceType() == BRTSourceModel::Directivity) {
 					control = control && brtManager->DisconnectModuleTransform(_listener, _source, "listenerPosition");
 				}
 

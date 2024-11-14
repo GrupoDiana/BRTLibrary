@@ -219,34 +219,18 @@ namespace BRTEnvironmentModel {
 		 * @param _source Pointer to the source
 		 * @return True if the connection success
 		*/
-		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel > _source) override { 
-			return ConnectAnySoundSource(_source, false);
+		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) override {
+			return ConnectAnySoundSource(_source);
 		};
-		/**
-		 * @brief Connect a new source to this listener
-		 * @param _source Pointer to the source
-		 * @return True if the connection success
-		*/
-		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) override { 			
-			return ConnectAnySoundSource(_source, true);
-		};
-
+		
 		/**
 		 * @brief Disconnect a new source to this listener
 		 * @param _source Pointer to the source
 		 * @return True if the disconnection success
 		*/
-		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceSimpleModel> _source) override{ 
-			return DisconnectAnySoundSource(_source, false);
-		};
-		/**
-		 * @brief Disconnect a new source to this listener
-		 * @param _source Pointer to the source
-		 * @return True if the disconnection success
-		*/
-		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceDirectivityModel> _source) override { 
-			return DisconnectAnySoundSource(_source, true);
-		};
+		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) override{ 
+			return DisconnectAnySoundSource(_source);
+		};		
 	
 		/**
 		 * @brief Reset all processor buffers
@@ -385,8 +369,8 @@ namespace BRTEnvironmentModel {
 		 * @param _source Pointer to the source
 		 * @return True if the connection success
 		*/
-		template <typename T>
-		bool ConnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {			
+		//template <typename T>
+		bool ConnectAnySoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source/*, bool sourceNeedsListenerPosition*/) {			
 			std::lock_guard<std::mutex> l(mutex);
 			
 			// Get listener Model pointer			
@@ -410,7 +394,7 @@ namespace BRTEnvironmentModel {
 			bool control = brtManager->ConnectModuleTransform(_source, _newSDNProcessors.SDNProcessor, "sourcePosition");			
 			control = control && brtManager->ConnectModuleID(_source, _newSDNProcessors.SDNProcessor, "sourceID");						
 			
-			if (sourceNeedsListenerPosition) {
+			if (_source->GetSourceType() == BRTSourceModel::Directivity/*sourceNeedsListenerPosition*/) {
 				control = control && brtManager->ConnectModuleTransform(_listener, _source, "listenerPosition");
 			}
 		
@@ -439,9 +423,8 @@ namespace BRTEnvironmentModel {
 		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
 		 * @param _source Pointer to the source
 		*  @return True if the disconnection success
-		*/
-		template <typename T>
-		bool DisconnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {						
+		*/		
+		bool DisconnectAnySoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) {						
 			std::lock_guard<std::mutex> l(mutex);
 
 			// Get listener Model pointer
@@ -465,7 +448,7 @@ namespace BRTEnvironmentModel {
 				control = control && brtManager->DisconnectModulesSamples(_source, "samples", it->SDNProcessor, "inputSamples");
 				control = control && brtManager->DisconnectModuleID(this, it->SDNProcessor, "listenerID");
 				control = control && brtManager->DisconnectModuleTransform(_listener, it->SDNProcessor, "listenerPosition");
-				if (sourceNeedsListenerPosition) {
+				if (_source->GetSourceType() == BRTSourceModel::Directivity) {
 					control = control && brtManager->DisconnectModuleTransform(_listener, _source, "listenerPosition");
 				}
 				control = control && brtManager->DisconnectModuleID(_source, it->SDNProcessor, "sourceID");
