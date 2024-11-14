@@ -113,7 +113,10 @@ namespace BRTListenerModel {
 		virtual bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) { return false; }
 		virtual bool SetAmbisonicNormalization(std::string _ambisonicNormalization) {return false;}
 		virtual Common::TAmbisonicNormalization GetAmbisonicNormalization() { return Common::TAmbisonicNormalization::none; }
-				
+		
+		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) { return false; }
+		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) { return false; }	
+
 		virtual bool ConnectEnvironmentModel(const std::string & _environmentModelID) { return false; };
 		virtual bool DisconnectEnvironmentModel(const std::string & _environmentModelID) { return false; };
 
