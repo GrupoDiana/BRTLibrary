@@ -86,7 +86,7 @@ namespace BRTReaders {
 		*	\param [out] listener affected by the hrtf
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		bool ReadNFCFiltersFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CSOSFilters>& listenerNFCFilters)
+		bool ReadSOSFiltersFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CSOSFilters>& listenerNFCFilters)
 		{
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerNFCFilters;
 			
