@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unrealease]
 
+### Added
+- A new namespace and folder has been created to centralise the classes that manage the connectivity between modules.
+- Added implementation of binaural filters based on second order sections loaded from a SOFA file.
+- An independent and adjustable gain control has been added for each model.
+
+### Changed
+- The classes related to connectivity have been moved to the new folder and namespace created for this purpose.
+- The location and namespace of the base classes of the environment, listener and source models have been changed. 
+- The source models have been simplified to make them easier to use internally, in the same style as the rest of the model.
+- Nearfield processing is now handled by a more generic class called BinauralFilter.
+- The method for reading SOFA files of type SOS has been renamed.
+
 ### Fixed
 - Audio sources will not be erased properly when using the free field environment model.
 
