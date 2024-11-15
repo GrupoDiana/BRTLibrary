@@ -505,53 +505,7 @@ namespace BRTListenerModel {
 			sourceProcessor.SetConfiguration(enableSpatialization, enableInterpolation, enableNearFieldEffect, enableITDSimulation, enableParallaxCorrection);
 		}
 
-		/**
-		 * @brief Connect a new source to this listener
-		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
-		 * @param _source Pointer to the source
-		 * @return True if the connection success
-		*/
-		//template <typename T>
-		//bool ConnectAnySoundSource(std::shared_ptr<T> _source, bool sourceNeedsListenerPosition) {			
-		//	std::lock_guard<std::mutex> l(mutex);
-		//	
-		//	// Get listener pointer
-		//	std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(GetIDEntryPoint("listenerID")->GetData());
-		//	if (_listener == nullptr) {
-		//		SET_RESULT(RESULT_ERROR_NOTSET, "This listener Model has not been connected to a listener.");
-		//		return false;
-		//	}
-		//	// Make connections						
-		//	CSourceProcessors _newSourceProcessors(_source->GetID(), brtManager);
-
-		//	bool control = brtManager->ConnectModuleTransform(_source, _newSourceProcessors.binauralConvolverProcessor, "sourcePosition");
-		//	control = control && brtManager->ConnectModuleTransform(_source, _newSourceProcessors.nearFieldEffectProcessor, "sourcePosition");
-		//	control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.binauralConvolverProcessor, "sourceID");
-		//	control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.nearFieldEffectProcessor, "sourceID");
-		//	
-		//	if (_source->GetSourceType() == BRTSourceModel::TSourceType::Directivity) {
-		//		control = control && brtManager->ConnectModuleTransform(_listener, _source, "listenerPosition");
-		//	}
-
-		//	control = control && brtManager->ConnectModuleTransform(_listener, _newSourceProcessors.binauralConvolverProcessor, "listenerPosition");
-		//	control = control && brtManager->ConnectModuleTransform(_listener, _newSourceProcessors.nearFieldEffectProcessor, "listenerPosition");
-		//	control = control && brtManager->ConnectModuleHRTF(this, _newSourceProcessors.binauralConvolverProcessor, "listenerHRTF");
-		//	control = control && brtManager->ConnectModuleILD(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerILD");
-		//	control = control && brtManager->ConnectModuleID(_listener, _newSourceProcessors.binauralConvolverProcessor, "listenerID");	// this or listener??
-
-		//	control = control && brtManager->ConnectModulesSamples(_source, "samples", _newSourceProcessors.binauralConvolverProcessor, "inputSamples");
-		//	control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.binauralConvolverProcessor, "leftEar", _newSourceProcessors.nearFieldEffectProcessor, "leftEar");
-		//	control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.binauralConvolverProcessor, "rightEar", _newSourceProcessors.nearFieldEffectProcessor, "rightEar");
-		//	control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.nearFieldEffectProcessor, "leftEar", this, "leftEar");
-		//	control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.nearFieldEffectProcessor, "rightEar", this, "rightEar");
-
-		//	if (control) {				
-		//		SetSourceProcessorsConfiguration(_newSourceProcessors);
-		//		sourcesConnectedProcessors.push_back(std::move(_newSourceProcessors));
-		//		return true;
-		//	}
-		//	return false;
-		//}
+		
 		/**
 		 * @brief Connect a new source to this listener		 
 		 * @param _source Pointer to the source

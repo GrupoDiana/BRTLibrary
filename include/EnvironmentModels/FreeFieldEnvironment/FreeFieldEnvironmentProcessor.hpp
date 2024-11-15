@@ -35,7 +35,8 @@ namespace BRTEnvironmentModel {
 	public:
 		CFreeFieldEnvironmentProcessor(BRTBase::CBRTManager * _brtManager)			
 			: brtManager { _brtManager }
-			, initialized { false }	{
+			, initialized { false }
+			, gain { 1.0f } {
 
 			CreateSamplesEntryPoint("inputSamples");
 			CreatePositionEntryPoint("sourcePosition");
@@ -115,6 +116,8 @@ namespace BRTEnvironmentModel {
 			CMonoBuffer<float> outBuffer;
 			Process(inBuffer, outBuffer, sourcePosition, listenerPosition);
 						
+			outBuffer.ApplyGain(gain);
+
 			virtualSource->SetSourceTransform(sourcePosition);
 			virtualSource->SetBuffer(outBuffer);													
 		}
@@ -126,7 +129,16 @@ namespace BRTEnvironmentModel {
 		}
 
 		void ResetProcessBuffers() {
-		
+			// Nothing for the moment
+		}
+
+		void SetGain(float _gain) {	
+			std::lock_guard<std::mutex> l(mutex);
+			gain = _gain;
+		}
+
+		float GetGain() {
+			return gain;
 		}
 
 		/**
@@ -147,6 +159,7 @@ namespace BRTEnvironmentModel {
 		BRTBase::CBRTManager * brtManager;
 						
 		std::string originalSourceID;
+		float gain;
 		bool initialized;		
 	};
 }

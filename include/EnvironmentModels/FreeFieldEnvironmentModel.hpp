@@ -90,7 +90,19 @@ namespace BRTEnvironmentModel {
 			*/
 			void ResetBuffers() {
 				// do nothing
-			}					
+				freeFieldProcessor->ResetProcessBuffers();
+			}		
+
+			/**
+			 * @brief Set the gain of the processor
+			 * @param _gain Gain value
+			 */
+			void SetGain(float _gain) {
+				freeFieldProcessor->SetGain(_gain);
+			}
+			
+
+			// Attributes
 			std::string sourceID;
 			std::shared_ptr<BRTEnvironmentModel::CFreeFieldEnvironmentProcessor> freeFieldProcessor;
 		};
@@ -126,6 +138,24 @@ namespace BRTEnvironmentModel {
 			}
 		};
 		
+		/**
+		 * @brief Set the gain of the model
+		 * @param _gain 
+		 */
+		void UpdateGain() override {
+			std::lock_guard<std::mutex> l(mutex);			
+			for (auto & it : sourcesConnectedProcessors) {
+				it.SetGain(gain);
+			}
+		}
+
+		/**
+		 * @brief Get the gain of the model
+		 * @return Gain value
+		 */
+		float GetGain() override {
+			return gain;
+		}
 
 		/**
 		 * @brief Connect a new source to this listener
@@ -281,8 +311,8 @@ namespace BRTEnvironmentModel {
 		// Attributes
 		/////////////////
 		mutable std::mutex mutex;					// To avoid access collisions
-		BRTBase::CBRTManager * brtManager;				
-
+		BRTBase::CBRTManager * brtManager;						
+		float gain;
 		std::vector<CSourceProcessors> sourcesConnectedProcessors;
 	};	
 }

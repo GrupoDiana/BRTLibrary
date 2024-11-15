@@ -40,6 +40,8 @@ namespace BRTEnvironmentModel {
 		
 		// Virtual Methods
 		virtual ~CEnviromentModelBase() { }		
+				
+		virtual void UpdateGain() = 0;
 
 		virtual void EnableDirectPath() {};
 		virtual void DisableDirectPath() {};
@@ -68,6 +70,15 @@ namespace BRTEnvironmentModel {
 			CreateCommandEntryPoint();
 		}
 		
+		/**
+		 * @brief Set the gain of the model
+		 * @param _gain New gain value
+		 */
+		void SetGain(float _gain) override {
+			gain = _gain;
+			UpdateGain();
+		}
+
 		/**
 		 * @brief Check if this environment is already connected to a listener model
 		 * @return 

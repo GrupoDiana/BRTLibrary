@@ -123,6 +123,14 @@ namespace BRTEnvironmentModel {
 			}
 
 			/**
+			 * @brief Set the gain of the processor
+			 * @param _gain New gain value
+			 */
+			void SetGain(float _gain) {
+				SDNProcessor->SetGain(_gain);
+			}
+
+			/**
 			 * @brief Reset processor buffers
 			*/
 			void ResetBuffers() {			
@@ -169,7 +177,18 @@ namespace BRTEnvironmentModel {
 				it.SetEnableProcessor(false);
 			}
 		};
-				
+		
+		/**
+		 * @brief Set the gain of the model
+		 * @param _gain 
+		 */
+		void UpdateGain() override {
+			std::lock_guard<std::mutex> l(mutex);
+			for (auto & it : sourcesConnectedProcessors) {
+				it.SetGain(gain);
+			}
+		}
+
 		/**
 		 * @brief Enable Direct Path
 		 */

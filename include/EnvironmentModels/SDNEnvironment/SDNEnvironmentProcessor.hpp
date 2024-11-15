@@ -45,7 +45,8 @@ namespace BRTEnvironmentModel {
 			, initialized { false }
 			, muteLoS { false }
 			, muteReverbPath { false }
-			, enableProcessor { true } {
+			, enableProcessor { true }
+			, gain {1.0f} {
 
 			CreateSamplesEntryPoint("inputSamples");
 			CreatePositionEntryPoint("sourcePosition");
@@ -120,6 +121,15 @@ namespace BRTEnvironmentModel {
 		 * @return true if the processor is enabled, false otherwise
 		 */
 		bool IsProcessorEnabled() { return enableProcessor; }
+
+		/**
+		 * @brief Set the gain of the environment processor
+		 * @param _gain New gain value
+		 */
+		void SetGain(float _gain) {
+			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
+			gain = _gain;
+		}
 
 		/**
 		 * @brief Connect the environment processor to a listener model
@@ -366,7 +376,11 @@ namespace BRTEnvironmentModel {
 				std::fill(virtualSourceBuffers[index].begin(), virtualSourceBuffers[index].end(), 0);				
 			} 			
 			SetVirtualSourcePosition(GetBRTVirtualSourceID(index), CalculateGlobalPosition(virtualSourcePositions[index]));
-			SetVirtualSourceBuffer(GetBRTVirtualSourceID(index), virtualSourceBuffers[index]);
+			
+			CMonoBuffer<float> outBuffer = virtualSourceBuffers[index];
+			outBuffer.ApplyGain(gain);
+
+			SetVirtualSourceBuffer(GetBRTVirtualSourceID(index), outBuffer);
 		}
 		
 		/**
@@ -411,6 +425,7 @@ namespace BRTEnvironmentModel {
 		std::string originalSourceID;
 		bool initialized;
 		bool enableProcessor;
+		float gain;
 		Common::CVector3 globalCoordinatesRoomCentre; 
 	};
 

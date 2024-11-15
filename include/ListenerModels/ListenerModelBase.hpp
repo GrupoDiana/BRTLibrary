@@ -197,6 +197,9 @@ namespace BRTListenerModel {
 		*/
 		void AllEntryPointsAllDataReady() override{
 			
+			leftBuffer.ApplyGain(gain);
+			rightBuffer.ApplyGain(gain);
+
 			GetSamplesExitPoint("leftEar")->sendData(leftBuffer);
 			GetSamplesExitPoint("rightEar")->sendData(rightBuffer);
 			leftDataReady = false;
