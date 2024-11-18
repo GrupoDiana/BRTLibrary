@@ -51,6 +51,14 @@ namespace BRTEnvironmentModel {
 		virtual void DisableReverbPath() {};
 		virtual bool IsReverbPathEnabled() { return false; };		
 
+		virtual void EnableDistanceAttenuation() {};
+		virtual void DisableDistanceAttenuation() {};
+		virtual bool IsDistanceAttenuationEnabled() { return false; };
+
+		virtual void EnablePropagationDelay() {};
+		virtual void DisablePropagationDelay() {};
+		virtual bool IsPropagationDelayEnabled() { return false; };
+
 		virtual void UpdateRoomGeometry() { };
 		virtual void UpdateRoomWallAbsortion(int wallIndex) { };
 		virtual void UpdateRoomAllWallsAbsortion() { };
@@ -64,7 +72,7 @@ namespace BRTEnvironmentModel {
 
 			
 			CreateIDExitPoint();
-			CreateIDEntryPoint("listenerID");
+			//CreateIDEntryPoint("listenerID");
 			CreateIDEntryPoint("listenerModelID");
 			GetIDExitPoint()->sendData(modelID);
 			CreateCommandEntryPoint();

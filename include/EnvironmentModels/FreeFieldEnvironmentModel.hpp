@@ -41,7 +41,7 @@ namespace BRTEnvironmentModel {
 				: sourceID { _sourceID } {				
 
 				freeFieldProcessor = brtManager->CreateProcessor<BRTEnvironmentModel::CFreeFieldEnvironmentProcessor>(brtManager);
-				freeFieldProcessor->Setup(_sourceID);
+				freeFieldProcessor->Setup(_sourceID);								
 			}
 
 			/**
@@ -88,8 +88,7 @@ namespace BRTEnvironmentModel {
 			/**
 			 * @brief Reset processor buffers
 			*/
-			void ResetBuffers() {
-				// do nothing
+			void ResetBuffers() {				
 				freeFieldProcessor->ResetProcessBuffers();
 			}		
 
@@ -101,6 +100,41 @@ namespace BRTEnvironmentModel {
 				freeFieldProcessor->SetGain(_gain);
 			}
 			
+			/**
+			 * @brief Set the enable distance attenuation
+			 * @param _enableDistanceAttenuation
+			 */
+			void SetEnableDistanceAttenuation(bool _enableDistanceAttenuation) {
+				if (_enableDistanceAttenuation) {
+					freeFieldProcessor->EnableDistanceAttenuation();
+				} else {
+					freeFieldProcessor->DisableDistanceAttenuation();
+				}
+			}
+
+			/**
+			 * @brief Set the enable propagation delay
+			 * @param _enablePropagationDelay
+			 */
+			void SetEnablePropagationDelay(bool _enablePropagationDelay) {
+				if (_enablePropagationDelay) {
+					freeFieldProcessor->EnablePropagationDelay();
+				} else {
+					freeFieldProcessor->DisablePropagationDelay();
+				}
+			}
+
+
+			/**
+			 * @brief Set proccesor configuration
+			 * @param enableSpatialization Spatialization state
+			 * @param enableInterpolation Interpolation state
+			 * @param enableNearFieldEffect Nearfield state
+			*/
+			void SetConfiguration(bool _enableDistanceAttenuation, bool _enablePropagationDelay) {
+				SetEnableDistanceAttenuation(_enableDistanceAttenuation);
+				SetEnablePropagationDelay(_enablePropagationDelay);
+			}
 
 			// Attributes
 			std::string sourceID;
@@ -111,6 +145,8 @@ namespace BRTEnvironmentModel {
 		CFreeFieldEnvironmentModel(const std::string & _environmentModelID, BRTBase::CBRTManager * _brtManager)
 			: CEnviromentModelBase(_environmentModelID)
 			, brtManager { _brtManager }
+			, enableDistanceAttenuation { true }
+			, enablePropagationDelay { false }
 		{ 
 			
 		}
@@ -156,6 +192,50 @@ namespace BRTEnvironmentModel {
 		float GetGain() override {
 			return gain;
 		}
+		
+		/**
+		 * @brief Enable distance attenuation
+		 */
+		void EnableDistanceAttenuation() override {			
+			enableDistanceAttenuation = true;
+			SetConfigurationInALLSourcesProcessors();
+		}
+		/**
+		 * @brief Disable distance attenuation
+		 */
+		void DisableDistanceAttenuation() override {			
+			enableDistanceAttenuation = false;
+			SetConfigurationInALLSourcesProcessors();
+		}
+		/**
+		 * @brief Get the flag for distance attenuation enabling
+		 * @return True if the distance attenuation is enabled
+		 */
+		bool IsDistanceAttenuationEnabled() override {
+			return enableDistanceAttenuation;
+		}
+
+		/**
+		 * @brief Enable propagation delay
+		 */
+		void EnablePropagationDelay() override {			
+			enablePropagationDelay = true;
+			SetConfigurationInALLSourcesProcessors();
+		}
+		/**
+		 * @brief Disable propagation delay
+		 */ 
+		void DisablePropagationDelay() override {			
+			enablePropagationDelay = false;
+			SetConfigurationInALLSourcesProcessors();
+		}
+		/**
+		 * @brief Get the flag for propagation delay enabling
+		 * @return True if the propagation delay is enabled
+		 */
+		bool IsPropagationDelayEnabled() override {
+			return enablePropagationDelay;
+		}
 
 		/**
 		 * @brief Connect a new source to this listener
@@ -174,49 +254,62 @@ namespace BRTEnvironmentModel {
 			return DisconnectAnySoundSource(_source);
 		};
 		
+
+		/**
+		 * @brief Reset all processor buffers
+		*/
+		void ResetProcessorBuffers() {
+			std::lock_guard<std::mutex> l(mutex);
+			for (auto & it : sourcesConnectedProcessors) {
+				it.ResetBuffers();
+			}
+		}	
+
 						
 		/**
 		 * @brief Implementation of the virtual method for processing the received commands
 		*/
 		void UpdateCommand() override {
 			
-			//BRTBase::CCommand command = GetCommandEntryPoint()->GetData();
-			//if (command.isNull() || command.GetCommand() == "") {
-			//	return;
-			//}
+			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			if (command.isNull() || command.GetCommand() == "") {
+				return;
+			}
+									
+			std::string listenerModelID = GetIDEntryPoint("listenerModelID")->GetData();
+			std::shared_ptr<BRTBase::CListener> listener = GetListenerPointer();
+			if (listener == nullptr) return;
+			std::string listenerID = GetListenerPointer()->GetID();
 
-			//std::string listenerID = GetIDEntryPoint("listenerID")->GetData();
-			////std::string listenerModelID = GetIDEntryPoint("listenerModelID")->GetData();
+			if (this->GetModelID() == command.GetStringParameter("environmentModelID")) {
+				if (command.GetCommand() == "/environment/enableModel") {
+					if (command.GetBoolParameter("enable")) {
+						EnableModel();
+					} else {
+						DisableModel();
+					}
+				} else if (command.GetCommand() == "/environment/enableDirectPath") {
+					if (command.GetBoolParameter("enable")) {
+						EnableDirectPath();
+					} else {
+						DisableDirectPath();
+					}
+				} else if (command.GetCommand() == "/environment/enableReverbPath") {
+					if (command.GetBoolParameter("enable")) {
+						EnableReverbPath();
+					} else {
+						DisableReverbPath();
+					}
+				} else if (command.GetCommand() == "/environment/resetBuffers") {
+					ResetProcessorBuffers();
+				}
+			}
 
-			//if (this->GetID() == command.GetStringParameter("environmentModelID")) {
-			//	if (command.GetCommand() == "/environment/enableModel") {
-			//		if (command.GetBoolParameter("enable")) {
-			//			EnableModel();
-			//		} else {
-			//			DisableModel();
-			//		}
-			//	} else if (command.GetCommand() == "/environment/enableDirectPath") {
-			//		if (command.GetBoolParameter("enable")) {
-			//			EnableDirectPath();
-			//		} else {
-			//			DisableDirectPath();
-			//		}
-			//	} else if (command.GetCommand() == "/environment/enableReverbPath") {
-			//		if (command.GetBoolParameter("enable")) {
-			//			EnableReverbPath();
-			//		} else {
-			//			DisableReverbPath();
-			//		}
-			//	} else if (command.GetCommand() == "/environment/resetBuffers") {
-			//		ResetProcessorBuffers();
-			//	}
-			//}
-
-			//if (listenerID == command.GetStringParameter("listenerID")) {
-			//	if (command.GetCommand() == "/listener/resetBuffers") {
-			//		ResetProcessorBuffers();
-			//	}
-			//}
+			if (listenerID == command.GetStringParameter("listenerID")) {
+				if (command.GetCommand() == "/listener/resetBuffers") {
+					ResetProcessorBuffers();
+				}
+			}
 		}
 
 
@@ -231,23 +324,16 @@ namespace BRTEnvironmentModel {
 			std::lock_guard<std::mutex> l(mutex);
 
 			// Get listener Model pointer
-			std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTListenerModel::CListenerModelBase>(GetIDEntryPoint("listenerModelID")->GetData());
-			if (_listenerModel == nullptr) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "This environment has not been connected to a listener Model.");
-				return false;
-			}
-
+			std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel = GetListenerModelPointer();
+			if (_listenerModel == nullptr) return false;
 			// Get listener pointer
-			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(_listenerModel->GetListenerID());
-			if (_listener == nullptr) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "This environment has not been connected to a listener.");
-				return false;
-			}
+			std::shared_ptr<BRTBase::CListener> _listener = GetListenerPointer(_listenerModel);
+			if (_listener == nullptr) return false;
 
 			// Make connections									
 			CSourceProcessors _newSourceProcessors(_source->GetID(), brtManager);
 			bool control = brtManager->ConnectModuleTransform(_source, _newSourceProcessors.freeFieldProcessor, "sourcePosition");
-			
+			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.freeFieldProcessor, "sourceID");
 			if (_source->GetSourceType() == BRTSourceModel::Directivity) {
 				control = control && brtManager->ConnectModuleTransform(_listener, _source, "listenerPosition");
 			}
@@ -257,6 +343,7 @@ namespace BRTEnvironmentModel {
 			control = control && _newSourceProcessors.ConnectToListenerModel(_listenerModel);
 
 			if (control) {
+				SetSourceProcessorsConfiguration(_newSourceProcessors);
 				sourcesConnectedProcessors.push_back(std::move(_newSourceProcessors));
 				return true;
 			}
@@ -276,19 +363,12 @@ namespace BRTEnvironmentModel {
 			std::lock_guard<std::mutex> l(mutex);
 
 			// Get listener Model pointer
-			std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTListenerModel::CListenerModelBase>(GetIDEntryPoint("listenerModelID")->GetData());
-			if (_listenerModel == nullptr) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "This environment has not been connected to a listener Model.");
-				return false;
-			}
-
+			std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel = GetListenerModelPointer();
+			if (_listenerModel == nullptr) return false;
 			// Get listener pointer
-			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(_listenerModel->GetListenerID());
-			if (_listener == nullptr) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "This environment has not been connected to a listener.");
-				return false;
-			}
-
+			std::shared_ptr<BRTBase::CListener> _listener = GetListenerPointer(_listenerModel);
+			if (_listener == nullptr) return false;
+						
 			// Make connections
 			std::string _sourceID = _source->GetID();
 			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSourceProcessors & sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
@@ -299,12 +379,70 @@ namespace BRTEnvironmentModel {
 				if (_source->GetSourceType() == BRTSourceModel::Directivity) {
 					control = control && brtManager->DisconnectModuleTransform(_listener, _source, "listenerPosition");
 				}
-				control = brtManager->DisconnectModuleTransform(_source, it->freeFieldProcessor, "sourcePosition");
+				control = control && brtManager->DisconnectModuleID(_source, it->freeFieldProcessor, "sourceID");
+				control = control && brtManager->DisconnectModuleTransform(_source, it->freeFieldProcessor, "sourcePosition");
 				it->Clear(brtManager);
 				sourcesConnectedProcessors.erase(it);
 				return true;
 			}
 			return false;			
+		}
+
+		/**
+		 * @brief Get listener Model pointer
+		 * @return Listener Model pointer
+		*/
+		std::shared_ptr<BRTListenerModel::CListenerModelBase> GetListenerModelPointer() {
+			// Get listener Model pointer
+			std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTListenerModel::CListenerModelBase>(GetIDEntryPoint("listenerModelID")->GetData());
+			if (_listenerModel == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This environment has not been connected to a listener Model.");				
+			}
+			return _listenerModel;
+		}
+
+		/**
+		 * @brief Get listener pointer
+		 * @param _listenerModel Listener Model pointer
+		 * @return Listener pointer
+		*/
+		std::shared_ptr<BRTBase::CListener> GetListenerPointer() {			
+			std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel = GetListenerModelPointer();
+			if (_listenerModel == nullptr) return nullptr;
+			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(_listenerModel->GetListenerID());
+			if (_listener == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This environment has not been connected to a listener.");
+			}
+			return _listener;
+		} 
+		/**
+		 * @brief Get listener pointer
+		 * @param _listenerModel Listener Model pointer
+		 * @return Listener pointer
+		*/
+		std::shared_ptr<BRTBase::CListener> GetListenerPointer(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
+			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(_listenerModel->GetListenerID());
+			if (_listener == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This environment has not been connected to a listener.");				
+			}
+			return _listener;
+		}
+
+		/**
+		 * @brief Update Configuration in all source processor
+		*/
+		void SetConfigurationInALLSourcesProcessors() {
+			std::lock_guard<std::mutex> l(mutex);
+			for (auto & it : sourcesConnectedProcessors) {
+				SetSourceProcessorsConfiguration(it);
+			}
+		}
+		/**
+		 * @brief Update configuration just in one source processor
+		 * @param sourceProcessor 
+		*/
+		void SetSourceProcessorsConfiguration(CSourceProcessors & sourceProcessor) {
+			sourceProcessor.SetConfiguration(enableDistanceAttenuation, enablePropagationDelay);
 		}
 
 		/////////////////
@@ -313,6 +451,10 @@ namespace BRTEnvironmentModel {
 		mutable std::mutex mutex;					// To avoid access collisions
 		BRTBase::CBRTManager * brtManager;						
 		float gain;
+
+		bool enablePropagationDelay;
+		bool enableDistanceAttenuation;
+
 		std::vector<CSourceProcessors> sourcesConnectedProcessors;
 	};	
 }

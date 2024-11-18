@@ -97,7 +97,7 @@ namespace BRTEnvironmentModel {
 		void AllEntryPointsAllDataReady() override {
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			if (!initialized) {
-				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "The SDN environment processor is not initialized");
+				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "The Free fielnd environment processor is not initialized");
 				return;
 			}
 			
@@ -114,11 +114,12 @@ namespace BRTEnvironmentModel {
 			}
 
 			CMonoBuffer<float> outBuffer;
-			Process(inBuffer, outBuffer, sourcePosition, listenerPosition);
+			Common::CTransform effectiveSourcePosition;
+			Process(inBuffer, outBuffer, sourcePosition, listenerPosition, effectiveSourcePosition);
 						
 			outBuffer.ApplyGain(gain);
 
-			virtualSource->SetSourceTransform(sourcePosition);
+			virtualSource->SetSourceTransform(effectiveSourcePosition);
 			virtualSource->SetBuffer(outBuffer);													
 		}
 
@@ -128,8 +129,8 @@ namespace BRTEnvironmentModel {
 			initialized = false;
 		}
 
-		void ResetProcessBuffers() {
-			// Nothing for the moment
+		void ResetProcessBuffers() {			
+			ResetBuffers();
 		}
 
 		void SetGain(float _gain) {	
@@ -145,6 +146,20 @@ namespace BRTEnvironmentModel {
 		 * @brief Implementation of CAdvancedEntryPointManager virtual method
 		*/
 		void UpdateCommand() override {
+			
+			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			if (command.isNull() || command.GetCommand() == "") {
+				return;
+			}
+
+			std::string sourceID = GetIDEntryPoint("sourceID")->GetData();
+			if (sourceID == command.GetStringParameter("sourceID")) {
+				// Propagete the command to the virtual sources
+				nlohmann::json j;				
+				j["command"] = command.GetCommand();
+				j["sourceID"] = virtualSource->GetID();
+				brtManager->ExecuteCommand(j.dump());				
+			}					
 		}
 	private:
 		

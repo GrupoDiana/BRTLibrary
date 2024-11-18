@@ -24,7 +24,9 @@
 #include <Common/ErrorHandler.hpp>
 #include <Common/GlobalParameters.hpp>
 #include <Common/DistanceAttenuator.hpp>
+#include <Common/Waveguide.hpp>
 #include <Base/BRTManager.hpp>
+
 
 
 #ifndef _C_FREE_FIELD_ENVIRONMENT_HPP_
@@ -39,45 +41,121 @@ namespace BRTEnvironmentModel {
 		 * @brief Enable processor
 		 */
 		void EnableProcessor() { 
-			distanceAttenuation.EnableProcessor();
+			std::lock_guard<std::mutex> l(mutex);	
 			enableProcessor = true; 
 		}
 		/**
 		 * @brief Disable processor
 		 */
-		void DisableProcessor() { 
-			distanceAttenuation.DisableProcessor();
+		void DisableProcessor() {
+			std::lock_guard<std::mutex> l(mutex);	
 			enableProcessor = false; 
 		}
+		
 		/**
 		 * @brief Get the flag to know if the processor is enabled.
 		 * @return true if the processor is enabled, false otherwise
 		 */
 		bool IsProcessorEnabled() { return enableProcessor; }
-	
+
+		/**
+		 * @brief Enable distance attenuation for this waveguide
+		 */
+		void EnableDistanceAttenuation() { 
+			std::lock_guard<std::mutex> l(mutex);	
+			distanceAttenuation.EnableProcessor(); 
+		}
 		
+		/**
+		 * @brief Disable distance attenuation for this waveguide
+		 */
+		void DisableDistanceAttenuation() { 
+			std::lock_guard<std::mutex> l(mutex);	
+			distanceAttenuation.DisableProcessor(); 
+		}
+				 
+		/**
+		 * @brief Get the flag for distance attenuation enabling
+		 * @return true if the distance attenuation is enabled, false otherwise
+		 */
+		bool IsDistanceAttenuationEnabled() { return distanceAttenuation.IsProcessorEnabled(); }
+
+		/**
+		 * @brief Enable propagation delay for this waveguide
+		 */
+		void EnablePropagationDelay() { 
+			std::lock_guard<std::mutex> l(mutex);	
+			channelSourceListener.EnablePropagationDelay(); 
+		}
+		/**
+		 * @brief Disable propagation delay for this waveguide
+		 */
+		void DisablePropagationDelay() { 
+			std::lock_guard<std::mutex> l(mutex);	
+			channelSourceListener.DisablePropagationDelay(); 
+		}
+		/**
+		 * @brief Get the flag for propagation delay enabling
+		 * @return true if the propagation delay is enabled, false otherwise
+		 */
+		bool IsPropagationDelayEnabled() { return channelSourceListener.IsPropagationDelayEnabled(); }
 		
-		void Process(const CMonoBuffer<float> & _inBuffer, CMonoBuffer<float> & _outBuffer, Common::CTransform _sourceTransform, Common::CTransform _listenerTransform) { 
+		/**
+		 * @brief Process the input buffer
+		 * @param _inBuffer Input buffer
+		 * @param _outBuffer Output buffer
+		 * @param _sourceTransform Source transform
+		 * @param _listenerTransform Listener transform
+		 */
+		void Process(const CMonoBuffer<float> & _inBuffer, CMonoBuffer<float> & _outBuffer, const Common::CTransform& _sourceTransform, const Common::CTransform& _listenerTransform, Common::CTransform& _effectiveSourceTransform ) { 
 			
 			std::lock_guard<std::mutex> l(mutex);
 			ASSERT(_inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");
 			
-			if (_inBuffer.size() != 0) {
-				distanceAttenuation.Process(_inBuffer, _outBuffer, _sourceTransform, _listenerTransform);				
-			}  
+			if (!enableProcessor) {
+				_outBuffer = _inBuffer;
+				return;
+			}
+
+			// Process the waveguide						
+			Common::CVector3 effectiveSourcePosition;
+			channelSourceListener.PushBack(_inBuffer, _sourceTransform.GetPosition(), _listenerTransform.GetPosition());			
+			CMonoBuffer<float> _waveGuideOutBuffer;
+			channelSourceListener.PopFront(_waveGuideOutBuffer, _listenerTransform.GetPosition(), effectiveSourcePosition);
+
+			if (channelSourceListener.IsPropagationDelayEnabled()) {
+				_effectiveSourceTransform = _sourceTransform;			
+				_effectiveSourceTransform.SetPosition(effectiveSourcePosition);		
+				// Process the distance attenuation	
+				distanceAttenuation.Process(_waveGuideOutBuffer, _outBuffer, _effectiveSourceTransform, _listenerTransform);
+			} else {
+				// Process the distance attenuation	
+				distanceAttenuation.Process(_inBuffer, _outBuffer, _sourceTransform, _listenerTransform);
+			}
+			// Process the distance attenuation			
+			//distanceAttenuation.Process(_inBuffer, _outBuffer, _sourceTransform, _listenerTransform);
+						
 		}
 	
-	
+		/**
+		 * @brief Reset the buffers
+		 */
+		void ResetBuffers() {
+			std::lock_guard<std::mutex> l(mutex);
+			channelSourceListener.Reset();
+			//distanceAttenuation.Reset();
+		}
 	
 	private:
 		/// Atributes
 		mutable std::mutex mutex;								// Thread management
 		Common::CGlobalParameters globalParameters;				// Get access to global render parameters		
-		BRTProcessing::CDistanceAttenuator distanceAttenuation; // Distance attenuation processor
-		//CWaveGuide waveGuide;		
+		BRTProcessing::CDistanceAttenuator distanceAttenuation; // Distance attenuation processor		
+		Common::CWaveguide channelSourceListener;				// Waveguide processor
 		//CLongDistanceFilter longDistanceFilter;
 		
 		bool enableProcessor; // Flag to enable the processor
+
 	};
 }
 #endif
