@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A new namespace and folder has been created to centralise the classes that manage the connectivity between modules.
 - Added implementation of binaural filters based on second order sections loaded from a SOFA file.
 - An independent and adjustable gain control has been added for each model.
+- Propagation delay simulation has been added to the free-field environment model.
 
 ### Changed
 - The classes related to connectivity have been moved to the new folder and namespace created for this purpose.
