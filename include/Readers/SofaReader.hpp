@@ -40,6 +40,20 @@ namespace BRTReaders {
 
 	public:
 		
+		CSOFAReader()
+			: errorDescription { "" } {
+		}
+
+		/**
+		 * @brief Get the last action error description, if any
+		 * @return error description
+		 */
+		std::string GetError() {
+			std::string _errorDescription = errorDescription;
+			ResetError();
+			return _errorDescription;
+		}
+
 		/** \brief Returns the sample rate in Hz in the sofa file
 		*	\param [in] path of the sofa file
 		*   \eh On error, an error code is reported to the error handler.
@@ -48,12 +62,17 @@ namespace BRTReaders {
 		{
 			BRTReaders::CLibMySOFALoader loader(sofafile);
 			int error = loader.getError();
-			if (error != 0) return -1;
+			if (error) {
+				errorDescription = "Error reading SOFA file - " +  loader.GetErrorName(error);
+				return -1;
+			}
 
 			std::string dataType = loader.GetDataType();
 			if (dataType == "FIR" || dataType == "FIR-E" || dataType == "SOS") { 
+				ResetError();
 				return loader.GetSamplingRate();
 			} else {
+				errorDescription = "The data type contained in the sofa file is not valid - " + dataType;
 				return -1;
 			}			
 		}
@@ -70,17 +89,22 @@ namespace BRTReaders {
 			// Open file
 			BRTReaders::CLibMySOFALoader loader(sofafile);
 			bool error = loader.getError();
-			if (error) return false;
+			if (error) {
+				errorDescription = "Error reading SOFA file - " + loader.GetErrorName(error);
+				return false;
+			}
 
 			// Discover the file type
 			std::string dataType = loader.GetDataType();
 			//std::string sofaConvention = loader.GetSofaConvention();
 
 			// Load Data
-			if (dataType == "FIR" || dataType == "FIR-E") {
+			if (dataType == "FIR" || dataType == "FIR-E") {	
+				ResetError();
 				return ReadFromSofaFIRDataType(loader, sofafile, data, _spatialResolution, _extrapolationMethod, 0.0f, 0.0f, 0.0f, 0.0f);		
 			} else {
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The data type contained in the sofa file is not valid for loading HRTFs - " + dataType);
+				errorDescription = "The data type contained in the sofa file is not valid for loading HRTFs - " + dataType;
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, errorDescription);
 				return false;
 			}				
 		}
@@ -98,7 +122,10 @@ namespace BRTReaders {
 			// Open file
 			BRTReaders::CLibMySOFALoader loader(sofafile);
 			bool error = loader.getError();
-			if (error) return false;
+			if (error) {
+				errorDescription = "Error reading SOFA file - " + loader.GetErrorName(error);
+				return false;
+			}
 
 			// Discover the file type
 			std::string dataType = loader.GetDataType();
@@ -106,9 +133,11 @@ namespace BRTReaders {
 
 			// Load Data			
 			if (dataType == "SOS") {
+				ResetError();
 				return ReadFromSofaSOSDataType(loader, sofafile, data);			
-			} else {				
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The data type contained in the sofa file is not valid for loading NFC Filters - " + dataType);
+			} else {			
+				errorDescription = "The data type contained in the sofa file is not valid for loading NFC Filters - " + dataType;
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, errorDescription);
 				return false;
 			}															
 		}
@@ -125,16 +154,21 @@ namespace BRTReaders {
 			// Open file
 			BRTReaders::CLibMySOFALoader loader(sofafile);
 			bool error = loader.getError();
-			if (error) return false;
+			if (error) {
+				errorDescription = "Error reading SOFA file - " + loader.GetErrorName(error);
+				return false;
+			}
 
 			// Discover the file type
 			std::string dataType = loader.GetDataType();
 			//std::string sofaConvention = loader.GetSofaConvention();
 			// Load Data						
 			if (dataType == "TF") {
+				ResetError();
 				return ReadFromSofaTFDataType(loader, sofafile, data, _spatialResolution, _extrapolationMethod);
-			} else {				
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The data type contained in the sofa file is not valid for loading Directivity TF - " + dataType);
+			} else {		
+				errorDescription = "The data type contained in the sofa file is not valid for loading Directivity TF - " + dataType;
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, errorDescription);
 				return false;
 			}							
 		}
@@ -153,7 +187,10 @@ namespace BRTReaders {
 			// Open file
 			BRTReaders::CLibMySOFALoader loader(sofafile);
 			bool error = loader.getError();
-			if (error) return false;
+			if (error) {
+				errorDescription = "Error reading SOFA file - " + loader.GetErrorName(error);
+				return false;
+			}
 
 			// Discover the file type
 			std::string dataType = loader.GetDataType();
@@ -161,9 +198,11 @@ namespace BRTReaders {
 
 			// Load Data
 			if (dataType == "FIR" || dataType == "FIR-E") {
+				ResetError();
 				return ReadFromSofaFIRDataType(loader, sofafile, data, _spatialResolution, _extrapolationMethod, _fadeInWindowThreshold, _fadeInWindowRiseTime, _fadeOutWindowThreshold, _fadeOutWindowRiseTime);			
-			} else {				
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The data type contained in the sofa file is not valid for loading BRIRs - " + dataType);
+			} else {
+				errorDescription = "The data type contained in the sofa file is not valid for loading BRIRs - " + dataType;
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, errorDescription);
 				return false;
 			}													
 		}
@@ -182,9 +221,11 @@ namespace BRTReaders {
 			GetAndSaveReceiverPosition(loader, data);							// Get and Save listener ear 
 			
 			bool result;			
-			result = GetHRSOSCoefficients(loader, data);			
+			std::string _error;
+			result = GetHRSOSCoefficients(loader, data, _error);
 			if (!result) {
-				SET_RESULT(RESULT_ERROR_UNKNOWN, "An error occurred creating the data structure from the SOFA file, please consider previous messages.");
+				errorDescription = "An error occurred creating the data structure from the SOFA file - " + _error;
+				SET_RESULT(RESULT_ERROR_UNKNOWN, errorDescription);
 				return false;
 			}
 			// Finish setup			
@@ -192,7 +233,7 @@ namespace BRTReaders {
 			return true;
 		}
 
-		bool GetHRSOSCoefficients(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& data) {
+		bool GetHRSOSCoefficients(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& data, std::string& _error) {
 			//Get source positions												
 			std::vector< double > sourcePositionsVector = std::move(loader.GetSourcePositionVector());
 			// GET delays and IRs
@@ -208,7 +249,8 @@ namespace BRTReaders {
 				SET_RESULT(RESULT_OK, "This ILD SOFA file contains coefficients for both ears.");
 			}
 			else {
-				SET_RESULT(RESULT_ERROR_BADSIZE, "SOFA gives incoherent number of receivers and coefficients");
+				_error = "SOFA gives incoherent number of receivers and coefficients";
+				SET_RESULT(RESULT_ERROR_BADSIZE, _error);
 				return false;
 			}
 
@@ -255,7 +297,8 @@ namespace BRTReaders {
 			bool result;			
 			result = GetDirectivityTF(loader, data, _extrapolationMethod);						
 			if (!result) {
-				SET_RESULT(RESULT_ERROR_UNKNOWN, "An error occurred creating the data structure from the SOFA file, please consider previous messages.");
+				errorDescription = "An error occurred creating the data structure from the SOFA file.";
+				SET_RESULT(RESULT_ERROR_UNKNOWN, errorDescription);
 				return false;
 			}
 
@@ -264,7 +307,7 @@ namespace BRTReaders {
 			return data->EndSetup();			
 		}
 
-		bool GetDirectivityTF(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& dataDirectivityTF, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
+		bool GetDirectivityTF(BRTReaders::CLibMySOFALoader & loader, std::shared_ptr<BRTServices::CServicesBase> & dataDirectivityTF, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
 			//Get source positions									
 			std::vector< double > receiverPositionsVector(loader.getHRTF()->ReceiverPosition.values, loader.getHRTF()->ReceiverPosition.values + loader.getHRTF()->ReceiverPosition.elements);
 
@@ -317,11 +360,11 @@ namespace BRTReaders {
 			GetAndSaveReceiverPosition(loader, data); // Get and Save listener ear
 			
 			data->SetWindowingParameters(_fadeInWindowThreshold, _fadeInWindowRiseTime, _fadeOutWindowThreshold, _fadeOutWindowRiseTime);
-			bool result;
-			result = GetBRIRs(loader, data, _extrapolationMethod);
-
+			bool result;			
+			result = GetBRIRs(loader, data, _extrapolationMethod);			
 			if (!result) {
-				SET_RESULT(RESULT_ERROR_UNKNOWN, "An error occurred creating the data structure from the SOFA file, please consider previous messages.");
+				errorDescription = "An error occurred creating the data structure from the SOFA file.";
+				SET_RESULT(RESULT_ERROR_UNKNOWN, errorDescription);
 				return false;
 			}
 
@@ -1053,6 +1096,16 @@ namespace BRTReaders {
 			}									
 			return _outPoint;
 		}
-	};
+						
+		void ResetError() {
+			errorDescription.clear();
+		}
+
+		////////////////
+		// Attributes
+		////////////////
+		std::string errorDescription;
+
+	};	
 };
 #endif 
