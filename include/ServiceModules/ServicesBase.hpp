@@ -198,9 +198,11 @@ namespace BRTServices {
 	public:
 		CServicesBase() {}
 		virtual ~CServicesBase() {}		
-		
-		virtual void BeginSetup() {}		
-		virtual void BeginSetup(int32_t _IRLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {}		
+
+		virtual std::string GetLastError() { return ""; }
+
+		virtual bool BeginSetup() { return true; }		
+		virtual bool BeginSetup(int32_t _IRLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) { return false; }		
 		virtual bool EndSetup() { return false; }
 
 		virtual void SetGridSamplingStep(int _samplingStep) {};

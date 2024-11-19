@@ -94,8 +94,7 @@ namespace BRTServices
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
-		void BeginSetup(int32_t _HRIRLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod)
-		{		
+		bool BeginSetup(int32_t _HRIRLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) override {		
 			std::lock_guard<std::mutex> l(mutex);
 			//Change class state
 			setupInProgress = true;
@@ -113,7 +112,8 @@ namespace BRTServices
 			elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
 			elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
 					
-			SET_RESULT(RESULT_OK, "HRTF Setup started");			
+			SET_RESULT(RESULT_OK, "HRTF Setup started");
+			return true;
 		}
 
 		/** \brief Set the full HRIR matrix.
@@ -128,8 +128,7 @@ namespace BRTServices
 		}
 		
 
-		void AddHRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRIR)
-		{			
+		void AddHRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRIR) override {			
 			if (setupInProgress) {				
 				_azimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
 				_elevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);						
@@ -145,8 +144,7 @@ namespace BRTServices
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
-		bool EndSetup()
-		{
+		bool EndSetup() override {
 			std::lock_guard<std::mutex> l(mutex);
 			if (setupInProgress) {
 				if (!t_HRTF_DataBase.empty())

@@ -94,15 +94,16 @@ namespace BRTServices
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
-		void BeginSetup(int32_t _directivityTFPartLength, TEXTRAPOLATION_METHOD _extrapolationMethod){
+		bool BeginSetup(int32_t _directivityTFPartLength, TEXTRAPOLATION_METHOD _extrapolationMethod) override{
 			//Update parameters			
 			elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
 			elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
 
 			if (_directivityTFPartLength != globalParameters.GetBufferSize()) //
 			{
-				SET_RESULT(RESULT_ERROR_BADSIZE, "Number of frequency samples (N) in SOFA file is different from Buffer Size");
-				return;
+				errorMessage = "Number of frequency samples (N) in SOFA file is different from Buffer Size";
+				SET_RESULT(RESULT_ERROR_BADSIZE, errorMessage);
+				return false;
 			}
 
 			bufferSize = globalParameters.GetBufferSize();
@@ -120,6 +121,7 @@ namespace BRTServices
 			directivityTFloaded = false;
 
 			SET_RESULT(RESULT_OK, "HRTF Setup started");
+			return true;
 		}
 
 		/** \brief Stop the DirectivityTF configuration
@@ -375,10 +377,13 @@ namespace BRTServices
 			}
 		};
 
-	private:
+		/** 
+			\brief Get the last error message
+		*/
+		std::string GetLastError() { return errorMessage; }
 
-		//enum TExtrapolationMethod { zeroInsertion, nearestPoint };
-
+	private:		
+		std::string errorMessage;
 		std::string title;
 		std::string databaseName;
 		std::string fileName;

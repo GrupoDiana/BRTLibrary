@@ -41,14 +41,14 @@ namespace BRTReaders {
 	public:
 		
 		CSOFAReader()
-			: errorDescription { "" } {
+			: errorDescription { "No error." } {
 		}
 
 		/**
 		 * @brief Get the last action error description, if any
 		 * @return error description
 		 */
-		std::string GetError() {
+		std::string GetLastError() {
 			std::string _errorDescription = errorDescription;
 			ResetError();
 			return _errorDescription;
@@ -295,19 +295,21 @@ namespace BRTReaders {
 			CheckListenerOrientation(loader);									// Check listener view			
 			
 			bool result;			
-			result = GetDirectivityTF(loader, data, _extrapolationMethod);						
-			if (!result) {
-				errorDescription = "An error occurred creating the data structure from the SOFA file.";
-				SET_RESULT(RESULT_ERROR_UNKNOWN, errorDescription);
+			std::string _error;
+			result = GetDirectivityTF(loader, data, _extrapolationMethod, _error);						
+			if (!result) {		
+				errorDescription = _error;				
 				return false;
 			}
 
 			// Finish setup
-			if (_resamplingStep != -1) { data->SetGridSamplingStep(_resamplingStep); }
-			return data->EndSetup();			
+			if (_resamplingStep != -1) { data->SetGridSamplingStep(_resamplingStep); }			
+			bool success = data->EndSetup();			
+			
+			return success;
 		}
 
-		bool GetDirectivityTF(BRTReaders::CLibMySOFALoader & loader, std::shared_ptr<BRTServices::CServicesBase> & dataDirectivityTF, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
+		bool GetDirectivityTF(BRTReaders::CLibMySOFALoader & loader, std::shared_ptr<BRTServices::CServicesBase> & dataDirectivityTF, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, std::string& error) {
 			//Get source positions									
 			std::vector< double > receiverPositionsVector(loader.getHRTF()->ReceiverPosition.values, loader.getHRTF()->ReceiverPosition.values + loader.getHRTF()->ReceiverPosition.elements);
 
@@ -326,7 +328,11 @@ namespace BRTReaders {
 			int numberOfReceivers = loader.getHRTF()->R;
 
 			// Get and save TFs			
-			dataDirectivityTF->BeginSetup(numberOfFrequencySamples, _extrapolationMethod);
+			bool success = dataDirectivityTF->BeginSetup(numberOfFrequencySamples, _extrapolationMethod);
+			if (!success) {
+				error = dataDirectivityTF->GetLastError();				
+				return false;
+			}
 
 			// This outtermost loop iterates over TFs
 			for (std::size_t receiver = 0; receiver < numberOfReceivers; receiver++)
@@ -407,8 +413,11 @@ namespace BRTReaders {
 			const int numberOfCoordinates = loader.getHRTF()->C;
 
 			
-			dataHRBRIR->BeginSetup(numberOfSamples, _extrapolationMethod);
-
+			bool success = dataHRBRIR->BeginSetup(numberOfSamples, _extrapolationMethod);
+			if (!success) {
+				errorDescription = dataHRBRIR->GetLastError();
+				return false;
+			}
 			dataHRBRIR->SetSamplingRate(loader.GetSamplingRate());
 			const int left_ear = 0;
 			const int right_ear = 1;
@@ -1098,7 +1107,7 @@ namespace BRTReaders {
 		}
 						
 		void ResetError() {
-			errorDescription.clear();
+			errorDescription = "No error.";
 		}
 
 		////////////////

@@ -61,8 +61,7 @@ namespace BRTServices
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
-		void BeginSetup(int32_t _HRIRLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod)
-		{
+		bool BeginSetup(int32_t _HRIRLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) override {
 			std::lock_guard<std::mutex> l(mutex);
 			//Change class state
 			setupInProgress = true;
@@ -84,7 +83,8 @@ namespace BRTServices
 			elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
 			elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
 
-			SET_RESULT(RESULT_OK, "HRBRIR Setup started");					
+			SET_RESULT(RESULT_OK, "HRBRIR Setup started");
+			return true;
 		}
 
 		

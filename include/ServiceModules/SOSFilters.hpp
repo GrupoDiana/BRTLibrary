@@ -89,12 +89,12 @@ namespace BRTServices {
 		}
 
 
-		void BeginSetup() {
+		bool BeginSetup() {
 			setupInProgress = true;			
 			NFCFiltersLoaded = false;			
 			Clear();
-
 			SET_RESULT(RESULT_OK, "SOS Filter Setup started");
+			return true;
 		}
 
 		bool EndSetup()
