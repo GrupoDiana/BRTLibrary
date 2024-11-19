@@ -50,7 +50,12 @@ namespace BRTReaders {
 			int error = loader.getError();
 			if (error != 0) return -1;
 
-			return loader.GetSamplingRate();
+			std::string dataType = loader.GetDataType();
+			if (dataType == "FIR" || dataType == "FIR-E" || dataType == "SOS") { 
+				return loader.GetSamplingRate();
+			} else {
+				return -1;
+			}			
 		}
 
 		/** \brief Loads an HRTF from a sofa file
