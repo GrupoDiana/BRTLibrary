@@ -23,7 +23,7 @@
 #ifndef _DIRECTIVITYTF_CONVOLVER_
 #define _DIRECTIVITYTF_CONVOLVER_
 
-#include <Common/UPCAnechoic.hpp>
+#include <Common/UniformPartitionedConvolution.hpp>
 #include <Common/Buffer.hpp>
 #include <ServiceModules/DirectivityTF.hpp>
 
@@ -107,7 +107,7 @@ namespace BRTProcessing {
 	private:
 
 		Common::CGlobalParameters globalParameters;
-		Common::CUPCAnechoic outputUPConvolution;		// Object to make the inverse fft of the left channel with the UPC method
+		Common::CUniformPartitionedConvolution outputUPConvolution;		// Object to make the inverse fft of the left channel with the UPC method
 
 		bool enableSourceDirectivity;					// Flags for independent control of processes		
 		bool convolutionBuffersInitialized;

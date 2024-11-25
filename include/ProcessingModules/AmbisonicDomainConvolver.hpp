@@ -23,7 +23,7 @@
 #ifndef _AMBISONIC_DOMAIN_CONVOLVER_
 #define _AMBISONIC_DOMAIN_CONVOLVER_
 
-#include <Common/UPCAnechoic.hpp>
+#include <Common/UniformPartitionedConvolution.hpp>
 #include <Common/Buffer.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/AmbisonicBIR.hpp>
@@ -124,7 +124,7 @@ namespace BRTProcessing {
 			mixedChannels.SetFromMix({ allChannelsBuffersConvolved });			
 			mixedChannels.ApplyGain(1.0f / numberOfAmbisonicChannels);
 			// InverseFFT
-			Common::CUPCAnechoic::CalculateIFFT(mixedChannels, outBuffer);			
+			Common::CUniformPartitionedConvolution::CalculateIFFT(mixedChannels, outBuffer);			
 		}
 		
 		/**
@@ -141,7 +141,7 @@ namespace BRTProcessing {
 
 		// Atributes
 		Common::CGlobalParameters globalParameters;		
-		std::vector<std::shared_ptr<Common::CUPCAnechoic>> channelsUPConvolutionVector;		// Object to make the inverse fft of the left channel with the UPC method				
+		std::vector<std::shared_ptr<Common::CUniformPartitionedConvolution>> channelsUPConvolutionVector;		// Object to make the inverse fft of the left channel with the UPC method				
 		
 		Common::T_ear earToProcess;							// Ear to process
 		int numberOfAmbisonicChannels;						// Number of ambisonic channels
@@ -160,7 +160,7 @@ namespace BRTProcessing {
 			int subfilterLength = _listenerAmbisonicBIR->GetIRSubfilterLength();
 			
 			for (int nChannel = 0; nChannel < numberOfAmbisonicChannels; nChannel++) {								
-				std::shared_ptr<Common::CUPCAnechoic> channelUPConvolver = std::make_shared<Common::CUPCAnechoic>();				
+				std::shared_ptr<Common::CUniformPartitionedConvolution> channelUPConvolver = std::make_shared<Common::CUniformPartitionedConvolution>();				
 				channelUPConvolver->Setup(globalParameters.GetBufferSize(), subfilterLength, numOfSubfilters, true);
 				channelsUPConvolutionVector.push_back(channelUPConvolver);				
 			}			

@@ -23,7 +23,7 @@
 #ifndef _HRTF_CONVOLVER_
 #define _HRTF_CONVOLVER_
 
-#include <Common/UPCAnechoic.hpp>
+#include <Common/UniformPartitionedConvolution.hpp>
 #include <Common/Buffer.hpp>
 #include <Common/AddDelayExpansionMethod.hpp>
 #include <Common/SourceListenerRelativePositionCalculation.hpp>
@@ -224,8 +224,8 @@ namespace BRTProcessing {
 		// Atributes
 		Common::CGlobalParameters globalParameters;
 
-		Common::CUPCAnechoic outputLeftUPConvolution;		// Object to make the inverse fft of the left channel with the UPC method
-		Common::CUPCAnechoic outputRightUPConvolution;		// Object to make the inverse fft of the rigth channel with the UPC method
+		Common::CUniformPartitionedConvolution outputLeftUPConvolution;		// Object to make the inverse fft of the left channel with the UPC method
+		Common::CUniformPartitionedConvolution outputRightUPConvolution;		// Object to make the inverse fft of the rigth channel with the UPC method
 
 		CMonoBuffer<float> leftChannelDelayBuffer;			// To store the delay of the left channel of the expansion method
 		CMonoBuffer<float> rightChannelDelayBuffer;			// To store the delay of the right channel of the expansion method

@@ -27,7 +27,7 @@
 #include <algorithm>
 #include <Connectivity/AdvancedEntryPointManager.hpp>
 #include <Connectivity/ExitPointManager.hpp>
-#include <Common/UPCAnechoic.hpp>
+#include <Common/UniformPartitionedConvolution.hpp>
 #include <Common/Buffer.hpp>
 #include <ProcessingModules/BilateralAmbisonicEncoder.hpp>
 

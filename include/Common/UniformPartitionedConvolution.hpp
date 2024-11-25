@@ -1,7 +1,7 @@
 /**
-* \class UPCAnechoic
+* \class CUniformPartitionedConvolution
 *
-* \brief Declaration of CUPCAnechoic class interface.
+* \brief Declaration of CUniformPartitionedConvolution class interface.
 * \date	June 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
@@ -37,7 +37,7 @@ namespace Common {
 
 	/** \details This class implements the necessary algorithms to do the convolution, in frequency domain, between signal and a impulse response using the	Uniformly Partitioned Convolution Algorithm (UPC algorithm)
 	*/
-	class CUPCAnechoic
+	class CUniformPartitionedConvolution
 	{
 
 	public:
@@ -45,7 +45,13 @@ namespace Common {
 		/** \brief Default constructor
 		*   \eh Nothing is reported to the error handler.
 		*/
-		CUPCAnechoic() : setupDone{ false }, inputSize{ 0 }, impulseResponseMemory{ 0 }, impulseResponseNumberOfSubfilters{ 0 }, impulseResponse_Frequency_Block_Size{ 0 }
+		CUniformPartitionedConvolution() 
+			: setupDone{ false }
+			, inputSize{ 0 }
+			, impulseResponseMemory{ 0 }
+			, impulseResponseNumberOfSubfilters{ 0 }
+			, impulseResponse_Frequency_Block_Size{ 0 }
+			, storageInput_bufferSize { 0 }
 		{
 		}
 
