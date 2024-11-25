@@ -164,7 +164,7 @@ namespace BRTListenerModel {
 		}
 		
 		///
-		/** \brief SET HRTF of listener
+		/** \brief SET Near field compesation filter of listener
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
@@ -174,7 +174,7 @@ namespace BRTListenerModel {
 			return true;
 		}
 
-		/** \brief Get HRTF of listener
+		/** \brief Get Near field compesation filter of listener
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
@@ -183,7 +183,7 @@ namespace BRTListenerModel {
 			return listenerNFCFilters;
 		}
 
-		/** \brief Remove the HRTF of thelistener
+		/** \brief Remove the Near field compesation filter of thelistener
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void RemoveNearFierldCompensationFilters() override {

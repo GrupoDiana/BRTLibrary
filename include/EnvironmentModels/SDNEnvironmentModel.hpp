@@ -1,5 +1,5 @@
 /**
-* \class CEnvironmentVirtualSourcesSDNModel
+* \class CSDNEnvironmentModel
 *
 * \brief This class implements the SDN environment model. It instantiates an SDN processor for each source that connects to it. 
 * \date	Sep 2024
