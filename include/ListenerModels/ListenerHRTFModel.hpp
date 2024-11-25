@@ -130,7 +130,7 @@ namespace BRTListenerModel {
 		}
 
 		
-		/** \brief SET HRTF of listener
+		/** \brief SET HRTF to this listener model
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
@@ -147,7 +147,7 @@ namespace BRTListenerModel {
 			return true;
 		}
 
-		/** \brief Get HRTF of listener
+		/** \brief Get HRTF of this listener model
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/		
@@ -156,7 +156,7 @@ namespace BRTListenerModel {
 			return listenerHRTF;
 		}
 
-		/** \brief Remove the HRTF of thelistener
+		/** \brief Remove the HRTF of this listener model
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void RemoveHRTF() override {
@@ -164,7 +164,7 @@ namespace BRTListenerModel {
 		}
 		
 		///
-		/** \brief SET Near field compesation filter of listener
+		/** \brief SET Near field compesation filter of listener model
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
@@ -174,7 +174,7 @@ namespace BRTListenerModel {
 			return true;
 		}
 
-		/** \brief Get Near field compesation filter of listener
+		/** \brief Get Near field compesation filter of listener model
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
@@ -183,7 +183,7 @@ namespace BRTListenerModel {
 			return listenerNFCFilters;
 		}
 
-		/** \brief Remove the Near field compesation filter of thelistener
+		/** \brief Remove the Near field compesation of this listener model
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void RemoveNearFierldCompensationFilters() override {
@@ -191,7 +191,7 @@ namespace BRTListenerModel {
 		}
 		
 		/**
-		 * @brief Connect a new source to this listener
+		 * @brief Connect a new source to this listener model
 		 * @param _source Pointer to the source
 		 * @return True if the connection success
 		*/
@@ -202,7 +202,7 @@ namespace BRTListenerModel {
 		}
 
 		/**
-		 * @brief Disconnect a new source to this listener
+		 * @brief Disconnect a new source to this listener model
 		 * @param _source Pointer to the source
 		 * @return True if the disconnection success
 		*/
