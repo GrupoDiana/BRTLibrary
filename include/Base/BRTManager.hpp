@@ -173,7 +173,16 @@ namespace BRTBase {
 				return nullptr;
 			}
 		}
-				
+		
+		/**
+		 * @brief Returns pointer to a source found by its ID
+		 * @tparam T Source class model
+		 * @param _sourceID sourceID
+		 * @return Pointer to source if exist, if not returns nullptr
+		*/
+		std::shared_ptr<BRTSourceModel::CSourceModelBase> GetSoundSource(const std::string & _sourceID) {
+			return FindModel(audioSources, _sourceID);
+		}	
 
 		/**
 		 * @brief Creates a new listener and returns a pointer to it. This listener pointer is also saved in a vector.
