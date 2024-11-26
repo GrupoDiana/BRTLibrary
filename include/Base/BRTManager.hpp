@@ -181,8 +181,27 @@ namespace BRTBase {
 		 * @return Pointer to source if exist, if not returns nullptr
 		*/
 		std::shared_ptr<BRTSourceModel::CSourceModelBase> GetSoundSource(const std::string & _sourceID) {
-			return FindModel(audioSources, _sourceID);
+			return FindSoundSource(_sourceID);
 		}	
+
+		/**
+		 * @brief Delete a source
+		 * @param _sourceID Identifier of the source to be deleted
+		 * @return Returns true in case the source could have been deleted.
+		*/
+		bool RemoveSoundSource(std::string _sourceID) {
+			if (!setupModeActivated) {
+				return false;
+			}
+			auto it = std::find_if(audioSources.begin(), audioSources.end(), [&_sourceID](std::shared_ptr<BRTSourceModel::CSourceModelBase> & sourceItem) { return sourceItem->GetID() == _sourceID; });
+			if (it != audioSources.end()) {
+				DisconnectModulesCommand(*it);
+				audioSources.erase(it);
+				//it->reset();
+				return true;
+			}
+			return false;
+		}
 
 		/**
 		 * @brief Creates a new listener and returns a pointer to it. This listener pointer is also saved in a vector.
@@ -341,23 +360,7 @@ namespace BRTBase {
 				return nullptr;
 			}
 		}
-		
-		/**
-		 * @brief Delete a source
-		 * @param _sourceID Identifier of the source to be deleted
-		 * @return Returns true in case the source could have been deleted.
-		*/
-		bool RemoveSoundSource(std::string _sourceID) {
-			if (!setupModeActivated) { return false; }
-			auto it = std::find_if(audioSources.begin(), audioSources.end(), [&_sourceID](std::shared_ptr<BRTSourceModel::CSourceModelBase> & sourceItem) { return sourceItem->GetID() == _sourceID; });
-			if (it != audioSources.end()) { 
-				DisconnectModulesCommand(*it);
-				audioSources.erase(it); 				
-				//it->reset();
-				return true;
-			}				
-			return false;
-		}
+				
 		
 		/**
 		 * @brief Delete a listener
@@ -860,6 +863,19 @@ namespace BRTBase {
 		std::shared_ptr<T> FindModel(std::vector<std::shared_ptr<T>> _list, const std::string & _ID) {
 			auto it = std::find_if(_list.begin(), _list.end(), [&_ID](std::shared_ptr<T> & item) { return item->GetModelID() == _ID; });
 			if (it != _list.end()) {
+				return *it;
+			}
+			return nullptr;
+		}
+
+		/**
+		 * @brief Find sound source by ID
+		 * @param _ID sound source ID
+		 * @return Sound source pointer if found, otherwise nullptr
+		 */
+		std::shared_ptr<BRTSourceModel::CSourceModelBase> FindSoundSource(const std::string & _ID) {
+			auto it = std::find_if(audioSources.begin(), audioSources.end(), [&_ID](std::shared_ptr<BRTSourceModel::CSourceModelBase> & sourceItem) { return sourceItem->GetID() == _ID; });
+			if (it != audioSources.end()) {
 				return *it;
 			}
 			return nullptr;
