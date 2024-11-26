@@ -168,7 +168,7 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CSOSFilters > _listenerILD) {
+		bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CSOSFilters > _listenerILD) override {
 			listenerNFCFilters = _listenerILD;
 			GetILDExitPoint()->sendDataPtr(listenerNFCFilters);
 			return true;
@@ -178,7 +178,7 @@ namespace BRTListenerModel {
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr <BRTServices::CSOSFilters> GetNearFieldCompensationFilters() const
+		std::shared_ptr <BRTServices::CSOSFilters> GetNearFieldCompensationFilters() const override
 		{
 			return listenerNFCFilters;
 		}
@@ -186,7 +186,7 @@ namespace BRTListenerModel {
 		/** \brief Remove the HRTF of thelistener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void RemoveNearFierldCompensationFilters() {
+		void RemoveNearFierldCompensationFilters() override {
 			listenerNFCFilters = std::make_shared<BRTServices::CSOSFilters>();	// empty HRTF			
 		}
 
@@ -195,7 +195,7 @@ namespace BRTListenerModel {
 		 * @param _ambisonicOrder Ambisonic order to be set up. Currently only orders between 1 to 3 are allowed
 		 * @return true if it is a valid order.
 		*/
-		bool SetAmbisonicOrder(int _ambisonicOrder) {
+		bool SetAmbisonicOrder(int _ambisonicOrder) override {
 			
 			if (_ambisonicOrder < 1 || _ambisonicOrder > 3) { return false; }
 			if (ambisonicOrder == _ambisonicOrder) { return true; }			
@@ -216,7 +216,7 @@ namespace BRTListenerModel {
 		 * @brief Return current established ambisonic order
 		 * @return order
 		*/
-		int GetAmbisonicOrder() {
+		int GetAmbisonicOrder() override {
 			return ambisonicOrder;
 		}
 
@@ -224,7 +224,7 @@ namespace BRTListenerModel {
 		 * @brief Set the ambisonin normalization to be used
 		 * @param _ambisonicNormalization Normalization to be set up. 
 		*/
-		bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) {
+		bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) override {
 			
 			if (ambisonicNormalization == _ambisonicNormalization) { return true; }
 			
@@ -240,7 +240,7 @@ namespace BRTListenerModel {
 		 * @param _ambisonicNormalization Normalization to be set up, valid strings are N3D, SN3D and maxN
 		 * @return true if it is a valid normalization
 		*/
-		bool SetAmbisonicNormalization(std::string _ambisonicNormalization) {
+		bool SetAmbisonicNormalization(std::string _ambisonicNormalization) override {
 			
 			Common::TAmbisonicNormalization temp;
 			if (_ambisonicNormalization == "N3D") {			temp = Common::TAmbisonicNormalization::N3D; }
@@ -254,7 +254,7 @@ namespace BRTListenerModel {
 		 * @brief Return current established ambisonic normalization 
 		 * @return current established ambisonic normalization
 		*/
-		Common::TAmbisonicNormalization GetAmbisonincNormalization() {
+		Common::TAmbisonicNormalization GetAmbisonicNormalization() override {
 			return ambisonicNormalization;
 		}
 		
@@ -362,6 +362,17 @@ namespace BRTListenerModel {
 		}
 		
 		/**
+		 * @brief Connect a new source to this listener model
+		 * @param _sourceID Source ID
+		 * @return True if the connection success
+		 */
+		bool ConnectSoundSource(const std::string & _sourceID) override {
+			std::shared_ptr<BRTSourceModel::CSourceModelBase> _source = brtManager->GetSoundSource(_sourceID);
+			if (_source == nullptr) return false;
+			return ConnectAnySoundSource(_source);
+		}
+
+		/**
 		 * @brief Disconnect a new source to this listener
 		 * @param _source Pointer to the source
 		 * @return True if the disconnection success
@@ -369,7 +380,18 @@ namespace BRTListenerModel {
 		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) override {
 			return DisconnectAnySoundSource(_source);
 		};
-								
+				
+		/**
+		 * @brief Disconnect a new source to this listener model
+		 * @param _sourceID Source ID
+		 * @return True if the disconnection success
+		 */
+		bool DisconnectSoundSource(const std::string & _sourceID) override {
+			std::shared_ptr<BRTSourceModel::CSourceModelBase> _source = brtManager->GetSoundSource(_sourceID);
+			if (_source == nullptr) return false;
+			return DisconnectAnySoundSource(_source);
+		};
+
 		/**
 		 * @brief Reset all processor buffers
 		*/
