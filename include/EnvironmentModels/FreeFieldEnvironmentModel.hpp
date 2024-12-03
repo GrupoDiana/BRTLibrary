@@ -173,16 +173,7 @@ namespace BRTEnvironmentModel {
 				it.SetEnableProcessor(false);
 			}
 		};
-		
-
-		///**
-		// * @brief Get the gain of the model
-		// * @return Gain value
-		// */
-		//float GetGain() override {
-		//	return gain;
-		//}
-		
+				
 		/**
 		 * @brief Enable distance attenuation
 		 */
