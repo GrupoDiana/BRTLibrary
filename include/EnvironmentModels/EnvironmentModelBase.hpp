@@ -63,10 +63,12 @@ namespace BRTEnvironmentModel {
 		virtual void UpdateRoomWallAbsortion(int wallIndex) { };
 		virtual void UpdateRoomAllWallsAbsortion() { };
 
+		virtual bool ConnectSoundSource(const std::string & _sourceID) { return false; }
+		virtual bool DisconnectSoundSource(const std::string & _sourceID) { return false; }	
+
 		virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) { return false; }
-		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) { return false; }					
-
-
+		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) { return false; }	
+		
 		CEnviromentModelBase(const std::string & _environmentModelID)
 			: CModelBase(_environmentModelID) {
 

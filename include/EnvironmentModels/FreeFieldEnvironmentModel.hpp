@@ -174,24 +174,14 @@ namespace BRTEnvironmentModel {
 			}
 		};
 		
-		/**
-		 * @brief Set the gain of the model
-		 * @param _gain 
-		 */
-		void UpdateGain() override {
-			std::lock_guard<std::mutex> l(mutex);			
-			for (auto & it : sourcesConnectedProcessors) {
-				it.SetGain(gain);
-			}
-		}
 
-		/**
-		 * @brief Get the gain of the model
-		 * @return Gain value
-		 */
-		float GetGain() override {
-			return gain;
-		}
+		///**
+		// * @brief Get the gain of the model
+		// * @return Gain value
+		// */
+		//float GetGain() override {
+		//	return gain;
+		//}
 		
 		/**
 		 * @brief Enable distance attenuation
@@ -247,6 +237,17 @@ namespace BRTEnvironmentModel {
 		};
 		
 		/**
+		 * @brief Connect a new source to this listener model
+		 * @param _sourceID Source ID
+		 * @return True if the connection success
+		 */
+		bool ConnectSoundSource(const std::string & _sourceID) override {
+			std::shared_ptr<BRTSourceModel::CSourceModelBase> _source = brtManager->GetSoundSource(_sourceID);
+			if (_source == nullptr) return false;
+			return ConnectAnySoundSource(_source);
+		}
+
+		/**
 		 * @brief Disconnect a new source to this listener
 		 * @param _source Pointer to the source
 		 */
@@ -254,6 +255,16 @@ namespace BRTEnvironmentModel {
 			return DisconnectAnySoundSource(_source);
 		};
 		
+		/**
+		 * @brief Disconnect a new source to this listener model
+		 * @param _sourceID Source ID
+		 * @return True if the disconnection success
+		 */
+		bool DisconnectSoundSource(const std::string & _sourceID) override {
+			std::shared_ptr<BRTSourceModel::CSourceModelBase> _source = brtManager->GetSoundSource(_sourceID);
+			if (_source == nullptr) return false;
+			return DisconnectAnySoundSource(_source);
+		};
 
 		/**
 		 * @brief Reset all processor buffers
@@ -312,8 +323,19 @@ namespace BRTEnvironmentModel {
 			}
 		}
 
-
 	private:
+		
+		/**
+		 * @brief Set the gain of the model
+		 * @param _gain 
+		 */
+		void UpdateGain() override {
+			std::lock_guard<std::mutex> l(mutex);
+			for (auto & it : sourcesConnectedProcessors) {
+				it.SetGain(gain);
+			}
+		}
+
 		/**
 		 * @brief Connect a new source to this listener
 		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
@@ -450,7 +472,7 @@ namespace BRTEnvironmentModel {
 		/////////////////
 		mutable std::mutex mutex;					// To avoid access collisions
 		BRTBase::CBRTManager * brtManager;						
-		float gain;
+		//float gain;
 
 		bool enablePropagationDelay;
 		bool enableDistanceAttenuation;
