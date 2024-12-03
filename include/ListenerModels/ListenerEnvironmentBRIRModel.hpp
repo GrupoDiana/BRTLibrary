@@ -150,11 +150,33 @@ namespace BRTListenerModel {
 		};
 		
 		/**
+		 * @brief Connect a new source to this listener model
+		 * @param _sourceID Source ID
+		 * @return True if the connection success
+		 */
+		bool ConnectSoundSource(const std::string & _sourceID) override {
+			std::shared_ptr<BRTSourceModel::CSourceModelBase> _source = brtManager->GetSoundSource(_sourceID);
+			if (_source == nullptr) return false;
+			return ConnectAnySoundSource(_source);
+		}
+
+		/**
 		 * @brief Disconnect a new source to this listener
 		 * @param _source Pointer to the source
 		 * @return True if the disconnection success
 		*/
 		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) override {
+			return DisconnectAnySoundSource(_source);
+		};
+
+		/**
+		 * @brief Disconnect a new source to this listener model
+		 * @param _sourceID Source ID
+		 * @return True if the disconnection success
+		 */
+		bool DisconnectSoundSource(const std::string & _sourceID) override {
+			std::shared_ptr<BRTSourceModel::CSourceModelBase> _source = brtManager->GetSoundSource(_sourceID);
+			if (_source == nullptr) return false;
 			return DisconnectAnySoundSource(_source);
 		};
 				
