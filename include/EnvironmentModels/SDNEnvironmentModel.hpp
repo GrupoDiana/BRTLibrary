@@ -177,18 +177,7 @@ namespace BRTEnvironmentModel {
 				it.SetEnableProcessor(false);
 			}
 		};
-		
-		/**
-		 * @brief Set the gain of the model
-		 * @param _gain 
-		 */
-		void UpdateGain() override {
-			std::lock_guard<std::mutex> l(mutex);
-			for (auto & it : sourcesConnectedProcessors) {
-				it.SetGain(gain);
-			}
-		}
-
+				
 		/**
 		 * @brief Enable Direct Path
 		 */
@@ -241,6 +230,17 @@ namespace BRTEnvironmentModel {
 		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) override {
 			return ConnectAnySoundSource(_source);
 		};
+
+		/**
+		 * @brief Connect a new source to this listener model
+		 * @param _sourceID Source ID
+		 * @return True if the connection success
+		 */
+		bool ConnectSoundSource(const std::string & _sourceID) override {
+			std::shared_ptr<BRTSourceModel::CSourceModelBase> _source = brtManager->GetSoundSource(_sourceID);
+			if (_source == nullptr) return false;
+			return ConnectAnySoundSource(_source);
+		}
 		
 		/**
 		 * @brief Disconnect a new source to this listener
@@ -251,6 +251,17 @@ namespace BRTEnvironmentModel {
 			return DisconnectAnySoundSource(_source);
 		};		
 	
+		/**
+		 * @brief Disconnect a new source to this listener model
+		 * @param _sourceID Source ID
+		 * @return True if the disconnection success
+		 */
+		bool DisconnectSoundSource(const std::string & _sourceID) override {
+			std::shared_ptr<BRTSourceModel::CSourceModelBase> _source = brtManager->GetSoundSource(_sourceID);
+			if (_source == nullptr) return false;
+			return DisconnectAnySoundSource(_source);
+		};
+
 		/**
 		 * @brief Reset all processor buffers
 		*/
@@ -296,6 +307,18 @@ namespace BRTEnvironmentModel {
 
 
 	private:
+
+		/**
+		 * @brief Set the gain of the model
+		 * @param _gain 
+		 */
+		void UpdateGain() override {
+			std::lock_guard<std::mutex> l(mutex);
+			for (auto & it : sourcesConnectedProcessors) {
+				it.SetGain(gain);
+			}
+		}
+
 
 		/**
 		 * @brief Update room geometry. Called from father class
