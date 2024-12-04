@@ -34,10 +34,13 @@ namespace BRTSourceModel {
 			: CSourceModelBase(_sourceID, TSourceType::Simple) {			
 		}
 
-		
-		
-		
-		void Update(std::string _entryPointID) override{
+
+	private:		
+		/**
+		 * @brief Actions when the entry points are ready
+		 * @param _entryPointID 
+		 */
+		void Update(std::string _entryPointID) override {
 			std::lock_guard<std::mutex> l(mutex);
 
 			if (_entryPointID == "samples") {
@@ -45,19 +48,14 @@ namespace BRTSourceModel {
 				SendData(buffer);
 			}
 		}
-			
+
 		/**
 		* @brief Implementation of the virtual method for processing the received commands
 		* The SourceModelBase class already handles the common commands. Here you have to manage the specific ones.
 		*/
-		void UpdateCommandSource() override {			
+		void UpdateCommandSource() override {
 			// Nothing extra to do
 		}
-
-	private:		
-		//mutable std::mutex mutex;
-
-
 	};
 }
 #endif

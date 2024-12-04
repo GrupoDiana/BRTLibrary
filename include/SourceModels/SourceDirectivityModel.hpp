@@ -73,14 +73,7 @@ namespace BRTSourceModel {
 			else { DisableSourceDirectionality(); }
 		}
 		
-		/**
-		 * @brief Reset the buffers used in the convolution of the directivity
-		*/
-		// TODO Move to command
-		void ResetBuffers() override {
-			ResetSourceConvolutionBuffers();
-		}
-
+	private:	
 
 		/**
 		 * @brief Update method of the Source directivity model
@@ -93,7 +86,7 @@ namespace BRTSourceModel {
 
 				CMonoBuffer<float> outBuffer;
 				CMonoBuffer<float> inBuffer = GetBuffer();
-				Common::CTransform sourcePosition = GetCurrentSourceTransform();
+				Common::CTransform sourcePosition = GetSourceTransform();
 				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
 				if (inBuffer.size() != 0) {
 					Process(inBuffer, outBuffer, sourcePosition, listenerPosition, sourceDirectivityTF);
@@ -102,15 +95,14 @@ namespace BRTSourceModel {
 			}
 		}
 
-
 		/**
 		* @brief Implementation of the virtual method for processing the received commands
 		* The SourceModelBase class already handles the common commands. Here you have to manage the specific ones.
 		*/
-		void UpdateCommandSource() override {			
+		void UpdateCommandSource() override {
 			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
 
-			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {				
+			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
 				if (command.GetCommand() == "/source/enableDirectivity") {
 					if (command.GetBoolParameter("enable")) {
 						EnableSourceDirectionality();
@@ -123,8 +115,17 @@ namespace BRTSourceModel {
 			}
 		}
 
-	private:		
-		//mutable std::mutex mutex;
+		/**
+		 * @brief Reset the buffers used in the convolution of the directivity
+		*/
+		// TODO Move to command
+		void ResetBuffers() override {
+			ResetSourceConvolutionBuffers();
+		}
+
+		////////////////
+		// Attributes
+		/////////////// 		
 		std::shared_ptr<BRTServices::CDirectivityTF> sourceDirectivityTF;			// Directivity of the source
 		Common::CGlobalParameters globalParameters;
 		

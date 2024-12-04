@@ -27,12 +27,14 @@
 #include <vector>
 #include <Connectivity/BRTConnectivity.hpp>
 
+namespace BRTBase {
+	class CBRTManager; // Forward declaration
+}
 namespace BRTSourceModel {
 
 	enum TSourceType { Simple,	Directivity, Virtual };
-
-
-	class CSourceModelBase : public BRTConnectivity::CBRTConnectivity /*public CCommandEntryPointManager, public CExitPointManager, public CEntryPointManager*/ {
+	
+	class CSourceModelBase : public BRTConnectivity::CBRTConnectivity {				
 	public:		
 		virtual ~CSourceModelBase() {}						
 		virtual void Update(std::string entryPointID) = 0;
@@ -58,37 +60,28 @@ namespace BRTSourceModel {
 		}
 		
 		
-		
+		/**
+		 * @brief Set audio frame buffers
+		 * @param _buffer samples buffer
+		 */
 		void SetBuffer(const CMonoBuffer<float>& _buffer) { 
 			samplesBuffer = _buffer; 
 			dataReady = true;
 		}
 
+		/**
+		 * @brief Get the last audio frame buffer
+		 * @return last samples buffer
+		 */
 		CMonoBuffer<float> GetBuffer() {
 			return samplesBuffer;
 			
 		}
-		void SetDataReady() {
-			if (!dataReady) { 				
-				SetBuffer(CMonoBuffer<float>(globalParameters.GetBufferSize()));			// set and empty buffer to continue
-			}			
-			//Update(GetSamplesExitPoint("samples")->GetID());
-			Update("samples");
-		}
-
-		void operator()() {
-			//samplesExitPoint->sendData(samplesBuffer);
-			//Update();
-			//dataReady = false;
-			//Update(GetSamplesExitPoint("samples")->GetID());			
-			SetDataReady();
-		}
-
-		void SendData(CMonoBuffer<float>& _buffer) {
-			GetSamplesExitPoint("samples")->sendData(_buffer);
-			dataReady = false;
-		}
-
+		
+		/**
+		 * @brief Set the source transform
+		 * @param _transform Source transform
+		 */
 		void SetSourceTransform(Common::CTransform _transform) { 
 			sourceTransform = _transform;			
 			GetTransformExitPoint()->sendData(sourceTransform);
@@ -98,7 +91,7 @@ namespace BRTSourceModel {
 		 * @brief Get the current source transform
 		 * @return Source transform
 		 */
-		const Common::CTransform& GetCurrentSourceTransform() const { return sourceTransform; };		
+		const Common::CTransform& GetSourceTransform() const { return sourceTransform; };		
 		
 		/**
 		 * @brief Get the source ID
@@ -114,6 +107,31 @@ namespace BRTSourceModel {
 			return sourceType;
 		}
 
+		
+		
+	private:	
+
+		//////////////
+		// Methods
+		//////////////
+
+		/**
+		 * @brief Set the data ready flag. Internal use only.
+		 */
+		void SetDataReady() {
+			if (!dataReady) {
+				SetBuffer(CMonoBuffer<float>(globalParameters.GetBufferSize())); // set and empty buffer to continue
+			}
+			Update("samples");
+		}
+
+		/**
+		 * @brief Set the data ready flag. Internal use only.		 
+		 */
+		void operator()() {
+			SetDataReady();
+		}
+
 		/**
 		* @brief Manages the reception of new data by an entry point. 
 		* Only entry points that have a notification make a call to this method.
@@ -126,14 +144,14 @@ namespace BRTSourceModel {
 		 * @brief Manages the reception of new command by an entry point.
 		 */
 		void UpdateCommand() override {
-			
+
 			std::lock_guard<std::mutex> l(mutex);
 			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
 
 			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
 				if (command.GetCommand() == "/source/location") {
 					Common::CVector3 location = command.GetVector3Parameter("location");
-					Common::CTransform sourceTransform = GetCurrentSourceTransform();
+					Common::CTransform sourceTransform = GetSourceTransform();
 					sourceTransform.SetPosition(location);
 					SetSourceTransform(sourceTransform);
 				} else if (command.GetCommand() == "/source/orientation") {
@@ -141,30 +159,23 @@ namespace BRTSourceModel {
 					Common::CQuaternion orientation;
 					orientation = orientation.FromYawPitchRoll(orientationYawPitchRoll.x, orientationYawPitchRoll.y, orientationYawPitchRoll.z);
 
-					Common::CTransform sourceTransform = GetCurrentSourceTransform();
+					Common::CTransform sourceTransform = GetSourceTransform();
 					sourceTransform.SetOrientation(orientation);
 					SetSourceTransform(sourceTransform);
 				} else if (command.GetCommand() == "/source/orientationQuaternion") {
 					Common::CQuaternion orientation = command.GetQuaternionParameter("orientation");
-					Common::CTransform sourceTransform = GetCurrentSourceTransform();
+					Common::CTransform sourceTransform = GetSourceTransform();
 					sourceTransform.SetOrientation(orientation);
 					SetSourceTransform(sourceTransform);
 				}
 			}
-			
+
 			UpdateCommandSource();
 		}
-
-		/**
-		 * @brief Check if the command is for this source
-		 * @param _sourceID Source ID
-		 * @return True if the command is for this source
-		 */						
-		bool IsToMySoundSource(std::string _sourceID) {
-			return GetID() == _sourceID;
-		}
-
-	private:		
+				
+		////////////////
+		// Attributes
+		////////////////
 		std::string sourceID;		
 		TSourceType sourceType;
 
@@ -173,13 +184,34 @@ namespace BRTSourceModel {
 		CMonoBuffer<float> samplesBuffer;			
 		Common::CGlobalParameters globalParameters;
 
+		friend class BRTBase::CBRTManager; // Declare CBRTManager
+
 	protected:
+		
+		/**
+		 * @brief Send the data to the exit point
+		 * @param _buffer Buffer to be sent
+		 */
+		void SendData(CMonoBuffer<float> & _buffer) {
+			GetSamplesExitPoint("samples")->sendData(_buffer);
+			dataReady = false;
+		}
+		
 		/**
 		 * @brief Set the source type
 		 * @param _sourceType 
 		 */
 		void SetSourceType(TSourceType _sourceType) {
 			sourceType = _sourceType;
+		}
+
+		/**
+		 * @brief Check if the command is for this source
+		 * @param _sourceID Source ID
+		 * @return True if the command is for this source
+		 */
+		bool IsToMySoundSource(std::string _sourceID) {
+			return GetID() == _sourceID;
 		}
 
 		mutable std::mutex mutex;		// To avoid access collisions
