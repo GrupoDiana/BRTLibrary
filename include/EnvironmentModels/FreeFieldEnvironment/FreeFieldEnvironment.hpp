@@ -23,7 +23,7 @@
 #include <memory>
 #include <Common/ErrorHandler.hpp>
 #include <Common/GlobalParameters.hpp>
-#include <Common/DistanceAttenuator.hpp>
+#include <ProcessingModules/DistanceAttenuator.hpp>
 #include <Common/Waveguide.hpp>
 #include <Base/BRTManager.hpp>
 
