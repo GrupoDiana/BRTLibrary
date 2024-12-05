@@ -26,7 +26,7 @@
 #include <vector>
 #include <algorithm>
 #include <Connectivity/BRTConnectivity.hpp>
-#include <Common/UniformPartitionedConvolution.hpp>
+#include <ProcessingModules/UniformPartitionedConvolution.hpp>
 #include <Common/Buffer.hpp>
 #include <ProcessingModules/AmbisonicDomainConvolver.hpp>
 

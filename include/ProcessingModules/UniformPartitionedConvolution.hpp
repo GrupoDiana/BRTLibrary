@@ -20,8 +20,8 @@
 * \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
 */
 
-#ifndef _CUPCANECHOIC_H_
-#define _CUPCANECHOIC_H_
+#ifndef _C_UNIFORM_PARTITIONED_CONVOLUTION
+#define _C_UNIFORM_PARTITIONED_CONVOLUTION
 
 #include <iostream>
 #include <vector>

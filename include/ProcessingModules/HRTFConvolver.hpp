@@ -23,11 +23,10 @@
 #ifndef _HRTF_CONVOLVER_
 #define _HRTF_CONVOLVER_
 
-#include <Common/UniformPartitionedConvolution.hpp>
+#include <ProcessingModules/UniformPartitionedConvolution.hpp>
 #include <Common/Buffer.hpp>
 #include <Common/AddDelayExpansionMethod.hpp>
 #include <Common/SourceListenerRelativePositionCalculation.hpp>
-//#include <ServiceModules/HRTF.hpp>
 
 
 #include <memory>

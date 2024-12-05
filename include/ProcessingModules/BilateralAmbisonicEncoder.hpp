@@ -23,7 +23,7 @@
 #ifndef _CBILATERAL_AMBISONIC_ENCODER_HPP
 #define _CBILATERAL_AMBISONIC_ENCODER_HPP
 
-#include <Common/UniformPartitionedConvolution.hpp>
+#include <ProcessingModules/UniformPartitionedConvolution.hpp>
 #include <Common/Buffer.hpp>
 #include <ProcessingModules/AmbisonicEncoder.hpp>
 #include <Common/AddDelayExpansionMethod.hpp>

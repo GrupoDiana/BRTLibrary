@@ -23,7 +23,7 @@
 #ifndef _DIRECTIVITYTF_CONVOLVER_
 #define _DIRECTIVITYTF_CONVOLVER_
 
-#include <Common/UniformPartitionedConvolution.hpp>
+#include <ProcessingModules/UniformPartitionedConvolution.hpp>
 #include <Common/Buffer.hpp>
 #include <ServiceModules/DirectivityTF.hpp>
 
