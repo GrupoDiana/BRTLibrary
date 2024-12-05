@@ -26,7 +26,7 @@
 #include <Base/BRTManager.hpp>
 #include <BinauralFilter/BinauralFilterBase.hpp>
 #include <ListenerModels/ListenerModelBase.hpp>
-#include <Common/BinauralFilter.hpp>
+#include <ProcessingModules/BinauralFilter.hpp>
 
 #define NUMBER_OF_COEFFICIENTS_IN_STAGE_SOS 6
 
@@ -240,7 +240,7 @@ namespace BRTBinauralFilter {
 		BRTBase::CBRTManager * brtManager;										// Pointer to the BRT Manager
 		std::shared_ptr<BRTServices::CSOSFilters> SOSFilter; // SOS Filter of listener
 
-		Common::CBinauralFilter binauralFilter; // Binaural filter
+		BRTProcessing::CBinauralFilter binauralFilter; // Binaural filter
 
 	};
 }

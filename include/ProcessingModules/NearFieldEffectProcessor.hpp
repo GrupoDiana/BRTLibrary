@@ -28,11 +28,11 @@
 #include <algorithm>
 #include <Connectivity/BRTConnectivity.hpp>
 #include <Common/Buffer.hpp>
-#include <Common/BinauralFilter.hpp>
+#include <ProcessingModules/BinauralFilter.hpp>
 
 
 namespace BRTProcessing {
-class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity, public Common::CBinauralFilter {
+class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity, public BRTProcessing::CBinauralFilter {
 		
     public:
 		CNearFieldEffectProcessor() {

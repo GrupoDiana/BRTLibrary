@@ -30,7 +30,7 @@
 
 #define NUMBER_OF_COEFFICIENTS_IN_STAGE_SOS 6
 
-namespace Common {
+namespace BRTProcessing {
 
 	class CBinauralFilter {
 	public:
@@ -114,7 +114,7 @@ namespace Common {
 			// Check process flag
 			if (!enableProcessor) { return;	}
 			
-			float distance = CSourceListenerRelativePositionCalculation::CalculateSourceListenerDistance(sourceTransform, listenerTransform);
+			float distance = Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerDistance(sourceTransform, listenerTransform);
 			if (distance > DISTANCE_MODEL_THRESHOLD_NEAR) {	return; }
 						
 			ASSERT(_inLeftBuffer.size() == globalParameters.GetBufferSize() || _inRightBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");			

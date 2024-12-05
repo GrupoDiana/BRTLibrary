@@ -28,7 +28,7 @@
 #include <ProcessingModules/AmbisonicEncoder.hpp>
 #include <Common/AddDelayExpansionMethod.hpp>
 #include <Common/SourceListenerRelativePositionCalculation.hpp>
-#include <Common/BinauralFilter.hpp>
+#include <ProcessingModules/BinauralFilter.hpp>
 #include <ServiceModules/HRTF.hpp>
 
 #include <memory>
@@ -206,7 +206,7 @@ namespace BRTProcessing {
 		/// Atributes
 		mutable std::mutex mutex;								// Thread management
 		Common::CGlobalParameters globalParameters;				// Get access to global render parameters
-		Common::CBinauralFilter nearFieldEffectProcess;				// NearField effect processor instance
+		BRTProcessing::CBinauralFilter nearFieldEffectProcess; // NearField effect processor instance
 		//Common::CAmbisonicEncoder leftAmbisonicEncoder;			// Left ear encoder
 		//Common::CAmbisonicEncoder rightAmbisonicEncoder;		// Right ear enconder
 		BRTProcessing::CAmbisonicEncoder ambisonicEncoder; // Ambisonic encoder
