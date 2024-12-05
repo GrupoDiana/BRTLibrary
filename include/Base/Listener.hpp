@@ -591,13 +591,13 @@ namespace BRTBase {
 			return false;
 		}*/
 
-		Common::TAmbisonicNormalization GetAmbisonicNormalization() const { 			
+		BRTProcessing::TAmbisonicNormalization GetAmbisonicNormalization() const { 			
 			for (auto& it : listenerModelsConnected) {
 				if (it->GetListenerModelCharacteristics().IsAmbisonic()) {
 					return it->GetAmbisonicNormalization();
 				}
 			}							
-			return Common::TAmbisonicNormalization::none; 
+			return BRTProcessing::TAmbisonicNormalization::none; 
 		}
 
 

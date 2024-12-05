@@ -110,9 +110,9 @@ namespace BRTListenerModel {
 
 		virtual bool SetAmbisonicOrder(int _ambisonicOrder) { return false; }
 		virtual int GetAmbisonicOrder() { return 0; }
-		virtual bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) { return false; }
+		virtual bool SetAmbisonicNormalization(BRTProcessing::TAmbisonicNormalization _ambisonicNormalization) { return false; }
 		virtual bool SetAmbisonicNormalization(std::string _ambisonicNormalization) {return false;}
-		virtual Common::TAmbisonicNormalization GetAmbisonicNormalization() { return Common::TAmbisonicNormalization::none; }
+		virtual BRTProcessing::TAmbisonicNormalization GetAmbisonicNormalization() { return BRTProcessing::TAmbisonicNormalization::none; }
 		
 		virtual bool ConnectSoundSource(const std::string & _sourceID) { return false; }
 		virtual bool DisconnectSoundSource(const std::string & _sourceID) { return false; }	

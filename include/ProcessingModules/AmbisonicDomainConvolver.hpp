@@ -62,7 +62,7 @@ namespace BRTProcessing {
 		*/
 		void SetAmbisonicOrder(int _ambisonicOrder) {
 			std::lock_guard<std::mutex> l(mutex);
-			numberOfAmbisonicChannels = Common::CAmbisonicEncoder::CalculateNumberOfChannels(_ambisonicOrder);
+			numberOfAmbisonicChannels = BRTProcessing::CAmbisonicEncoder::CalculateNumberOfChannels(_ambisonicOrder);
 			ResetBuffers();
 		};
 	

@@ -25,7 +25,7 @@
 
 #include <Common/UniformPartitionedConvolution.hpp>
 #include <Common/Buffer.hpp>
-#include <Common/AmbisonicEncoder.hpp>
+#include <ProcessingModules/AmbisonicEncoder.hpp>
 #include <Common/AddDelayExpansionMethod.hpp>
 #include <Common/SourceListenerRelativePositionCalculation.hpp>
 #include <Common/BinauralFilter.hpp>
@@ -41,7 +41,7 @@ namespace BRTProcessing {
 		CBilateralAmbisonicEncoder() 
 			: enableProcessor{ true }
 			, ambisonicOrder { 1 }
-			, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }
+			, ambisonicNormalization { BRTProcessing::TAmbisonicNormalization::N3D }
 			, enableInterpolation{ true }
 			, enableITDSimulation{ false }
 			, enableParallaxCorrection{ true } {
@@ -80,7 +80,7 @@ namespace BRTProcessing {
 
 		int GetAmbisonicOrder() {	return ambisonicOrder; }
 		
-		void SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) {
+		void SetAmbisonicNormalization(BRTProcessing::TAmbisonicNormalization _ambisonicNormalization) {
 			std::lock_guard<std::mutex> l(mutex);
 			
 			if (ambisonicNormalization == _ambisonicNormalization) { return; }
@@ -209,12 +209,12 @@ namespace BRTProcessing {
 		Common::CBinauralFilter nearFieldEffectProcess;				// NearField effect processor instance
 		//Common::CAmbisonicEncoder leftAmbisonicEncoder;			// Left ear encoder
 		//Common::CAmbisonicEncoder rightAmbisonicEncoder;		// Right ear enconder
-		Common::CAmbisonicEncoder ambisonicEncoder;				// Ambisonic encoder
+		BRTProcessing::CAmbisonicEncoder ambisonicEncoder; // Ambisonic encoder
 
 		CMonoBuffer<float> leftChannelDelayBuffer;				// To store the delay of the left channel of the expansion method
 		CMonoBuffer<float> rightChannelDelayBuffer;				// To store the delay of the right channel of the expansion method
 		int ambisonicOrder;
-		Common::TAmbisonicNormalization ambisonicNormalization;
+		BRTProcessing::TAmbisonicNormalization ambisonicNormalization;
 		
 		bool enableProcessor;								// Flag to enable the processor
 		bool enableInterpolation;							// Enables/Disables the interpolation

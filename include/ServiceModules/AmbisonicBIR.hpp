@@ -29,7 +29,7 @@
 #include <Common/Fprocessor.hpp>
 #include <Common/ErrorHandler.hpp>
 #include <Common/CommonDefinitions.hpp>
-#include <Common/AmbisonicEncoder.hpp>
+#include <ProcessingModules/AmbisonicEncoder.hpp>
 #include <Common/GlobalParameters.hpp>
 #include <ServiceModules/ServicesBase.hpp>
 #include <ServiceModules/HRTF.hpp>
@@ -97,7 +97,7 @@ namespace BRTServices
 		*/
 
 
-		void BeginSetup(int _ambisonicOrder, Common::TAmbisonicNormalization _ambisonicNormalization)
+		void BeginSetup(int _ambisonicOrder, BRTProcessing::TAmbisonicNormalization _ambisonicNormalization)
 		{									
 			ASSERT(_ambisonicOrder > 0, RESULT_ERROR_BADSIZE, "Attempt to set an unllowed value for the ambisonic order.","");
 			ASSERT(_ambisonicOrder < 4, RESULT_ERROR_BADSIZE, "Attempt to set an unllowed value for the ambisonic order.","");
@@ -580,7 +580,7 @@ namespace BRTServices
 
 		std::vector<Common::CVector3>	ambisonicIRPartitionedTable_ListenerPositions;
 
-		Common::CAmbisonicEncoder ambisonicEncoder;						// To do the ambisonic encoding
+		BRTProcessing::CAmbisonicEncoder ambisonicEncoder; // To do the ambisonic encoding
 
 		Common::CGlobalParameters globalParameters;						// To store global parameters
 

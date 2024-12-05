@@ -25,7 +25,7 @@
 
 #include <Common/Buffer.hpp>
 
-namespace Common {
+namespace BRTProcessing {
 
 	enum TAmbisonicNormalization { none, N3D, SN3D, maxN };
 

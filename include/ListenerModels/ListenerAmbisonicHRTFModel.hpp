@@ -66,7 +66,7 @@ namespace BRTListenerModel {
 			 * @param enableBilateral 
 			 * @param enableNearFieldEffect 
 			*/
-			void SetConfiguration(int _ambisonicOrder, Common::TAmbisonicNormalization _ambisonicNormalization, bool enableNearFieldEffect, bool enableITDSimulation, bool enableParallaxCorrection) {
+			void SetConfiguration(int _ambisonicOrder, BRTProcessing::TAmbisonicNormalization _ambisonicNormalization, bool enableNearFieldEffect, bool enableITDSimulation, bool enableParallaxCorrection) {
 
 				bilateralAmbisonicEncoderProcessor->SetAmbisonicOrder(_ambisonicOrder);
 				bilateralAmbisonicEncoderProcessor->SetAmbisonicNormalization(_ambisonicNormalization);
@@ -106,7 +106,7 @@ namespace BRTListenerModel {
 			: brtManager{ _brtManager }
 			, CListenerModelBase(_listenerID, TListenerModelcharacteristics(true, false, true, true, true, true, false, false))
 			, ambisonicOrder{ 1 }
-			, ambisonicNormalization{ Common::TAmbisonicNormalization::N3D }
+			, ambisonicNormalization { BRTProcessing::TAmbisonicNormalization::N3D }
 			, enableNearFieldEffect{ false }
 			, enableParallaxCorrection{ true }
 			, enableITDSimulation{ true } {
@@ -224,7 +224,7 @@ namespace BRTListenerModel {
 		 * @brief Set the ambisonin normalization to be used
 		 * @param _ambisonicNormalization Normalization to be set up. 
 		*/
-		bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) override {
+		bool SetAmbisonicNormalization(BRTProcessing::TAmbisonicNormalization _ambisonicNormalization) override {
 			
 			if (ambisonicNormalization == _ambisonicNormalization) { return true; }
 			
@@ -242,10 +242,10 @@ namespace BRTListenerModel {
 		*/
 		bool SetAmbisonicNormalization(std::string _ambisonicNormalization) override {
 			
-			Common::TAmbisonicNormalization temp;
-			if (_ambisonicNormalization == "N3D") {			temp = Common::TAmbisonicNormalization::N3D; }
-			else if (_ambisonicNormalization == "SN3D") {	temp = Common::TAmbisonicNormalization::SN3D; }
-			else if (_ambisonicNormalization == "maxN") {	temp = Common::TAmbisonicNormalization::maxN; }
+			BRTProcessing::TAmbisonicNormalization temp;
+			if (_ambisonicNormalization == "N3D") {			temp = BRTProcessing::TAmbisonicNormalization::N3D; }
+			else if (_ambisonicNormalization == "SN3D") {	temp = BRTProcessing::TAmbisonicNormalization::SN3D; }
+			else if (_ambisonicNormalization == "maxN") {	temp = BRTProcessing::TAmbisonicNormalization::maxN; }
 			else { return false; }
 			return SetAmbisonicNormalization(temp);					
 		}
@@ -254,7 +254,7 @@ namespace BRTListenerModel {
 		 * @brief Return current established ambisonic normalization 
 		 * @return current established ambisonic normalization
 		*/
-		Common::TAmbisonicNormalization GetAmbisonicNormalization() override {
+		BRTProcessing::TAmbisonicNormalization GetAmbisonicNormalization() override {
 			return ambisonicNormalization;
 		}
 		
@@ -646,7 +646,7 @@ namespace BRTListenerModel {
 		std::shared_ptr<BRTServices::CAmbisonicBIR> listenerAmbisonicIR;			// AmbisonicIR related to the listener				
 
 		int ambisonicOrder;															// Store the Ambisonic order
-		Common::TAmbisonicNormalization ambisonicNormalization;						// Store the Ambisonic normalization
+		BRTProcessing::TAmbisonicNormalization ambisonicNormalization;				// Store the Ambisonic normalization
 		bool enableNearFieldEffect;													// Enables/Disables the Near Field Effect
 		bool enableParallaxCorrection;												// Enable parallax correction
 		bool enableITDSimulation;													// Enable ITD simulation 
