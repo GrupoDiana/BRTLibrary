@@ -44,16 +44,7 @@ namespace BRTProcessing {
 		void DisableSourceDirectionality() { enableSourceDirectivity = false; }
 		//Get the flag for spatialization process enabling
 		bool IsSourceDirectionalityEnabled() { return enableSourceDirectivity; }
-		
-		//TO BE IMPLEMENTED:
-		/////Enable HRTF interpolation method	
-		//void EnableInterpolation() { enableInterpolation = true; }
-		/////Disable HRTF interpolation method
-		//void DisableInterpolation() { enableInterpolation = false; } 
-		/////Get the flag for HRTF interpolation method
-		//bool IsInterpolationEnabled() { return enableInterpolation; }
-
-		
+					
 		
 		/** \brief Process data from input buffer to generate spatialization by convolution
 		* *	\param [in] inBuffer input buffer with anechoic audio
