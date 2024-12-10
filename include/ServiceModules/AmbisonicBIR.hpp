@@ -26,7 +26,7 @@
 #include <unordered_map>
 #include <cmath>  
 #include <Common/Buffer.hpp>
-#include <Common/Fprocessor.hpp>
+#include <Common/FFTCalculator.hpp>
 #include <Common/ErrorHandler.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <ProcessingModules/AmbisonicEncoder.hpp>

@@ -31,7 +31,7 @@
 #include <cstdint>
 #include <Common/Buffer.hpp>
 #include <Common/ErrorHandler.hpp>
-#include <Common/Fprocessor.hpp>
+#include <Common/FFTCalculator.hpp>
 #include <Common/GlobalParameters.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <Common/CranicalGeometry.hpp>

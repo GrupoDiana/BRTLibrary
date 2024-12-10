@@ -25,7 +25,7 @@
 
 #include <iostream>
 #include <vector>
-#include <Common/Fprocessor.hpp>
+#include <Common/FFTCalculator.hpp>
 #include <Common/Buffer.hpp>
 #include <Common/CommonDefinitions.hpp>
 
