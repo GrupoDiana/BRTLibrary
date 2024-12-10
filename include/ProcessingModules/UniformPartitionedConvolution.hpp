@@ -143,14 +143,14 @@ namespace BRTProcessing {
 
 				//Step 2,3 - FFT of the input signal
 				CMonoBuffer<float> inBuffer_Frequency;
-				Common::CFprocessor::CalculateFFT(inBuffer_Time_dobleSize, inBuffer_Frequency);
+				Common::CFFTCalculator::CalculateFFT(inBuffer_Time_dobleSize, inBuffer_Frequency);
 				*it_storageInputFFT = inBuffer_Frequency;		//Store the new input FFT into the first FTT history buffers
 
 				//Step 4, 5 - Multiplications and sums
 				auto it_product = it_storageInputFFT;
 
 				for (int i = 0; i < impulseResponseNumberOfSubfilters; i++) {
-					Common::CFprocessor::ProcessComplexMultiplication(*it_product, IR[i], temp);
+					Common::CFFTCalculator::ProcessComplexMultiplication(*it_product, IR[i], temp);
 					sum += temp;
 					if (it_product == storageInputFFT_buffer.begin()) {
 						it_product = storageInputFFT_buffer.end() - 1;
@@ -168,7 +168,7 @@ namespace BRTProcessing {
 				}
 				// Make the IIF
 				CMonoBuffer<float> ouputBuffer_temp;
-				Common::CFprocessor::CalculateIFFT(sum, ouputBuffer_temp);
+				Common::CFFTCalculator::CalculateIFFT(sum, ouputBuffer_temp);
 				//We are left only with the final half of the result
 				int halfsize = (int)(ouputBuffer_temp.size() * 0.5f);
 				CMonoBuffer<float> temp_OutputBlock(ouputBuffer_temp.begin() + halfsize, ouputBuffer_temp.end());
@@ -219,7 +219,7 @@ namespace BRTProcessing {
 
 					//Step 2,3 - FFT of the input signal
 					CMonoBuffer<float> inBuffer_Frequency;
-					Common::CFprocessor::CalculateFFT(inBuffer_Time_dobleSize, inBuffer_Frequency);
+					Common::CFFTCalculator::CalculateFFT(inBuffer_Time_dobleSize, inBuffer_Frequency);
 					//Store the new input FFT into the first FTT history buffers
 					*it_storageInputFFT = inBuffer_Frequency;
 
@@ -231,7 +231,7 @@ namespace BRTProcessing {
 					auto it_HRIR_multiplicationFactor = it_storageHRIR;
 
 					for (int i = 0; i < impulseResponseNumberOfSubfilters; i++) {
-						Common::CFprocessor::ProcessComplexMultiplication(*it_product, (*it_HRIR_multiplicationFactor)[i], temp);
+						Common::CFFTCalculator::ProcessComplexMultiplication(*it_product, (*it_HRIR_multiplicationFactor)[i], temp);
 						sum += temp;
 						if (it_product == storageInputFFT_buffer.begin()) {
 							it_product = storageInputFFT_buffer.end() - 1;
@@ -266,7 +266,7 @@ namespace BRTProcessing {
 					if (_doIFFT) {
 						// Make the IIF
 						CMonoBuffer<float> ouputBuffer_temp;
-						Common::CFprocessor::CalculateIFFT(sum, ouputBuffer_temp);
+						Common::CFFTCalculator::CalculateIFFT(sum, ouputBuffer_temp);
 						//We are left only with the final half of the result
 						//int halfsize = (int)(ouputBuffer_temp.size() * 0.5f);
 						CMonoBuffer<float> temp_OutputBlock(ouputBuffer_temp.end() - inputSize, ouputBuffer_temp.end());
@@ -292,7 +292,7 @@ namespace BRTProcessing {
 		static void CalculateIFFT(const CMonoBuffer<float>& _inBuffer, CMonoBuffer<float> &_outBuffer) {
 
 			CMonoBuffer<float> outBuffer_temp;
-			Common::CFprocessor::CalculateIFFT(_inBuffer, outBuffer_temp);
+			Common::CFFTCalculator::CalculateIFFT(_inBuffer, outBuffer_temp);
 			//We are left only with the final half of the result
 			int halfsize = (int)(outBuffer_temp.size() * 0.5f);
 

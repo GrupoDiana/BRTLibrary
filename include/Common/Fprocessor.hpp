@@ -39,14 +39,14 @@ namespace Common {
 
 	/** \details This class implements the necessary algorithms to do the convolution, in frequency domain, between signal and a impulse response.
 	*/
-	class CFprocessor
+	class CFFTCalculator
 	{
 
 	public:
 
 		/** \brief Default constructor
 		*/
-		CFprocessor() : inputSize{ 0 }, IRSize{ 0 }, FFTBufferSize{ 0 }, setupDone{ false }, ip_size {0}, normalizeCoef{0}, w_size{0}
+		CFFTCalculator() : inputSize{ 0 }, IRSize{ 0 }, FFTBufferSize{ 0 }, setupDone{ false }, ip_size {0}, normalizeCoef{0}, w_size{0}
 		{
 		}
 		

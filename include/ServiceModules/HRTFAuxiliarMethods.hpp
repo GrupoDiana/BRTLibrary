@@ -607,8 +607,8 @@ namespace BRTServices {
 					}
 					//FFT
 					CMonoBuffer<float> left_data_FFT, right_data_FFT;
-					Common::CFprocessor::CalculateFFT(left_data_FFT_doubleSize, left_data_FFT);
-					Common::CFprocessor::CalculateFFT(right_data_FFT_doubleSize, right_data_FFT);
+					Common::CFFTCalculator::CalculateFFT(left_data_FFT_doubleSize, left_data_FFT);
+					Common::CFFTCalculator::CalculateFFT(right_data_FFT_doubleSize, right_data_FFT);
 					//Prepare struct to return the value
 					new_DataFFT_Partitioned.leftHRIR_Partitioned.push_back(left_data_FFT);
 					new_DataFFT_Partitioned.rightHRIR_Partitioned.push_back(right_data_FFT);
