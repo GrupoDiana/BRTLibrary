@@ -98,7 +98,7 @@ namespace BRTProcessing {
 	private:
 
 		Common::CGlobalParameters globalParameters;
-		Common::CUniformPartitionedConvolution outputUPConvolution;		// Object to make the inverse fft of the left channel with the UPC method
+		BRTProcessing::CUniformPartitionedConvolution outputUPConvolution; // Object to make the inverse fft of the left channel with the UPC method
 
 		bool enableSourceDirectivity;					// Flags for independent control of processes		
 		bool convolutionBuffersInitialized;

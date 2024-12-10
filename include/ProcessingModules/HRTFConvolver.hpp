@@ -223,8 +223,8 @@ namespace BRTProcessing {
 		// Atributes
 		Common::CGlobalParameters globalParameters;
 
-		Common::CUniformPartitionedConvolution outputLeftUPConvolution;		// Object to make the inverse fft of the left channel with the UPC method
-		Common::CUniformPartitionedConvolution outputRightUPConvolution;		// Object to make the inverse fft of the rigth channel with the UPC method
+		BRTProcessing::CUniformPartitionedConvolution outputLeftUPConvolution; // Object to make the inverse fft of the left channel with the UPC method
+		BRTProcessing::CUniformPartitionedConvolution outputRightUPConvolution; // Object to make the inverse fft of the rigth channel with the UPC method
 
 		CMonoBuffer<float> leftChannelDelayBuffer;			// To store the delay of the left channel of the expansion method
 		CMonoBuffer<float> rightChannelDelayBuffer;			// To store the delay of the right channel of the expansion method

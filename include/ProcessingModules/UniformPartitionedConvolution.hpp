@@ -33,7 +33,7 @@
 */
 typedef std::vector<CMonoBuffer<float>> THRIR_partitioned;
 
-namespace Common {
+namespace BRTProcessing {
 
 	/** \details This class implements the necessary algorithms to do the convolution, in frequency domain, between signal and a impulse response using the	Uniformly Partitioned Convolution Algorithm (UPC algorithm)
 	*/
@@ -77,10 +77,10 @@ namespace Common {
 			impulseResponseNumberOfSubfilters = _IR_Block_Number;
 			impulseResponseMemory = _IRMemory;
 
-			if (CalculateIsPowerOfTwo(inputSize)) {	
+			if (Common::CalculateIsPowerOfTwo(inputSize)) {	
 				storageInput_bufferSize = inputSize;	
 			}	else {
-				storageInput_bufferSize = 2 * CalculateNextPowerOfTwo(inputSize)  - inputSize;
+				storageInput_bufferSize = 2 * Common::CalculateNextPowerOfTwo(inputSize)  - inputSize;
 			}
 
 			//Prepare the buffer with the space that we are going to need	
