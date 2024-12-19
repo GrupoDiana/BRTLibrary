@@ -6,7 +6,6 @@
 * 
 * \authors  Developer's team (University of Milan), in alphabetical order: F. Avanzini, D. Fantini , M. Fontana, G. Presti,
 * Coordinated by F. Avanzini (University of Milan) ||
-*
 * \b Contact: federico.avanzini@unimi.it
 *
 * \b Copyright: University of Milan - 2023
@@ -14,6 +13,7 @@
 * \b Contributions: (additional authors/contributors can be added here)
 *
 * \b Project: SONICOM (https://www.sonicom.eu/) ||
+* \b Website: https://www.sonicom.eu/
 *
 * \b Acknowledgement: This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743
 *

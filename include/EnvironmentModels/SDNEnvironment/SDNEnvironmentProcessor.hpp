@@ -15,6 +15,7 @@
 * \b Contributions: D. Gonzalez-Toledo (University of Malaga)
 *
 * \b Project: SONICOM (https://www.sonicom.eu/) ||
+* \b Website: https://www.sonicom.eu/
 *
 * \b Acknowledgement: This project has received funding from the European Union�s Horizon 2020 research and innovation programme under grant agreement no.101017743
 *
