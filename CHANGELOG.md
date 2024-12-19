@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The source models have been simplified to make them easier to use internally, in the same style as the rest of the model.
 - Nearfield processing is now handled by a more generic class called BinauralFilter.
 - The method for reading SOFA files of type SOS has been renamed.
+- The headers for all files have been updated.
 
 ### Fixed
 - Audio sources will not be erased properly when using the free field environment model.
