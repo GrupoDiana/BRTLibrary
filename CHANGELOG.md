@@ -5,7 +5,7 @@ All notable changes to the Binaural Rendering Toolbox (BRT) will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unrealease]
+## [2.0.0] - 2024-12-20
 
 ### Added
 - A new namespace and folder has been created to centralise the classes that manage the connectivity between modules.
