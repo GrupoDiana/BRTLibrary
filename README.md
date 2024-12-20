@@ -44,9 +44,6 @@ Copyright (c) for each module belongs to its respective authors, who may vary as
 
 This library includes pieces of code from the 3DTI AudioToolkit, shared under GPLv3 license and copyright (c) by University of Málaga (contact: areyes@uma.es) and Imperial College London (contact: l.picinali@imperial.ac.uk). See headers in the source code files.
 
-## Acknowledgements 
-
-![European Union](assets/EU_flag.png "European Union") This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743 
 
 ## Acknowledgements 
 
