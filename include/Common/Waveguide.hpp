@@ -69,8 +69,8 @@ namespace Common {
 		*/		
 		void PushBack(const CMonoBuffer<float>& _inputBuffer, const CVector3& _sourcePosition, const CVector3& _listenerPosition) {
 			
-			mostRecentBuffer = _inputBuffer;		// Save a copy of this most recent Buffer
-
+			mostRecentBuffer = _inputBuffer;				// Save a copy of this most recent Buffer
+			mostRecentSourceTransform = _sourcePosition;	// Save a copy of the source position
 			//If propagation delay simulation is not enable, do nothing more
 			if (!enablePropagationDelay) return;
 
@@ -86,6 +86,7 @@ namespace Common {
 			// if the propagation delay is not activated, just return the last input buffer
 			if (!enablePropagationDelay) {
 				outbuffer = mostRecentBuffer;
+				sourcePositionWhenWasEmitted = mostRecentSourceTransform;
 			} else {
 				// Pop really doesn't pop. The next time a buffer is pushed, it will be removed.
 				ProcessListenerMovement(outbuffer, sourcePositionWhenWasEmitted, _listenerPosition);
@@ -489,6 +490,7 @@ namespace Common {
 		 		 	  
 		bool enablePropagationDelay;					/// To store if the propagation delay is enabled or not		
 		CMonoBuffer<float> mostRecentBuffer;			/// To store the last buffer introduced into the waveguide
+		CVector3 mostRecentSourceTransform;				/// To store the last source transform introduced into the waveguide
 		boost::circular_buffer<float> circular_buffer;	/// To store the samples into the waveguide			
 		
 		std::vector<TSourcePosition> sourcePositionsBuffer;	/// To store the source positions in each frame
