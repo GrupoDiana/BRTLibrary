@@ -24,6 +24,8 @@
 #ifndef _BINAURAL_FILTER_HPP
 #define _BINAURAL_FILTER_HPP
 
+#define EPSILON 0.001f
+
 
 #include <Common/Buffer.hpp>
 #include <ServiceModules/SOSFilters.hpp>
@@ -116,9 +118,18 @@ namespace BRTProcessing {
 			// Check process flag
 			if (!enableProcessor) { return;	}
 			
-			float distance = Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerDistance(sourceTransform, listenerTransform);
-			if (distance > DISTANCE_MODEL_THRESHOLD_NEAR) {	return; }
-						
+			float distance = Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerDistance(sourceTransform, listenerTransform);			
+			
+			if (distance > DISTANCE_MODEL_THRESHOLD_NEAR) {
+				return;
+			}
+			if (Common::AreSame(distance, 0, MINIMUM_DISTANCE_SOURCE_LISTENER)) {
+				SET_RESULT(RESULT_WARNING, "The source is inside the listener's head.");
+				outLeftBuffer = _inLeftBuffer;
+				outRightBuffer = _inRightBuffer;
+				return;
+			}
+
 			ASSERT(_inLeftBuffer.size() == globalParameters.GetBufferSize() || _inRightBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");			
 			
 			// Check listener ILD
