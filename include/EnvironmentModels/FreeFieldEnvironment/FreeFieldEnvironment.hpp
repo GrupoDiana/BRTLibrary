@@ -118,23 +118,21 @@ namespace BRTEnvironmentModel {
 			}
 
 			// Process the waveguide						
-			Common::CVector3 effectiveSourcePosition;
+			Common::CVector3 waveGuideOutSourcePosition;
 			channelSourceListener.PushBack(_inBuffer, _sourceTransform.GetPosition(), _listenerTransform.GetPosition());			
 			CMonoBuffer<float> _waveGuideOutBuffer;
-			channelSourceListener.PopFront(_waveGuideOutBuffer, _listenerTransform.GetPosition(), effectiveSourcePosition);
+			channelSourceListener.PopFront(_waveGuideOutBuffer, _listenerTransform.GetPosition(), waveGuideOutSourcePosition);
 
 			if (channelSourceListener.IsPropagationDelayEnabled()) {
 				_effectiveSourceTransform = _sourceTransform;			
-				_effectiveSourceTransform.SetPosition(effectiveSourcePosition);		
+				_effectiveSourceTransform.SetPosition(waveGuideOutSourcePosition);		
 				// Process the distance attenuation	
 				distanceAttenuation.Process(_waveGuideOutBuffer, _outBuffer, _effectiveSourceTransform, _listenerTransform);
 			} else {
 				// Process the distance attenuation	
+				_effectiveSourceTransform = _sourceTransform;				
 				distanceAttenuation.Process(_inBuffer, _outBuffer, _sourceTransform, _listenerTransform);
-			}
-			// Process the distance attenuation			
-			//distanceAttenuation.Process(_inBuffer, _outBuffer, _sourceTransform, _listenerTransform);
-						
+			}									
 		}
 	
 		/**
