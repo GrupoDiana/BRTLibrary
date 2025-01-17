@@ -140,7 +140,7 @@ namespace Common {
 		};
 
 		/// Processes the input buffer according to the movement of the source.
-		void CWaveguide::ProcessSourceMovement(const CMonoBuffer<float> & _inputBuffer, const CVector3 & _sourcePosition, const CVector3 & _listenerPosition) {
+		void ProcessSourceMovement(const CMonoBuffer<float> & _inputBuffer, const CVector3 & _sourcePosition, const CVector3 & _listenerPosition) {
 			// First time we initialized the listener position
 			if (!previousListenerPositionInitialized) {
 				previousListenerPosition = _listenerPosition;
@@ -189,12 +189,12 @@ namespace Common {
 					InsertBackSourcePositionBuffer(insertBufferSize, _sourcePosition);
 				}
 			}
-			CheckIntegritySourcePositionsBuffer(); //To be deleted
+			//CheckIntegritySourcePositionsBuffer(); //To be deleted
 		}
 
 
 		/// Processes the existing samples in the waveguide to obtain an output buffer according to the new listener position.
-		void CWaveguide::ProcessListenerMovement(CMonoBuffer<float> & outbuffer, CVector3 & _sourcePositionWhenWasEmitted, const CVector3 & _listenerPosition) {
+		void ProcessListenerMovement(CMonoBuffer<float> & outbuffer, CVector3 & _sourcePositionWhenWasEmitted, const CVector3 & _listenerPosition) {
 
 			// Get the source position when the nexts samples were emited
 			_sourcePositionWhenWasEmitted = GetNextSourcePosition(globalParameters.GetBufferSize());
@@ -255,7 +255,7 @@ namespace Common {
 		/////////////////////////////
 
 		/// Resize the circular buffer
-		void CWaveguide::ResizeCirculaBuffer(size_t newSize) {
+		void ResizeCirculaBuffer(size_t newSize) {
 			try {
 				circular_buffer.resize(newSize);
 			} catch (std::bad_alloc & e) {
@@ -265,7 +265,7 @@ namespace Common {
 		}
 
 		/// Changes de circular buffer capacity, throwing away the newest samples
-		void CWaveguide::SetCirculaBufferCapacity(size_t newSize) {
+		void SetCirculaBufferCapacity(size_t newSize) {
 			try {
 				/// It adds space to future samples on the back side and throws samples from the front side
 				circular_buffer.set_capacity(newSize);
@@ -276,7 +276,7 @@ namespace Common {
 		}
 
 		/// Changes de circular buffer capacity, throwing away the oldest samples
-		void CWaveguide::RsetCirculaBuffer(size_t newSize) {
+		void RsetCirculaBuffer(size_t newSize) {
 			try {
 				/// It adds space to future samples on the back side and throws samples from the front side
 				circular_buffer.rset_capacity(newSize);
@@ -291,13 +291,13 @@ namespace Common {
 		///////////////
 
 		/// Calculate the distance in meters between two positions
-		const float CWaveguide::CalculateDistance(const CVector3 & position1, const CVector3 & position2) const {
+		const float CalculateDistance(const CVector3 & position1, const CVector3 & position2) const {
 			float distance = (position1.x - position2.x) * (position1.x - position2.x) + (position1.y - position2.y) * (position1.y - position2.y) + (position1.z - position2.z) * (position1.z - position2.z);
 			return std::sqrt(distance);
 		}
 
 		/// Calculate the distance in samples
-		size_t CWaveguide::CalculateDistanceInSamples(float sampleRate, float soundSpeed, float distanceInMeters) {
+		size_t CalculateDistanceInSamples(float sampleRate, float soundSpeed, float distanceInMeters) {
 			double delaySeconds = distanceInMeters / soundSpeed;
 			size_t delaySamples = std::nearbyint(delaySeconds * sampleRate);
 			return delaySamples;
@@ -307,7 +307,7 @@ namespace Common {
 		// Expansion-Compresion
 		/////////////////////////
 		/// Execute a buffer expansion or compression
-		void CWaveguide::ProcessExpansionCompressionMethod(const CMonoBuffer<float> & input, CMonoBuffer<float> & output) {
+		void ProcessExpansionCompressionMethod(const CMonoBuffer<float> & input, CMonoBuffer<float> & output) {
 			int outputSize = output.size();
 			//Calculate the compresion factor. See technical report
 			float position = 0;
@@ -336,7 +336,7 @@ namespace Common {
 		}
 
 		/// Execute a buffer expansion or compression, and introduce the samples directly into the circular buffer
-		void CWaveguide::ProcessExpansionCompressionMethod(const CMonoBuffer<float> & input, int outputSize) {
+		void ProcessExpansionCompressionMethod(const CMonoBuffer<float> & input, int outputSize) {
 			//Calculate the compresion factor. See technical report
 			float position = 0;
 			float numerator = input.size() - 1;
@@ -371,14 +371,14 @@ namespace Common {
 		////////////////////////////
 
 		/// Initialize the source Position Buffer at the begining. It is going to be supposed that the source was in that position since ever.
-		void CWaveguide::InitSourcePositionBuffer(int _numberOFZeroSamples, const CVector3 & _sourcePosition) {
+		void InitSourcePositionBuffer(int _numberOFZeroSamples, const CVector3 & _sourcePosition) {
 			sourcePositionsBuffer.clear();
 			TSourcePosition temp(0, _numberOFZeroSamples - 1, _sourcePosition);
 			sourcePositionsBuffer.push_back(temp);
 		}
 
 		/// Insert at the buffer back the source position for a set of samples
-		void CWaveguide::InsertBackSourcePositionBuffer(int bufferSize, const CVector3 & _sourcePosition) {
+		void InsertBackSourcePositionBuffer(int bufferSize, const CVector3 & _sourcePosition) {
 			int begin = circular_buffer.size() - bufferSize;
 			int end = circular_buffer.size() - 1;
 			TSourcePosition temp(begin, end, _sourcePosition);
@@ -386,14 +386,14 @@ namespace Common {
 		}
 
 		/// Insert at the buffer fromt the source position for a set of samples
-		void CWaveguide::InsertFrontSourcePositionBuffer(int samples, const CVector3 & _sourcePosition) {
+		void InsertFrontSourcePositionBuffer(int samples, const CVector3 & _sourcePosition) {
 			TSourcePosition temp(0, samples - 1, _sourcePosition);
 			sourcePositionsBuffer.insert(sourcePositionsBuffer.begin(), temp);
 		}
 
 		/// Shifts all buffer positions to the left, deleting any that become negative.
 		/// This is because it is assumed that samples will have come out of the circular buffer from the front.
-		void CWaveguide::ShiftLeftSourcePositionsBuffer(int samples) {
+		void ShiftLeftSourcePositionsBuffer(int samples) {
 
 			std::vector<int> positionsToDelete;
 			if (samples <= 0) {
@@ -421,7 +421,7 @@ namespace Common {
 
 		/// Shifts all buffer positions to the right.
 		/// This is because it is assumed that samples will have been added on the front in the circular buffer.
-		void CWaveguide::ShiftRightSourcePositionsBuffer(int samples) {
+		void ShiftRightSourcePositionsBuffer(int samples) {
 
 			if (samples <= 0) {
 				return;
@@ -434,7 +434,7 @@ namespace Common {
 		}
 
 		/// Remove samples from the back side of the buffer in order to have the same size that the circular buffer
-		void CWaveguide::ResizeSourcePositionsBuffer(int newSize) {
+		void ResizeSourcePositionsBuffer(int newSize) {
 
 			std::vector<int> positionsToDelete;
 			if (newSize <= 0) {
@@ -456,7 +456,7 @@ namespace Common {
 		}
 
 		/// Get the last source position
-		CVector3 CWaveguide::GetLastSourcePosition() {
+		CVector3 GetLastSourcePosition() {
 			if (sourcePositionsBuffer.size() == 0) {
 				CVector3 previousSourcePosition(0, 0, 0);
 				return previousSourcePosition;
@@ -467,21 +467,21 @@ namespace Common {
 		}
 
 		// Get the next buffer source position
-		CVector3 CWaveguide::GetNextSourcePosition(int bufferSize) {
+		CVector3 GetNextSourcePosition(int bufferSize) {
 			/// TODO Check the buffer size to select the sourceposition, maybe the output buffer will include more than the just first position of the source position buffer
 			return sourcePositionsBuffer.front().GetPosition();
 		}
 					
 								
 		// TODO Delete me
-		void CWaveguide::CheckIntegritySourcePositionsBuffer() {
+		/*void CheckIntegritySourcePositionsBuffer() {
 			if (sourcePositionsBuffer.size() == 0) {
 				return;
 			}
 			if ((sourcePositionsBuffer[sourcePositionsBuffer.size() - 1].endIndex) != (circular_buffer.size() - 1)) {
 				std::cout << "error";
 			}
-		}	
+		}	*/
 
 		///////////////
 		// Attributes
