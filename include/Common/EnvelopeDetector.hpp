@@ -48,11 +48,11 @@ namespace Common {
 		/** \brief Default constructor
 		*	\details By default, sets sampling rate to 44100Hz, attack time to 20ms and release time to 100ms
 		*/
-		CEnvelopeDetector() 
-		{
-			samplingRate = 44100;
-			envelope = 0;
-
+		CEnvelopeDetector()
+			: initialized(false)
+			, envelope(0)
+			, samplingRate(0) 
+		{			
 			SetAttackTime(20);  // m_fAttackTime -> Will be initialized with this call
 			SetReleaseTime(100);  // m_fReleaseTime -> Will be initialized with this call
 		}
@@ -64,6 +64,7 @@ namespace Common {
 		void Setup(int _samplingRate) 
 		{
 			samplingRate = _samplingRate;
+			initialized = true;
 		}
 
 		/** \brief Set the attack time
@@ -117,6 +118,10 @@ namespace Common {
 		*/
 		float ProcessSample(float input_sample)
 		{
+			if (!initialized) {
+				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "EnvelopeDetector not initialized. Call Setup() before using it.");				
+				return 0;
+			}
 			input_sample = std::fabs(input_sample);
 
 			if (input_sample > envelope) envelope = m_fAttackTime * (envelope - input_sample) + input_sample;
@@ -134,6 +139,7 @@ namespace Common {
 		float m_fReleaseTime;           // Value used in the difference equation to obtain the envelop 
 		float m_fAttackTime_ms;         // Attack time in ms
 		float m_fReleaseTime_ms;        // Release time in ms
+		bool initialized; // True if the envelope detector has been configured
 	};
 }//end namespace Common
 
