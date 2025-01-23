@@ -53,22 +53,21 @@ namespace BRTEnvironmentModel {
 		 * @param _orinalSourceID ID of the original source
 		 * @return True if the setup was successful
 		 */
-		bool Setup(std::string _orinalSourceID) {
+		bool Setup(std::string _freefieldModelID, std::string _originalSourceID) {
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			if (initialized) {
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "The SDN environment processor is already initialized");
 				return false;
 			}
 
-			if (_orinalSourceID == "") {
+			if (_originalSourceID == "") {
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The source ID must be defined");
 				return false;
 			}
 
-			originalSourceID = _orinalSourceID;
-
-			virtualSource = brtManager->CreateSoundSource<BRTSourceModel::CVirtualSourceModel>("FreeField_" + originalSourceID);						
-			virtualSource->SetOriginSourceID(originalSourceID);
+			virtualSourceID = _freefieldModelID + "_" + _originalSourceID;			
+			virtualSource = brtManager->CreateSoundSource<BRTSourceModel::CVirtualSourceModel>(virtualSourceID);						
+			virtualSource->SetOriginSourceID(_originalSourceID);
 			initialized = true;
 			return true;
 		}
@@ -124,8 +123,8 @@ namespace BRTEnvironmentModel {
 		}
 
 		void Clear() {
-			brtManager->RemoveSoundSource("FreeField_" + originalSourceID);
-			originalSourceID = "";
+			brtManager->RemoveSoundSource(virtualSourceID);
+			virtualSourceID = "";
 			initialized = false;
 		}
 
@@ -162,8 +161,7 @@ namespace BRTEnvironmentModel {
 			}					
 		}
 	private:
-		
-
+				
 		/////////////////
 		// Attributes
 		/////////////////
@@ -173,7 +171,7 @@ namespace BRTEnvironmentModel {
 		std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource;
 		BRTBase::CBRTManager * brtManager;
 						
-		std::string originalSourceID;
+		std::string virtualSourceID;
 		float gain;
 		bool initialized;		
 	};

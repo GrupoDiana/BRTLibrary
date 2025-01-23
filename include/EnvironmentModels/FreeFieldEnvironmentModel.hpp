@@ -37,11 +37,11 @@ namespace BRTEnvironmentModel {
 	
 		class CSourceProcessors {
 		public:
-			CSourceProcessors(std::string _sourceID, BRTBase::CBRTManager * brtManager)
+			CSourceProcessors(std::string _environmentModelID, std::string _sourceID, BRTBase::CBRTManager * brtManager)
 				: sourceID { _sourceID } {				
 
 				freeFieldProcessor = brtManager->CreateProcessor<BRTEnvironmentModel::CFreeFieldEnvironmentProcessor>(brtManager);
-				freeFieldProcessor->Setup(_sourceID);								
+				freeFieldProcessor->Setup(_environmentModelID, _sourceID);								
 			}
 
 			/**
@@ -344,7 +344,7 @@ namespace BRTEnvironmentModel {
 			if (_listener == nullptr) return false;
 
 			// Make connections									
-			CSourceProcessors _newSourceProcessors(_source->GetID(), brtManager);
+			CSourceProcessors _newSourceProcessors(modelID,_source->GetID(), brtManager);
 			bool control = brtManager->ConnectModuleTransform(_source, _newSourceProcessors.freeFieldProcessor, "sourcePosition");
 			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.freeFieldProcessor, "sourceID");
 			if (_source->GetSourceType() == BRTSourceModel::Directivity) {
