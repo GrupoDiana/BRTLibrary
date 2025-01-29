@@ -28,10 +28,8 @@
 
 #include <Common/Buffer.hpp>
 
-//#include <Common/DynamicCompressorMono.h>
 #include <Common/ErrorHandler.hpp>
 #include <cmath>
-//#include "Defaults.h"
 #include <math.h>
 
 #define EPSILON_ 0.00001
@@ -43,13 +41,15 @@ namespace Common {
 	*/
 class CRMSCalculator
 	{
-	public:                                                             // PUBLIC METHODS
+	public:
+		// PUBLIC METHODS
 
 		/** \brief Default constructor
 		*	\details By default, sets sampling rate to 44100Hz, attack time to 20ms and release time to 100ms
 		*/
-		CRMSCalculator()
-			: rms {0}	
+		CRMSCalculator(size_t num_frames = 10)
+			: max_frames(num_frames)
+			, sum_rms { 0 }	
 		{}
 				
 		/**
@@ -59,20 +59,32 @@ class CRMSCalculator
 		 */
 		float Process(const CMonoBuffer<float> & buffer)
 		{
-			double sum = 0;
+			double sum_squares = 0;
 			for (int i = 0; i < buffer.size(); i++) {
-				sum += buffer[i] * buffer[i];
+				sum_squares += buffer[i] * buffer[i];
 			}
-			double avg = sum / buffer.size();
-			rms = std::sqrt(avg);
+			double rms = std::sqrt(sum_squares / buffer.size());
 			
-			return rms;
+			
+			// Update moving average
+			if (rms_history.size() == max_frames) {
+				sum_rms -= rms_history.front();
+				rms_history.pop_front();
+			}
+
+			rms_history.push_back(rms);
+			sum_rms += rms;
+						
+			return sum_rms / rms_history.size();
 		}
 
 
 	private:
 		
-		float rms; /// last calculated RMS value
+		double sum_rms; /// last calculated RMS value
+		std::deque<double> rms_history;
+		size_t max_frames;
+		
 	};
 }
 
