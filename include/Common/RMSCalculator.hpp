@@ -51,11 +51,16 @@ class CRMSCalculator
 			: max_frames(num_frames)
 			, sum_rms { 0 }	
 		{}
-				
+		
+
+		void SetNumberOfFrames(int _windowSizeMS, int _sampleRate, int _bufferSize) {			
+			int num_frames = CalculateWindowSizeInSamples(_windowSizeMS, _sampleRate, _bufferSize);			
+		}
+
 		/**
-		 * @brief Calculate the RMS value of a buffer
+		 * @brief Calculate the RMS value of a buffer using a moving average
 		 * @param buffer buffer with samples
-		 * @return rms value of the buffer
+		 * @return average rms value of the last N buffers
 		 */
 		float Process(const CMonoBuffer<float> & buffer)
 		{
@@ -78,9 +83,31 @@ class CRMSCalculator
 			return sum_rms / rms_history.size();
 		}
 
+		/**
+		 * @brief Calculate the RMS value of a buffer
+		 * @param buffer buffer with samples
+		 * @return rms value of the buffer
+		 */
+		static float InstantProcess(const CMonoBuffer<float> & buffer) {
+			double sum_squares = 0;
+			for (int i = 0; i < buffer.size(); i++) {
+				sum_squares += buffer[i] * buffer[i];
+			}
+			double rms = std::sqrt(sum_squares / buffer.size());
+			return rms;
+		}
 
 	private:
 		
+		size_t CalculateWindowSizeInSamples(int _windowSizeMS, int _sampleRate, int _bufferSize) {
+
+			float frameSize = static_cast<float>(_bufferSize) / static_cast<float>(_sampleRate);
+			float windowRequiredSize = static_cast<float>(_windowSizeMS) / 1000;
+			float framesRequired = windowRequiredSize / frameSize;
+			size_t framesRequired_upper_int = static_cast<size_t>(std::ceil(framesRequired));
+			return framesRequired_upper_int;
+		}
+
 		double sum_rms; /// last calculated RMS value
 		std::deque<double> rms_history;
 		size_t max_frames;
