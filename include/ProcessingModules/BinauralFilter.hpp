@@ -147,10 +147,10 @@ namespace BRTProcessing {
 			std::vector<float> coefficientsLeft = _listenerILD->GetSOSFilterCoefficients(Common::T_ear::LEFT, distance, interauralAzimuth);
 			std::vector<float> coefficientsRight = _listenerILD->GetSOSFilterCoefficients(Common::T_ear::RIGHT, distance, interauralAzimuth);
 			
-			/*if (coefficientsLeft.size() != 12 || coefficientsRight.size() != 12) {
-				SET_RESULT(RESULT_ERROR_BADSIZE, "Twelve coefficients were expected in order to be able to set up the filters in BRTProcessing::CNearFieldEffect");
+			if (coefficientsLeft.size() == 0 || coefficientsRight.size() == 0) {
+				SET_RESULT(RESULT_ERROR_BADSIZE, "There are not coefficientes to be set int BinauralFilter::Process");
 				return;
-			}*/						
+			}						
 			
 			SetCoefficients(filtersChain.left, coefficientsLeft);		//Set LEFT coefficients 			 
 			SetCoefficients(filtersChain.right, coefficientsRight);	//Set RIGHT coefficients
