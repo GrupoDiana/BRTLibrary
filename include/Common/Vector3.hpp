@@ -161,7 +161,7 @@ namespace Common {
 			float distance = GetDistance();
 			if (distance == 0.0f)
 			{
-				SET_RESULT(RESULT_ERROR_DIVBYZERO, "Distance from source to listener is zero");
+				//SET_RESULT(RESULT_ERROR_DIVBYZERO, "Distance from source to listener is zero");
 				return CVector3::ZERO();
 			}
 			return CVector3(x / distance, y / distance, z / distance);
@@ -213,7 +213,7 @@ namespace Common {
 			float forwardAxis = GetAxis(FORWARD_AXIS);
 			if ((rightAxis == 0.0f) && (forwardAxis == 0.0f))
 			{
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Azimuth cannot be computed for a (0,0,z) vector. 0.0 is returned");
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Azimuth cannot be computed for a (0, 0, z) vector, 0.0f is returned");
 				return 0.0f;
 			}
 

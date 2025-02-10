@@ -136,8 +136,14 @@ namespace BRTServices
 				_elevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);						
 				auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, _distance), std::forward<THRIRStruct>(newHRIR));
 				//Error handler
-				if (!returnValue.second) { 
-					SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
+				if (!returnValue.second) {
+
+					if (t_HRTF_DataBase.find(orientation(_azimuth, _elevation, _distance)) != t_HRTF_DataBase.end()) {
+						SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map, already exists a HRIR in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]");
+					} else {
+						SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]");
+					}
+				}
 			}
 		}
 
