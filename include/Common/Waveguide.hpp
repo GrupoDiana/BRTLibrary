@@ -39,13 +39,16 @@ namespace Common {
 		*/				
 		CWaveguide() 
 			: enablePropagationDelay(false)
-			, previousListenerPositionInitialized(false) {}
+			, previousListenerPositionInitialized(false)
+			, checkSoundSpeedLimit(0)
+		{}
 
 
 		/** \brief Enable propagation delay for this waveguide
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void EnablePropagationDelay() { 
+			checkSoundSpeedLimit = globalParameters.GetBufferSize() / (globalParameters.GetSoundSpeed() / globalParameters.GetSampleRate());
 			enablePropagationDelay = true; 
 		}
 
@@ -153,6 +156,12 @@ namespace Common {
 			float distanceDiferenteToListener = currentDistanceToListener - oldDistanceToListener;
 			int changeInDelayInSamples = CalculateDistanceInSamples(globalParameters.GetSampleRate(), globalParameters.GetSoundSpeed(), distanceDiferenteToListener);
 
+			
+			if (distanceDiferenteToListener > checkSoundSpeedLimit) {
+				// This is a check to avoid the case when the source moves faster than the sound speed
+				SET_RESULT(RESULT_ERROR_OUTOFRANGE, "The source/listener is moving faster than the sound speed");
+			}
+
 			if (circular_buffer.capacity() == 0) {
 				// This is the first Time
 				// We initialize the buffers the first time, this is when its capacity is zero
@@ -176,8 +185,13 @@ namespace Common {
 				int insertBufferSize = changeInDelayInSamples + globalParameters.GetBufferSize(); // Calculate the expasion/compression
 
 				if (insertBufferSize <= 0) {
-					// When soundsource approaches to the lister faster than the sound velocity. Insert nothing to the circular buffer
-					SetCirculaBufferCapacity(newDelayInSamples + globalParameters.GetBufferSize()); // Remove samples from circular buffer
+					// When soundsource approaches to the lister faster than the sound velocity. Insert nothing to the circular buffer					
+					int newBufferCapacity = newDelayInSamples + globalParameters.GetBufferSize();
+					if (newBufferCapacity < 0) {
+						newBufferCapacity = 0;
+						SET_RESULT(RESULT_ERROR_BADSIZE, "Trying to set a negative capacity to the circular buffer");
+					}
+					SetCirculaBufferCapacity(newBufferCapacity); // Remove samples from circular buffer
 					ResizeSourcePositionsBuffer(circular_buffer.size()); // Remove samples for source positions buffer
 					InsertBackSourcePositionBuffer(1, _sourcePosition); // Insert the last position with zero samples into the source position buffer
 				} else {
@@ -496,6 +510,8 @@ namespace Common {
 		std::vector<TSourcePosition> sourcePositionsBuffer;	/// To store the source positions in each frame
 		CVector3 previousListenerPosition;				/// To store the last position of the listener
 		bool previousListenerPositionInitialized;		/// To store if the last position of the listener has been initialized		
+
+		float checkSoundSpeedLimit;						/// To store the limit of the sound speed
 	};
 }
 #endif
