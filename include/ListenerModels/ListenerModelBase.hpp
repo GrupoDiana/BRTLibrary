@@ -210,6 +210,19 @@ namespace BRTListenerModel {
 						           
 		}
 		
+		/**
+		 * @brief When there are no inputs, the model sends empty buffers
+		 */
+		void ProcessModelWithoutInputsSamples() { 
+			if (GetSamplesEntryPoint("leftEar")->GetConnections() == 0) { 
+				CMonoBuffer<float> newBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
+				GetSamplesExitPoint("leftEar")->sendData(newBuffer);
+			}
+			if (GetSamplesEntryPoint("rightEar")->GetConnections() == 0) {
+				CMonoBuffer<float> newBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
+				GetSamplesExitPoint("rightEar")->sendData(newBuffer);
+			}						
+		}
 
 		void UpdateCommand() override {
 			// TODO

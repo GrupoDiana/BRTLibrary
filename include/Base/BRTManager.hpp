@@ -850,6 +850,9 @@ namespace BRTBase {
 		*/
 		void ProcessAllThread() {
 			for (auto it = audioSources.begin(); it != audioSources.end(); it++) (*it)->SetDataReady();
+
+			for (auto it = listenerModels.begin(); it != listenerModels.end(); it++)
+				(*it)->ProcessModelWithoutInputsSamples();
 		}
 
 		/**
