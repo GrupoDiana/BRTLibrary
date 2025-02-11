@@ -48,7 +48,7 @@ namespace Common {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void EnablePropagationDelay() { 
-			checkSoundSpeedLimit = globalParameters.GetBufferSize() / (globalParameters.GetSoundSpeed() / globalParameters.GetSampleRate());
+			checkSoundSpeedLimit = float(globalParameters.GetBufferSize()) * (globalParameters.GetSoundSpeed() / float(globalParameters.GetSampleRate()));
 			enablePropagationDelay = true; 
 		}
 
@@ -155,11 +155,10 @@ namespace Common {
 			float oldDistanceToListener = CalculateDistance(GetLastSourcePosition(), previousListenerPosition);
 			float distanceDiferenteToListener = currentDistanceToListener - oldDistanceToListener;
 			int changeInDelayInSamples = CalculateDistanceInSamples(globalParameters.GetSampleRate(), globalParameters.GetSoundSpeed(), distanceDiferenteToListener);
-
 			
-			if (distanceDiferenteToListener > checkSoundSpeedLimit) {
+			if (std::abs(distanceDiferenteToListener) > checkSoundSpeedLimit) {
 				// This is a check to avoid the case when the source moves faster than the sound speed
-				SET_RESULT(RESULT_ERROR_OUTOFRANGE, "The source/listener is moving faster than the sound speed");
+				SET_RESULT(RESULT_WARNING, "The source/listener is moving faster than the sound speed");
 			}
 
 			if (circular_buffer.capacity() == 0) {
