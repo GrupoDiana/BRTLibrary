@@ -182,7 +182,7 @@ namespace Common {
 				int currentDelayInSamples = circular_buffer.size() - globalParameters.GetBufferSize(); // Calculate current delay in samples
 				int newDelayInSamples = changeInDelayInSamples + currentDelayInSamples; // Calculate the new delay in samples
 				int insertBufferSize = changeInDelayInSamples + globalParameters.GetBufferSize(); // Calculate the expasion/compression
-
+				//std::cout << "Muestras insertadas " << std::to_string(insertBufferSize) << std::endl;
 				if (insertBufferSize <= 0) {
 					// When soundsource approaches to the lister faster than the sound velocity. Insert nothing to the circular buffer					
 					int newBufferCapacity = newDelayInSamples + globalParameters.GetBufferSize();
@@ -236,27 +236,32 @@ namespace Common {
 				CMonoBuffer<float> insertBuffer(samplesToBeExtracted);
 				circular_buffer.insert(circular_buffer.begin(), insertBuffer.begin(), insertBuffer.end());
 				//Introduce the new sample into the buffer of source positions
+				CVector3 firstPosition = sourcePositionsBuffer.front().GetPosition();
 				ShiftRightSourcePositionsBuffer(samplesToBeExtracted);
-				InsertFrontSourcePositionBuffer(samplesToBeExtracted, CVector3(0, 0, 0));
+				InsertFrontSourcePositionBuffer(samplesToBeExtracted, firstPosition);
+				//InsertFrontSourcePositionBuffer(samplesToBeExtracted, CVector3(0, 0, 0));
 				// Output a frame of zeros
 				outbuffer.resize(globalParameters.GetBufferSize());
+				//std::cout << "samplesToBeExtracted <= 0" << std::endl;
+				return;
 			}
 
 			// In other case Get samples from buffer
 			if (samplesToBeExtracted == globalParameters.GetBufferSize()) {
-				// If it doesn't needed to do and expasion or compression
-				//outbuffer.clear();
+				// If it doesn't needed to do and expasion or compression				
+				//std::cout << "No movi. Hay " << circular_buffer.size() << " muestras y quiero sacar " << samplesToBeExtracted << std::endl;
 				outbuffer.insert(outbuffer.begin(), circular_buffer.begin(), circular_buffer.begin() + samplesToBeExtracted);
-				ShiftLeftSourcePositionsBuffer(samplesToBeExtracted); // Delete samples that have left the buffer storing the source positions.
+				ShiftLeftSourcePositionsBuffer(samplesToBeExtracted); // Delete samples that have left the buffer storing the source positions.				
 			} else {
+				//std::cout << "Si movi. Hay " << circular_buffer.size() << " muestras y quiero sacar " << samplesToBeExtracted << std::endl;
 				//In case we need to expand or compress
-				CMonoBuffer<float> extractingBuffer(circular_buffer.begin(), circular_buffer.begin() + samplesToBeExtracted /*_audioState.bufferSize*/);
+				CMonoBuffer<float> extractingBuffer(circular_buffer.begin(), circular_buffer.begin() + samplesToBeExtracted);
 				ShiftLeftSourcePositionsBuffer(samplesToBeExtracted); // Delete samples that have left the buffer storing the source positions.
 				// the capacity of the circular buffer must be increased with the samples that have not been removed
 				RsetCirculaBuffer(circular_buffer.capacity() + globalParameters.GetBufferSize() - samplesToBeExtracted);
 				// Expand or compress the buffer and return it
 				outbuffer.resize(globalParameters.GetBufferSize()); // Prepare buffer
-				ProcessExpansionCompressionMethod(extractingBuffer, outbuffer); // Expand or compress the buffer
+				ProcessExpansionCompressionMethod(extractingBuffer, outbuffer); // Expand or compress the buffer				
 			}
 			// Pop really doesn't pop. The next time a buffer is pushed, it will be removed.
 		}
@@ -427,8 +432,17 @@ namespace Common {
 				}
 				index++;
 			}
-			for (int i = positionsToDelete.size() - 1; i > -1; i--) {
-				sourcePositionsBuffer.erase(sourcePositionsBuffer.begin() + positionsToDelete[i]);
+			if (positionsToDelete.size() < sourcePositionsBuffer.size()) {							
+				for (int i = positionsToDelete.size() - 1; i > -1; i--) {
+					sourcePositionsBuffer.erase(sourcePositionsBuffer.begin() + positionsToDelete[i]);
+				}
+			} else {				
+				/// This prevents the source position buffer from becoming empty, which would suggest a source movement 
+				// to the Process Source Movement method. The situation where this buffer becomes empty occurs when the 
+				// distance between listener and source is just one frame and the listener is approaching just one frame (or multiples).
+				sourcePositionsBuffer.erase(sourcePositionsBuffer.begin(), sourcePositionsBuffer.end() - 1);
+				sourcePositionsBuffer[0].beginIndex = -1;
+				sourcePositionsBuffer[0].endIndex = -1;
 			}
 		}
 
@@ -494,7 +508,7 @@ namespace Common {
 			if ((sourcePositionsBuffer[sourcePositionsBuffer.size() - 1].endIndex) != (circular_buffer.size() - 1)) {
 				std::cout << "error";
 			}
-		}	*/
+		}*/
 
 		///////////////
 		// Attributes
