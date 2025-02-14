@@ -440,9 +440,7 @@ namespace Common {
 				/// This prevents the source position buffer from becoming empty, which would suggest a source movement 
 				// to the Process Source Movement method. The situation where this buffer becomes empty occurs when the 
 				// distance between listener and source is just one frame and the listener is approaching just one frame (or multiples).
-				sourcePositionsBuffer.erase(sourcePositionsBuffer.begin(), sourcePositionsBuffer.end() - 1);
-				sourcePositionsBuffer[0].beginIndex = -1;
-				sourcePositionsBuffer[0].endIndex = -1;
+				sourcePositionsBuffer.erase(sourcePositionsBuffer.begin(), sourcePositionsBuffer.end() - 1);				
 			}
 		}
 
