@@ -96,7 +96,7 @@ namespace BRTEnvironmentModel {
 		void AllEntryPointsAllDataReady() override {
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			if (!initialized) {
-				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "The Free fielnd environment processor is not initialized");
+				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "The Free field environment processor is not initialized");
 				return;
 			}
 			
