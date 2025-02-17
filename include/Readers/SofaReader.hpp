@@ -864,6 +864,7 @@ namespace BRTReaders {
 					rightEarPos.SetAxis(UP_AXIS, receiverPosition[5]);
 					data->SetEarPosition(Common::T_ear::RIGHT, rightEarPos);
 				}
+				data->SetCranialGeometryAsDefault();
 			}
 		}
 

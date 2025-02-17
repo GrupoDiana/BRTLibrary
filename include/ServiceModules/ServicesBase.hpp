@@ -212,10 +212,13 @@ namespace BRTServices {
 		virtual void SetDatabaseName(std::string _databaseName) {}
 		virtual void SetListenerShortName(std::string _listenerShortName) {};
 		virtual void SetFilename(std::string _fileName) {}
+		virtual std::string GetFilename() { return ""; };
 		
 		virtual void SetSamplingRate(int samplingRate) {};
 		virtual void SetNumberOfEars(int _numberOfEars) {}
+		virtual void SetHeadRadius(float _headRadius)  {};
 		virtual void SetEarPosition(Common::T_ear _ear, Common::CVector3 _earPosition) {};
+		virtual void SetCranialGeometryAsDefault() {};
 
 		virtual void SetWindowingParameters(float _fadeInWindowThreshold, float _fadeInWindowRiseTime, float _fadeOutWindowThreshold, float _fadeOutWindowRiseTime) {};
 		virtual void GetWindowingParameters(float& _fadeInWindowThreshold, float& _fadeInWindowRiseTime, float& _fadeOutWindowThreshold, float& _fadeOutWindowRiseTime) {};
@@ -231,8 +234,10 @@ namespace BRTServices {
 		virtual int32_t GetHRIRLength() const { return 0; }
 		virtual const int32_t GetHRIRNumberOfSubfilters() const { return 0; }
 		virtual const int32_t GetHRIRSubfilterLength() const { return 0; }
-		virtual float GetHeadRadius() { return 0.0f; };
+		virtual float GetHeadRadius() { return 0.0f; }
+		virtual void RestoreHeadRadius() { }
 		virtual Common::CVector3 GetEarLocalPosition(Common::T_ear _ear) { return Common::CVector3(); }
+		
 		virtual float GetHRTFDistanceOfMeasurement() { return 0; }
 				
 		virtual const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, const Common::CTransform& _listenerLocation) const

@@ -281,7 +281,7 @@ namespace BRTServices
 		*	\retval size Size of HRIR subfilters
 		*   \eh Nothing is reported to the error handler.
 		*/		
-		const int32_t GetHRIRSubfilterLength() const {
+		const int32_t GetHRIRSubfilterLength() const override {
 			return HRIR_partitioned_SubfilterLength;
 		}
 
@@ -307,28 +307,28 @@ namespace BRTServices
 		*   \return distance of the speakers structure to calculate the HRTF
 		*   \eh Nothing is reported to the error handler.
 		*/		
-		float GetHRTFDistanceOfMeasurement() {
+		float GetHRTFDistanceOfMeasurement() override {
 			return distanceOfMeasurement;
 		}
 
 		/** \brief Set the title of the SOFA file
 		*    \param [in]	_title		string contains title
 		*/
-		void SetTitle(std::string _title) {
+		void SetTitle(std::string _title) override {
 			title = _title;
 		}
 
 		/** \brief Set the title of the SOFA file
 		*    \param [in]	_title		string contains title
 		*/
-		void SetDatabaseName(std::string _databaseName) {
+		void SetDatabaseName(std::string _databaseName) override {
 			databaseName = _databaseName;
 		}
 
 		/** \brief Set the title of the SOFA file
 		*    \param [in]	_title		string contains title
 		*/
-		void SetListenerShortName(std::string _listenerShortName) {
+		void SetListenerShortName(std::string _listenerShortName) override {
 			listenerShortName = _listenerShortName;
 		}
 
@@ -336,21 +336,21 @@ namespace BRTServices
 		/** \brief Set the name of the SOFA file 
 		*    \param [in]	_fileName		string contains filename
 		*/
-		void SetFilename(std::string _fileName) {
+		void SetFilename(std::string _fileName) override {
 			fileName = _fileName;
 		}
 
 		/** \brief Get the name of the SOFA file 
 		*   \return string contains filename
 		*/
-		std::string GetFilename() { 
+		std::string GetFilename() override { 
 			return fileName;
 		}
 
 		/** \brief	Set the radius of the listener head
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void SetHeadRadius(float _headRadius) 
+		void SetHeadRadius(float _headRadius) override
 		{
 			std::lock_guard<std::mutex> l(mutex);
 			if (_headRadius >= 0.0f) {
@@ -368,14 +368,14 @@ namespace BRTServices
 		*   \return listenerHeadRadius in meters
 		*   \eh Nothing is reported to the error handler.
 		*/
-		float GetHeadRadius() {
+		float GetHeadRadius() override {
 			return cranialGeometry.GetHeadRadius();
 		}
 
 		/**
 		 * @brief Return to original ear positions and head radius.
 		 */
-		void RestoreHeadRadius() {
+		void RestoreHeadRadius() override {
 			std::lock_guard<std::mutex> l(mutex);
 			cranialGeometry = originalCranialGeometry;
 		}
@@ -385,7 +385,7 @@ namespace BRTServices
 		*   \param [in]	_earPosition	ear local position
 		*   \eh <<Error not allowed>> is reported to error handler
 		*/
-		void SetEarPosition( Common::T_ear _ear, Common::CVector3 _earPosition) {
+		void SetEarPosition(Common::T_ear _ear, Common::CVector3 _earPosition) override {
 			if (_ear == Common::T_ear::LEFT){
 				cranialGeometry.SetLeftEarPosition(_earPosition);
 			}
@@ -394,8 +394,14 @@ namespace BRTServices
 			}			
 			else {
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to set listener ear transform for BOTH or NONE ears");
-			}
-				
+			}				
+		}
+
+		/**
+		 * @brief Set current cranial geometry as default
+		 */
+		void SetCranialGeometryAsDefault() override {
+			originalCranialGeometry = cranialGeometry;
 		}
 
 		/** \brief	Get the relative position of one ear (to the listener head center)
