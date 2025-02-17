@@ -42,16 +42,28 @@
 namespace BRTProcessing {
 	class CHRTFConvolver  {
 	public:
-		CHRTFConvolver() : enableProcessor{true}, enableInterpolation{true}, enableSpatialization{true}, enableITDSimulation{true}, enableParallaxCorrection{true}, convolutionBuffersInitialized{false} { }
+		CHRTFConvolver() 
+			: enableProcessor{true}
+			, enableInterpolation{true}
+			, enableSpatialization{true}
+			, enableITDSimulation{true}
+			, enableParallaxCorrection{true}
+			, convolutionBuffersInitialized{false} { }
 
 		/**
 		 * @brief Enable processor
 		 */
-		void EnableProcessor() { enableProcessor = true; }
+		void EnableProcessor() { 
+			std::lock_guard<std::mutex> l(mutex);
+			enableProcessor = true; 
+		}
 		/**
 		 * @brief Disable processor
 		 */
-		void DisableProcessor() { enableProcessor = false; }
+		void DisableProcessor() { 
+			std::lock_guard<std::mutex> l(mutex);
+			enableProcessor = false; 
+		}
 		/**
 		 * @brief Get the flag to know if the processor is enabled.
 		 * @return true if the processor is enabled, false otherwise
@@ -61,11 +73,17 @@ namespace BRTProcessing {
 		/**
 		 * @brief Enable spatialization process for this source
 		 */
-		void EnableSpatialization() { enableSpatialization = true; }
+		void EnableSpatialization() { 
+			std::lock_guard<std::mutex> l(mutex);
+			enableSpatialization = true; 
+		}
 		/**
 		 * @brief Disable spatialization process for this source
 		 */
-		void DisableSpatialization() { enableSpatialization = false; }
+		void DisableSpatialization() { 
+			std::lock_guard<std::mutex> l(mutex);
+			enableSpatialization = false; 
+		}
 		/**
 		 * @brief Get the flag to know if spatialization is enabled.
 		 * @return true if spatialization is enabled, false otherwise
@@ -75,11 +93,17 @@ namespace BRTProcessing {
 		/**
 		 * @brief Enable HRTF interpolation method
 		 */
-		void EnableInterpolation() { enableInterpolation = true; }		
+		void EnableInterpolation() { 
+			std::lock_guard<std::mutex> l(mutex);
+			enableInterpolation = true; 
+		}		
 		/**
 		 * @brief Disable HRTF interpolation method
 		 */
-		void DisableInterpolation() { enableInterpolation = false; }
+		void DisableInterpolation() { 
+			std::lock_guard<std::mutex> l(mutex);
+			enableInterpolation = false; 
+		}
 		/**
 		 * @brief Get the flag to know if HRTF interpolation is enabled.
 		 * @return true if HRTF interpolation is enabled, false otherwise
@@ -89,11 +113,17 @@ namespace BRTProcessing {
 		/**
 		 * @brief Enable ITD method
 		 */
-		void EnableITDSimulation() { enableITDSimulation = true; }
+		void EnableITDSimulation() { 
+			std::lock_guard<std::mutex> l(mutex);
+			enableITDSimulation = true; 
+		}
 		/**
 		 * @brief Disable ITD method
 		 */
-		void DisableITDSimulation() { enableITDSimulation = false; }		
+		void DisableITDSimulation() { 
+			std::lock_guard<std::mutex> l(mutex);
+			enableITDSimulation = false; 
+		}		
 		/**
 		 * @brief Get the flag to know if ITD simulation is enabled.
 		 * @return true if ITD is enabled, false otherwise
@@ -103,12 +133,18 @@ namespace BRTProcessing {
 		/**
 		 * @brief Enable Parallax Correction method
 		 */
-		void EnableParallaxCorrection() { enableParallaxCorrection = true; }
+		void EnableParallaxCorrection() { 
+			std::lock_guard<std::mutex> l(mutex);
+			enableParallaxCorrection = true; 
+		}
 		
 		/**
 		 * @brief Disable Parallax Correction method
 		 */
-		void DisableParallaxCorrection() { enableParallaxCorrection = false; }
+		void DisableParallaxCorrection() { 
+			std::lock_guard<std::mutex> l(mutex);
+			enableParallaxCorrection = false; 
+		}
 		
 		/**
 		 * @brief Get the flag to know if Parallax Correction is enabled.
@@ -127,6 +163,8 @@ namespace BRTProcessing {
 		*       parameters and if the HRTF of the listener is null.		   
 		*/		
 		void Process(CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CServicesBase>& _listenerHRTFWeak) {
+			std::lock_guard<std::mutex> l(mutex);
+
 			ASSERT(_inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");
 			
 			// Check processor flag
@@ -212,6 +250,9 @@ namespace BRTProcessing {
 
 		/// Reset convolvers and convolution buffers
 		void ResetSourceConvolutionBuffers() {
+			
+			std::lock_guard<std::mutex> l(mutex);
+
 			convolutionBuffersInitialized = false;
 			// Reset convolver classes
 			outputLeftUPConvolution.Reset();
@@ -223,7 +264,8 @@ namespace BRTProcessing {
 	private:
 
 		// Atributes
-		Common::CGlobalParameters globalParameters;
+		mutable std::mutex mutex; // To avoid access collisions
+		Common::CGlobalParameters globalParameters; // Global parameters
 
 		BRTProcessing::CUniformPartitionedConvolution outputLeftUPConvolution; // Object to make the inverse fft of the left channel with the UPC method
 		BRTProcessing::CUniformPartitionedConvolution outputRightUPConvolution; // Object to make the inverse fft of the rigth channel with the UPC method
