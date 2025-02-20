@@ -28,6 +28,7 @@
 #include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/SOSFilters.hpp>
+#include <Common/AudioMixer.hpp>
 
 namespace BRTServices {
 	class CHRTF;
@@ -132,9 +133,10 @@ namespace BRTListenerModel {
 		CListenerModelBase(std::string _listenerModelID, TListenerModelcharacteristics _listenerCharacteristics) 
 			: CModelBase(_listenerModelID)
 			, listenerCharacteristics{ _listenerCharacteristics }
-			, leftDataReady { false }
-			, rightDataReady { false } {
-												
+			{											
+			leftChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
+			rightChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
+
 			CreateSamplesEntryPoint("leftEar");		// TODO is this necessary?
 			CreateSamplesEntryPoint("rightEar");	// TODO is this necessary?								
 			CreateTransformExitPoint();				// TODO is this necessary?
@@ -180,14 +182,16 @@ namespace BRTListenerModel {
 		void OneEntryPointOneDataReceived(std::string _entryPointId) override{
 						
 			if (_entryPointId == "leftEar") {				
-				if (!leftDataReady) { InitBuffer(leftBuffer); }				
+				//if (!leftDataReady) { InitBuffer(leftBuffer); }				
 				CMonoBuffer<float> newBuffer = GetSamplesEntryPoint("leftEar")->GetData();				
-				leftDataReady = MixEarBuffers(leftBuffer, newBuffer);									
+				//leftDataReady = MixEarBuffers(leftBuffer, newBuffer);					
+				leftChannelMixer.AddBuffer(newBuffer);
 			}
 			else if (_entryPointId == "rightEar") {
-				if (!rightDataReady) { InitBuffer(rightBuffer); }
+				//if (!rightDataReady) { InitBuffer(rightBuffer); }
 				CMonoBuffer<float> newBuffer = GetSamplesEntryPoint("rightEar")->GetData();				
-				rightDataReady = MixEarBuffers(rightBuffer, newBuffer);				
+				//rightDataReady = MixEarBuffers(rightBuffer, newBuffer);	
+				rightChannelMixer.AddBuffer(newBuffer);
 			} else {			
 				//nothing
 			}
@@ -200,13 +204,16 @@ namespace BRTListenerModel {
 		*/
 		void AllEntryPointsAllDataReady() override{
 			
+			CMonoBuffer<float> leftBuffer = leftChannelMixer.GetMixedBuffer();
+			CMonoBuffer<float> rightBuffer = rightChannelMixer.GetMixedBuffer();
+
 			leftBuffer.ApplyGain(gain);
 			rightBuffer.ApplyGain(gain);
-
+			
 			GetSamplesExitPoint("leftEar")->sendData(leftBuffer);
 			GetSamplesExitPoint("rightEar")->sendData(rightBuffer);
-			leftDataReady = false;
-			rightDataReady = false;
+			//leftDataReady = false;
+			//rightDataReady = false;
 						           
 		}
 		
@@ -240,12 +247,10 @@ namespace BRTListenerModel {
 		TListenerModelcharacteristics listenerCharacteristics;
 						
 		Common::CGlobalParameters globalParameters;		
-		CMonoBuffer<float> leftBuffer;
-		CMonoBuffer<float> rightBuffer;
 		
-		bool leftDataReady;
-		bool rightDataReady;	
-				
+		Common::CAudioMixer leftChannelMixer;
+		Common::CAudioMixer rightChannelMixer;
+
 		//////////////////////////
 		// Private Methods
 		/////////////////////////

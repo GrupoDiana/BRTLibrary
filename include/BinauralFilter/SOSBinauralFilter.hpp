@@ -205,6 +205,10 @@ namespace BRTBinauralFilter {
 
 			CMonoBuffer<float> outLeftBuffer;
 			CMonoBuffer<float> outRightBuffer;
+
+			CMonoBuffer<float> leftBuffer = leftChannelMixer.GetMixedBuffer();
+			CMonoBuffer<float> rightBuffer = rightChannelMixer.GetMixedBuffer();
+			
 			if (leftBuffer.size() == 0 || rightBuffer.size() == 0) return;
 			
 			binauralFilter.Process(leftBuffer, rightBuffer, outLeftBuffer, outRightBuffer);			
@@ -213,9 +217,7 @@ namespace BRTBinauralFilter {
 			outRightBuffer.ApplyGain(gain);
 
 			GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
-			GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);
-			leftDataReady = false;
-			rightDataReady = false;
+			GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);			
 		}	
 
 		

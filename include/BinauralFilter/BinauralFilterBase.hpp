@@ -24,6 +24,8 @@
 #define _C_BINAURAL_FILTER_BASE_HPP_
 
 #include <Base/ModelBase.hpp>
+#include <Common/Buffer.hpp>
+#include <Common/AudioMixer.hpp>
 
 namespace BRTBinauralFilter {
 	class CBinauralFilterBase : public BRTBase::CModelBase {
@@ -39,10 +41,10 @@ namespace BRTBinauralFilter {
 
 		CBinauralFilterBase(const std::string & _binauraFilterID)
 			: CModelBase(_binauraFilterID)
-			, leftDataReady { false }
-			, rightDataReady { false } {
+			{
 			
-
+			leftChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
+			rightChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
 			CreateSamplesEntryPoint("leftEar");
 			CreateSamplesEntryPoint("rightEar");
 			CreateIDEntryPoint("listenerID");			
@@ -74,18 +76,13 @@ namespace BRTBinauralFilter {
 
 		void OneEntryPointOneDataReceived(std::string _entryPointId) override {
 
-			if (_entryPointId == "leftEar") {
-				if (!leftDataReady) {
-					InitBuffer(leftBuffer);
-				}
-				CMonoBuffer<float> newBuffer = GetSamplesEntryPoint("leftEar")->GetData();
-				leftDataReady = MixEarBuffers(leftBuffer, newBuffer);
-			} else if (_entryPointId == "rightEar") {
-				if (!rightDataReady) {
-					InitBuffer(rightBuffer);
-				}
-				CMonoBuffer<float> newBuffer = GetSamplesEntryPoint("rightEar")->GetData();
-				rightDataReady = MixEarBuffers(rightBuffer, newBuffer);
+			if (_entryPointId == "leftEar") {				
+				CMonoBuffer<float> newBuffer = GetSamplesEntryPoint("leftEar")->GetData();				
+				leftChannelMixer.AddBuffer(newBuffer);
+
+			} else if (_entryPointId == "rightEar") {				
+				CMonoBuffer<float> newBuffer = GetSamplesEntryPoint("rightEar")->GetData();				
+				rightChannelMixer.AddBuffer(newBuffer);
 			} else {
 				//nothing
 			}
@@ -96,10 +93,11 @@ namespace BRTBinauralFilter {
 		*/
 		void AllEntryPointsAllDataReady() override {
 
+			CMonoBuffer<float> leftBuffer = leftChannelMixer.GetMixedBuffer();
+			CMonoBuffer<float> rightBuffer = rightChannelMixer.GetMixedBuffer();
+
 			GetSamplesExitPoint("leftEar")->sendData(leftBuffer);
-			GetSamplesExitPoint("rightEar")->sendData(rightBuffer);
-			leftDataReady = false;
-			rightDataReady = false;
+			GetSamplesExitPoint("rightEar")->sendData(rightBuffer);			
 		}
 
 		void UpdateCommand() override {
@@ -136,10 +134,8 @@ namespace BRTBinauralFilter {
 
 		void SendMyID() { GetIDExitPoint()->sendData(modelID); }
 
-		CMonoBuffer<float> leftBuffer;
-		CMonoBuffer<float> rightBuffer;		
-		bool leftDataReady;
-		bool rightDataReady;
+		Common::CAudioMixer leftChannelMixer;
+		Common::CAudioMixer rightChannelMixer;		
 	};
 }
 #endif
