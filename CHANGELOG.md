@@ -5,10 +5,12 @@ All notable changes to the Binaural Rendering Toolbox (BRT) will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] 
+
+## [2.1.0] - 2025-02-26
 
 ### Added
 - An RMS meter is added, which will allow the dBFS signal level to be measured when required. It works by means of a sliding window of configurable size.
+- A new centralized audio mixer that adds normalization
 
 ### Changed
 - The libmysofa library has been updated to the latest commit, dated 7 February 2025. 
@@ -19,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Resolves an error in the binaural filter class when no filter coefficients are found in the table. This can occur in exceptional situations and the failure caused the system to crash.
 - Fixed a problem that arose when more than one listener model was connected to a binaural filter and one of those listeners was not connected to any source in the rederising. This problem caused the binaural filter to lose frames and therefore a bad sound.
 - Fixed several bugs in the waveguide that arose when the listener moved so close to the source that they put it inside their head and also when they moved while keeping the source inside their head.A situation that seems strange but which can occur depending on the desired simulation.
+- Fixes inter-thread collision in HRTF Convolver when resetting buffers while a frame was being processed. Related with Issue #16
+- Fixed head radius loaded from SOFA file not being stored correctly.
 
 
 ## [2.0.1] - 2025-01-16
