@@ -34,7 +34,7 @@ class CAudioMixer {
 public:
 	CAudioMixer()
 		: bufferSize(0)
-		, buffersReceived(0)
+		, buffersReceived(0)		
 		, mixBuffer(CMonoBuffer<float>())
 		, sampleCount(std::vector<size_t>()) {
 	}
@@ -80,9 +80,11 @@ public:
 
 		if (_normalization) {
 			// Normalisation: dividing each sample by the number of contributions
+			float temp = 1 / static_cast<float> (buffersReceived);
 			for (size_t i = 0; i < bufferSize; i++) {
 				if (sampleCount[i] > 0) {
-					returnBuffer[i] = mixBuffer[i] / static_cast<float>(sampleCount[i]);
+					//returnBuffer[i] = mixBuffer[i] / static_cast<float>(sampleCount[i]);					
+					returnBuffer[i] = mixBuffer[i] * temp;
 				}
 			}
 		} else {
@@ -99,7 +101,7 @@ public:
 
 private:
 	size_t bufferSize;
-	size_t buffersReceived; // number of buffers received in the current frame
+	size_t buffersReceived;			// number of buffers received in the current frame	
 
 	CMonoBuffer<float> mixBuffer; // mixed buffer
 	std::vector<size_t> sampleCount; // count of contributions per sample
