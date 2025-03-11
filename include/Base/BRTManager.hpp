@@ -24,12 +24,12 @@
 #define _BRT_MANAGER_
 
 #include <thread>
-#include <Connectivity/ExitPoint.hpp>
-#include "SourceModelBase.hpp"
+#include "Connectivity/ExitPoint.hpp"
+#include "SourceModels/SourceModelBase.hpp"
 #include "ListenerBase.hpp"
-#include "ListenerModelBase.hpp"
-#include <EnvironmentModels/EnvironmentModelBase.hpp>
-#include <BinauralFilter/BinauralFilterBase.hpp>
+#include "ListenerModels/ListenerModelBase.hpp"
+#include "EnvironmentModels/EnvironmentModelBase.hpp"
+#include "BinauralFilter/BinauralFilterBase.hpp"
 #include "third_party_libraries/nlohmann/json.hpp"
 
 namespace BRTBase {
