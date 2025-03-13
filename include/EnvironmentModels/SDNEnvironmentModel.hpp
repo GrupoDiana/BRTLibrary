@@ -279,9 +279,7 @@ namespace BRTEnvironmentModel {
 			//std::lock_guard<std::mutex> l(mutex);
 			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();						
 			if (command.isNull() || command.GetCommand() == "") { return; }
-
-			std::string listenerID = GetIDEntryPoint("listenerID")->GetData();
-			//std::string listenerModelID = GetIDEntryPoint("listenerModelID")->GetData();
+			
 
 			if (this->GetModelID() == command.GetStringParameter("environmentModelID")) {
 				if (command.GetCommand() == "/environment/enableModel") {
@@ -296,13 +294,7 @@ namespace BRTEnvironmentModel {
 				} else if (command.GetCommand() == "/environment/resetBuffers") {
 					ResetProcessorBuffers();
 				}
-			}
-
-			if (listenerID == command.GetStringParameter("listenerID")) {								
-				if (command.GetCommand() == "/listener/resetBuffers") {
-					ResetProcessorBuffers();
-				}
-			}	
+			}			
 		}
 
 
