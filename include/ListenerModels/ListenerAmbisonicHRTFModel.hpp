@@ -136,13 +136,16 @@ namespace BRTListenerModel {
 				SET_RESULT(RESULT_ERROR_NOTSET, "This HRTF has not been assigned to the listener. The sample rate of the HRTF does not match the one set in the library Global Parameters.");
 				return false;
 			}			
+
+			EnableAmbisonicDomainConvolvers(false); // Stop the convolvers
+
 			listenerHRTF = _listenerHRTF;									
 			InitListenerAmbisonicIR();
-
 			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
-			GetABIRExitPoint()->sendDataPtr(listenerAmbisonicIR);
-						
+			GetABIRExitPoint()->sendDataPtr(listenerAmbisonicIR);						
 			ResetProcessorBuffers();
+
+			EnableAmbisonicDomainConvolvers(true); // Start again
 			return true;
 		}
 
@@ -200,15 +203,15 @@ namespace BRTListenerModel {
 			if (_ambisonicOrder < 1 || _ambisonicOrder > 3) { return false; }
 			if (ambisonicOrder == _ambisonicOrder) { return true; }			
 			
-			//std::lock_guard<std::mutex> l(mutex);
+			EnableAmbisonicDomainConvolvers(false); // Stop the convolvers
 								
 			ambisonicOrder = _ambisonicOrder;
-			if (listenerHRTF->IsHRTFLoaded()) {	InitListenerAmbisonicIR();		}
-						
+			if (listenerHRTF->IsHRTFLoaded()) {	InitListenerAmbisonicIR();		}						
 			SetConfigurationInALLSourcesProcessors();
-
 			leftAmbisonicDomainConvolverProcessor->SetAmbisonicOrder(_ambisonicOrder);
 			rightAmbisonicDomainConvolverProcessor->SetAmbisonicOrder(_ambisonicOrder);
+
+			EnableAmbisonicDomainConvolvers(true); // Start again
 			return true;
 		}
 
@@ -228,10 +231,13 @@ namespace BRTListenerModel {
 			
 			if (ambisonicNormalization == _ambisonicNormalization) { return true; }
 			
-			//std::lock_guard<std::mutex> l(mutex);
+			EnableAmbisonicDomainConvolvers(false); // Stop the convolvers
+			
 			ambisonicNormalization = _ambisonicNormalization;
 			if (listenerHRTF->IsHRTFLoaded()) {	InitListenerAmbisonicIR();	}			
 			SetConfigurationInALLSourcesProcessors();
+
+			EnableAmbisonicDomainConvolvers(true); // Start again
 			return true;
 		}
 		
@@ -634,6 +640,20 @@ namespace BRTListenerModel {
 				return true;
 			}
 			return false;
+		}
+
+		/**
+		 * @brief Enable or disable left and right ambisonic domain convolvers
+		 * @param _enable true to enable, false to disable
+		 */
+		void EnableAmbisonicDomainConvolvers(bool _enable) {
+			if (_enable) {
+				leftAmbisonicDomainConvolverProcessor->EnableProcessor();
+				rightAmbisonicDomainConvolverProcessor->EnableProcessor();
+			} else {
+				leftAmbisonicDomainConvolverProcessor->DisableProcessor();
+				rightAmbisonicDomainConvolverProcessor->DisableProcessor();
+			}
 		}
 
 		/////////////////
