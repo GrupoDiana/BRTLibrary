@@ -101,7 +101,7 @@ namespace BRTProcessing {
 			
 			// Check listener Ambisonic BIR data ready
 			if (!_listenerAmbisonicBIR->IsReady()) {
-				SET_RESULT(RESULT_WARNING, "AmbisonicBIR is not ready to provide IRs. This usually occurs because the ambisonic order has been changed during reproduction.");
+				SET_RESULT(RESULT_WARNING, "AmbisonicBIR is not ready to provide IRs. This usually occurs because the ambisonic setup has been changed during reproduction.");
 				outBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 				return;
 			}
@@ -109,17 +109,21 @@ namespace BRTProcessing {
 			// First time - Initialize convolution buffers
 			if (!convolutionBuffersInitialized) { InitializedSourceConvolutionBuffers(_listenerAmbisonicBIR); }
 			
-			// Process
+			// Process						
 			std::vector<CMonoBuffer<float>> allChannelsBuffersConvolved (numberOfAmbisonicChannels);
-			for (int nChannel = 0; nChannel < _inChannelsBuffers.size(); nChannel++) {				
-				
-				std::vector<CMonoBuffer<float>>	oneChannel_ABIR_partitioned = _listenerAmbisonicBIR->GetChannelPartitionedIR_OneEar(nChannel, earToProcess, _listenerTransform); // GET ABIR								
+			for (int nChannel = 0; nChannel < _inChannelsBuffers.size(); nChannel++) {																
+				if (!enableProcessor) { 
+					SET_RESULT(RESULT_WARNING, "Failure to obtain an IR from AmbisonicIR. This usually occurs because the ABIR has been changed during reproduction.");
+					outBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
+					return;				
+				}
+				std::vector<CMonoBuffer<float>>	oneChannel_ABIR_partitioned = _listenerAmbisonicBIR->GetChannelPartitionedIR_OneEar(nChannel, earToProcess, _listenerTransform); // GET ABIR																
 				if (oneChannel_ABIR_partitioned.size() == 0) {
-					SET_RESULT(RESULT_ERROR_BADSIZE, "Failure to obtain an IR from AmbisonicIR. This usually occurs because the ambisonic order has been changed during reproduction.");
+					SET_RESULT(RESULT_WARNING, "Failure to obtain an IR from AmbisonicIR. This usually occurs because the ABIR has been changed during reproduction.");
 					outBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 					return;
-				}
-				channelsUPConvolutionVector[nChannel]->ProcessUPConvolutionWithMemory(_inChannelsBuffers[nChannel], oneChannel_ABIR_partitioned, allChannelsBuffersConvolved[nChannel], false);
+				}				
+				channelsUPConvolutionVector[nChannel]->ProcessUPConvolutionWithMemory(_inChannelsBuffers[nChannel], oneChannel_ABIR_partitioned, allChannelsBuffersConvolved[nChannel], false);				
 			}
 			// Mixer
 			CMonoBuffer<float> mixedChannels;

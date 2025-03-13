@@ -122,16 +122,26 @@ namespace BRTListenerModel {
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
 		bool SetHRBRIR(std::shared_ptr<BRTServices::CHRBRIR> _listenerHRBRIR) override {
+			
+			if (!_listenerHRBRIR->IsHRBRIRLoaded()) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "The HRBRIR has not been assigned becaused it is empty.");
+				return false;
+			}	
 			if (_listenerHRBRIR->GetSamplingRate() != globalParameters.GetSampleRate()) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "This HRBRIR has not been assigned to the listener. The sample rate of the HRBRIR does not match the one set in the library Global Parameters.");
 				return false;
 			}
-			listenerHRBRIR = _listenerHRBRIR;
+						
+			EnableAmbisonicDomainConvolvers(false);		// Stop the convolvers
+						
+			listenerHRBRIR = _listenerHRBRIR;			
 			InitListenerAmbisonicIR();
 			GetHRBRIRExitPoint()->sendDataPtr(listenerHRBRIR);
-			GetABIRExitPoint()->sendDataPtr(listenerAmbisonicIR);
+			GetABIRExitPoint()->sendDataPtr(listenerAmbisonicIR);			
 			ResetProcessorBuffers();
-		
+			
+			EnableAmbisonicDomainConvolvers(true);		// Start again
+			
 			return true;
 		}
 
@@ -161,15 +171,15 @@ namespace BRTListenerModel {
 			if (_ambisonicOrder < 1 || _ambisonicOrder > 3) { return false; }
 			if (ambisonicOrder == _ambisonicOrder) { return true; }			
 			
-			//std::lock_guard<std::mutex> l(mutex);
+			EnableAmbisonicDomainConvolvers(false); // Stop the convolvers
 								
 			ambisonicOrder = _ambisonicOrder;
-			if (listenerHRBRIR->IsHRBRIRLoaded()) { InitListenerAmbisonicIR(); }
-						
+			if (listenerHRBRIR->IsHRBRIRLoaded()) { InitListenerAmbisonicIR(); }						
 			SetConfigurationInALLSourcesProcessors();
-
 			leftAmbisonicDomainConvolverProcessor->SetAmbisonicOrder(_ambisonicOrder);
 			rightAmbisonicDomainConvolverProcessor->SetAmbisonicOrder(_ambisonicOrder);
+
+			EnableAmbisonicDomainConvolvers(true); // Start again
 			return true;
 		}
 
@@ -189,10 +199,13 @@ namespace BRTListenerModel {
 			
 			if (ambisonicNormalization == _ambisonicNormalization) { return true; }
 			
-			//std::lock_guard<std::mutex> l(mutex);
+			EnableAmbisonicDomainConvolvers(false); // Stop the convolvers
+			
 			ambisonicNormalization = _ambisonicNormalization;
 			if (listenerHRBRIR->IsHRBRIRLoaded()) {	InitListenerAmbisonicIR();	}
 			SetConfigurationInALLSourcesProcessors();
+			
+			EnableAmbisonicDomainConvolvers(true); // Start again
 			return true;
 		}
 		
@@ -374,11 +387,16 @@ namespace BRTListenerModel {
 		// Methods
 		/////////////////
 		
+		/**
+		 * @brief Initialize the ambisonic IR of the listener
+		 */
 		void InitListenerAmbisonicIR(){
-			std::lock_guard<std::mutex> l(mutex);
-			listenerAmbisonicIR->BeginSetup(ambisonicOrder, ambisonicNormalization);
+			
+			std::lock_guard<std::mutex> l(mutex);												
+			
+			listenerAmbisonicIR->BeginSetup(ambisonicOrder, ambisonicNormalization);			
 			bool control = listenerAmbisonicIR->AddImpulseResponsesFromHRIR(listenerHRBRIR);
-			if (control) {
+			if (control) {				
 				listenerAmbisonicIR->EndSetup();
 			}
 			else {
@@ -479,6 +497,20 @@ namespace BRTListenerModel {
 				return true;
 			}
 			return false;
+		}
+
+		/**
+		 * @brief Enable or disable left and right ambisonic domain convolvers
+		 * @param _enable true to enable, false to disable
+		 */
+		void EnableAmbisonicDomainConvolvers(bool _enable) {
+			if (_enable) {
+				leftAmbisonicDomainConvolverProcessor->EnableProcessor();
+				rightAmbisonicDomainConvolverProcessor->EnableProcessor();
+			} else {
+				leftAmbisonicDomainConvolverProcessor->DisableProcessor();
+				rightAmbisonicDomainConvolverProcessor->DisableProcessor();
+			}	
 		}
 
 		/////////////////
