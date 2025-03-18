@@ -66,13 +66,20 @@ namespace BRTSourceModel {
 		/**
 		 * @brief Enable or disable directivity for the source model
 		 * @param _enabled boolean true if you want to enable the directivity, false if disable
-		*/
-		// TODO: Move to command
+		*/		
 		void SetDirectivityEnable(bool _enabled) override {
 			if (_enabled) { EnableSourceDirectionality(); }
 			else { DisableSourceDirectionality(); }
 		}
 		
+		/**
+		 * @brief Get the status of the directivity of the source model
+		 * @return true if it is enabled, false if it is disabled
+		 */
+		bool IsDirectivityEnabled() override {
+			return IsSourceDirectionalityEnabled();
+		}
+
 	private:	
 
 		/**
