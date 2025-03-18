@@ -28,143 +28,114 @@
 //#include <iostream>
 
 #ifndef DEFAULT_SAMPLE_RATE
-#define DEFAULT_SAMPLE_RATE 44100						///< Default sample rate in samples/seconds
+	#define DEFAULT_SAMPLE_RATE 44100 ///< Default sample rate in samples/seconds
 #endif
 #ifndef DEFAULT_BUFFER_SIZE
-#define DEFAULT_BUFFER_SIZE 512							///< Default buffer size in samples
+	#define DEFAULT_BUFFER_SIZE 512 ///< Default buffer size in samples
 #endif
-#ifndef DEFAULT_REVERB_ATTENUATION_DB
-#define DEFAULT_REVERB_ATTENUATION_DB -3.01f			///< Default reverb attenuation with distance, in decibels
-#endif
-#ifndef DEFAULT_ANECHOIC_ATTENUATION_DB
-#define DEFAULT_ANECHOIC_ATTENUATION_DB	-6.0206f		///< log10f(0.5f) * 20.0f Default anechoic attenuation with distance, in decibels 
+#ifndef DEFAULT_DISTANCE_ATTENUATION_FACTOR_DB
+	#define DEFAULT_DISTANCE_ATTENUATION_FACTOR_DB -6.0206f ///< log10f(0.5f) * 20.0f Default anechoic attenuation with distance, in decibels
 #endif
 #ifndef DEFAULT_SOUND_SPEED
-#define DEFAULT_SOUND_SPEED	343.0f						///< Default sound speed, in meters per second (m/s)
-#endif 
+	#define DEFAULT_SOUND_SPEED 343.0f ///< Default sound speed, in meters per second (m/s)
+#endif
 #ifndef DISTANCE_MODEL_THRESHOLD_NEAR
-#define DISTANCE_MODEL_THRESHOLD_NEAR 2 				///< Reference distance for the near-distance threshold, in meters
-#endif 
+	#define DISTANCE_MODEL_THRESHOLD_NEAR 2 ///< Reference distance for the near-distance threshold, in meters
+#endif
 #ifndef DISTANCE_MODEL_THRESHOLD_FAR
-#define DISTANCE_MODEL_THRESHOLD_FAR 15					///< Far-distance threshold, in meters
+	#define DISTANCE_MODEL_THRESHOLD_FAR 15 ///< Far-distance threshold, in meters
 #endif
 #ifndef EPSILON_ATTACK_SAMPLES
-#define EPSILON_ATTACK_SAMPLES  0.001f					///< Attack sample lower limit attenuation in simple attenuation distance (used in ApplyGainExponentially method)
+	#define EPSILON_ATTACK_SAMPLES 0.001f ///< Attack sample lower limit attenuation in simple attenuation distance (used in ApplyGainExponentially method)
 #endif
-#ifndef REFERENCE_DISTANCE_ATTENUATION
-#define REFERENCE_DISTANCE_ATTENUATION 1				///< Reference distance for attenuation by distance in meters	
+#ifndef REFERENCE_ATTENUATION_DISTANCE
+	#define REFERENCE_ATTENUATION_DISTANCE 1 ///< Reference distance for attenuation by distance in meters
 #endif
 #ifndef ATTACK_TIME_DISTANCE_ATTENUATION
-#define ATTACK_TIME_DISTANCE_ATTENUATION 100			///< Attack time for gradual attenuation in simple attenuation distance (used in ApplyGainExponentially method)
+	#define ATTACK_TIME_DISTANCE_ATTENUATION 100 ///< Attack time for gradual attenuation in simple attenuation distance (used in ApplyGainExponentially method)
 #endif
 #ifndef MINIMUM_DISTANCE_SOURCE_LISTENER
-#define MINIMUM_DISTANCE_SOURCE_LISTENER 0.0001f		///< Minimun distance allowed betwwen source and listener in metres. It only serves to solve the numerical problem
-#endif 
+	#define MINIMUM_DISTANCE_SOURCE_LISTENER 0.0001f ///< Minimun distance allowed betwwen source and listener in metres. It only serves to solve the numerical problem
+#endif
 
-
+#include <Common/CommonDefinitions.hpp>
 #include <Common/Transform.hpp>
 #include <Common/Vector3.hpp>
-#include <Common/CommonDefinitions.hpp>
 
 namespace Common {
-		
-	// Comes from Audiostate and Magnitudes of the 3D-Tune-In toolkit
-	class CGlobalParameters
-	{
-		//Monostate Patttern
-	private:
-		static inline int	bufferSize				= DEFAULT_BUFFER_SIZE;
-		static inline int	sampleRate				= DEFAULT_SAMPLE_RATE;
-		static inline float anechoicAttenuationDB	= DEFAULT_ANECHOIC_ATTENUATION_DB;				// Constant for modeling the attenuation due to distance in anechoic process, in decibel units
-		static inline float reverbAttenuationDB		= DEFAULT_REVERB_ATTENUATION_DB;				// Constant for modeling the attenuation due to distance in reverb process, in decibel units
-		static inline float soundSpeed				= DEFAULT_SOUND_SPEED;							// Constant for modeling sound speed
 
-	public:
-		CGlobalParameters() = default;
+// Comes from Audiostate and Magnitudes of the 3D-Tune-In toolkit
+class CGlobalParameters {
+	//Monostate Patttern
+private:
+	static inline int bufferSize = DEFAULT_BUFFER_SIZE;
+	static inline int sampleRate = DEFAULT_SAMPLE_RATE;
+	static inline float soundSpeed = DEFAULT_SOUND_SPEED; // Constant for modeling sound speed
+
+public:
+	static inline const float distanceAttenuationFactorDB = DEFAULT_DISTANCE_ATTENUATION_FACTOR_DB; // Constant for modeling the attenuation due to distance in anechoic process, in decibel units	
+	static inline const float referenceAttenuationDistance = REFERENCE_ATTENUATION_DISTANCE; // Reference distance for attenuation by distance in meters
 
 
-		////////////////////////
-		// GET - SET METHODS	
-		////////////////////////
-		// Set the buffer size
-		void SetBufferSize(int _bufferSize) { 
-			bufferSize = _bufferSize;
-			if (!CalculateIsPowerOfTwo(_bufferSize)) {
-				SET_RESULT(RESULT_WARNING, "This buffer size is not a power of two, so processing will not be as efficient as it could be. Convolution and FFT operations will be done on the next largest number that is a power of two.");
-			} else {
-				SET_RESULT(RESULT_OK, "This buffer size has been set correctly.");
-			}
+	CGlobalParameters() = default;
 
-		}
-		// Get buffer size
-		int GetBufferSize()	const { return bufferSize; }				
-
-		void SetSampleRate(int _sampleRate) {
-			sampleRate = _sampleRate;
-		}
-		int GetSampleRate() const { return sampleRate; }
-		
-						
-		
-		// Set distance attenuation constant for anechoic process  
-		void SetAnechoicDistanceAttenuation(float _anechoicAttenuationDB)
-		{
-			//SetAttenuation(anechoicAttenuation, anechoicAttenuationDB, anechoicAttenuationGAIN, units);
-			if (_anechoicAttenuationDB > 0.0f)
-			{
-				//SET_RESULT(RESULT_ERROR_PHYSICS, "Attenuation constant in decibels must be a negative value");
-				return;
-			}
-			anechoicAttenuationDB = _anechoicAttenuationDB;
-
-			//SET_RESULT(RESULT_OK, "Anechoic distance attenuation succesfully set");
-		}
-		// Get distance attenuation constant for anechoic process	
-		float GetAnechoicDistanceAttenuation() const
-		{
-			return anechoicAttenuationDB;
-		}
-
-		// Set distance attenuation constant for reverb process 
-		void SetReverbDistanceAttenuation(float _reverbAttenuationDB)
-		{
-			//SetAttenuation(reverbAttenuation, reverbAttenuationDB, reverbAttenuationGAIN, units);
-			if (_reverbAttenuationDB > 0.0f)
-			{
-				//SET_RESULT(RESULT_ERROR_PHYSICS, "Attenuation constant in decibels must be a negative value");
-				return;
-			}
-			reverbAttenuationDB = _reverbAttenuationDB;
-
-			//SET_RESULT(RESULT_OK, "Reverb distance attenuation succesfully set");
-		}
 	
-		// Get distance attenuation constant for anechoic process 		
-		float GetReverbDistanceAttenuation() const
-		{
-			return reverbAttenuationDB;
+	/**
+	 * @brief Set the buffer size. Global buffer size for the whole system
+	 * @param _bufferSize buffer size in samples
+	 */
+	void SetBufferSize(int _bufferSize) {
+		bufferSize = _bufferSize;
+		if (!CalculateIsPowerOfTwo(_bufferSize)) {
+			SET_RESULT(RESULT_WARNING, "This buffer size is not a power of two, so processing will not be as efficient as it could be. Convolution and FFT operations will be done on the next largest number that is a power of two.");
+		} else {
+			SET_RESULT(RESULT_OK, "This buffer size has been set correctly.");
+		}
+	}
+	
+	/**
+	 * @brief Get the global buffer size
+	 * @return buffer size
+	 */
+	int GetBufferSize() const { return bufferSize; }
+
+	/**
+	 * @brief Set the sample rate. Global sample rate for the whole system
+	 * @param _sampleRate sample rate in samples/second
+	 */
+	void SetSampleRate(int _sampleRate) {
+		sampleRate = _sampleRate;
+	}
+
+	/**
+	 * @brief Get the global sample rate
+	 * @return sample rate in samples/second
+	 */
+	int GetSampleRate() const { return sampleRate; }
+
+
+	/**
+	 * @brief Set the sound speed in m/s
+	 * @param _soundSpeed sound speed in m/s
+	 */
+	void SetSoundSpeed(float _soundSpeed) {
+		if (_soundSpeed < 0.0f) {
+			//SET_RESULT(RESULT_ERROR_PHYSICS, "Sound speed must be a positive value");
+			return;
 		}
 
-		// Set sound speed in m/s
-		void SetSoundSpeed(float _soundSpeed)
-		{
-			if (_soundSpeed < 0.0f)
-			{
-				//SET_RESULT(RESULT_ERROR_PHYSICS, "Sound speed must be a positive value");
-				return;
-			}
+		soundSpeed = _soundSpeed;
 
-			soundSpeed = _soundSpeed;
+		//SET_RESULT(RESULT_OK, "Sound speed succesfully set");
+	}
 
-			//SET_RESULT(RESULT_OK, "Sound speed succesfully set");
-
-		}
-
-		// Get sound speed in m/s
-		float GetSoundSpeed() const
-		{
-			return soundSpeed;
-		}
-	};    
+	/**
+	 * @brief Get the sound speed in m/s
+	 * @return sound speed in m/s
+	 */
+	float GetSoundSpeed() const {
+		return soundSpeed;
+	}
+};
 }
 #endif

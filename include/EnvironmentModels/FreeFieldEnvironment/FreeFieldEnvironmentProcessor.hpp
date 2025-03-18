@@ -73,6 +73,23 @@ namespace BRTEnvironmentModel {
 		}
 
 		/**
+		 * @brief Set the gain of the model
+		 * @param _gain New gain value
+		 */
+		void SetGain(float _gain) {
+			std::lock_guard<std::mutex> l(mutex);
+			gain = _gain;
+		}
+
+		/**
+		 * @brief Get the gain of the model
+		 * @return Gain value
+		 */
+		float GetGain() {
+			return gain;
+		}
+		
+		/**
 		 * @brief Connect the environment processor to a listener model
 		 * @param _listenerModel Listener model to connect
 		 * @return True if the connection was successful
@@ -122,25 +139,23 @@ namespace BRTEnvironmentModel {
 			virtualSource->SetBuffer(outBuffer);													
 		}
 
+		/**
+		 * @brief Reset processor
+		 */
 		void Clear() {
 			brtManager->RemoveSoundSource(virtualSourceID);
 			virtualSourceID = "";
 			initialized = false;
+			ResetProcessBuffers();
 		}
 
+		/**
+		 * @brief Reset all processor buffers
+		 */
 		void ResetProcessBuffers() {			
 			ResetBuffers();
 		}
-
-		void SetGain(float _gain) {	
-			std::lock_guard<std::mutex> l(mutex);
-			gain = _gain;
-		}
-
-		float GetGain() {
-			return gain;
-		}
-
+		
 		/**
 		 * @brief Implementation of CAdvancedEntryPointManager virtual method
 		*/

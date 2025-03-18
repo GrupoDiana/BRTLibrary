@@ -35,7 +35,10 @@ namespace BRTEnvironmentModel {
 	class CFreeFieldEnvironment {
 	public:
 		CFreeFieldEnvironment()
-			: enableProcessor { true } { }
+			: enableProcessor { true } { 
+		
+			distanceAttenuation.Setup(globalParameters.distanceAttenuationFactorDB, globalParameters.referenceAttenuationDistance);
+		}
 
 		/**
 		 * @brief Enable processor
@@ -87,6 +90,7 @@ namespace BRTEnvironmentModel {
 			std::lock_guard<std::mutex> l(mutex);	
 			channelSourceListener.EnablePropagationDelay(); 
 		}
+
 		/**
 		 * @brief Disable propagation delay for this waveguide
 		 */
@@ -94,12 +98,47 @@ namespace BRTEnvironmentModel {
 			std::lock_guard<std::mutex> l(mutex);	
 			channelSourceListener.DisablePropagationDelay(); 
 		}
+		
 		/**
 		 * @brief Get the flag for propagation delay enabling
 		 * @return true if the propagation delay is enabled, false otherwise
 		 */
 		bool IsPropagationDelayEnabled() { return channelSourceListener.IsPropagationDelayEnabled(); }
 		
+		/**
+		 * @brief Set the distance attenuation factor in dB
+		 * @param _distanceAttenuationFactorDB Attenuation factor in dB
+		 */
+		void SetDistanceAttenuationFactor(float _distanceAttenuationFactorDB) {
+			std::lock_guard<std::mutex> l(mutex);
+			distanceAttenuation.SetDistanceAttenuationFactor(_distanceAttenuationFactorDB);			
+		}
+
+		/**
+		 * @brief Get the distance attenuation factor in dB
+		 * @return Distance attenuation factor in decibels
+		 */
+		float GetDistanceAttenuationFactor() {			
+			return distanceAttenuation.GetDistanceAttenuationFactor();
+		}
+
+		 /**
+         * @brief Set the distance attenuation reference distance. 
+         * @param _attenuationReference Distance at which the attenuation is 0 dB, in meters.
+         */
+		void SetReferenceAttenuationDistance(float _attenuationReferenceDistance) {
+			std::lock_guard<std::mutex> l(mutex);
+			distanceAttenuation.SetReferenceAttenuationDistance(_attenuationReferenceDistance);
+		}
+
+		/**
+         * @brief Get the distance attenuation reference distance. This is the distance at which the attenuation is 0 dB
+         * @return attenuation reference distance in meters.
+         */
+		float GetReferenceAttenuationDistance() {
+			return distanceAttenuation.GetReferenceAttenuationDistance();
+		}
+
 		/**
 		 * @brief Process the input buffer
 		 * @param _inBuffer Input buffer
@@ -147,12 +186,15 @@ namespace BRTEnvironmentModel {
 	private:
 		/// Atributes
 		mutable std::mutex mutex;								// Thread management
+		
+		bool enableProcessor;									// Flag to enable the processor
 		Common::CGlobalParameters globalParameters;				// Get access to global render parameters		
+		
 		BRTProcessing::CDistanceAttenuator distanceAttenuation; // Distance attenuation processor		
 		Common::CWaveguide channelSourceListener;				// Waveguide processor
-		//CLongDistanceFilter longDistanceFilter;
+		//CLongDistanceFilter longDistanceFilter;				// Long distance filter
 		
-		bool enableProcessor; // Flag to enable the processor
+		
 
 	};
 }

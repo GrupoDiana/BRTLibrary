@@ -124,16 +124,33 @@ namespace BRTEnvironmentModel {
 				}
 			}
 
-
+			/**
+			 * @brief Set the distance attenuation factor in decibels
+			 * @param _distanceAttenuation Distance attenuation factor (dB)
+			 */
+			void SetDistanceAttenuationFactor(float _distanceAttenuationDB) {
+				freeFieldProcessor->SetDistanceAttenuationFactor(_distanceAttenuationDB);
+			}
+					
+			/**
+			 * @brief Set the reference attenuation distance
+			 * @param _attenuationReferenceDistance Distance at which the attenuation is 0 dB, in meters.
+			 */ 
+			void SetReferenceAttenuationDistance(float _attenuationReferenceDistance) {
+				freeFieldProcessor->SetReferenceAttenuationDistance(_attenuationReferenceDistance);
+			}
+			
 			/**
 			 * @brief Set proccesor configuration
 			 * @param enableSpatialization Spatialization state
 			 * @param enableInterpolation Interpolation state
 			 * @param enableNearFieldEffect Nearfield state
 			*/
-			void SetConfiguration(bool _enableDistanceAttenuation, bool _enablePropagationDelay) {
+			void SetConfiguration(bool _enableDistanceAttenuation, bool _enablePropagationDelay, float _distanceAttenuationDB, float _attenuationReferenceDistance) {
 				SetEnableDistanceAttenuation(_enableDistanceAttenuation);
 				SetEnablePropagationDelay(_enablePropagationDelay);
+				SetDistanceAttenuationFactor(_distanceAttenuationDB);
+				SetReferenceAttenuationDistance(_attenuationReferenceDistance);
 			}
 
 			// Attributes
@@ -147,6 +164,8 @@ namespace BRTEnvironmentModel {
 			, brtManager { _brtManager }
 			, enableDistanceAttenuation { true }
 			, enablePropagationDelay { false }
+			, distanceAttenuationFactorDB { Common::CGlobalParameters::distanceAttenuationFactorDB }
+			, referenceAttenuationDistance { Common::CGlobalParameters::referenceAttenuationDistance }
 		{ 
 			
 		}
@@ -216,6 +235,46 @@ namespace BRTEnvironmentModel {
 		 */
 		bool IsPropagationDelayEnabled() override {
 			return enablePropagationDelay;
+		}
+
+		/**
+		 * @brief Set the distance attenuation factor
+		 * @param _distanceAttenuationDB Distance attenuation factor in decibels
+		 */
+		bool SetDistanceAttenuationFactor(float _distanceAttenuationFactorDB) override {			
+			if (_distanceAttenuationFactorDB > 0) {
+				SET_RESULT(RESULT_ERROR_PHYSICS, "Attenuation factor in decibels must be a negative value");
+				return false;
+			}
+			distanceAttenuationFactorDB = _distanceAttenuationFactorDB;
+			SetConfigurationInALLSourcesProcessors();		
+			return true;
+		}
+
+		/**
+		 * @brief Get the distance attenuation factor
+		 * @return Distance attenuation factor in decibels
+		 */
+		float GetDistanceAttenuationFactor() override {
+			return distanceAttenuationFactorDB;
+		}
+
+		/**
+		 * @brief Set the reference attenuation distance
+		 * @param _attenuationReferenceDistance Distance at which the attenuation is 0 dB, in meters.
+		 */
+		bool SetReferenceAttenuationDistance(float _attenuationReferenceDistance) override {
+			/*referenceAttenuationDistance = _attenuationReferenceDistance;
+			SetConfigurationInALLSourcesProcessors();*/
+			return false;
+		}
+
+		/**
+		 * @brief Get the reference attenuation distance
+		 * @return attenuation reference distance
+		 */
+		float GetReferenceAttenuationDistance() override {
+			return referenceAttenuationDistance;
 		}
 
 		/**
@@ -455,7 +514,7 @@ namespace BRTEnvironmentModel {
 		 * @param sourceProcessor 
 		*/
 		void SetSourceProcessorsConfiguration(CSourceProcessors & sourceProcessor) {
-			sourceProcessor.SetConfiguration(enableDistanceAttenuation, enablePropagationDelay);
+			sourceProcessor.SetConfiguration(enableDistanceAttenuation, enablePropagationDelay, distanceAttenuationFactorDB, referenceAttenuationDistance);
 		}
 
 		/////////////////
@@ -463,10 +522,11 @@ namespace BRTEnvironmentModel {
 		/////////////////
 		mutable std::mutex mutex;					// To avoid access collisions
 		BRTBase::CBRTManager * brtManager;						
-		//float gain;
-
+		
 		bool enablePropagationDelay;
 		bool enableDistanceAttenuation;
+		float distanceAttenuationFactorDB;
+		float referenceAttenuationDistance;
 
 		std::vector<CSourceProcessors> sourcesConnectedProcessors;
 	};	

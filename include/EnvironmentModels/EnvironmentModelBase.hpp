@@ -63,6 +63,12 @@ namespace BRTEnvironmentModel {
 		virtual void UpdateRoomWallAbsortion(int wallIndex) { };
 		virtual void UpdateRoomAllWallsAbsortion() { };
 
+		virtual bool SetDistanceAttenuationFactor(float _distanceAttenuationDB) { return false; };
+		virtual float GetDistanceAttenuationFactor() { return 0; };
+		
+		virtual bool SetReferenceAttenuationDistance(float _referenceAttenuationDistance) { return false; };
+		virtual float GetReferenceAttenuationDistance() { return 0; };
+
 		virtual bool ConnectSoundSource(const std::string & _sourceID) { return false; }
 		virtual bool DisconnectSoundSource(const std::string & _sourceID) { return false; }	
 
