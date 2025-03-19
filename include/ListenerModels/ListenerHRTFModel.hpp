@@ -635,7 +635,7 @@ namespace BRTListenerModel {
 		bool enableParallaxCorrection;	// Enable parallax correction
 		bool enableITDSimulation;		// Enable ITD simulation 
 
-		std::vector<std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase>> environmentModelsConnected; // Listener models connected to the listener
+		std::vector<std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase>> environmentModelsConnected; // Environment models connected to this
 	};
 }
 #endif

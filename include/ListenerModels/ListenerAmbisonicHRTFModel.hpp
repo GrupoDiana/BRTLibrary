@@ -678,8 +678,8 @@ namespace BRTListenerModel {
 
 		BRTBase::CBRTManager* brtManager;
 		Common::CGlobalParameters globalParameters;
-
-		std::vector<std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase>> environmentModelsConnected; // Listener models connected to the listener
+		
+		std::vector<std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase>> environmentModelsConnected; // Environment models connected to this
 	};
 }
 #endif
