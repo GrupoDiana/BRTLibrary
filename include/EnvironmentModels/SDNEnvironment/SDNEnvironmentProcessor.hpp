@@ -219,24 +219,28 @@ namespace BRTEnvironmentModel {
 				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "The SDN environment processor is not initialized");
 				return;
 			}
-
-			if (!enableProcessor) {
-				virtualSourceBuffers = std::vector<CMonoBuffer<float>>(SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT, CMonoBuffer<float>(globalParameters.GetBufferSize()));
-				SyncAllVirtualSourcesToModel();
-				return;
-			}			
+					
 			// Get data from entry points
 			CMonoBuffer<float> inBuffer = GetSamplesEntryPoint("inputSamples")->GetData();
 			Common::CTransform sourcePosition = CalculateLocalPosition(GetPositionEntryPoint("sourcePosition")->GetData());
 			Common::CTransform listenerPosition = CalculateLocalPosition(GetPositionEntryPoint("listenerPosition")->GetData());
 						
-			if (inBuffer.size() == 0) {
-				std::cout << "Buffer Size = 0" << std::endl;
+			if (inBuffer.size() == 0) {				
 				SET_RESULT(RESULT_ERROR_BADSIZE, "The input buffer size is 0");
 				return;
 			}
 
 			ASSERT(inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");
+
+			if (!enableProcessor) {
+				virtualSourceBuffers = std::vector<CMonoBuffer<float>>(SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT, CMonoBuffer<float>(globalParameters.GetBufferSize()));
+				virtualSourceBuffers[SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT - 1] = inBuffer;
+				
+				virtualSourcePositions = std::vector<Common::CTransform>(SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT, Common::CTransform());
+				virtualSourcePositions[SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT - 1] = sourcePosition;
+				SyncAllVirtualSourcesToModel();
+				return;
+			}	
 
 			// If the source or listener position exceed the size of the room silence the output			
 			if (IsInBounds(sourcePosition.GetPosition()) && IsInBounds(listenerPosition.GetPosition())) {				
