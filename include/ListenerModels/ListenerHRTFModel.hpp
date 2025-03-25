@@ -113,7 +113,7 @@ namespace BRTListenerModel {
 
 	public:
 		CListenerHRTFModel(std::string _listenerModelID, BRTBase::CBRTManager* _brtManager) 
-			: CListenerModelBase(_listenerModelID, TListenerModelcharacteristics(true, false, false, true, true, true, true, true))
+			: CListenerModelBase(_listenerModelID, TListenerModelcharacteristics(true, false, false, true, true, true, true, true, false))
 			, brtManager{ _brtManager }
 			, enableSpatialization{ true }
 			, enableInterpolation{ true }

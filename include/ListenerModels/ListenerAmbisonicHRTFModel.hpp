@@ -104,7 +104,7 @@ namespace BRTListenerModel {
 	public:
 		CListenerAmbisonicHRTFModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) 
 			: brtManager{ _brtManager }
-			, CListenerModelBase(_listenerID, TListenerModelcharacteristics(true, false, true, true, true, true, false, false))
+			, CListenerModelBase(_listenerID, TListenerModelcharacteristics(true, false, true, true, true, true, false, false, false))
 			, ambisonicOrder{ 1 }
 			, ambisonicNormalization { BRTProcessing::TAmbisonicNormalization::N3D }
 			, enableNearFieldEffect{ false }

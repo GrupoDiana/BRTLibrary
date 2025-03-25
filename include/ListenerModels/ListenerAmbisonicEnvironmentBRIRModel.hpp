@@ -30,6 +30,7 @@
 #include <ServiceModules/AmbisonicBIR.hpp>
 #include <ProcessingModules/BilateralAmbisonicEncoderProcessor.hpp>
 #include <ProcessingModules/AmbisonicDomainConvolverProcessor.hpp>
+#include <ProcessingModules/DistanceAttenuatorProcessor.hpp>
 #include <SourceModels/SourceModelBase.hpp>
 #include <Base/BRTManager.hpp>
 #include <third_party_libraries/nlohmann/json.hpp>
@@ -43,7 +44,8 @@ namespace BRTListenerModel {
 		public:
 
 			CSourceToBeProcessed(std::string _sourceID, BRTBase::CBRTManager* brtManager) : sourceID{ _sourceID } {
-				bilateralAmbisonicEncoderProcessor = brtManager->CreateProcessor <BRTProcessing::CBilateralAmbisonicEncoderProcessor>();				
+				distanceAttenuatorProcessor = brtManager->CreateProcessor<BRTProcessing::CDistanceAttenuatorProcessor>();
+				bilateralAmbisonicEncoderProcessor = brtManager->CreateProcessor <BRTProcessing::CBilateralAmbisonicEncoderProcessor>();
 			}
 			
 			/**
@@ -61,7 +63,8 @@ namespace BRTListenerModel {
 			 * @param _ambisonicNormalization 
 			 * @param enableBilateral 			 
 			*/
-			void SetConfiguration(int _ambisonicOrder, BRTProcessing::TAmbisonicNormalization _ambisonicNormalization) {
+			void SetConfiguration(int _ambisonicOrder, BRTProcessing::TAmbisonicNormalization _ambisonicNormalization
+				, bool enableDistanceAttenuation, float _distanceAttenuationFactorDB, float _referenceAttenuationDistance) {
 
 				bilateralAmbisonicEncoderProcessor->SetAmbisonicOrder(_ambisonicOrder);
 				bilateralAmbisonicEncoderProcessor->SetAmbisonicNormalization(_ambisonicNormalization);
@@ -70,6 +73,21 @@ namespace BRTListenerModel {
 				bilateralAmbisonicEncoderProcessor->DisableNearFieldEffect();
 				bilateralAmbisonicEncoderProcessor->DisableParallaxCorrection(); 
 				
+				if (enableDistanceAttenuation) {
+					distanceAttenuatorProcessor->EnableProcessor();
+				} else {
+					distanceAttenuatorProcessor->DisableProcessor();
+				}								
+				distanceAttenuatorProcessor->SetDistanceAttenuationFactor(_distanceAttenuationFactorDB);
+				distanceAttenuatorProcessor->SetReferenceAttenuationDistance(_referenceAttenuationDistance);
+			}
+
+			/**
+			* @brief Set the distance attenuation factor in decibels
+			* @param _distanceAttenuationFactorDB distance attenuation factor in decibels
+			*/
+			void SetDistanceAttenuationFactor(float _distanceAttenuationFactorDB) {
+				distanceAttenuatorProcessor->SetDistanceAttenuationFactor(_distanceAttenuationFactorDB);
 			}
 
 			/**
@@ -77,8 +95,14 @@ namespace BRTListenerModel {
 			 * @param _enableProcessor
 			 */
 			void SetEnableProcessor(bool _enableProcessor) {
-				if (_enableProcessor) { bilateralAmbisonicEncoderProcessor->EnableProcessor(); }
-				else { bilateralAmbisonicEncoderProcessor->DisableProcessor(); }
+				if (_enableProcessor) { 
+					bilateralAmbisonicEncoderProcessor->EnableProcessor(); 
+					distanceAttenuatorProcessor->EnableProcessor();
+				}
+				else { 
+					bilateralAmbisonicEncoderProcessor->DisableProcessor(); 
+					distanceAttenuatorProcessor->DisableProcessor();
+				}
 			}
 
 			/**		
@@ -89,17 +113,21 @@ namespace BRTListenerModel {
 			}
 
 			std::string sourceID;
-			std::shared_ptr <BRTProcessing::CBilateralAmbisonicEncoderProcessor> bilateralAmbisonicEncoderProcessor;			
+			std::shared_ptr<BRTProcessing::CBilateralAmbisonicEncoderProcessor> bilateralAmbisonicEncoderProcessor;
+			std::shared_ptr<BRTProcessing::CDistanceAttenuatorProcessor> distanceAttenuatorProcessor;
 		};
 
 	public:
 		CListenerAmbisonicEnvironmentBRIRModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) 
 			: brtManager{ _brtManager }
-			, CListenerModelBase(_listenerID, TListenerModelcharacteristics(false, true, true, false, false, false, false, false))
+			, CListenerModelBase(_listenerID, TListenerModelcharacteristics(false, true, true, false, false, false, false, false, true))
 			, ambisonicOrder{ 1 }
 			, ambisonicNormalization { BRTProcessing::TAmbisonicNormalization::N3D }
 			, enableNearFieldEffect{ false }
-			, enableParallaxCorrection{ true }  {
+			, enableParallaxCorrection{ true }
+			, enableDistanceAttenuation { false }
+			, distanceAttenuationFactorDB {globalParameters.reverbDistanceAttenuationFactorDB}
+			, referenceAttenuationDistance { globalParameters.referenceAttenuationDistance } {
 			
 			listenerHRBRIR = nullptr;												// Create a empty HRTF	class
 			listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicBIR>();	// Create a empty AmbisonicIR class //TODO CHANGE TO NULLPTR						
@@ -111,11 +139,35 @@ namespace BRTListenerModel {
 			leftAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>(Common::T_ear::LEFT);			
 			brtManager->ConnectModuleABIR(this, leftAmbisonicDomainConvolverProcessor, "listenerAmbisonicBIR");
 
-
 			rightAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>(Common::T_ear::RIGHT);
 			brtManager->ConnectModuleABIR(this, rightAmbisonicDomainConvolverProcessor, "listenerAmbisonicBIR");			
 		}
 
+		/**
+		 * @brief Enable model
+		 */
+		void EnableModel() override {
+			std::lock_guard<std::mutex> l(mutex);
+			enableModel = true;
+			for (auto & it : sourcesConnectedProcessors) {
+				it.SetEnableProcessor(true);
+			}
+			leftAmbisonicDomainConvolverProcessor->EnableProcessor();
+			rightAmbisonicDomainConvolverProcessor->EnableProcessor();
+		};
+
+		/**
+		 * @brief Disable model
+		 */
+		void DisableModel() override {
+			std::lock_guard<std::mutex> l(mutex);
+			enableModel = false;
+			for (auto & it : sourcesConnectedProcessors) {
+				it.SetEnableProcessor(false);
+			}
+			leftAmbisonicDomainConvolverProcessor->DisableProcessor();
+			rightAmbisonicDomainConvolverProcessor->DisableProcessor();
+		};
 
 		/** \brief SET HRBRIR of listener
 		*	\param[in] pointer to HRBRIR to be stored
@@ -277,7 +329,7 @@ namespace BRTListenerModel {
 		 * @param _listenerID listener ID
 		 * @return true if the connection success
 		 */
-		bool ConnectListenerTransform(const std::string _listenerID) {
+		bool ConnectListenerTransform(const std::string _listenerID) override {
 			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(_listenerID);
 			if (_listener != nullptr) {
 				brtManager->ConnectModuleTransform(_listener, leftAmbisonicDomainConvolverProcessor, "listenerPosition");
@@ -292,7 +344,7 @@ namespace BRTListenerModel {
 		 * @param _listenerID listener ID
 		 * @return true if the diconnection success
 		 */
-		bool DisconnectListenerTransform(const std::string _listenerID) {
+		bool DisconnectListenerTransform(const std::string _listenerID) override {
 			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(_listenerID);
 			if (_listener != nullptr) {
 				brtManager->DisconnectModuleTransform(_listener, leftAmbisonicDomainConvolverProcessor, "listenerPosition");
@@ -301,33 +353,56 @@ namespace BRTListenerModel {
 			}
 			return false;
 		}
+		
+		/**
+		 * @brief Enable distance attenuation
+		 */
+		void EnableDistanceAttenuation() override {
+			enableDistanceAttenuation = true;
+			SetConfigurationInALLSourcesProcessors();
+		}
 
 		/**
-		 * @brief Enable model
+		 * @brief Disable distance attenuation
 		 */
-		void EnableModel() {
-			std::lock_guard<std::mutex> l(mutex);
-			enableModel = true;
-			for (auto& it : sourcesConnectedProcessors) {
-				it.SetEnableProcessor(true);
-			}
-			leftAmbisonicDomainConvolverProcessor->EnableProcessor();
-			rightAmbisonicDomainConvolverProcessor->EnableProcessor();
-		};
+		void DisableDistanceAttenuation() override {
+			enableDistanceAttenuation = false;
+			SetConfigurationInALLSourcesProcessors();
+		}
 
 		/**
-		 * @brief Disable model
+		 * @brief Get the flag for distance attenuation enabling
+		 * @return True if the distance attenuation is enabled
 		 */
-		void DisableModel() {
-			std::lock_guard<std::mutex> l(mutex);
-			enableModel = false;
-			for (auto& it : sourcesConnectedProcessors) {
-				it.SetEnableProcessor(false);
-			}
-			leftAmbisonicDomainConvolverProcessor->DisableProcessor();
-			rightAmbisonicDomainConvolverProcessor->DisableProcessor();
-		};
+		bool IsDistanceAttenuationEnabled() override {
+			return enableDistanceAttenuation;
+		}
+		
 
+		/**
+		 * @brief Set the distance attenuation factor in dB
+		 * @param _distanceAttenuationFactorDB Attenuation factor in dB
+		 */
+		bool SetDistanceAttenuationFactor(float _distanceAttenuationFactorDB) override {
+			std::lock_guard<std::mutex> l(mutex);
+			if (_distanceAttenuationFactorDB > 0) {
+				SET_RESULT(RESULT_ERROR_PHYSICS, "Attenuation factor in decibels must be a negative value");
+				return false;
+			}
+			distanceAttenuationFactorDB = _distanceAttenuationFactorDB;
+			for (auto & it : sourcesConnectedProcessors) {
+				it.SetDistanceAttenuationFactor(_distanceAttenuationFactorDB);
+			}	
+			return true;
+		}
+
+		/**
+		 * @brief Get the distance attenuation factor in dB
+		 * @return Distance attenuation factor in decibels
+		 */
+		float GetDistanceAttenuationFactor() override {
+			return distanceAttenuationFactorDB;
+		}
 
 		/**
 		 * @brief Reset all processor buffers
@@ -342,19 +417,11 @@ namespace BRTListenerModel {
 				it.ResetBuffers();
 			}
 		}
-
-		/**
-		 * @brief Implementation of the virtual method to process the data received by the entry points.
-		 * @param entryPointID ID of the entry point
-		*/
-		void Update(std::string entryPointID) {
-			// Nothing to do
-		}
-
+		
 		/**
 		 * @brief Implementation of the virtual method for processing the received commands
 		*/
-		void UpdateCommand() {
+		void UpdateCommand() override {
 			//std::lock_guard<std::mutex> l(mutex);
 			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
 			if (command.isNull() || command.GetAddress() == "") { return; }
@@ -380,7 +447,6 @@ namespace BRTListenerModel {
 			}
 		}
 
-
 	private:
 		
 		/////////////////
@@ -390,7 +456,7 @@ namespace BRTListenerModel {
 		/**
 		 * @brief Initialize the ambisonic IR of the listener
 		 */
-		void InitListenerAmbisonicIR(){
+		void InitListenerAmbisonicIR() {
 			
 			std::lock_guard<std::mutex> l(mutex);												
 			
@@ -404,7 +470,6 @@ namespace BRTListenerModel {
 			}
 		}
 
-
 		/**
 		 * @brief Update Configuration in all source processor
 		*/
@@ -414,14 +479,14 @@ namespace BRTListenerModel {
 				SetSourceProcessorsConfiguration(it);
 			}
 		}
+
 		/**
 		 * @brief Update configuration just in one source processor
 		 * @param sourceProcessor
 		*/
 		void SetSourceProcessorsConfiguration(CSourceToBeProcessed& sourceProcessor) {
-			sourceProcessor.SetConfiguration(ambisonicOrder, ambisonicNormalization);
+			sourceProcessor.SetConfiguration(ambisonicOrder, ambisonicNormalization, enableDistanceAttenuation, distanceAttenuationFactorDB, referenceAttenuationDistance);
 		}
-
 
 		/**
 		 * @brief Connect a new source to this listener		 
@@ -429,23 +494,44 @@ namespace BRTListenerModel {
 		 * @return True if the connection success
 		*/		
 		bool ConnectAnySoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) {
-			std::lock_guard<std::mutex> l(mutex);
-			CSourceToBeProcessed _newSourceProcessors(_source->GetID(), brtManager);
-			_newSourceProcessors.bilateralAmbisonicEncoderProcessor->SetAmbisonicOrder(ambisonicOrder);
-			_newSourceProcessors.bilateralAmbisonicEncoderProcessor->SetAmbisonicNormalization(ambisonicNormalization);
-
-			bool control = brtManager->ConnectModuleTransform(_source, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "sourcePosition");
-			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "sourceID");			
 			
+			std::lock_guard<std::mutex> l(mutex);
+						
+			// Get listener pointer
+			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(GetIDEntryPoint("listenerID")->GetData());
+			if (_listener == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This listener Model has not been connected to a listener.");
+				return false;
+			}
+			
+			bool control = true;			
+			// Connect soundsource to listener, just in case it is a directivity source
 			if (_source->GetSourceType() == BRTSourceModel::Directivity) {
-				control = control && brtManager->ConnectModuleTransform(this, _source, "listenerPosition");
+				control = control && brtManager->ConnectModuleTransform(_listener, _source, "listenerPosition");
 			}
 
-			control = control && brtManager->ConnectModuleTransform(this, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerPosition");
-			control = control && brtManager->ConnectModuleHRBRIR(this, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerHRBRIR");
-			control = control && brtManager->ConnectModuleID(this, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerID");
+			// Create new set of processors and configure them
+			CSourceToBeProcessed _newSourceProcessors(_source->GetID(), brtManager);
+			/* _newSourceProcessors.bilateralAmbisonicEncoderProcessor->SetAmbisonicOrder(ambisonicOrder);
+			_newSourceProcessors.bilateralAmbisonicEncoderProcessor->SetAmbisonicNormalization(ambisonicNormalization);
+			_newSourceProcessors.distanceAttenuatorProcessor->DisableProcessor();
+			_newSourceProcessors.distanceAttenuatorProcessor->Setup(distanceAttenuationFactorDB, globalParameters.referenceAttenuationDistance);*/
+						
+			// Connect source and listener to processors
+			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.distanceAttenuatorProcessor, "sourceID");			
+			control = control && brtManager->ConnectModuleTransform(_source, _newSourceProcessors.distanceAttenuatorProcessor, "sourcePosition");
+			control = control && brtManager->ConnectModuleID(_listener, _newSourceProcessors.distanceAttenuatorProcessor, "listenerID");
+			control = control && brtManager->ConnectModuleTransform(_listener, _newSourceProcessors.distanceAttenuatorProcessor, "listenerPosition");			
 			
-			control = control && brtManager->ConnectModulesSamples(_source, "samples", _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "inputSamples");
+			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "sourceID");												
+			control = control && brtManager->ConnectModuleTransform(_source, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "sourcePosition");
+			control = control && brtManager->ConnectModuleID(_listener, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerID");
+			control = control && brtManager->ConnectModuleTransform(_listener, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerPosition");			
+			control = control && brtManager->ConnectModuleHRBRIR(this, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerHRBRIR");
+			
+			
+			control = control && brtManager->ConnectModulesSamples(_source, "samples", _newSourceProcessors.distanceAttenuatorProcessor, "inputSamples");
+			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.distanceAttenuatorProcessor, "outputSamples", _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "inputSamples");
 
 			control = control && brtManager->ConnectModulesMultipleSamplesVectors(_newSourceProcessors.bilateralAmbisonicEncoderProcessor, "leftAmbisonicChannels", leftAmbisonicDomainConvolverProcessor, "inputChannels");
 			control = control && brtManager->ConnectModulesMultipleSamplesVectors(_newSourceProcessors.bilateralAmbisonicEncoderProcessor, "rightAmbisonicChannels", rightAmbisonicDomainConvolverProcessor, "inputChannels");
@@ -469,6 +555,14 @@ namespace BRTListenerModel {
 		*/		
 		bool DisconnectAnySoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) {
 			std::lock_guard<std::mutex> l(mutex);
+	
+			// Get listener pointer
+			std::shared_ptr<BRTBase::CListener> _listener = brtManager->GetListener(GetIDEntryPoint("listenerID")->GetData());
+			if (_listener == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This listener Model has not been connected to a listener.");
+				return false;
+			}
+
 			std::string _sourceID = _source->GetID();
 			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSourceToBeProcessed& sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
 			if (it != sourcesConnectedProcessors.end()) {
@@ -478,20 +572,25 @@ namespace BRTListenerModel {
 
 				control = control && brtManager->DisconnectModulesMultipleSamplesVectors(it->bilateralAmbisonicEncoderProcessor, "leftAmbisonicChannels", leftAmbisonicDomainConvolverProcessor, "inputChannels");
 				control = control && brtManager->DisconnectModulesMultipleSamplesVectors(it->bilateralAmbisonicEncoderProcessor, "rightAmbisonicChannels", rightAmbisonicDomainConvolverProcessor, "inputChannels");
-
-				control = control && brtManager->DisconnectModulesSamples(_source, "samples", it->bilateralAmbisonicEncoderProcessor, "inputSamples");
-				control = control && brtManager->DisconnectModuleID(this, it->bilateralAmbisonicEncoderProcessor, "listenerID");				
-				control = control && brtManager->DisconnectModuleHRBRIR(this, it->bilateralAmbisonicEncoderProcessor, "listenerHRBRIR");
-
-				control = control && brtManager->DisconnectModuleTransform(this, it->bilateralAmbisonicEncoderProcessor, "listenerPosition");
-
-				if (_source->GetSourceType() == BRTSourceModel::Directivity) {
-					control = control && brtManager->DisconnectModuleTransform(this, _source, "listenerPosition");
-				}
-
+				
+				control = control && brtManager->DisconnectModulesSamples(it->distanceAttenuatorProcessor, "outSamples", it->bilateralAmbisonicEncoderProcessor, "inputSamples");
+				control = control && brtManager->DisconnectModulesSamples(_source, "samples", it->distanceAttenuatorProcessor, "inputSamples");
+				
 				control = control && brtManager->DisconnectModuleID(_source, it->bilateralAmbisonicEncoderProcessor, "sourceID");
 				control = control && brtManager->DisconnectModuleTransform(_source, it->bilateralAmbisonicEncoderProcessor, "sourcePosition");
+				control = control && brtManager->DisconnectModuleID(_listener, it->bilateralAmbisonicEncoderProcessor, "listenerID");
+				control = control && brtManager->DisconnectModuleTransform(_listener, it->bilateralAmbisonicEncoderProcessor, "listenerPosition");
+				control = control && brtManager->DisconnectModuleHRBRIR(this, it->bilateralAmbisonicEncoderProcessor, "listenerHRBRIR");
 
+				control = control && brtManager->DisconnectModuleID(_source, it->distanceAttenuatorProcessor, "sourceID");
+				control = control && brtManager->DisconnectModuleTransform(_source, it->distanceAttenuatorProcessor, "sourcePosition");
+				control = control && brtManager->DisconnectModuleID(_listener, it->distanceAttenuatorProcessor, "listenerID");
+				control = control && brtManager->DisconnectModuleTransform(_listener, it->distanceAttenuatorProcessor, "listenerPosition");			
+
+				if (_source->GetSourceType() == BRTSourceModel::Directivity) {
+					control = control && brtManager->DisconnectModuleTransform(_listener, _source, "listenerPosition");
+				}
+				
 				it->Clear(brtManager);
 				sourcesConnectedProcessors.erase(it);
 				return true;
@@ -522,9 +621,12 @@ namespace BRTListenerModel {
 		std::shared_ptr<BRTServices::CAmbisonicBIR> listenerAmbisonicIR;			// AmbisonicIR related to the listener				
 
 		int ambisonicOrder;															// Store the Ambisonic order
-		BRTProcessing::TAmbisonicNormalization ambisonicNormalization; // Store the Ambisonic normalization
+		BRTProcessing::TAmbisonicNormalization ambisonicNormalization;				// Store the Ambisonic normalization
 		bool enableNearFieldEffect;													// Enables/Disables the Near Field Effect
 		bool enableParallaxCorrection;												// Enable parallax correction
+		bool enableDistanceAttenuation;												// Enable distance attenuation
+		float distanceAttenuationFactorDB;											// Distance attenuation factor in decibels
+		float referenceAttenuationDistance;											// Reference distance for distance attenuation
 
 		std::vector< CSourceToBeProcessed> sourcesConnectedProcessors;				// List of sources connected to this listener model
 

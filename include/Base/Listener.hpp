@@ -416,12 +416,18 @@ namespace BRTBase {
 			}
 		}
 
+		/**
+		 * @brief Enable spatialization in the listener model if it is supported
+		 */
 		void EnableSpatialization(){			
 			for (auto& it : listenerModelsConnected) {				
 				it->EnableSpatialization();								
 			}			
 		}
 
+		/**
+		 * @brief Disable spatialization in the listener model if it is supported
+		 */
 		void DisableSpatialization() {			 
 			 for (auto& it : listenerModelsConnected) {
 				 it->DisableSpatialization();			
@@ -443,12 +449,18 @@ namespace BRTBase {
 			return control;
 		}
 
+		/**
+		 * @brief Enable interpolation in the listener model if it is supported
+		 */
 		void EnableInterpolation() {
 			for (auto& it : listenerModelsConnected) {
 				it->EnableInterpolation();
 			}
 		}
 
+		/**
+		 * @brief Disable interpolation in the listener model if it is supported
+		 */
 		void DisableInterpolation() {
 			for (auto& it : listenerModelsConnected) {
 				it->DisableInterpolation();
@@ -468,6 +480,9 @@ namespace BRTBase {
 			return false;
 		}
 
+		/**
+		 * @brief Enable ITD simulation in the listener model if it is supported
+		 */
 		void EnableITDSimulation() {
 			for (auto& it : listenerModelsConnected) {
 				if (it->GetListenerModelCharacteristics().SupportITDSimulation()) {
@@ -476,6 +491,9 @@ namespace BRTBase {
 			}
 		}
 
+		/**
+		 * @brief Disable ITD simulation in the listener model if it is supported
+		 */
 		void DisableITDSimulation() {
 			for (auto& it : listenerModelsConnected) {
 				if (it->GetListenerModelCharacteristics().SupportITDSimulation()) {
@@ -485,8 +503,8 @@ namespace BRTBase {
 		}
 
 		/**
-		 * @brief 
-		 * @return 
+		 * @brief Check if the ITD simulation is enabled in the listener model if it is supported
+		 * @return True if the ITD simulation is enabled
 		 */
 		bool IsITDSimulationEnabled() {
 			for (auto& it : listenerModelsConnected) {
@@ -497,6 +515,9 @@ namespace BRTBase {
 			return false;
 		}
 
+		/**
+		 * @brief Enable near field effect in the listener model if it is supported
+		 */
 		void EnableNearFieldEffect() {
 			for (auto& it : listenerModelsConnected) {
 				if (it->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {
@@ -505,6 +526,9 @@ namespace BRTBase {
 			}
 		}
 
+		/**
+		 * @brief Disable near field effect in the listener model if it is supported
+		 */
 		void DisableNearFieldEffect() {
 			for (auto& it : listenerModelsConnected) {
 				if (it->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {
@@ -514,8 +538,8 @@ namespace BRTBase {
 		}
 
 		/**
-		 * @brief 
-		 * @return 
+		 * @brief Check if the near field effect is enabled
+		 * @return true if the near field effect is enabled
 		 */
 		bool IsNearFieldEffectEnabled() {
 			for (auto& it : listenerModelsConnected) {
@@ -526,6 +550,9 @@ namespace BRTBase {
 			return false;
 		}
 
+		/**
+		 * @brief Enable parallax correction in the listener model if it is supported
+		 */
 		void EnableParallaxCorrection() {
 			for (auto& it : listenerModelsConnected) {
 				if (it->GetListenerModelCharacteristics().SupportParallaxCorrection()) {
@@ -534,6 +561,9 @@ namespace BRTBase {
 			}
 		}
 
+		/**
+		 * @brief Disable parallax correction in the listener model if it is supported
+		 */ 
 		void DisableParallaxCorrection() {
 			for (auto& it : listenerModelsConnected) {
 				if (it->GetListenerModelCharacteristics().SupportParallaxCorrection()) {
@@ -543,8 +573,8 @@ namespace BRTBase {
 		}
 
 		/**
-		 * @brief 
-		 * @return 
+		 * @brief Check if the parallax correction is enabled
+		 * @return true if the parallax correction is enabled
 		 */
 		bool IsParallaxCorrectionEnabled() {
 			for (auto& it : listenerModelsConnected) {
@@ -555,6 +585,11 @@ namespace BRTBase {
 			return false;
 		}
 
+		/**
+		 * @brief Set the ambisonic order in the listener model if it is supported
+		 * @param _ambisonicOrder ambisonic order
+		 * @return true if the ambisonic order is set
+		 */
 		bool SetAmbisonicOrder(int _ambisonicOrder) {
 			for (auto& it : listenerModelsConnected) {
 				if (it->GetListenerModelCharacteristics().IsAmbisonic()) {
@@ -563,6 +598,11 @@ namespace BRTBase {
 			}
 			return false;
 		}
+
+		/**
+		 * @brief Get the ambisonic order in the listener model if it is supported
+		 * @return current ambisonic order
+		 */
 		int GetAmbisonicOrder() const { 
 			for (auto& it : listenerModelsConnected) {
 				if (it->GetListenerModelCharacteristics().IsAmbisonic()) {
@@ -572,6 +612,11 @@ namespace BRTBase {
 			return 0;
 		}
 		
+		/**
+		 * @brief Set the ambisonic normalization in the listener model if it is supported
+		 * @param _ambisonicNormalization ambisonic normalization
+		 * @return true if the ambisonic normalization is set
+		 */
 		template <typename T>
 		bool SetAmbisonicNormalization(T _ambisonicNormalization) {
 			for (auto& it : listenerModelsConnected) {
@@ -581,16 +626,11 @@ namespace BRTBase {
 			}
 			return false;
 		}
-
-		/*bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) { 
-			for (auto& it : listenerModelsConnected) {
-				if (it->GetListenerModelCharacteristics().IsAmbisonic()) {
-					return it->SetAmbisonicNormalization(_ambisonicNormalization);
-				}
-			}
-			return false;
-		}*/
-
+		
+		/**
+		 * @brief Get the ambisonic normalization in the listener model if it is supported
+		 * @return current ambisonic normalization
+		 */
 		BRTProcessing::TAmbisonicNormalization GetAmbisonicNormalization() const { 			
 			for (auto& it : listenerModelsConnected) {
 				if (it->GetListenerModelCharacteristics().IsAmbisonic()) {
@@ -600,6 +640,67 @@ namespace BRTBase {
 			return BRTProcessing::TAmbisonicNormalization::none; 
 		}
 
+		/**
+		 * @brief Enable distance attenuation in the listener model
+		 */
+		void EnableDistanceAttenuation() {
+			for (auto & it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().SupportDistanceAttenuation()) {
+					it->EnableDistanceAttenuation();
+				}
+			}
+		}
+
+		/**
+		 * @brief Disable distance attenuation in the listener model
+		 */
+		void DisableDistanceAttenuation() {
+			for (auto & it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().SupportDistanceAttenuation()) {
+					it->DisableDistanceAttenuation();
+				}
+			}
+		}
+		
+		/**
+		 * @brief Get the flag for distance attenuation enabling
+		 * @return True if the distance attenuation is enabled
+		 */
+		bool IsDistanceAttenuationEnabled() {
+			for (auto & it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().SupportDistanceAttenuation()) {
+					return it->IsDistanceAttenuationEnabled();
+				}
+			}
+			return false;
+		}
+
+		/**
+		 * @brief Set the distance attenuation factor in the listener model if it is supported
+		 * @param _distanceAttenuationFactorDB distance attenuation factor in dB
+		 * @return true if the distance attenuation factor is set
+		 */
+		bool SetDistanceAttenuationFactor(float _distanceAttenuationFactorDB) {
+			for (auto & it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().SupportDistanceAttenuation()) {
+					return it->SetDistanceAttenuationFactor(_distanceAttenuationFactorDB);
+				}
+			}
+			return false;
+		}
+
+		/**
+		 * @brief Get the distance attenuation factor in the listener model if it is supported
+		 * @return distance attenuation factor in dB
+		 */
+		float GetDistanceAttenuationFactor() {
+			for (auto & it : listenerModelsConnected) {
+				if (it->GetListenerModelCharacteristics().SupportDistanceAttenuation()) {
+					return it->GetDistanceAttenuationFactor();
+				}
+			}
+			return 0;
+		}
 
 	private:
 				
@@ -616,4 +717,4 @@ namespace BRTBase {
 		std::vector<std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase>> binauralFiltersConnected; // Binaural filters connected to the listener
 	};
 }
-#endif
+#endif;

@@ -122,11 +122,9 @@ namespace BRTEnvironmentModel {
 			Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
 			Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
 
-			if (inBuffer.size() == 0) {
-				std::cout << "Buffer Size = 0" << std::endl;
+			if (inBuffer.size() == 0) {				
 				SET_RESULT(RESULT_ERROR_BADSIZE, "The input buffer size is 0");
-				return;
-			
+				return;			
 			}
 
 			CMonoBuffer<float> outBuffer;

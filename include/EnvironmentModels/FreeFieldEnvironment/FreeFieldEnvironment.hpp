@@ -36,8 +36,9 @@ namespace BRTEnvironmentModel {
 	public:
 		CFreeFieldEnvironment()
 			: enableProcessor { true } { 
-		
-			distanceAttenuation.Setup(globalParameters.distanceAttenuationFactorDB, globalParameters.referenceAttenuationDistance);
+					
+			distanceAttenuation.SetDistanceAttenuationFactor(globalParameters.distanceAttenuationFactorDB);
+			distanceAttenuation.SetReferenceAttenuationDistance(globalParameters.referenceAttenuationDistance);
 		}
 
 		/**
@@ -109,9 +110,9 @@ namespace BRTEnvironmentModel {
 		 * @brief Set the distance attenuation factor in dB
 		 * @param _distanceAttenuationFactorDB Attenuation factor in dB
 		 */
-		void SetDistanceAttenuationFactor(float _distanceAttenuationFactorDB) {
+		bool SetDistanceAttenuationFactor(float _distanceAttenuationFactorDB) {
 			std::lock_guard<std::mutex> l(mutex);
-			distanceAttenuation.SetDistanceAttenuationFactor(_distanceAttenuationFactorDB);			
+			return distanceAttenuation.SetDistanceAttenuationFactor(_distanceAttenuationFactorDB);			
 		}
 
 		/**
@@ -126,9 +127,9 @@ namespace BRTEnvironmentModel {
          * @brief Set the distance attenuation reference distance. 
          * @param _attenuationReference Distance at which the attenuation is 0 dB, in meters.
          */
-		void SetReferenceAttenuationDistance(float _attenuationReferenceDistance) {
+		bool SetReferenceAttenuationDistance(float _attenuationReferenceDistance) {
 			std::lock_guard<std::mutex> l(mutex);
-			distanceAttenuation.SetReferenceAttenuationDistance(_attenuationReferenceDistance);
+			return distanceAttenuation.SetReferenceAttenuationDistance(_attenuationReferenceDistance);
 		}
 
 		/**
@@ -179,8 +180,7 @@ namespace BRTEnvironmentModel {
 		 */
 		void ResetBuffers() {
 			std::lock_guard<std::mutex> l(mutex);
-			channelSourceListener.Reset();
-			//distanceAttenuation.Reset();
+			channelSourceListener.Reset();		
 		}
 	
 	private:

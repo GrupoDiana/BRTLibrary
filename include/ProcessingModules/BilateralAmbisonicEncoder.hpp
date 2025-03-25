@@ -74,9 +74,7 @@ namespace BRTProcessing {
 			std::lock_guard<std::mutex> l(mutex);
 
 			if (ambisonicOrder == _ambisonicOrder) { return; }
-			ambisonicOrder = _ambisonicOrder; 
-			//leftAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
-			//rightAmbisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
+			ambisonicOrder = _ambisonicOrder; 			
 			ambisonicEncoder.Setup(ambisonicOrder, ambisonicNormalization);
 		}
 

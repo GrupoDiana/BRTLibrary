@@ -25,20 +25,7 @@
 #ifndef _CGLOBAL_PARAMETERS_HPP_
 #define _CGLOBAL_PARAMETERS_HPP_
 
-//#include <iostream>
-
-#ifndef DEFAULT_SAMPLE_RATE
-	#define DEFAULT_SAMPLE_RATE 44100 ///< Default sample rate in samples/seconds
-#endif
-#ifndef DEFAULT_BUFFER_SIZE
-	#define DEFAULT_BUFFER_SIZE 512 ///< Default buffer size in samples
-#endif
-#ifndef DEFAULT_DISTANCE_ATTENUATION_FACTOR_DB
-	#define DEFAULT_DISTANCE_ATTENUATION_FACTOR_DB -6.0206f ///< log10f(0.5f) * 20.0f Default anechoic attenuation with distance, in decibels
-#endif
-#ifndef DEFAULT_SOUND_SPEED
-	#define DEFAULT_SOUND_SPEED 343.0f ///< Default sound speed, in meters per second (m/s)
-#endif
+// TODO remove all defines and use static inline const class members
 #ifndef DISTANCE_MODEL_THRESHOLD_NEAR
 	#define DISTANCE_MODEL_THRESHOLD_NEAR 2 ///< Reference distance for the near-distance threshold, in meters
 #endif
@@ -48,9 +35,7 @@
 #ifndef EPSILON_ATTACK_SAMPLES
 	#define EPSILON_ATTACK_SAMPLES 0.001f ///< Attack sample lower limit attenuation in simple attenuation distance (used in ApplyGainExponentially method)
 #endif
-#ifndef REFERENCE_ATTENUATION_DISTANCE
-	#define REFERENCE_ATTENUATION_DISTANCE 1 ///< Reference distance for attenuation by distance in meters
-#endif
+
 #ifndef ATTACK_TIME_DISTANCE_ATTENUATION
 	#define ATTACK_TIME_DISTANCE_ATTENUATION 100 ///< Attack time for gradual attenuation in simple attenuation distance (used in ApplyGainExponentially method)
 #endif
@@ -68,14 +53,14 @@ namespace Common {
 class CGlobalParameters {
 	//Monostate Patttern
 private:
-	static inline int bufferSize = DEFAULT_BUFFER_SIZE;
-	static inline int sampleRate = DEFAULT_SAMPLE_RATE;
-	static inline float soundSpeed = DEFAULT_SOUND_SPEED; // Constant for modeling sound speed
+	static inline int bufferSize = 512;	///< Default sample rate in samples/seconds
+	static inline int sampleRate = 44100; ///< Default buffer size in samples
+	static inline float soundSpeed = 343.0f; ///< Default sound speed, in meters per second (m/s)
 
 public:
-	static inline const float distanceAttenuationFactorDB = DEFAULT_DISTANCE_ATTENUATION_FACTOR_DB; // Constant for modeling the attenuation due to distance in anechoic process, in decibel units	
-	static inline const float referenceAttenuationDistance = REFERENCE_ATTENUATION_DISTANCE; // Reference distance for attenuation by distance in meters
-
+	static inline const float distanceAttenuationFactorDB = -6.0206f; ///< Default anechoic attenuation with distance, in decibels. log10f(0.5f) * 20.0f
+	static inline const float referenceAttenuationDistance = 1; ///< Reference distance for attenuation by distance in meters
+	static inline const float reverbDistanceAttenuationFactorDB = -3.0f; ///< Default anechoic attenuation with distance, in decibels. log10f(0.7079f) * 20.0f
 
 	CGlobalParameters() = default;
 

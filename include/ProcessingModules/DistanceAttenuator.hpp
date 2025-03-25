@@ -39,11 +39,11 @@ namespace BRTProcessing {
 class CDistanceAttenuator {
 public:
 	CDistanceAttenuator()
-		: enableProcessor { true }
-		, setupDone { false }
+		: enableProcessor { true }		
 		, distanceAttenuationFactorDB { 0 }
 		, referenceAttenuationDistance { 0 }
-		, previousAttenuation_Channel { 0 } {
+		, previousAttenuation_Channel { 0 }		
+	{
 	}
 
 	/**
@@ -51,7 +51,7 @@ public:
          * @param _distanceAttenuationFactorDB Distance attenuation factor in decibels
          * @param _attenuationReferenceDistance Distance at which the attenuation is 0 dB, in meters.
          */
-	void Setup(float _distanceAttenuationFactorDB, float _attenuationReferenceDistance) {
+	/*void Setup(float _distanceAttenuationFactorDB, float _attenuationReferenceDistance) {
 		std::lock_guard<std::mutex> l(mutex);
 		if (_distanceAttenuationFactorDB > 0) {
 			SET_RESULT(RESULT_ERROR_PHYSICS, "Attenuation factor in decibels must be a negative value");
@@ -64,7 +64,7 @@ public:
 		distanceAttenuationFactorDB = _distanceAttenuationFactorDB;
 		referenceAttenuationDistance = _attenuationReferenceDistance;
 		setupDone = true;
-	}
+	}*/
 
 	/**
          * @brief Enable distance attenuation process
@@ -86,13 +86,14 @@ public:
          * @brief Set the distance attenuation factor in decibels
          * @param _distanceAttenuationFactorDB distance attenuation factor in decibels
          */
-	void SetDistanceAttenuationFactor(float _distanceAttenuationFactorDB) {
+	bool SetDistanceAttenuationFactor(float _distanceAttenuationFactorDB) {
 		std::lock_guard<std::mutex> l(mutex);
 		if (_distanceAttenuationFactorDB > 0) {
 			SET_RESULT(RESULT_ERROR_PHYSICS, "Attenuation factor in decibels must be a negative value");
-			return;
+			return false; 
 		}
 		distanceAttenuationFactorDB = _distanceAttenuationFactorDB;
+		return true;
 	}
 
 	/**
@@ -107,13 +108,14 @@ public:
          * @brief Set the distance attenuation reference distance. This is the distance at which the attenuation is 0 dB
          * @param _referenceAttenuationDistance Distance at which the attenuation is 0 dB, in meters.
          */
-	void SetReferenceAttenuationDistance(float _referenceAttenuationDistance) {
+	bool SetReferenceAttenuationDistance(float _referenceAttenuationDistance) {
 		std::lock_guard<std::mutex> l(mutex);
 		if (_referenceAttenuationDistance <= 0) {
 			SET_RESULT(RESULT_ERROR_PHYSICS, "Reference distance must be a positive value");
-			return;
+			return false;
 		}
 		referenceAttenuationDistance = _referenceAttenuationDistance;
+		return true;
 	}
 
 	/**
@@ -133,19 +135,20 @@ public:
          */
 	void Process(const CMonoBuffer<float> & _inBuffer, CMonoBuffer<float> & outBuffer, Common::CTransform sourceTransform, Common::CTransform listenerTransform) {
 		std::lock_guard<std::mutex> l(mutex);
-		if (!setupDone) {
-			SET_RESULT(RESULT_ERROR_NOTSET, "DistanceAttenuator has not been set up", "");
-			return;
-		}
-
+						
 		ASSERT(_inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");
 
 		outBuffer = _inBuffer;
-
+		
 		if (!enableProcessor) {
 			return;
 		}
 
+		if ((distanceAttenuationFactorDB >= 0) || (referenceAttenuationDistance <= 0)) {
+			SET_RESULT(RESULT_ERROR_PHYSICS, "DistanceAttenuator has not been set up correctly", "");
+			return;
+		}
+		
 		// Calculate distance
 		float distance = CalculateDistance(sourceTransform, listenerTransform);
 
@@ -159,14 +162,7 @@ public:
 	}
 
 private:
-	mutable std::mutex mutex; // Thread management
-
-	bool enableProcessor;
-	bool setupDone;
-	float distanceAttenuationFactorDB; // Attenuation factor for distance attenuation
-	float referenceAttenuationDistance; // Distance at which the attenuation is 0 dB, in meters.
-	float previousAttenuation_Channel;
-	Common::CGlobalParameters globalParameters;
+	
 
 	/////////////////////
 	/// PRIVATE Methods
@@ -198,6 +194,19 @@ private:
 		float _distanceToListener = _vectorToListener.GetDistance();
 		return _distanceToListener;
 	}
+
+
+	/////////////////////
+	/// Attributes
+	/////////////////////
+	mutable std::mutex mutex;			// Thread management
+
+	bool enableProcessor;				// Flag for independent control of processes	
+	float distanceAttenuationFactorDB;	// Attenuation factor for distance attenuation
+	float referenceAttenuationDistance; // Distance at which the attenuation is 0 dB, in meters.
+	float previousAttenuation_Channel; // Previous attenuation value for the channel
+	
+	Common::CGlobalParameters globalParameters;
 };
 }
 #endif

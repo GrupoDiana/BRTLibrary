@@ -50,14 +50,32 @@ namespace BRTListenerModel {
 
 		bool configurableSpatialisation;
 		bool configurableInterpolation;
+
+		bool distanceAttenuation;
 	
 	public:		
-		TListenerModelcharacteristics() : supportHRTF{ false }, supportBRIR{ false }, ambisonic{ false }, nearFieldCompensation{ false }, 
-			parallaxCorrection{ false }, itdSimulation{ false }, configurableSpatialisation{ false }, configurableInterpolation{ false } {}
+		TListenerModelcharacteristics() 
+			: supportHRTF{ false }
+			, supportBRIR{ false }
+			, ambisonic{ false }
+			, nearFieldCompensation{ false }
+			, parallaxCorrection{ false }
+			, itdSimulation{ false }
+			, configurableSpatialisation{ false }
+			, configurableInterpolation{ false }
+			, distanceAttenuation { false } { }
 		
-		TListenerModelcharacteristics(bool _supportHRTF, bool _supportBRIR, bool _ambisonic, bool _nearFieldCompensation, bool _parallaxCorrection, bool _itdSimulation, bool _configurableSpatialisation, bool _configurableInterpolation) :
-			supportHRTF{ _supportHRTF }, supportBRIR{ _supportBRIR }, ambisonic{ _ambisonic }, nearFieldCompensation{ _nearFieldCompensation }, parallaxCorrection{ _parallaxCorrection },
-			itdSimulation{ _itdSimulation }, configurableSpatialisation{ _configurableSpatialisation }, configurableInterpolation{ _configurableInterpolation } {}
+		TListenerModelcharacteristics(bool _supportHRTF, bool _supportBRIR, bool _ambisonic, bool _nearFieldCompensation, bool _parallaxCorrection, bool _itdSimulation, bool _configurableSpatialisation, bool _configurableInterpolation, bool _distanceAttenuation) 
+			: supportHRTF{ _supportHRTF }
+			, supportBRIR{ _supportBRIR }
+			, ambisonic{ _ambisonic }
+			, nearFieldCompensation{ _nearFieldCompensation }
+			, parallaxCorrection{ _parallaxCorrection }
+			, itdSimulation{ _itdSimulation }
+			, configurableSpatialisation{ _configurableSpatialisation }
+			, configurableInterpolation{ _configurableInterpolation }
+			, distanceAttenuation { _distanceAttenuation }
+		{}
 
 		bool SupportHRTF() { return supportHRTF; }
 		bool SupportBRIR() { return supportBRIR; }
@@ -67,6 +85,7 @@ namespace BRTListenerModel {
 		bool SupportITDSimulation() { return itdSimulation; }
 		bool SupportConfigurableSpatialisation() { return configurableSpatialisation; }
 		bool SupportConfigurableInterpolation() { return configurableInterpolation; }
+		bool SupportDistanceAttenuation() { return distanceAttenuation; }
 	};
 
 
@@ -115,6 +134,12 @@ namespace BRTListenerModel {
 		virtual bool SetAmbisonicNormalization(std::string _ambisonicNormalization) {return false;}
 		virtual BRTProcessing::TAmbisonicNormalization GetAmbisonicNormalization() { return BRTProcessing::TAmbisonicNormalization::none; }
 		
+		virtual void EnableDistanceAttenuation() {};
+		virtual void DisableDistanceAttenuation() {};
+		virtual bool IsDistanceAttenuationEnabled() { return false; }
+		virtual bool SetDistanceAttenuationFactor(float _distanceAttenuationFactorDB) { return false; }
+		virtual float GetDistanceAttenuationFactor() { return 0; }
+		
 		virtual bool ConnectSoundSource(const std::string & _sourceID) { return false; }
 		virtual bool DisconnectSoundSource(const std::string & _sourceID) { return false; }	
 		
@@ -139,7 +164,7 @@ namespace BRTListenerModel {
 
 			CreateSamplesEntryPoint("leftEar");		// TODO is this necessary?
 			CreateSamplesEntryPoint("rightEar");	// TODO is this necessary?								
-			CreateTransformExitPoint();				// TODO is this necessary?
+			//CreateTransformExitPoint();				// TODO is this necessary?
 			CreateIDExitPoint();
 			
 			CreateSamplesExitPoint("leftEar");
