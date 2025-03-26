@@ -511,11 +511,7 @@ namespace BRTListenerModel {
 			}
 
 			// Create new set of processors and configure them
-			CSourceToBeProcessed _newSourceProcessors(_source->GetID(), brtManager);
-			/* _newSourceProcessors.bilateralAmbisonicEncoderProcessor->SetAmbisonicOrder(ambisonicOrder);
-			_newSourceProcessors.bilateralAmbisonicEncoderProcessor->SetAmbisonicNormalization(ambisonicNormalization);
-			_newSourceProcessors.distanceAttenuatorProcessor->DisableProcessor();
-			_newSourceProcessors.distanceAttenuatorProcessor->Setup(distanceAttenuationFactorDB, globalParameters.referenceAttenuationDistance);*/
+			CSourceToBeProcessed _newSourceProcessors(_source->GetID(), brtManager);			
 						
 			// Connect source and listener to processors
 			control = control && brtManager->ConnectModuleID(_source, _newSourceProcessors.distanceAttenuatorProcessor, "sourceID");			
@@ -536,8 +532,8 @@ namespace BRTListenerModel {
 			control = control && brtManager->ConnectModulesMultipleSamplesVectors(_newSourceProcessors.bilateralAmbisonicEncoderProcessor, "leftAmbisonicChannels", leftAmbisonicDomainConvolverProcessor, "inputChannels");
 			control = control && brtManager->ConnectModulesMultipleSamplesVectors(_newSourceProcessors.bilateralAmbisonicEncoderProcessor, "rightAmbisonicChannels", rightAmbisonicDomainConvolverProcessor, "inputChannels");
 
-			control = control && brtManager->ConnectModulesSamples(leftAmbisonicDomainConvolverProcessor, "outSamples", this, "leftEar");
-			control = control && brtManager->ConnectModulesSamples(rightAmbisonicDomainConvolverProcessor, "outSamples", this, "rightEar");
+			control = control && brtManager->ConnectModulesSamples(leftAmbisonicDomainConvolverProcessor, "outputSamples", this, "leftEar");
+			control = control && brtManager->ConnectModulesSamples(rightAmbisonicDomainConvolverProcessor, "outputSamples", this, "rightEar");
 
 			if (control) {
 				SetSourceProcessorsConfiguration(_newSourceProcessors);
@@ -567,13 +563,13 @@ namespace BRTListenerModel {
 			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSourceToBeProcessed& sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
 			if (it != sourcesConnectedProcessors.end()) {
 
-				bool control = brtManager->DisconnectModulesSamples(leftAmbisonicDomainConvolverProcessor, "outSamples", this, "leftEar");
-				control = control && brtManager->DisconnectModulesSamples(rightAmbisonicDomainConvolverProcessor, "outSamples", this, "rightEar");
+				bool control = brtManager->DisconnectModulesSamples(leftAmbisonicDomainConvolverProcessor, "outputSamples", this, "leftEar");
+				control = control && brtManager->DisconnectModulesSamples(rightAmbisonicDomainConvolverProcessor, "outputSamples", this, "rightEar");
 
 				control = control && brtManager->DisconnectModulesMultipleSamplesVectors(it->bilateralAmbisonicEncoderProcessor, "leftAmbisonicChannels", leftAmbisonicDomainConvolverProcessor, "inputChannels");
 				control = control && brtManager->DisconnectModulesMultipleSamplesVectors(it->bilateralAmbisonicEncoderProcessor, "rightAmbisonicChannels", rightAmbisonicDomainConvolverProcessor, "inputChannels");
 				
-				control = control && brtManager->DisconnectModulesSamples(it->distanceAttenuatorProcessor, "outSamples", it->bilateralAmbisonicEncoderProcessor, "inputSamples");
+				control = control && brtManager->DisconnectModulesSamples(it->distanceAttenuatorProcessor, "outputSamples", it->bilateralAmbisonicEncoderProcessor, "inputSamples");
 				control = control && brtManager->DisconnectModulesSamples(_source, "samples", it->distanceAttenuatorProcessor, "inputSamples");
 				
 				control = control && brtManager->DisconnectModuleID(_source, it->bilateralAmbisonicEncoderProcessor, "sourceID");

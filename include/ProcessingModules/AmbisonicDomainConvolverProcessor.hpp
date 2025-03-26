@@ -43,7 +43,7 @@ namespace BRTProcessing {
 			CreateIDEntryPoint("sourceID");
 			CreateIDEntryPoint("listenerID");
 			CreatePositionEntryPoint("listenerPosition");
-            CreateSamplesExitPoint("outSamples");			            
+            CreateSamplesExitPoint("outputSamples");			            
         }
 		
 		/**
@@ -70,7 +70,7 @@ namespace BRTProcessing {
 			std::weak_ptr<BRTServices::CAmbisonicBIR> listenerABIR = GetABIRPtrEntryPoint("listenerAmbisonicBIR")->GetData();
 			Common::CTransform _listenerTransform = GetPositionEntryPoint("listenerPosition")->GetData();
 			Process(channelsBuffer, outBuffer, listenerABIR, _listenerTransform);
-			GetSamplesExitPoint("outSamples")->sendData(outBuffer);					
+			GetSamplesExitPoint("outputSamples")->sendData(outBuffer);					
 			channelsBuffer.clear();
 			
 			
