@@ -54,6 +54,7 @@ namespace BRTListenerModel {
 			*/
 			void Clear(BRTBase::CBRTManager* brtManager) {
 				sourceID = "";
+				brtManager->RemoveProcessor(distanceAttenuatorProcessor);
 				brtManager->RemoveProcessor(bilateralAmbisonicEncoderProcessor);				
 			}
 
