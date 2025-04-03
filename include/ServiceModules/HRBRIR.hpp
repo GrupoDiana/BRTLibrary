@@ -51,7 +51,7 @@ namespace BRTServices
 			gapThreshold {DEFAULT_GAP_THRESHOLD}, sphereBorder{ SPHERE_BORDER }, epsilon_sewing{ EPSILON_SEWING }, extrapolationMethod{ TEXTRAPOLATION_METHOD::zero_insertion },
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION },
 			HRIR_partitioned_NumberOfSubfilters{ 0 }, HRIR_partitioned_SubfilterLength{ 0 },
-			fadeInWindowThreshold { 0 }, fadeInWindowRiseTime{ 0 }, fadeOutWindowThreshold{ 0 }, fadeOutWindowRiseTime{ 0 },
+			fadeInBegin { 0 }, riseTime{ 0 }, fadeOutCutoff{ 0 }, fallTime{ 0 },
 			elevationNorth{ 0 }, elevationSouth{ 0 }, title{""},	databaseName{""}, listenerShortName{""}, fileName{""} {}
 
 
@@ -350,12 +350,12 @@ namespace BRTServices
 		 * @param _windowThreshold The midpoint of the window in time (seconds), that is, where the window reaches 0.5.
 		 * @param _windowRiseTime time (secons) for the window to go from 0 to 1. A value of zero would represent the step window. 
 		 */
-		void SetWindowingParameters(float _fadeInWindowThreshold, float _fadeInWindowRiseTime, float _fadeOutWindowThreshold, float _fadeOutWindowRiseTime) override {			
+		void SetWindowingParameters(float _fadeInBegin, float _riseTime, float _fadeOutCutoff, float _fallTime) override {			
 			mutex.lock();
-			fadeInWindowThreshold = _fadeInWindowThreshold;
-			fadeInWindowRiseTime = _fadeInWindowRiseTime;
-			fadeOutWindowThreshold = _fadeOutWindowThreshold;
-			fadeOutWindowRiseTime = _fadeOutWindowRiseTime;
+			fadeInBegin = _fadeInBegin;
+			riseTime = _riseTime;
+			fadeOutCutoff = _fadeOutCutoff;
+			fallTime = _fallTime;
 
 			mutex.unlock();
 			if (HRBRIRLoaded) {				
@@ -372,10 +372,10 @@ namespace BRTServices
 		 * @param [out] _windowRiseTime 
 		 */
 		void GetWindowingParameters(float & _fadeInWindowThreshold, float & _fadeInWindowRiseTime, float & _fadeOutWindowThreshold, float & _fadeOutWindowRiseTime) override {
-			_fadeInWindowThreshold = fadeInWindowThreshold;
-			_fadeInWindowRiseTime = fadeInWindowRiseTime;
-			_fadeOutWindowThreshold = fadeOutWindowThreshold;
-			_fadeOutWindowRiseTime = fadeOutWindowRiseTime;
+			_fadeInWindowThreshold = fadeInBegin;
+			_fadeInWindowRiseTime = riseTime;
+			_fadeOutWindowThreshold = fadeOutCutoff;
+			_fadeOutWindowRiseTime = fallTime;
 		}
 
 		
@@ -572,11 +572,11 @@ namespace BRTServices
 		 * @return 
 		 */
 		bool IsFadeInWindowingConfigured() {
-			return fadeInWindowThreshold != 0 || fadeInWindowRiseTime != 0;
+			return fadeInBegin != 0 || riseTime != 0;
 		}
 
 		bool IsFadeOutWindowingConfigured() {
-			return fadeOutWindowThreshold != 0 || fadeOutWindowRiseTime != 0;
+			return fadeOutCutoff != 0 || fallTime != 0;
 		}
 
 		/**
@@ -593,15 +593,15 @@ namespace BRTServices
 				for (auto it = _outTable.begin(); it != _outTable.end(); it++) {
 					//it->second.leftHRIR = std::move(CalculateWindowingIR(it->second.leftHRIR));
 					//it->second.rightHRIR = std::move(CalculateWindowingIR(it->second.rightHRIR));
-					it->second.leftHRIR		= std::move(Common::CIRWindowing::Proccess(it->second.leftHRIR, Common::CIRWindowing::fadein, fadeInWindowThreshold, fadeInWindowRiseTime, globalParameters.GetSampleRate()));
-					it->second.rightHRIR	= std::move(Common::CIRWindowing::Proccess(it->second.rightHRIR, Common::CIRWindowing::fadein, fadeInWindowThreshold, fadeInWindowRiseTime, globalParameters.GetSampleRate()));
+					it->second.leftHRIR		= std::move(Common::CIRWindowing::Proccess(it->second.leftHRIR, Common::CIRWindowing::fadein, fadeInBegin, riseTime, globalParameters.GetSampleRate()));
+					it->second.rightHRIR	= std::move(Common::CIRWindowing::Proccess(it->second.rightHRIR, Common::CIRWindowing::fadein, fadeInBegin, riseTime, globalParameters.GetSampleRate()));
 				}
 			}
 
 			if (IsFadeOutWindowingConfigured()) {
 				for (auto it = _outTable.begin(); it != _outTable.end(); it++) {					
-					it->second.leftHRIR		= std::move(Common::CIRWindowing::Proccess(it->second.leftHRIR, Common::CIRWindowing::fadeout, fadeOutWindowThreshold, fadeOutWindowRiseTime, globalParameters.GetSampleRate()));
-					it->second.rightHRIR	= std::move(Common::CIRWindowing::Proccess(it->second.rightHRIR, Common::CIRWindowing::fadeout, fadeOutWindowThreshold, fadeOutWindowRiseTime, globalParameters.GetSampleRate()));
+					it->second.leftHRIR		= std::move(Common::CIRWindowing::Proccess(it->second.leftHRIR, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate()));
+					it->second.rightHRIR	= std::move(Common::CIRWindowing::Proccess(it->second.rightHRIR, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate()));
 				}
 				
 				// Update HRIRLength and the number of subfilters
@@ -714,10 +714,10 @@ namespace BRTServices
 		float elevationNorth;						// Variables that define limits of work area
 		float elevationSouth;						// Variables that define limits of work area
 
-		float fadeInWindowThreshold;				// Variable to be used in the windowing IR process 
-		float fadeInWindowRiseTime;					// Variable to be used in the windowing IR process 
-		float fadeOutWindowThreshold;				// Variable to be used in the windowing IR process
-		float fadeOutWindowRiseTime;				// Variable to be used in the windowing IR process 
+		float fadeInBegin;				// Variable to be used in the windowing IR process 
+		float riseTime;					// Variable to be used in the windowing IR process 
+		float fadeOutCutoff;				// Variable to be used in the windowing IR process
+		float fallTime;				// Variable to be used in the windowing IR process 
 
 		// HRBRIR tables			
 		T_HRBRIRTable					t_HRBRIR_DataBase;					// Store original data, normally read from SOFA file

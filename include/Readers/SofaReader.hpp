@@ -181,7 +181,7 @@ namespace BRTReaders {
 		*/
 		bool ReadBRIRFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CHRBRIR> listenerHRTF, int _spatialResolution, 
 			BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, 
-			float _fadeInWindowThreshold, float _fadeInWindowRiseTime, float _fadeOutWindowThreshold, float _fadeOutWindowRiseTime) {
+			float _fadeInBegin, float _riseTime, float _fadeOutCutoff, float _fallTime) {
 
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerHRTF;
 			// Open file
@@ -199,7 +199,7 @@ namespace BRTReaders {
 			// Load Data
 			if (dataType == "FIR" || dataType == "FIR-E") {
 				ResetError();
-				return ReadFromSofaFIRDataType(loader, sofafile, data, _spatialResolution, _extrapolationMethod, _fadeInWindowThreshold, _fadeInWindowRiseTime, _fadeOutWindowThreshold, _fadeOutWindowRiseTime);			
+				return ReadFromSofaFIRDataType(loader, sofafile, data, _spatialResolution, _extrapolationMethod, _fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);			
 			} else {
 				errorDescription = "The data type contained in the sofa file is not valid for loading BRIRs - " + dataType;
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, errorDescription);
@@ -359,13 +359,13 @@ namespace BRTReaders {
 		/////////////////////////////////////////////////////////////////
 		bool ReadFromSofaFIRDataType(BRTReaders::CLibMySOFALoader &loader, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data,
 			int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, 
-			float _fadeInWindowThreshold, float _fadeInWindowRiseTime, float _fadeOutWindowThreshold, float _fadeOutWindowRiseTime) {
+			float _fadeInBegin, float _riseTime, float _fadeOutCutoff, float _fallTime) {
 			
 			// Get and Save data			
 			GetAndSaveGlobalAttributes(loader, CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR ,sofafile, data);			// GET and Save Global Attributes			
 			GetAndSaveReceiverPosition(loader, data); // Get and Save listener ear
 			
-			data->SetWindowingParameters(_fadeInWindowThreshold, _fadeInWindowRiseTime, _fadeOutWindowThreshold, _fadeOutWindowRiseTime);
+			data->SetWindowingParameters(_fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);
 			bool result;			
 			result = GetBRIRs(loader, data, _extrapolationMethod);			
 			if (!result) {
