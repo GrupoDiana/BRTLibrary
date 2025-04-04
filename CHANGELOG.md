@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.2.0] - 2025-04-04
+
+### Added
+- Adds a distance attenuator to the listener and enviroment models.
+
+### Changed
+- The free field environment model allows you to configure its attenuation factor value per distance individually. 
+- Changes the behaviour of the SDN environment model when disabled, it now lets the signal pass through unaltered.
+- Renames loadBRIR window parameters
+
+### Fixed
+- Fixes errors when reconfiguring the ambisonic during rendering
+- Solve SDN model failure when receiving an internal control message
+
+
 ## [2.1.0] - 2025-02-26
 
 ### Added
