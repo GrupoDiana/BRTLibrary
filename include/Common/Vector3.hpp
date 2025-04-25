@@ -31,6 +31,7 @@
 #include <Common/ErrorHandler.hpp>
 #include <Common/Conventions.hpp>
 #include <string>
+#include <vector>
 
 const double PI_D = 3.141592653589793238463;
 const float  PI_F = 3.14159265358979f;
