@@ -145,7 +145,7 @@ public:
 		}
 
 		if ((distanceAttenuationFactorDB >= 0) || (referenceAttenuationDistance <= 0)) {
-			SET_RESULT(RESULT_ERROR_PHYSICS, "DistanceAttenuator has not been set up correctly", "");
+			SET_RESULT(RESULT_ERROR_PHYSICS, "DistanceAttenuator has not been set up correctly");
 			return;
 		}
 		
