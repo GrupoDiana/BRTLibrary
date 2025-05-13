@@ -536,7 +536,7 @@ namespace Common {
 		//const CVector3 CVector3::TO_LEFT(0.0f, -1.0f, 0.0f);
 		//const CVector3 CVector3::TO_RIGHT(0.0f, 1.0f, 0.0f);
 		static CVector3 TO_LEFT() { return CVector3(0.0f, -1.0f, 0.0f); }
-		static CVector3 TO_RIGHT() { return CVector(0.0f, 1.0f, 0.0f); }
+		static CVector3 TO_RIGHT() { return CVector3(0.0f, 1.0f, 0.0f); }
 #elif UP_AXIS == AXIS_X
 		//const CVector3 CVector3::TO_LEFT(1.0f, 0.0f, 0.0f);
 		//const CVector3 CVector3::TO_RIGHT(-1.0f, 0.0f, 0.0f);
