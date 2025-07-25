@@ -1,7 +1,7 @@
 ﻿/**
-* \class CBinauralFilterBase
+* \class CBilateralFilterBase
 *
-* \brief This class implements the binaural filter.
+* \brief This class implements the bilateral filter.
 * \date	Nov 2024
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo ||
@@ -27,8 +27,8 @@
 #include <Common/Buffer.hpp>
 #include <Common/AudioMixer.hpp>
 
-namespace BRTBinauralFilter {
-	class CBinauralFilterBase : public BRTBase::CModelBase {
+namespace BRTBilateralFilter {
+	class CBilateralFilterBase : public BRTBase::CModelBase {
 	public:
 
 		virtual bool SetSOSFilter(std::shared_ptr<BRTServices::CSOSFilters> _listenerILD) { return false; };
@@ -39,7 +39,7 @@ namespace BRTBinauralFilter {
 		virtual bool DisconnectListenerModel(const std::string & _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) { return false; };
 
 
-		CBinauralFilterBase(const std::string & _binauraFilterID)
+		CBilateralFilterBase(const std::string & _binauraFilterID)
 			: CModelBase(_binauraFilterID)
 			{
 			

@@ -24,19 +24,19 @@
 #define _C_SOS_BINAURAL_FILTER_HPP_
 
 #include <Base/BRTManager.hpp>
-#include <BinauralFilter/BinauralFilterBase.hpp>
+#include <BinauralFilter/BilateralFilterBase.hpp>
 #include <ListenerModels/ListenerModelBase.hpp>
 #include <ProcessingModules/BinauralFilter.hpp>
 
 #define NUMBER_OF_COEFFICIENTS_IN_STAGE_SOS 6
 
-namespace BRTBinauralFilter { 
+namespace BRTBilateralFilter { 
 
-	class CSOSBinauralFilter : public CBinauralFilterBase { 
+	class CSOSBilateralFilter : public CBilateralFilterBase { 
 	public:
 
-		CSOSBinauralFilter(const std::string & _binauraFilterID, BRTBase::CBRTManager * _brtManager)
-			: CBinauralFilterBase(_binauraFilterID)
+		CSOSBilateralFilter(const std::string & _binauraFilterID, BRTBase::CBRTManager * _brtManager)
+			: CBilateralFilterBase(_binauraFilterID)
 			, brtManager { _brtManager }
 		{
 

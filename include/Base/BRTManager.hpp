@@ -29,7 +29,7 @@
 #include "ListenerBase.hpp"
 #include "ListenerModels/ListenerModelBase.hpp"
 #include "EnvironmentModels/EnvironmentModelBase.hpp"
-#include "BinauralFilter/BinauralFilterBase.hpp"
+#include "BinauralFilter/BilateralFilterBase.hpp"
 #include "third_party_libraries/nlohmann/json.hpp"
 
 namespace BRTBase {
@@ -406,7 +406,7 @@ namespace BRTBase {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "BRT library is not in configuration mode");
 					return nullptr;
 				}
-				auto it = std::find_if(binauralFilters.begin(), binauralFilters.end(), [&_binauralFilterID](std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase> & binauralFilterItem) { return binauralFilterItem->GetModelID() == _binauralFilterID; });
+				auto it = std::find_if(binauralFilters.begin(), binauralFilters.end(), [&_binauralFilterID](std::shared_ptr<BRTBilateralFilter::CBilateralFilterBase> & binauralFilterItem) { return binauralFilterItem->GetModelID() == _binauralFilterID; });
 				if (it != binauralFilters.end()) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "A binaural filter with such an ID already exists.");
 					return nullptr;
@@ -841,7 +841,7 @@ namespace BRTBase {
 		std::vector<std::shared_ptr<CListenerBase>>			listeners;			// List of listeners		
 		std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> listenerModels; // List of listener Models
 		std::vector<std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase>> environmentModels; // List of virtual sources environments
-		std::vector<std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase>> binauralFilters;		// List of binaural filters
+		std::vector<std::shared_ptr<BRTBilateralFilter::CBilateralFilterBase>> binauralFilters;		// List of binaural filters
 
 		bool initialized;
 		bool setupModeActivated;

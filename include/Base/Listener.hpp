@@ -173,7 +173,7 @@ namespace BRTBase {
 		*/
 		bool ConnectBinauralFilter(const std::string & _binauralFilterID, Common::T_ear _ear = Common::T_ear::BOTH) {
 
-			std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase> _binauralFilter = brtManager->GetBinauralFilter<BRTBinauralFilter::CBinauralFilterBase>(_binauralFilterID);
+			std::shared_ptr<BRTBilateralFilter::CBilateralFilterBase> _binauralFilter = brtManager->GetBinauralFilter<BRTBilateralFilter::CBilateralFilterBase>(_binauralFilterID);
 			if (_binauralFilter == nullptr) return false;
 
 			return ConnectBinauralFilter(_binauralFilter, _ear);
@@ -185,7 +185,7 @@ namespace BRTBase {
 		 * @param _ear Ear to connect, both by default
 		 * @return True if the connection success
 		*/
-		bool ConnectBinauralFilter(std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase> _binauralFilter, Common::T_ear _ear = Common::T_ear::BOTH) {
+		bool ConnectBinauralFilter(std::shared_ptr<BRTBilateralFilter::CBilateralFilterBase> _binauralFilter, Common::T_ear _ear = Common::T_ear::BOTH) {
 
 			if (_binauralFilter == nullptr) return false;
 			if (_binauralFilter->IsConnectedToListener()) {
@@ -220,7 +220,7 @@ namespace BRTBase {
 		*/
 		bool DisconnectBinauralFilter(const std::string & _binauralFilterID, Common::T_ear _ear = Common::T_ear::BOTH) {
 
-			std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase> _binauralFilter = brtManager->GetBinauralFilter<BRTBinauralFilter::CBinauralFilterBase>(_binauralFilterID);
+			std::shared_ptr<BRTBilateralFilter::CBilateralFilterBase> _binauralFilter = brtManager->GetBinauralFilter<BRTBilateralFilter::CBilateralFilterBase>(_binauralFilterID);
 			if (_binauralFilter == nullptr) return false;
 
 			return DisconnectBinauralFilter(_binauralFilter, _ear);
@@ -232,7 +232,7 @@ namespace BRTBase {
 		 * @param _ear Ear to connect, both by default
 		 * @return True if the connection success
 		*/
-		bool DisconnectBinauralFilter(std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase> _binauralFilter, Common::T_ear _ear = Common::T_ear::BOTH) {
+		bool DisconnectBinauralFilter(std::shared_ptr<BRTBilateralFilter::CBilateralFilterBase> _binauralFilter, Common::T_ear _ear = Common::T_ear::BOTH) {
 
 			if (_binauralFilter == nullptr) return false;			
 
@@ -259,7 +259,7 @@ namespace BRTBase {
 		 * @brief Remove listener model from the list of connected listener models
 		 * @param _listenerModel listener model to remove	
 		 */
-		bool RemoveBinauralFiltersConnected(std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase> _binauralFilter) {
+		bool RemoveBinauralFiltersConnected(std::shared_ptr<BRTBilateralFilter::CBilateralFilterBase> _binauralFilter) {
 			auto it = std::find(binauralFiltersConnected.begin(), binauralFiltersConnected.end(), _binauralFilter);
 			if (it != binauralFiltersConnected.end()) {
 				binauralFiltersConnected.erase(it);
@@ -714,7 +714,7 @@ namespace BRTBase {
 		/////////////////////////
 		CBRTManager* brtManager;							// Pointer to the BRT Manager			
 		std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> listenerModelsConnected;						// Listener models connected to the listener
-		std::vector<std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase>> binauralFiltersConnected; // Binaural filters connected to the listener
+		std::vector<std::shared_ptr<BRTBilateralFilter::CBilateralFilterBase>> binauralFiltersConnected; // Binaural filters connected to the listener
 	};
 }
 #endif;
