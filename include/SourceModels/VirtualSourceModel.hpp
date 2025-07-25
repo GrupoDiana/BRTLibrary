@@ -23,17 +23,16 @@
 #ifndef _SOUND_SOURCE_VIRTUAL_MODEL_HPP
 #define _SOUND_SOURCE_VIRTUAL_MODEL_HPP
 
-//#include <SourceModels/SourceModelBase.hpp>
-#include <SourceModels/SourceSimpleModel.hpp>
 #include <vector>
+#include "SourceModels/SourceOmnidirectionalModel.hpp"
 
 namespace BRTSourceModel {
-	class CVirtualSourceModel : public CSourceSimpleModel {
+	class CVirtualSourceModel : public CSourceOmnidirectionalModel {
 
 	public:			
 
 		CVirtualSourceModel(std::string _sourceID)
-			: CSourceSimpleModel(_sourceID)
+			: CSourceOmnidirectionalModel(_sourceID)
 			, originSourceID {""} {
 			SetSourceType(TSourceType::Virtual);
 		}		
