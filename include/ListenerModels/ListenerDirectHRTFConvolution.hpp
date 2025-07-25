@@ -1,7 +1,7 @@
 ﻿/**
-* \class CListenerHRTFModel
+* \class CListenerDirectHRTFConvolution
 *
-* \brief Declaration of CListenerHRTFModel class
+* \brief Declaration of CListenerDirectHRTFConvolution class
 * \date	June 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
@@ -20,8 +20,8 @@
 * \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 */
 
-#ifndef _CLISTENER_HRTF_MODEL_HPP_
-#define _CLISTENER_HRTF_MODEL_HPP_
+#ifndef _CLISTENER_DIRECT_HRTF_CONVOLUTION_MODEL_HPP_
+#define _CLISTENER_DIRECT_HRTF_CONVOLUTION_MODEL_HPP_
 
 #include <memory>
 #include <ListenerModels/ListenerModelBase.hpp>
@@ -37,7 +37,7 @@
 namespace BRTListenerModel {
 
 	
-	class CListenerHRTFModel : public CListenerModelBase {
+	class CListenerDirectHRTFConvolutionModel : public CListenerModelBase {
 		
 		class CSourceProcessors {
 		public:
@@ -112,7 +112,7 @@ namespace BRTListenerModel {
 		};
 
 	public:
-		CListenerHRTFModel(std::string _listenerModelID, BRTBase::CBRTManager* _brtManager) 
+		CListenerDirectHRTFConvolutionModel(std::string _listenerModelID, BRTBase::CBRTManager* _brtManager) 
 			: CListenerModelBase(_listenerModelID, TListenerModelcharacteristics(true, false, false, true, true, true, true, true, false))
 			, brtManager{ _brtManager }
 			, enableSpatialization{ true }

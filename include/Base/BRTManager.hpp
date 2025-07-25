@@ -815,10 +815,15 @@ namespace BRTBase {
 		/**
 		 * @brief Start audio processing
 		*/
-		void ProcessAll() {
+		void ProcessAll(bool _multiThread = false) {
 			if (setupModeActivated) return;
-			std::thread thread1 = std::thread(&BRTBase::CBRTManager::ProcessAllThread, this);
-			thread1.join();
+			
+			if (!_multiThread) {
+				std::thread thread1 = std::thread(&BRTBase::CBRTManager::ProcessMonoThread, this);
+				thread1.join();
+			} else {
+				ProcessMultiThread();
+			}			
 		}
 		/**
 		 * @brief Executes the received command. To do so, it distributes it to all the connected modules, which are responsible for executing the relevant actions.
@@ -848,11 +853,29 @@ namespace BRTBase {
 		/**
 		 * @brief Start processing on each of the sources.
 		*/
-		void ProcessAllThread() {
-			for (auto it = audioSources.begin(); it != audioSources.end(); it++) (*it)->SetDataReady();
+		void ProcessMonoThread() {
+			for (auto it = audioSources.begin(); it != audioSources.end(); it++) 
+				(*it)->SetDataReady();
 
 			for (auto it = listenerModels.begin(); it != listenerModels.end(); it++)
 				(*it)->ProcessModelWithoutInputsSamples();
+		}
+
+		/**
+		 * @brief Start processing on each of the sources.
+		*/
+		void ProcessMultiThread() {						
+			std::vector<std::thread> threads;
+			
+			for (auto it = audioSources.begin(); it != audioSources.end(); it++) {				
+				threads.push_back(std::move(std::thread(&BRTSourceModel::CSourceModelBase::SetDataReady, *it)));				
+			}
+			for (auto it = listenerModels.begin(); it != listenerModels.end(); it++) {
+				threads.push_back(std::move(std::thread(&BRTListenerModel::CListenerModelBase::ProcessModelWithoutInputsSamples, *it)));
+			}
+			for (auto & thread_i : threads) {
+				thread_i.join();
+			}
 		}
 
 		/**

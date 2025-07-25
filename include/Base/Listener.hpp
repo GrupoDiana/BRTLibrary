@@ -29,7 +29,7 @@
 #include <Connectivity/ExitPointManager.hpp>
 #include <ListenerModels/ListenerModelBase.hpp>
 #include <EnvironmentModels/EnvironmentModelBase.hpp>
-#include <ListenerModels/ListenerHRTFModel.hpp>
+#include <ListenerModels/ListenerDirectHRTFConvolution.hpp>
 #include <Base/ListenerBase.hpp>
 #include <Base/BRTManager.hpp>
 #include <Common/CommonDefinitions.hpp>

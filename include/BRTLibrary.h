@@ -30,10 +30,10 @@
 #include "Base/ListenerBase.hpp"
 #include "SourceModels/SourceOmnidirectionalModel.hpp"
 #include "SourceModels/SourceDirectivityModel.hpp"
-#include "ListenerModels/ListenerHRTFModel.hpp"
-#include "ListenerModels/ListenerAmbisonicHRTFModel.hpp"
-#include "ListenerModels/ListenerEnvironmentBRIRModel.hpp"
-#include "ListenerModels/ListenerAmbisonicEnvironmentBRIRModel.hpp"
+#include <ListenerModels/ListenerDirectHRTFConvolution.hpp>
+#include <ListenerModels/ListenerDirectBRIRConvolution.hpp>
+#include <ListenerModels/ListenerAmbisonicVirtualLoudspeakersModel.hpp>
+#include <ListenerModels/ListenerAmbisonicReverberantVirtualLoudspeakersModel.hpp>
 #include "ProcessingModules//HRTFConvolverProcessor.hpp"
 #include "ProcessingModules/DirectivityTFConvolver.hpp"
 #include "ServiceModules/HRTF.hpp"
