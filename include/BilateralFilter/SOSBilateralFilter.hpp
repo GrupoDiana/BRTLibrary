@@ -24,7 +24,7 @@
 #define _C_SOS_BINAURAL_FILTER_HPP_
 
 #include <Base/BRTManager.hpp>
-#include <BinauralFilter/BilateralFilterBase.hpp>
+#include <BilateralFilter/BilateralFilterBase.hpp>
 #include <ListenerModels/ListenerModelBase.hpp>
 #include <ProcessingModules/BinauralFilter.hpp>
 

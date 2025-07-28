@@ -29,7 +29,7 @@
 #include "ListenerBase.hpp"
 #include "ListenerModels/ListenerModelBase.hpp"
 #include "EnvironmentModels/EnvironmentModelBase.hpp"
-#include "BinauralFilter/BilateralFilterBase.hpp"
+#include "BilateralFilter/BilateralFilterBase.hpp"
 #include "third_party_libraries/nlohmann/json.hpp"
 
 namespace BRTBase {
