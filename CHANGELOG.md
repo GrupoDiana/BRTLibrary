@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.3.0] - 2025-07-29
+
+### Changed
+- The names of all listener models have been changed, including the bilateral filter (previously called binaural) and the omnidirectional source model (previously called simple). 
+This way, a more accurate nomenclature of names is now used, which we believe will be easier to understand. This new nomenclature of names was presented in an article entitled "NEW RELEASE OF THE BINAURAL RENDERING TOOLBOX: INTRODUCING VERSION 2.0" presented at the Acusticum 2025 Forum. https://www.fa-euronoise2025.org/w/forumacusticumeuronoise/getView/posterView?pos=6794b42969545&section=178145&referer=848202
+
+## Fixed
+- Fixed several minor errors in the code that caused compilation errors on platforms other than Visual Studio.
+
 ## [2.2.0] - 2025-04-04
 
 ### Added
