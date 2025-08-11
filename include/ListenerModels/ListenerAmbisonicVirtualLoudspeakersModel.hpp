@@ -20,8 +20,8 @@
 * \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 */
 
-#ifndef _CLISTENER_AMBISONIC_HRTF_MODEL_HPP_
-#define _CLISTENER_AMBISONIC_HRTF_MODEL_HPP_
+#ifndef _CLISTENER_AMBISONIC_VIRTUAL_LOUDSPEAKERS_MODEL_HPP_
+#define _CLISTENER_AMBISONIC_VIRTUAL_LOUDSPEAKERS_MODEL_HPP_
 
 #include <memory>
 #include <Common/ErrorHandler.hpp>
@@ -41,7 +41,7 @@ namespace BRTServices {
 
 namespace BRTListenerModel {
 
-	class CListenerAmbisonicHRTFModel : public CListenerModelBase {
+	class CListenerAmbisonicVirtualLoudspeakersModel : public CListenerModelBase {
 
 		class CSourceToBeProcessed {
 		public:
@@ -102,7 +102,7 @@ namespace BRTListenerModel {
 		};
 
 	public:
-		CListenerAmbisonicHRTFModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) 
+		CListenerAmbisonicVirtualLoudspeakersModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) 
 			: brtManager{ _brtManager }
 			, CListenerModelBase(_listenerID, TListenerModelcharacteristics(true, false, true, true, true, true, false, false, false))
 			, ambisonicOrder{ 1 }

@@ -85,7 +85,7 @@ public:
 				if (sampleCount[i] > 0) {
 					//returnBuffer[i] = mixBuffer[i] / static_cast<float>(sampleCount[i]);					
 					returnBuffer[i] = mixBuffer[i] * temp;
-				}
+				} 						
 			}
 		} else {
 			returnBuffer = mixBuffer;

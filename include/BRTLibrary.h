@@ -28,12 +28,12 @@
 #include "Base/BRTManager.hpp"
 #include "Base/Listener.hpp"
 #include "Base/ListenerBase.hpp"
-#include "ListenerModels/ListenerHRTFModel.hpp"
-#include "ListenerModels/ListenerAmbisonicHRTFModel.hpp"
-#include "ListenerModels/ListenerEnvironmentBRIRModel.hpp"
-#include "ListenerModels/ListenerAmbisonicEnvironmentBRIRModel.hpp"
-#include "SourceModels/SourceSimpleModel.hpp"
+#include "SourceModels/SourceOmnidirectionalModel.hpp"
 #include "SourceModels/SourceDirectivityModel.hpp"
+#include <ListenerModels/ListenerDirectHRTFConvolution.hpp>
+#include <ListenerModels/ListenerDirectBRIRConvolution.hpp>
+#include <ListenerModels/ListenerAmbisonicVirtualLoudspeakersModel.hpp>
+#include <ListenerModels/ListenerAmbisonicReverberantVirtualLoudspeakersModel.hpp>
 #include "ProcessingModules//HRTFConvolverProcessor.hpp"
 #include "ProcessingModules/DirectivityTFConvolver.hpp"
 #include "ServiceModules/HRTF.hpp"
@@ -45,6 +45,6 @@
 #include "Common/EnvelopeDetector.hpp"
 #include "EnvironmentModels/SDNEnvironmentModel.hpp"
 #include "EnvironmentModels/FreeFieldEnvironmentModel.hpp"
-#include "BinauralFilter/SOSBinauralFilter.hpp"
+#include "BilateralFilter/SOSBilateralFilter.hpp"
 
 #endif

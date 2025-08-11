@@ -1,7 +1,7 @@
 ﻿/**
-* \class CSourceSimpleModel
+* \class CSourceOmnidirectionalModel
 *
-* \brief Declaration of CSourceSimpleModel class
+* \brief Declaration of CSourceOmnidirectionalModel class
 * \date	June 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
@@ -27,11 +27,11 @@
 #include <vector>
 
 namespace BRTSourceModel {
-	class CSourceSimpleModel : public CSourceModelBase {
+	class CSourceOmnidirectionalModel : public CSourceModelBase {
 
 	public:			
-		CSourceSimpleModel(std::string _sourceID)
-			: CSourceModelBase(_sourceID, TSourceType::Simple) {			
+		CSourceOmnidirectionalModel(std::string _sourceID)
+			: CSourceModelBase(_sourceID, TSourceType::Omnidirectional) {			
 		}
 
 

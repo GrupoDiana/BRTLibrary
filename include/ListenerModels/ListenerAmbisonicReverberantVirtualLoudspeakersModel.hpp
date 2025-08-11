@@ -1,7 +1,7 @@
 ﻿/**
-* \class CListenerAmbisonicEnvironmentBRIRModel
+* \class CListenerAmbisonicReverberantVirtualLoudspeakersModel
 *
-* \brief Declaration of CListenerAmbisonicEnvironmentBRIRModel class
+* \brief Declaration of CListenerAmbisonicReverberantVirtualLoudspeakersModel class
 * \date	June 2024
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
@@ -20,8 +20,8 @@
 * \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 */
 
-#ifndef _CLISTENER_AMBISONIC_ENVIRONMENT_HRTF_MODEL_HPP_
-#define _CLISTENER_AMBISONIC_ENVIRONMENT_HRTF_MODEL_HPP_
+#ifndef _CLISTENER_AMBISONIC_REVERBERANT_VIRTUAL_LOUDSPEAKERS_MODEL_HPP_
+#define _CLISTENER_AMBISONIC_REVERBERANT_VIRTUAL_LOUDSPEAKERS_MODEL_HPP_
 
 #include <memory>
 #include <ListenerModels/ListenerModelBase.hpp>
@@ -38,7 +38,7 @@
 
 namespace BRTListenerModel {
 
-	class CListenerAmbisonicEnvironmentBRIRModel : public CListenerModelBase {
+	class CListenerAmbisonicReverberantVirtualLoudspeakersModel : public CListenerModelBase {
 
 		class CSourceToBeProcessed {
 		public:
@@ -119,7 +119,7 @@ namespace BRTListenerModel {
 		};
 
 	public:
-		CListenerAmbisonicEnvironmentBRIRModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) 
+		CListenerAmbisonicReverberantVirtualLoudspeakersModel(std::string _listenerID, BRTBase::CBRTManager * _brtManager) 
 			: brtManager{ _brtManager }
 			, CListenerModelBase(_listenerID, TListenerModelcharacteristics(false, true, true, false, false, false, false, false, true))
 			, ambisonicOrder{ 1 }

@@ -30,7 +30,7 @@
 #include <Common/Room.hpp>
 
 namespace BRTSourceModel {
-	class CSourceSimpleModel;
+	class CSourceOmnidirectionalModel;
 	class CSourceDirectivityModel;
 }
 

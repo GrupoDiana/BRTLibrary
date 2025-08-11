@@ -32,7 +32,7 @@ namespace BRTBase {
 }
 namespace BRTSourceModel {
 
-	enum TSourceType { Simple,	Directivity, Virtual };
+	enum TSourceType { Omnidirectional,	Directivity, Virtual };
 	
 	class CSourceModelBase : public BRTConnectivity::CBRTConnectivity {				
 	public:		

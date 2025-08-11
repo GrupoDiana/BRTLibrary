@@ -29,7 +29,7 @@
 #include "ListenerBase.hpp"
 #include "ListenerModels/ListenerModelBase.hpp"
 #include "EnvironmentModels/EnvironmentModelBase.hpp"
-#include "BinauralFilter/BinauralFilterBase.hpp"
+#include "BilateralFilter/BilateralFilterBase.hpp"
 #include "third_party_libraries/nlohmann/json.hpp"
 
 namespace BRTBase {
@@ -406,7 +406,7 @@ namespace BRTBase {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "BRT library is not in configuration mode");
 					return nullptr;
 				}
-				auto it = std::find_if(binauralFilters.begin(), binauralFilters.end(), [&_binauralFilterID](std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase> & binauralFilterItem) { return binauralFilterItem->GetModelID() == _binauralFilterID; });
+				auto it = std::find_if(binauralFilters.begin(), binauralFilters.end(), [&_binauralFilterID](std::shared_ptr<BRTBilateralFilter::CBilateralFilterBase> & binauralFilterItem) { return binauralFilterItem->GetModelID() == _binauralFilterID; });
 				if (it != binauralFilters.end()) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "A binaural filter with such an ID already exists.");
 					return nullptr;
@@ -815,10 +815,15 @@ namespace BRTBase {
 		/**
 		 * @brief Start audio processing
 		*/
-		void ProcessAll() {
+		void ProcessAll(bool _multiThread = false) {
 			if (setupModeActivated) return;
-			std::thread thread1 = std::thread(&BRTBase::CBRTManager::ProcessAllThread, this);
-			thread1.join();
+			
+			if (!_multiThread) {
+				std::thread thread1 = std::thread(&BRTBase::CBRTManager::ProcessMonoThread, this);
+				thread1.join();
+			} else {
+				ProcessMultiThread();
+			}			
 		}
 		/**
 		 * @brief Executes the received command. To do so, it distributes it to all the connected modules, which are responsible for executing the relevant actions.
@@ -836,7 +841,7 @@ namespace BRTBase {
 		std::vector<std::shared_ptr<CListenerBase>>			listeners;			// List of listeners		
 		std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> listenerModels; // List of listener Models
 		std::vector<std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase>> environmentModels; // List of virtual sources environments
-		std::vector<std::shared_ptr<BRTBinauralFilter::CBinauralFilterBase>> binauralFilters;		// List of binaural filters
+		std::vector<std::shared_ptr<BRTBilateralFilter::CBilateralFilterBase>> binauralFilters;		// List of binaural filters
 
 		bool initialized;
 		bool setupModeActivated;
@@ -848,11 +853,29 @@ namespace BRTBase {
 		/**
 		 * @brief Start processing on each of the sources.
 		*/
-		void ProcessAllThread() {
-			for (auto it = audioSources.begin(); it != audioSources.end(); it++) (*it)->SetDataReady();
+		void ProcessMonoThread() {
+			for (auto it = audioSources.begin(); it != audioSources.end(); it++) 
+				(*it)->SetDataReady();
 
 			for (auto it = listenerModels.begin(); it != listenerModels.end(); it++)
 				(*it)->ProcessModelWithoutInputsSamples();
+		}
+
+		/**
+		 * @brief Start processing on each of the sources.
+		*/
+		void ProcessMultiThread() {						
+			std::vector<std::thread> threads;
+			
+			for (auto it = audioSources.begin(); it != audioSources.end(); it++) {				
+				threads.push_back(std::move(std::thread(&BRTSourceModel::CSourceModelBase::SetDataReady, *it)));				
+			}
+			for (auto it = listenerModels.begin(); it != listenerModels.end(); it++) {
+				threads.push_back(std::move(std::thread(&BRTListenerModel::CListenerModelBase::ProcessModelWithoutInputsSamples, *it)));
+			}
+			for (auto & thread_i : threads) {
+				thread_i.join();
+			}
 		}
 
 		/**

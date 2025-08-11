@@ -20,8 +20,8 @@
 * \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 */
 
-#ifndef _CLISTENER_ENVIRONMENT_BRIR_MODEL_HPP_
-#define _CLISTENER_ENVIRONMENT_BRIR_MODEL_HPP_
+#ifndef _CLISTENER_DIRECT_BRIR_CONVOLUTION_MODEL_HPP_
+#define _CLISTENER_DIRECT_BRIR_CONVOLUTION_MODEL_HPP_
 
 #include <memory>
 #include <ListenerModels/ListenerModelBase.hpp>
@@ -36,7 +36,7 @@
 namespace BRTListenerModel {
 
 	
-	class CListenerEnvironmentBRIRModel : public CListenerModelBase {
+	class CListenerDirectBRIRConvolutionModel : public CListenerModelBase {
 		
 		class CSourceProcessors {
 		public:
@@ -117,7 +117,7 @@ namespace BRTListenerModel {
 		};
 
 	public:
-		CListenerEnvironmentBRIRModel(std::string _listenerID, BRTBase::CBRTManager* _brtManager) 
+		CListenerDirectBRIRConvolutionModel(std::string _listenerID, BRTBase::CBRTManager * _brtManager) 
 			: CListenerModelBase(_listenerID, TListenerModelcharacteristics(false, true, false, false, false, false, true, true, true))
 			, brtManager{ _brtManager }
 			, enableSpatialization{ true }

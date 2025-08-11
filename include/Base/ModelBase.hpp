@@ -24,7 +24,7 @@
 #define _C_MODEL_BASE_HPP_
 
 #include <Connectivity/BRTConnectivity.hpp>
-#include <SourceModels/SourceSimpleModel.hpp>
+#include "SourceModels/SourceOmnidirectionalModel.hpp"
 #include <SourceModels/SourceDirectivityModel.hpp>
 #include <SourceModels/VirtualSourceModel.hpp>
 
