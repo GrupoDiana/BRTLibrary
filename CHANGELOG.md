@@ -5,6 +5,11 @@ All notable changes to the Binaural Rendering Toolbox (BRT) will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2025-08-28
+
+### Changed
+- After testing it, we have decided that the normalization feature is not useful, so we have finally removed it from the audio mixer. In fact, including it in the previous release was a mistake.
+From now on, we will revert to the classic behavior of simply adding together buffers from different sources. Any problems with samples that fall outside the dynamic range will need to be addressed from the application's point of view.
 
 ## [2.3.0] - 2025-07-29
 

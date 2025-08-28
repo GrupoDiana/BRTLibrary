@@ -36,14 +36,14 @@ public:
 		: bufferSize(0)
 		, buffersReceived(0)		
 		, mixBuffer(CMonoBuffer<float>())
-		, sampleCount(std::vector<size_t>()) {
+	{
 	}
 
 	CAudioMixer(size_t bufferSize)
 		: bufferSize(bufferSize)
 		, buffersReceived(0)
 		, mixBuffer(CMonoBuffer<float>(bufferSize, 0))
-		, sampleCount(std::vector<size_t>(bufferSize, 0)) {
+	{
 	}
 
 	/**
@@ -54,13 +54,11 @@ public:
 	bool AddBuffer(const CMonoBuffer<float> & _newBuffer) {
 		if (_newBuffer.size() != bufferSize) {
 			return false;
-		}
-		//mixBuffer += _newBuffer;
+		}		
 
 		for (size_t i = 0; i < bufferSize; i++) {
 			if (_newBuffer[i] != 0.0f) { // only add non-zero samples
-				mixBuffer[i] += _newBuffer[i];
-				sampleCount[i]++;
+				mixBuffer[i] += _newBuffer[i];	
 			}
 		}
 
@@ -72,28 +70,24 @@ public:
 		 * @brief Get mixed buffer and reset accumulation
 		 * @return mixed buffer
 		 */
-	CMonoBuffer<float> GetMixedBuffer(bool _normalization = true) {
+	CMonoBuffer<float> GetMixedBuffer(bool _normalization = false) {
 
 		if (buffersReceived == 0) return CMonoBuffer<float>(bufferSize, 0.0f);
 
 		CMonoBuffer<float> returnBuffer(bufferSize);
 
-		if (_normalization) {
+		if (_normalization && buffersReceived > 0) {			
 			// Normalisation: dividing each sample by the number of contributions
-			float temp = 1 / static_cast<float> (buffersReceived);
+			float temp = 1 / static_cast<float>(buffersReceived);
 			for (size_t i = 0; i < bufferSize; i++) {
-				if (sampleCount[i] > 0) {
-					//returnBuffer[i] = mixBuffer[i] / static_cast<float>(sampleCount[i]);					
-					returnBuffer[i] = mixBuffer[i] * temp;
-				} 						
-			}
+				returnBuffer[i] = mixBuffer[i] * temp;
+			}			
 		} else {
 			returnBuffer = mixBuffer;
 		}
 
 		// Reset buffers and counter for next frame
-		std::fill(mixBuffer.begin(), mixBuffer.end(), 0.0f);
-		std::fill(sampleCount.begin(), sampleCount.end(), 0);
+		std::fill(mixBuffer.begin(), mixBuffer.end(), 0.0f);		
 		buffersReceived = 0;
 
 		return returnBuffer;
@@ -103,8 +97,7 @@ private:
 	size_t bufferSize;
 	size_t buffersReceived;			// number of buffers received in the current frame	
 
-	CMonoBuffer<float> mixBuffer; // mixed buffer
-	std::vector<size_t> sampleCount; // count of contributions per sample
+	CMonoBuffer<float> mixBuffer; // mixed buffer	
 };
 }
 #endif
