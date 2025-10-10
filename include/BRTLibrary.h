@@ -45,6 +45,7 @@
 #include "Common/EnvelopeDetector.hpp"
 #include "EnvironmentModels/SDNEnvironmentModel.hpp"
 #include "EnvironmentModels/FreeFieldEnvironmentModel.hpp"
+#include "EnvironmentModels/ISMEnvironmentModel.hpp"
 #include "BilateralFilter/SOSBilateralFilter.hpp"
 
 #endif

@@ -59,7 +59,7 @@ namespace BRTEnvironmentModel {
 		template <typename T>
 		bool ConnectVirtualSourcesToListenerModel(std::shared_ptr<T> _listenerModel) {						
 			bool control = true;
-			for (auto _virtualSource : virtualSources) {
+			for (auto& _virtualSource : virtualSources) {
 				control = control && _listenerModel->ConnectSoundSource(_virtualSource);
 			}
 			return control;
@@ -74,21 +74,21 @@ namespace BRTEnvironmentModel {
 		template <typename T>
 		bool DisconnectVirtualSourcesToListenerModel(std::shared_ptr<T> _listenerModel) {
 			bool control = true;
-			for (auto _virtualSource : virtualSources) {
+			for (auto& _virtualSource : virtualSources) {
 				control = control && _listenerModel->DisconnectSoundSource(_virtualSource);
 			}
 			return control;
 		}
 
-		void SetOriginSourceID(std::string _originSourceID) {
-			for (auto it : virtualSources) {
+		void SetOriginSourceID(const std::string& _originSourceID) {
+			for (auto& it : virtualSources) {
 				it->SetOriginSourceID(_originSourceID);
 			}
 		}
 
-		void SetVirtualSourceBuffer(std::string _virtualSourceID, CMonoBuffer<float>& _buffer) {
+		void SetVirtualSourceBuffer(const std::string& _virtualSourceID, const CMonoBuffer<float>& _buffer) {
 			
-			auto it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
+			auto& it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
 			if (it != virtualSources.end()) {					
 				it[0]->SetBuffer(_buffer);								
 			}
@@ -98,8 +98,8 @@ namespace BRTEnvironmentModel {
 		}
 
 
-		void SetVirtualSourcePosition(std::string _virtualSourceID, Common::CTransform _sourcePosition) {
-			auto it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
+		void SetVirtualSourcePosition(const std::string& _virtualSourceID, const Common::CTransform& _sourcePosition) {
+			auto& it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
 			if (it != virtualSources.end()) {
 				it[0]->SetSourceTransform(_sourcePosition);
 			}
