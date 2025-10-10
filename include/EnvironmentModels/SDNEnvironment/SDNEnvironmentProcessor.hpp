@@ -382,10 +382,10 @@ namespace BRTEnvironmentModel {
 			} 			
 			SetVirtualSourcePosition(GetBRTVirtualSourceID(index), CalculateGlobalPosition(virtualSourcePositions[index]));
 			
-			CMonoBuffer<float> outBuffer = virtualSourceBuffers[index];
-			outBuffer.ApplyGain(gain);
-
-			SetVirtualSourceBuffer(GetBRTVirtualSourceID(index), outBuffer);
+			//CMonoBuffer<float> outBuffer = virtualSourceBuffers[index];
+			//outBuffer.ApplyGain(gain);
+			virtualSourceBuffers[index].ApplyGain(gain);
+			SetVirtualSourceBuffer(GetBRTVirtualSourceID(index), virtualSourceBuffers[index]);
 		}
 		
 		/**

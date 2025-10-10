@@ -40,7 +40,11 @@ namespace Common {
 	class CRoom {
 	public:
 		CRoom()
-			: shoeBox { false } { }
+			: shoeBox { false }
+			, shoeBoxHeight {0}
+			, shoeBoxLength { 0 }
+			, shoeBoxWidth { 0 }
+		{ }
 
 		/** \brief Initializes the object with a shoebox room
 		*	\details creates six walls conforming a shoebox room with 0,0,0 at the center. It must be used right after
@@ -112,7 +116,7 @@ namespace Common {
 		*	\details creates a room with arbitrary geometry by means of defining all its corners and the walls as polygons with those corners
 		*	\param [in] roomGeometry: struct containing all the vertices and walls
 		*/
-		void SetupRoomGeometry(TRoomGeometry roomGeometry) {
+		void SetupRoomGeometry(const TRoomGeometry& roomGeometry) {
 			walls.clear();
 			for (int i = 0; i < roomGeometry.walls.size(); i++) {
 				CWall tempWall;
@@ -129,14 +133,17 @@ namespace Common {
 					 called once per wall to be inserted, after creating a new empty room.
 		*	\param [in] Wall to be inserted.
 		*/
-		void InsertWall(CWall _newWall) {
+		void InsertWall(const CWall& _newWall) {
 			walls.push_back(_newWall);
 		};
 
 		/** \brief Returns a vector of walls containing all the walls of the room.
 		*	\param [out] Walls: vector of walls with all the walls of the room.
 		*/
-		std::vector<CWall> GetWalls() {
+		/*std::vector<CWall> GetWalls() {
+			return walls;
+		}*/
+		const std::vector<CWall>& GetWalls() const {
 			return walls;
 		}
 
@@ -144,7 +151,7 @@ namespace Common {
 		*	\details Sets the i-th wall of the room as active and therefore reflective.
 		*	\param [in] index of the wall to be active.
 		*/
-		void EnableWall(int wallIndex) {
+		void EnableWall(const int& wallIndex) {
 			if (walls.size() > wallIndex) {
 				walls.at(wallIndex).Enable();
 			}
@@ -154,7 +161,7 @@ namespace Common {
 		*	\details Sets the i-th wall of the room as not active and therefore transparent.
 		*	\param [in] index of the wall to be active.
 		*/
-		void DisableWall(int wallIndex) {
+		void DisableWall(const int& wallIndex) {
 			if (walls.size() > wallIndex) {
 				walls.at(wallIndex).Disable();
 			}
@@ -188,14 +195,14 @@ namespace Common {
 		*	\param [in] index of the wall.
 		*	\param [in] absortion coeficients for each band (frequency dependent)
 		*/
-		bool SetWallAbsortion(int wallIndex, std::vector<float> absortionPerBand) {
+		bool SetWallAbsortion(int wallIndex, const std::vector<float>& absortionPerBand) {
 			if (!IsThereThisWall(wallIndex)) return false;
 			return walls.at(wallIndex).SetAbsortion(absortionPerBand);
 		};
 
 		/** \brief Sets the absortion coeficient (frequency dependent) of all walls
 		*/
-		bool SetAllWallsAbsortion(std::vector<float> absortionPerBand) {
+		bool SetAllWallsAbsortion(const std::vector<float>& absortionPerBand) {
 			bool control = true;
 			int wallsNumber = walls.size();
 			for (int i = 0; i < wallsNumber; i++) {
@@ -204,14 +211,24 @@ namespace Common {
 			return control;
 		}
 
+		/**
+		 * @brief Gets the absortion coefficients of all the walls in the room
+		 * @param _wallsAbsortions 
+		 */
+		void GetAllWallsAbsortion(std::vector<std::vector<float>> & _wallsAbsortions) const {
+			_wallsAbsortions.clear();
+			for (auto & wall: walls) {
+				_wallsAbsortions.push_back(wall.GetAbsortionBand());
+			}						
+		}
 		
-
 		/** \brief Returns a vector of image rooms
 		*	\details creates an image (specular) room for each wall of this room and returns a vector contoining them.
 		*	\param [out] ImageRooms: vector containing all image rooms of this room.
 		*/
-		std::vector<CRoom> GetImageRooms() {
-			std::vector<CRoom> roomList;
+		void getImageRooms(std::vector<CRoom> & roomList) const {
+		//std::vector<CRoom> GetImageRooms() {			
+			roomList.clear();
 			for (int i = 0; i < walls.size(); i++) {
 				if (walls.at(i).IsActive()) {
 					CRoom tempRoom;
@@ -222,7 +239,7 @@ namespace Common {
 					roomList.push_back(tempRoom);
 				}
 			}
-			return roomList;
+			//return roomList;
 		};
 
 		/** \brief Checks wether a 3D point is inside the room or not.
@@ -233,11 +250,10 @@ namespace Common {
 		*	\param [out] distance to nearest wall passed by reference
 		*	\param [out] Result: returned boolean indicating if the point is inside the room (true) or not (false)
 		*/
-		bool CheckPointInsideRoom(Common::CVector3 point, float & distanceNearestWall) {
+		bool CheckPointInsideRoom(const Common::CVector3 & point, float & distanceNearestWall) const {
 			float distanceToPlane = FLT_MAX;
-			bool inside;
-
-			inside = true;
+			bool inside = true;
+			
 			for (int i = 0; i < walls.size(); i++) {
 				if (walls.at(i).IsActive()) {
 
@@ -289,7 +305,7 @@ namespace Common {
 		*	\details The center is calculated as the average of the centers of the walls
 		*	\param [out] center: point (CVector3) which is the center of the room.
 		*/
-		Common::CVector3 GetCenter() {
+		Common::CVector3& GetCenter() const {
 			Common::CVector3 center = Common::CVector3::ZERO();
 
 			if (walls.size() > 0) {

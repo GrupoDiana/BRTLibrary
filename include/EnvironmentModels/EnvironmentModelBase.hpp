@@ -104,6 +104,11 @@ namespace BRTEnvironmentModel {
 			return (_listenerModelID != "");			
 		}
 
+
+		void SetupRoom(Common::CRoom& _room) {
+			roomDefinition = _room;
+		}
+
 		/**
 		 * @brief Set up a shoebox room
 		 * @param length extension of the room along the X axis
@@ -122,7 +127,7 @@ namespace BRTEnvironmentModel {
 		 * @brief Get room definition
 		 * @return Room defined
 		 */
-		Common::CRoom GetRoom() {
+		Common::CRoom& GetRoom() {
 			return roomDefinition;
 		}
 
@@ -133,7 +138,7 @@ namespace BRTEnvironmentModel {
 		 * @param wallIndex index of the wall
 		 * @param absortion absortion coeficient (frequency independent)
 		 */
-		bool SetRoomWallAbsortion(int wallIndex, float absortion) {
+		bool SetRoomWallAbsortion(int& wallIndex, float& absortion) {
 			if (roomDefinition.SetWallAbsortion(wallIndex, absortion)) {				
 				UpdateRoomWallAbsortion(wallIndex);
 				return true;
@@ -146,7 +151,7 @@ namespace BRTEnvironmentModel {
 		 *	\details Sets the absorption coeficient (absorved energy / incident energy) of each of the nine bands for the i-th wall of the room
 		 * @param absortion absortion coeficient (frequency independent)
 		 */ 
-		bool SetRoomAllWallsAbsortion(float _absortion) {
+		bool SetRoomAllWallsAbsortion(float& _absortion) {
 			if (roomDefinition.SetAllWallsAbsortion(_absortion)) {
 				UpdateRoomAllWallsAbsortion();
 				return true;
@@ -161,7 +166,7 @@ namespace BRTEnvironmentModel {
 		 * @param absortionPerBand absortion coeficients for each band (frequency dependent). 9 bands are expected, 
 								the centre frequencies of which are as follows:	[62.5, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]Hz
 		 */
-		bool SetRoomWallAbsortion(int wallIndex, std::vector<float> absortionPerBand) {
+		bool SetRoomWallAbsortion(int wallIndex, const std::vector<float>& absortionPerBand) {
 			if (roomDefinition.SetWallAbsortion(wallIndex, absortionPerBand)) {
 				UpdateRoomWallAbsortion(wallIndex);
 				return true;
@@ -175,7 +180,7 @@ namespace BRTEnvironmentModel {
 		 * @param absortionPerBand absortion coeficients for each band (frequency dependent). 9 bands are expected, 
 								the centre frequencies of which are as follows:	[62.5, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]Hz
 		 */
-		bool SetRoomAllWallsAbsortion(std::vector<float> absortionPerBand) {
+		bool SetRoomAllWallsAbsortion(const std::vector<float>& absortionPerBand) {
 			if (roomDefinition.SetAllWallsAbsortion(absortionPerBand)) {
 				UpdateRoomAllWallsAbsortion();
 				return true;
@@ -200,7 +205,8 @@ namespace BRTEnvironmentModel {
 		}		
 
 	private:
-		//std::string environmentModelID;															// Store unique enviroment ID	
+		
+	protected:
 		Common::CRoom roomDefinition;
 	};
 }
