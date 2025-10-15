@@ -42,9 +42,10 @@ namespace BRTEnvironmentModel {
 			, initialized { false }
 			, setupDone { false }
 			, enableProcessor { true }
+			, virtualSourcesConnectedToListener { false }
 			, originalSourceID { "" }
 			//, muteLoS { false }
-			, muteReverbPath { false }			
+			, muteReverbPath { false }		
 			, gain {1.0f} {
 
 			CreateSamplesEntryPoint("inputSamples");
@@ -92,17 +93,34 @@ namespace BRTEnvironmentModel {
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "The ISM environment processor is not initialized");
 				return false;
 			}
-
-			if (setupDone) { 
-				// It is done here or by the ISMEnvironmentModel? 
-				// Disconnect all the connections with the listenerModel
-				// Remove all the virtual sources
-				// Setup again				
-			}
+			if (setupDone) {
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "The ISM environment processor is already set up. Call ResetVirtualSources() before setting it up again.");
+				return false;
+			}			
 			
 			InitISMEnvironment(_reflectionOrder, _maxDistanceSourcesToListener, _windowSlopeDistance, _room);
 			setupDone = true;
 			return true;
+		}
+
+		/**
+		 * @brief Resets the virtual sources by disconnecting from the listener model, removing all virtual sources, and marking setup as incomplete.
+		 * @param _listenerModel A shared pointer to the listener model to disconnect from.
+		 * @return Returns a boolean value indicating the success or failure of the reset operation.
+		 */
+		bool ResetVirtualSources(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
+			bool result = DisconnectToListenerModel(_listenerModel);
+			if (!result && virtualSourcesConnectedToListener) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There was an error disconnecting the virtual sources from the listener model");
+				return false;
+			}
+			result = RemoveBRTVirtualSources(); // Remove all the virtual sources			
+			if (!result) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There was an error removing the virtual sources");
+				return false;
+			}
+			setupDone = false;
+			return result;
 		}
 
 		/**
@@ -133,8 +151,14 @@ namespace BRTEnvironmentModel {
 		 * @param _listenerModel Listener model to connect
 		 * @return True if the connection was successful
 		 */
-		bool ConnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
-			return ConnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
+		bool ConnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {			
+			bool result = ConnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
+			if (result) {
+				virtualSourcesConnectedToListener = true;
+			} else {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There was an error connecting the virtual sources to the listener model");
+			}
+			return result;
 		}
 
 		/**
@@ -142,8 +166,14 @@ namespace BRTEnvironmentModel {
 		 * @param _listenerModel Listener model to disconnect
 		 * @return True if the disconnection was successful
 		 */
-		bool DisconnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
-			return DisconnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
+		bool DisconnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {			
+			bool result=  DisconnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
+			if (result) {
+				virtualSourcesConnectedToListener = false;
+			} else {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There was an error disconnecting the virtual sources from the listener model");
+			}
+			return result;
 		}
 
 		/**
@@ -215,8 +245,16 @@ namespace BRTEnvironmentModel {
 			if (!initialized) {	
 				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "The SDN environment processor is not initialized");
 				return;
+			}					
+			if (!setupDone) { 	
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "The ISM environment processor is not setup");
+				return;
 			}
-					
+			if (!virtualSourcesConnectedToListener) {
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "The virtual sources are not connected to a listener model");
+				return;
+			}
+
 			// Get data from entry points
 			CMonoBuffer<float> inBuffer = GetSamplesEntryPoint("inputSamples")->GetData();
 			Common::CTransform sourceLocation = CalculateLocalPosition(GetPositionEntryPoint("sourcePosition")->GetData());
@@ -337,7 +375,7 @@ namespace BRTEnvironmentModel {
 		* @param roomDimensions Room dimensions in meters expressed as a CVector3 with form {x, y, z}
 		*/
 		void InitISMEnvironment(const int & order, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, const Common::CRoom & _room) {
-						
+			if (!initialized && setupDone) return; // It is not initialized or it is already setup
 			
 			Common::CTransform sourceTransform = GetPositionEntryPoint("sourcePosition")->GetData();			
 			Common::CTransform listenerTransform = GetPositionEntryPoint("listenerPosition")->GetData();
@@ -352,24 +390,28 @@ namespace BRTEnvironmentModel {
 			virtualSourcePositions = std::vector<Common::CTransform>(numberOfImageSources);
 
 			CreateBRTVirtualSources(numberOfImageSources);	
-
-			SyncAllVirtualSourcesToModel();
-
-			
-
-			//Prepare(globalParameters.GetSampleRate(), roomDimensions, sourcePosition, listenerPosition, virtualSourcePositions);
+			SyncAllVirtualSourcesToModel();						
 		}
 			
 		/**
 		 * @brief Create the BRT virtual sources
 		 */
 		void CreateBRTVirtualSources(size_t numberOfSources) {
-
 			for (int i = 0; i < numberOfSources; i++) {
 				CreateVirtualSource(GetBRTVirtualSourceID(i), originalSourceID);
 			}
 		}
-
+		
+		/**
+		 * @brief Removes all BRT virtual sound sources managed by the BRT manager.
+		 */
+		bool RemoveBRTVirtualSources() {
+			bool result = true;
+			for (int i = 0; i < virtualSourceBuffers.size(); i++) {
+				result = result && brtManager->RemoveSoundSource(GetBRTVirtualSourceID(i));
+			}
+			return result;
+		}
 		/**
 		 * @brief Sync the virtual sources to the model
 		 */
@@ -387,13 +429,9 @@ namespace BRTEnvironmentModel {
 
 			if (muteReverbPath) {
 				std::fill(virtualSourceBuffers[index].begin(), virtualSourceBuffers[index].end(), 0);				
-			}			
-			
-			SetVirtualSourcePosition(GetBRTVirtualSourceID(index), virtualSourcePositions[index]);			
-			//CMonoBuffer<float> outBuffer = virtualSourceBuffers[index];
-			//outBuffer.ApplyGain(10);
+			}						
+			SetVirtualSourcePosition(GetBRTVirtualSourceID(index), virtualSourcePositions[index]);						
 			virtualSourceBuffers[index].ApplyGain(gain);
-
 			SetVirtualSourceBuffer(GetBRTVirtualSourceID(index), virtualSourceBuffers[index]);
 		}
 		
@@ -402,7 +440,7 @@ namespace BRTEnvironmentModel {
 		 * @param wallIndex Index of the wall
 		 * @return ID of the wall
 		 */
-		std::string GetBRTVirtualSourceID(int _index) {			
+		std::string GetBRTVirtualSourceID(int _index) const {			
 			return originalSourceID + "_ISM_VirtualSource_" + std::to_string(_index);						
 		}
 		
@@ -421,12 +459,12 @@ namespace BRTEnvironmentModel {
 		bool initialized;
 		bool setupDone;
 		bool enableProcessor;				
+		bool virtualSourcesConnectedToListener; // Flag to know if the virtual sources are connected to a listener model
 		//bool muteLoS;										// Direct Path mute
 		bool muteReverbPath; // Reverb Path mute
 
 		float gain;
-
-		//Common::CVector3 globalCoordinatesRoomCentre; 
+		 
 		
 		size_t numberOfImageSources;
 	};

@@ -34,17 +34,7 @@
 
 //#include <Common/CascadeGraphicEq9OctaveBands.h>
 
-namespace BRTEnvironmentModel {	
-	
-	//Struct to store all the data of the image sources
-	struct TImageSourceData {
-		Common::CVector3 location; //Location of the image source
-		bool visible; //If the source is visible it should be rendered
-		float visibility; //1 if visible, 0 if not, something in the middle if in the transition, where the transition is +/-VISIBILITY_MARGIN width
-		std::vector<Common::CWall> reflectionWalls; //list of walls where the source has reflected (last reflection first)
-		std::vector<float> reflectionBands; //coeficients, for each octave Band, to be applied to simulate walls' absortion
-	};
-
+namespace BRTEnvironmentModel {			
 	class CISMSourceImage {
 	public:
 		CISMSourceImage(std::shared_ptr<CISMParameters> _ISMParameters)
@@ -246,7 +236,7 @@ namespace BRTEnvironmentModel {
 		void UpdateImageWallsAbsorptionCoefficients() {
 			std::vector<float> absorptionCoefficients = std::vector<float>(NUM_BAND_ABSORTION, 1.0f);
 			for (auto& wall : reflectionWallsPath) {
-				AddCoefficientsFromWall(absorptionCoefficients, wall); // Calculate EQ
+				AddCoefficientsFromWall(absorptionCoefficients, wall); // Calculate EQ filters 
 			}
 			reflectionBands.assign(absorptionCoefficients.begin(), absorptionCoefficients.end());
 			//eq.SetCommandGains(ISMParameters->sampleRate, absorptionCoefficients);

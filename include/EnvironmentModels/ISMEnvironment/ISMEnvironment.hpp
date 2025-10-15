@@ -30,9 +30,11 @@
 #include "ISMSourceImage.hpp"
 
 namespace BRTEnvironmentModel {
-
+	
 	class CISMEnvironment {
-
+	
+		constexpr static float visibilityThreshold = 0.00001; // Threshold to consider a source as audible (visible)
+	
 	public:
 		CISMEnvironment()
 			: setupDone{ false }
@@ -144,8 +146,10 @@ namespace BRTEnvironmentModel {
 		}
 
 		void Process(CMonoBuffer<float> & _inBuffer
-			, const Common::CTransform & _sourceTransform, const Common::CTransform & _listenerTransform,
-			std::vector<CMonoBuffer<float>> & _outBuffers, std::vector<Common::CTransform> & _virtualSourcePositions) 
+			, const Common::CTransform & _sourceTransform
+			, const Common::CTransform & _listenerTransform
+			, std::vector<CMonoBuffer<float>> & _outBuffers
+			, std::vector<Common::CTransform> & _virtualSourcePositions) 
 		{
 		
 			std::lock_guard<std::mutex> l(mutex);
@@ -188,7 +192,7 @@ namespace BRTEnvironmentModel {
 			if ((_listenerPosition != ISMParameters->listenerPosition) && (_sourcePosition != sourceLocation)) {
 				ISMParameters->listenerPosition = _listenerPosition;
 				sourceLocation = _sourcePosition;
-				UpdateImageSourcesTreeWithNewSourcePosition();
+				UpdateImageSourcesTreeWithNewSourcePosition();				
 			} else if (_listenerPosition != ISMParameters->listenerPosition) {
 				ISMParameters->listenerPosition = _listenerPosition;
 				UpdateImageSourcesTreeWithNewListenerPosition();
@@ -201,23 +205,37 @@ namespace BRTEnvironmentModel {
 
 		/**
 		 * @brief Updates the listener position in ISM parameters.
+		 * @details When the listener position changes, the visibility of image sources may also change.
 		 * @param _listenerTransform 
 		 */
 		void UpdateImageSourcesTreeWithNewListenerPosition() {
 			if (!setupDone) return;
 			if (imageSources != nullptr) {
 				imageSources->UpdateImagesTreeVisibilities();
-				UpdateImageSourceDataFromImageTree();				
+				ActionsAfterUpdateImageSourcePositionsOrVisibilities();		
 			}			
 		}
-
+		/**
+		 * @brief Updates the image sources tree with a new source position if setup is complete.
+		 * @details When the source position changes, both the positions and visibilities of image sources may change.
+		 */
 		void UpdateImageSourcesTreeWithNewSourcePosition() { 
 			if (!setupDone) return;
 
 			if (imageSources != nullptr) {
 				imageSources->UpdateSourceLocation(sourceLocation);
-				UpdateImageSourceDataFromImageTree();
+				ActionsAfterUpdateImageSourcePositionsOrVisibilities();
 			}			
+		}
+
+		/**
+		 * @brief Performs a series of updates after image source positions or visibilities have changed.
+		 */
+		void ActionsAfterUpdateImageSourcePositionsOrVisibilities() {			
+			UpdateImageSourceDataFromImageTree();
+			UpdateImageSourcesPositionList();
+			UpdateWaveGuideFiltersVisibility();
+			ShowImageSourceData(imageSourcesDataList); // TO DELETE
 		}
 
 		/**
@@ -228,21 +246,19 @@ namespace BRTEnvironmentModel {
 			
 			imageSourcesDataList.clear();			
 			imageSources->getImageSourcesData(imageSourcesDataList);
-			UpdateImageSourcesPositionList();
-
-			ShowImageSourceData(imageSourcesDataList); // TO remove
+			UpdateImageSourcesPositionList();			
 		}
-
+		
 		/**
 		 * @brief Updates images source positions after any change
 		 */
-		void UpdateImageSourcesPositionList() {
+		void UpdateImageSourcesPositionList() {			
 			imageSourcesPositionList.clear();
 			for (auto & image : imageSourcesDataList) {
 				imageSourcesPositionList.push_back(image.location);
 			}
 		}
-
+		
 		/** \brief Sets the maximum distance between the listener and each source image to be considered visible
 		*	\details Sources that exceed the maximum distance will be considered non-visible sources.
 		*	\param [in] maxDistanceSourcesToListener
@@ -264,8 +280,37 @@ namespace BRTEnvironmentModel {
 		void SetupWaveGuideProcessors() { 			
 			listOfChannelSourceListener.clear();			
 			listOfChannelSourceListener.resize(imageSourcesPositionList.size());
+			SetupWaveGuidesFilters();
 			EnablePropagationDelay();
 		}
+
+		/**
+		 * @brief Sets up filters for all waveguide processors in the list using the reflection bands from the image sources data.
+		 */ 
+		void SetupWaveGuidesFilters() {
+			if (listOfChannelSourceListener.size() != imageSourcesDataList.size()) return;
+			for (int i = 0; i < listOfChannelSourceListener.size(); i++) {				
+				listOfChannelSourceListener[i].SetupFilter(imageSourcesDataList[i].reflectionBands);
+				if (imageSourcesDataList[i].visibility > visibilityThreshold) {
+					listOfChannelSourceListener[i].EnablePropagationFilter();
+				} else {
+					listOfChannelSourceListener[i].DisablePropagationFilter();
+				}
+			}
+		}
+		/**
+		 * @brief Updates the visibility of waveguide filters based on the visibility of image sources.
+		 */
+		void UpdateWaveGuideFiltersVisibility() {
+			if (listOfChannelSourceListener.size() != imageSourcesDataList.size()) return;
+			for (int i = 0; i < listOfChannelSourceListener.size(); i++) {
+				if (imageSourcesDataList[i].visibility > visibilityThreshold) {
+					listOfChannelSourceListener[i].EnablePropagationFilter();
+				} else {
+					listOfChannelSourceListener[i].DisablePropagationFilter();
+				}
+			}
+		}		
 
 		/**
 		 * @brief Enables propagation delay for all waveguide processors in the list.
@@ -314,7 +359,8 @@ namespace BRTEnvironmentModel {
 		// TO remove
 		void ShowImageSourceData(const std::vector<TImageSourceData> & data) {
 			Common::CVector3 listenerLocation = ISMParameters->listenerPosition;
-			
+			int numVisibleSources = 0;
+
 			auto w2 = std::setw(2);
 			auto w5 = std::setw(5);
 			auto w6 = std::setw(6);
@@ -337,8 +383,10 @@ namespace BRTEnvironmentModel {
 			std::cout << "|    X       Y       Z  |  \n";
 			std::cout << "-------------+-------+-------------------------------------------------------+-----------------------+--------\n";
 			for (int i = 0; i < data.size(); i++) {
-				if (data.at(i).visible)
+				if (data.at(i).visible) {
 					std::cout << "VISIBLE ";
+					numVisibleSources++;
+				}
 				else
 					std::cout << "        ";
 				std::cout << w5 << std::fixed << std::setprecision(2) << data.at(i).visibility; //print source visibility
@@ -355,7 +403,7 @@ namespace BRTEnvironmentModel {
 				std::cout << " (" << data.at(i).reflectionWalls.front().GetMinimumDistanceFromWall(data.at(i).reflectionWalls.back()) << ")" << "\n";
 			}
 						
-			
+			std::cout << "Visible sources: " << numVisibleSources << " out of " << data.size() << " total sources.\n";
 			std::cout << "Source location = " << std::to_string(sourceLocation.x) << ", " << std::to_string(sourceLocation.y) << ", " << std::to_string(sourceLocation.z) << "\n";
 			std::cout << "Listener location = " << std::to_string(listenerLocation.x) << ", " << std::to_string(listenerLocation.y) << ", " << std::to_string(listenerLocation.z) << "\n";
 												

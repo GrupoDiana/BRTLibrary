@@ -64,6 +64,14 @@ namespace BRTEnvironmentModel {
 			}
 			
 			/**
+			 * @brief Resets the virtual sources associated with the specified listener model.
+			 * @param _listenerModel A shared pointer to the listener model whose virtual sources will be reset.
+			 */
+			void ResetVirtualSources(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
+				ISMProcessor->ResetVirtualSources(_listenerModel);
+			}
+			
+			/**
 			 * @brief Set Wall absortion coefficientes per band
 			 * @param _wallIndex Wall where the coefficients are to be placed. 
 			 * @param _wallAbsortions absortion coefficients per band
@@ -155,7 +163,10 @@ namespace BRTEnvironmentModel {
 		{ 			
 			// Default room
 			roomDefinition.SetupShoeBox(9.5f, 13.38f, 4.56f); // TODO delete me after testing
-			//roomDefinition.SetupShoeBox(8, 5, 3); // TODO delete me after testing											faultRoom();
+			//roomDefinition.SetupShoeBox(8, 5, 3); // TODO delete me after testing		
+			roomDefinition.SetAllWallsAbsortion({ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 }); // TODO delete me after testing
+			reflectionOrder = 5; // TODO delete me after testing
+			maxDistanceSourcesToListener = 10; // TODO delete me after testing
 		}
 
 		/**
@@ -322,15 +333,20 @@ namespace BRTEnvironmentModel {
 
 
 		/**
-		 * @brief Update room geometry. Called from father class
+		 * @brief Update room geometry in all sources processors. Called from father class
 		*/
 		void UpdateRoomGeometry() override {
 			std::lock_guard<std::mutex> l(mutex);			
-			// Update Room dimensions and Room Centre in all sources processors
-			for (auto & it : sourcesConnectedProcessors) {
-				// Disconnect all the connections with the listenerModel
-				// Remove all the virtual sources
-				// Setup again
+			
+			// Get listener Model pointer
+			std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTListenerModel::CListenerModelBase>(GetIDEntryPoint("listenerModelID")->GetData());
+			if (_listenerModel == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This environment has not been connected to a listener Model.");
+				return;
+			}
+
+			for (auto & it : sourcesConnectedProcessors) {							
+				it.ResetVirtualSources(_listenerModel);
 				it.Setup(reflectionOrder, maxDistanceSourcesToListener, windowSlopeDistance, roomDefinition);				
 			}
 		}
@@ -339,54 +355,27 @@ namespace BRTEnvironmentModel {
 		 * @brief Update room wall absortion. Called from father class
 		 * @param _wallIndex Pointer to the source
 		*/
-		void UpdateRoomWallAbsortion(int _wallIndex) override {
-			std::lock_guard<std::mutex> l(mutex);			
-			std::vector<float> absortionBands = GetRoom().GetWalls().at(_wallIndex).GetAbsortionBand();			
-			
-			//The SDN has one less band, it does not have the lowest frequency band.
-			std::vector<float> _sdnWallAbsortion(absortionBands.begin() + 1, absortionBands.end());
-			for (auto& it : sourcesConnectedProcessors) {
-				//it.SetWallAbsortion(ToSDNWallIndex(_wallIndex), _sdnWallAbsortion);
-			}
-		}
+		//void UpdateRoomWallAbsortion(int _wallIndex) override {
+		//	std::lock_guard<std::mutex> l(mutex);			
+		//	std::vector<float> absortionBands = GetRoom().GetWalls().at(_wallIndex).GetAbsortionBand();			
+		//	
+		//	//The SDN has one less band, it does not have the lowest frequency band.
+		//	std::vector<float> _sdnWallAbsortion(absortionBands.begin() + 1, absortionBands.end());
+		//	for (auto& it : sourcesConnectedProcessors) {
+		//		//it.SetWallAbsortion(ToSDNWallIndex(_wallIndex), _sdnWallAbsortion);
+		//	}
+		//}
 		
 		/**
 		 * @brief Update room all walls absortion. Called from father class
 		 */
-		void UpdateRoomAllWallsAbsortion() override {			
-			std::vector<Common::CWall> walls = GetRoom().GetWalls();
-			for (int _wallIndex = 0; _wallIndex < walls.size(); _wallIndex++) {
-				//UpdateRoomWallAbsortion(ToSDNWallIndex(_wallIndex));				
-			}
-		}
-
-		/**
-		 * @brief 
-		 * @param _wallIndex 
-		 * @return 
-		 */
-		//int ToSDNWallIndex(int _wallIndex) {
-		//	// BRT [front, left, right, back, floor, ceiling]
-		//	// SDN [X0, XSize, Y0, YSize, Z0, ZSize]
-		//				
-		//	switch (_wallIndex) {
-		//	case 0:
-		//		return 1; // front -> XSize
-		//	case 1:
-		//		return 3; // left -> YSize
-		//	case 2:
-		//		return 2; // right -> Y0
-		//	case 3:
-		//		return 0; // back -> X0
-		//	case 4:
-		//		return 4; // floor -> Z0
-		//	case 5:
-		//		return 5; // ceiling -> ZSize
-		//	default:
-		//		return -1;
+		//void UpdateRoomAllWallsAbsortion() override {			
+		//	std::vector<Common::CWall> walls = GetRoom().GetWalls();
+		//	for (int _wallIndex = 0; _wallIndex < walls.size(); _wallIndex++) {
+		//		//UpdateRoomWallAbsortion(ToSDNWallIndex(_wallIndex));				
 		//	}
 		//}
-
+		
 		/**
 		 * @brief Update Configuration in all source processor
 		*/
