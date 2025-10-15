@@ -30,7 +30,6 @@
 #include <vector>
 #include <memory>
 
-//using namespace std;  //TODO: Try to avoid this
 
 namespace Common {
 
@@ -122,19 +121,31 @@ namespace Common {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void Process(CMonoBuffer <float> & buffer)
-		{
-			//SET_RESULT(RESULT_OK, "");
-			/*for (std::size_t c = 0; c < filters.size(); c++)
-			{
-				std::shared_ptr<CBiquadFilter> f = filters[c];
-				if (f != NULL)
-					f->Process(buffer);
-			}*/
-
+		{			
 			for (std::shared_ptr<CBiquadFilter> itFilter : filters) {
 				if (itFilter != nullptr)
 				{
 					itFilter->Process(buffer);
+				}
+			}
+		}
+
+		/**
+		 * @brief Processes a mono audio buffer through a sequence of biquad filters.
+		 * @param buffer Reference to the input mono buffer to be processed.
+		 * @param outBuffer Reference to the output mono buffer where processed data is stored.
+		 */
+		void Process(const CMonoBuffer<float> & buffer, CMonoBuffer<float> & outBuffer) {
+			
+			for (std::size_t c = 0; c < filters.size(); c++) {
+				/*shared_ptr<CBiquadFilter> f = filters[c];
+				if (f != NULL)
+					f->Process(buffer, outBuffer);
+				buffer = outBuffer;*/
+				if (filters[c]!= nullptr)
+				{
+					filters[c]->Process(buffer, outBuffer);
+					//buffer = outBuffer;
 				}
 			}
 		}
