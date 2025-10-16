@@ -28,7 +28,7 @@
 #include <Common/Buffer.hpp>
 #include <Common/Vector3.hpp>
 #include <Common/GlobalParameters.hpp>
-#include <boost/circular_buffer.hpp>
+#include "boost/circular_buffer.hpp"
 
 namespace Common {
 	class CWaveguide

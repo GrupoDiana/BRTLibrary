@@ -5,7 +5,7 @@
 *		   It also allows to define a room, in the shape of a shoebox, in a quick way. 
 * \date    July 2021
 * 
-* \authors  Developer's team (University of Malaga), in alphabetical order: F. Arebola-Pérez, M. Cuevas-Rodríguez, D. Gonzalez-Toledo and A. Reyes-Lecuona ||
+* \authors  Developer's team (University of Malaga), in alphabetical order: F. Arebola-PÃ©rez, M. Cuevas-RodrÃ­guez, D. Gonzalez-Toledo and A. Reyes-Lecuona ||
 * Coordinated by A. Reyes-Lecuona (University of Malaga) ||
 *
 * \b Copyright: University of Malaga
@@ -28,6 +28,7 @@
 #include <vector>
 #include <Common/Vector3.hpp>
 #include <Common/Wall.hpp>
+#include <cfloat>
 
 namespace Common { 
 	
