@@ -48,7 +48,7 @@ namespace BRTEnvironmentModel {
 			: sampleRate{ 48000 }
 			, maxDistanceSourcesToListener{ 100 }
 			, transitionMeters { 0 }
-			, staticDistanceCriterion{ true }
+			, staticDistanceCriterion{ false }
 			, listenerPosition{ Common::CVector3(0, 0, 0) }
 		{			
 		}
