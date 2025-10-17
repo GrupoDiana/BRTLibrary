@@ -159,13 +159,13 @@ namespace BRTEnvironmentModel {
 			, enableReverbPath { true }
 			, reflectionOrder {1}
 			, maxDistanceSourcesToListener { 3.43 }
-			, windowSlopeDistance { 2 }			
+			, windowSlopeDistance { 2 * globalParameters.GetSoundSpeed() * 0.001f }			
 		{ 			
 			// Default room
-			roomDefinition.SetupShoeBox(9.5f, 13.38f, 4.56f); // TODO delete me after testing
+			roomDefinition.SetupShoeBox(9, 13, 4.5); // TODO delete me after testing
 			//roomDefinition.SetupShoeBox(8, 5, 3); // TODO delete me after testing		
-			roomDefinition.SetAllWallsAbsortion({ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 }); // TODO delete me after testing
-			reflectionOrder = 5; // TODO delete me after testing
+			roomDefinition.SetAllWallsAbsortion(std::vector<float>(9, 0.5f)); // TODO delete me after testing
+			reflectionOrder = 3; // TODO delete me after testing
 			maxDistanceSourcesToListener = 10; // TODO delete me after testing
 		}
 

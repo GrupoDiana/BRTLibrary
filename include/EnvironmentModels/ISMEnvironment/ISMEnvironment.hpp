@@ -402,7 +402,9 @@ namespace BRTEnvironmentModel {
 				std::cout << w6 << (data.at(i).location - listenerLocation).GetDistance(); //print distance to listener and distance between first and last reflection walls
 				std::cout << " (" << data.at(i).reflectionWalls.front().GetMinimumDistanceFromWall(data.at(i).reflectionWalls.back()) << ")" << "\n";
 			}
-						
+				
+			std::cout << "Reflection order = " << reflectionOrder << "\n";
+			std::cout << "Maximum distance to consider a source as visible = " << ISMParameters->maxDistanceSourcesToListener << " m\n";
 			std::cout << "Visible sources: " << numVisibleSources << " out of " << data.size() << " total sources.\n";
 			std::cout << "Source location = " << std::to_string(sourceLocation.x) << ", " << std::to_string(sourceLocation.y) << ", " << std::to_string(sourceLocation.z) << "\n";
 			std::cout << "Listener location = " << std::to_string(listenerLocation.x) << ", " << std::to_string(listenerLocation.y) << ", " << std::to_string(listenerLocation.z) << "\n";
@@ -413,7 +415,7 @@ namespace BRTEnvironmentModel {
 			for (int j = 0; j < NUM_BAND_ABSORTION; j++) {
 			std::cout << wallsAbsortions.at(0).at(j) << ", ";
 			}
-			std::cout << "\n";
+			std::cout << std::endl << std::endl;
 		}
 
 		////////////////
