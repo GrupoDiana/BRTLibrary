@@ -22,6 +22,7 @@
 
 #ifndef _CASCADE_GRAPHIC_EQ_9_OCTAVE_BANDS_H_
 #define _CASCADE_GRAPHIC_EQ_9_OCTAVE_BANDS_H_
+
 #include <Common/FiltersChain.hpp>
 
 namespace Common {
@@ -52,7 +53,7 @@ namespace Common {
          * \brief Default constructor which creates a chain of 9 octave bands graphic equalizer filters.
          */
 		CCascadeGraphicEq9OctaveBands()
-			: enable { true }
+			: enable { false }
             , generalGain { 0 }
 			, commandGains { std::vector<float> (NUM_BANDS, 1.0f) }
         {            
@@ -64,7 +65,7 @@ namespace Common {
          * \param commandGains Vector of command gains at each band (note that these are not the peak gains of each inidividual filter)
         */
 		CCascadeGraphicEq9OctaveBands(const std::vector<float> & _commandGains)
-			: enable { true }
+			: enable { false }
             , generalGain { 0 } 
             , commandGains { std::vector<float>(NUM_BANDS, 1.0f) }
         {                        
@@ -76,6 +77,7 @@ namespace Common {
          * \param buffer Buffer to be processed
         */
         void Process(CMonoBuffer<float> &buffer) {
+			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			if (!enable) return;
             return CFiltersChain::Process(buffer);
        }
@@ -84,6 +86,7 @@ namespace Common {
         * \brief Process an buffer through the whole set of filters
         */
        void Process(CMonoBuffer<float> &buffer, CMonoBuffer <float> &output) {
+		   std::lock_guard<std::mutex> l(mutex); // Lock the mutex
            if (!enable) {
                output = buffer;
 			   return;
@@ -95,6 +98,8 @@ namespace Common {
          * \brief Remove all previously created filters
          */
         void RemoveFilters() {
+			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
+			enable = false;
             return CFiltersChain::RemoveFilters();
         }
 
@@ -105,12 +110,14 @@ namespace Common {
          * \return True if the gains were set correctly, false otherwise
         */
         bool SetCommandGains(const std::vector<float> & _gains) {
+			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
             if (_gains.size() != NUM_BANDS) {
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "CascadeGraphicEq9OctaveBands: gains vector must have " + std::to_string(NUM_BANDS) + " elements");
                 return false;
             }
             commandGains = _gains;
             ResetFiltersChain(CalculatePeakGains());
+			enable = true;
         }
 
         /** 
@@ -197,22 +204,21 @@ namespace Common {
          * \brief Reset the filters chain with the new peak gains
          * \param gains Vector of gains to be set
         */
-       void ResetFiltersChain(const std::vector<float> & peakGains) {
-            RemoveFilters();
-
+       void ResetFiltersChain(const std::vector<float> & peakGains) {            
+		    CFiltersChain::RemoveFilters();
             // Create first low shelf filter
-            auto propagationFilter = AddFilter();
+			auto propagationFilter = CFiltersChain::AddFilter();
             constexpr float dummyQ = 1.0; // Not used inside the low shelf filter nor the high shelf filter
             propagationFilter->Setup(62.5 * Q, dummyQ, T_filterType::LOWSHELF, peakGains[0]);
 
             // Create 7 peak notch filters
             for (int i = 1; i < 8; i++) {
-                propagationFilter = AddFilter();
+				propagationFilter = CFiltersChain::AddFilter();
                 propagationFilter->Setup(BANDS_CENTERS[i], Q, T_filterType::PEAKNOTCH, peakGains[i]);
             }
 
             // Create last high shelf filter
-            propagationFilter = AddFilter();
+			propagationFilter = CFiltersChain::AddFilter();
             propagationFilter->Setup(16000 / Q, dummyQ, T_filterType::HIGHSHELF, peakGains[8]); 
 
             // Set general gain of last filter
@@ -222,7 +228,9 @@ namespace Common {
        //////////////
        // Attributes
        //////////////
-        
+	   mutable std::mutex mutex; // To avoid access collisions
+	   bool enable; 
+
        /** 
         * \brief Latest vector of commnand gains of the filters in the chain
         * set via SetCommandGains
@@ -234,7 +242,7 @@ namespace Common {
         */
 	   float generalGain;
 
-       bool enable; 
+       
     };
 }
 #endif
