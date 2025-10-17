@@ -53,9 +53,9 @@ namespace Common {
 		*	\param [in] width: extension of the room along the Y axis.
 		*	\param [in] height: extension of the room along the Z axis
 		*/
-		bool SetupShoeBox(float _length, float _width, float _height) {
+		bool SetupShoeBox(float length, float width, float height) {
 
-			if (_length <= 0 || _width <= 0 || _height <= 0) return false;
+			if (length <= 0 || width <= 0 || height <= 0) return false;
 
 			//If the room was previously set up as a shoebox, it will keep the wall properties if it is redifined with a new shoeboxSetup
 			std::vector<CWall> previousWalls;
@@ -66,35 +66,35 @@ namespace Common {
 			// Now we can clear the walls in case there was a previous definition to set the room up from scratch
 			walls.clear();
 			CWall front, back, left, right, ceiling, floor;
-			front.InsertCorner(_length / 2, _width / 2, -_height / 2);
-			front.InsertCorner(_length / 2, -_width / 2, -_height / 2);
-			front.InsertCorner(_length / 2, _width / 2, _height / 2);
-			front.InsertCorner(_length / 2, -_width / 2, _height / 2);
+			front.InsertCorner(length / 2, width / 2, height / 2);
+			front.InsertCorner(length / 2, width / 2, -height / 2);
+			front.InsertCorner(length / 2, -width / 2, -height / 2);
+			front.InsertCorner(length / 2, -width / 2, height / 2);
 			InsertWall(front);
-			left.InsertCorner(-_length / 2, _width / 2, _height / 2);
-			left.InsertCorner(-_length / 2, _width / 2, -_height / 2);
-			left.InsertCorner(_length / 2, _width / 2, -_height / 2);
-			left.InsertCorner(_length / 2, _width / 2, _height / 2);
+			left.InsertCorner(-length / 2, width / 2, height / 2);
+			left.InsertCorner(-length / 2, width / 2, -height / 2);
+			left.InsertCorner(length / 2, width / 2, -height / 2);
+			left.InsertCorner(length / 2, width / 2, height / 2);
 			InsertWall(left);
-			right.InsertCorner(_length / 2, -_width / 2, _height / 2);
-			right.InsertCorner(_length / 2, -_width / 2, -_height / 2);
-			right.InsertCorner(-_length / 2, -_width / 2, -_height / 2);
-			right.InsertCorner(-_length / 2, -_width / 2, _height / 2);
+			right.InsertCorner(length / 2, -width / 2, height / 2);
+			right.InsertCorner(length / 2, -width / 2, -height / 2);
+			right.InsertCorner(-length / 2, -width / 2, -height / 2);
+			right.InsertCorner(-length / 2, -width / 2, height / 2);
 			InsertWall(right);
-			back.InsertCorner(-_length / 2, -_width / 2, _height / 2);
-			back.InsertCorner(-_length / 2, -_width / 2, -_height / 2);
-			back.InsertCorner(-_length / 2, _width / 2, -_height / 2);
-			back.InsertCorner(-_length / 2, _width / 2, _height / 2);
+			back.InsertCorner(-length / 2, -width / 2, height / 2);
+			back.InsertCorner(-length / 2, -width / 2, -height / 2);
+			back.InsertCorner(-length / 2, width / 2, -height / 2);
+			back.InsertCorner(-length / 2, width / 2, height / 2);
 			InsertWall(back);
-			floor.InsertCorner(_length / 2, _width / 2, -_height / 2);
-			floor.InsertCorner(-_length / 2, _width / 2, -_height / 2);
-			floor.InsertCorner(-_length / 2, -_width / 2, -_height / 2);
-			floor.InsertCorner(_length / 2, -_width / 2, -_height / 2);
+			floor.InsertCorner(length / 2, width / 2, -height / 2);
+			floor.InsertCorner(-length / 2, width / 2, -height / 2);
+			floor.InsertCorner(-length / 2, -width / 2, -height / 2);
+			floor.InsertCorner(length / 2, -width / 2, -height / 2);
 			InsertWall(floor);
-			ceiling.InsertCorner(_length / 2, -_width / 2, _height / 2);
-			ceiling.InsertCorner(-_length / 2, -_width / 2, _height / 2);
-			ceiling.InsertCorner(-_length / 2, _width / 2, _height / 2);
-			ceiling.InsertCorner(_length / 2, _width / 2, _height / 2);
+			ceiling.InsertCorner(length / 2, -width / 2, height / 2);
+			ceiling.InsertCorner(-length / 2, -width / 2, height / 2);
+			ceiling.InsertCorner(-length / 2, width / 2, height / 2);
+			ceiling.InsertCorner(length / 2, width / 2, height / 2);
 			InsertWall(ceiling);
 
 			if (shoeBox) {
@@ -105,9 +105,9 @@ namespace Common {
 				}
 			}
 			shoeBox = true;
-			shoeBoxLength = _length;
-			shoeBoxWidth = _width;
-			shoeBoxHeight = _height;
+			shoeBoxLength = length;
+			shoeBoxWidth = width;
+			shoeBoxHeight = height;
 			
 			return true;
 		}
@@ -207,6 +207,25 @@ namespace Common {
 			int wallsNumber = walls.size();
 			for (int i = 0; i < wallsNumber; i++) {
 				control = control && walls.at(i).SetAbsortion(absortionPerBand);
+			}
+			return control;
+		}
+
+		/**
+		 * @brief Sets the absortion coeficient (frequency dependent) of all walls
+		 * @param absortionPerBand walls absortion coeficients for each band (frequency dependent)
+		 * @return 
+		 */
+		bool SetAllWallsAbsortion(const std::vector<std::vector<float>> & absortionPerBand) {
+			bool control = true;
+			
+			if (absortionPerBand.size() != walls.size()) {
+				return false;
+			}
+
+			int wallsNumber = walls.size();
+			for (int i = 0; i < wallsNumber; i++) {
+				control = control && walls.at(i).SetAbsortion(absortionPerBand[i]);
 			}
 			return control;
 		}
