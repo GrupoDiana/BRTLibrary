@@ -40,7 +40,8 @@ namespace Common {
 	class CRoom {
 	public:
 		CRoom()
-			: shoeBox { false }
+			: setupDone { false }
+			, shoeBox { false }
 			, shoeBoxHeight {0}
 			, shoeBoxLength { 0 }
 			, shoeBoxWidth { 0 }
@@ -108,7 +109,7 @@ namespace Common {
 			shoeBoxLength = length;
 			shoeBoxWidth = width;
 			shoeBoxHeight = height;
-			
+			setupDone = true;
 			return true;
 		}
 
@@ -126,8 +127,38 @@ namespace Common {
 				InsertWall(tempWall);
 			}
 			shoeBox = false;
+			setupDone = true;
 		}
 
+		/**
+		 * @brief Checks if the room has been defined
+		 * @details True does not necessarily mean that the room is valid 
+		 * @return true if the room has been defined, false otherwise
+		 */
+		bool IsRoomDefined() const {
+			return setupDone;
+		}
+
+		/** \brief Returns if there is any wall
+		*/
+		bool IsAnyWallDefined() const {
+			if (!setupDone) return false;
+			return walls.size() > 0;
+		}
+
+		bool IsShoeBox() const {
+			if (!setupDone) return false;
+			return shoeBox;
+		}
+
+		/** \brief Gets the shoebox room size
+			Returns if it is a shoebox room it returns the size of the room, otherwise it returns 0,0,0
+		*/
+		Common::CVector3 GetShoeBoxRoomSize() const {
+			if (!shoeBox) return Common::CVector3::ZERO();
+			return Common::CVector3(shoeBoxLength, shoeBoxWidth, shoeBoxHeight);
+		}
+		
 		/** \brief insert a new wall in the room
 		*	\details Instead of using the setup method, this method can be used to create any arbitrary room. It should be
 					 called once per wall to be inserted, after creating a new empty room.
@@ -152,6 +183,7 @@ namespace Common {
 		*	\param [in] index of the wall to be active.
 		*/
 		void EnableWall(const int& wallIndex) {
+			if (!setupDone) return;
 			if (walls.size() > wallIndex) {
 				walls.at(wallIndex).Enable();
 			}
@@ -162,9 +194,16 @@ namespace Common {
 		*	\param [in] index of the wall to be active.
 		*/
 		void DisableWall(const int& wallIndex) {
+			if (!setupDone) return;
 			if (walls.size() > wallIndex) {
 				walls.at(wallIndex).Disable();
 			}
+		}
+
+		bool IsWallActive(const int& wallIndex) const {
+			if (!setupDone) return false;
+			if (!IsThereThisWall(wallIndex)) return false;
+			return walls.at(wallIndex).IsActive();
 		}
 
 		/** \brief sets the absortion coeficient (frequency independent) of one wall
@@ -338,30 +377,18 @@ namespace Common {
 			return center;
 		}
 
-		/** \brief Gets the shoebox room size
-			Returns if it is a shoebox room it returns the size of the room, otherwise it returns 0,0,0
-		*/
-		Common::CVector3 GetShoeBoxRoomSize() {
-			if (!shoeBox) return Common::CVector3::ZERO();
-			return Common::CVector3(shoeBoxLength, shoeBoxWidth, shoeBoxHeight);
-		}
-
-		/** \brief Returns if there is any wall
-		*/
-		bool IsAnyWallDefined() {
-			return walls.size() > 0;
-		}
+		
 
 	private:
 
-		bool IsThereThisWall(int _wallIndex) {
+		bool IsThereThisWall(const int& _wallIndex) const {
 			return walls.size() > _wallIndex;
 		}
 
 		////////////
 		// Attributes
 		////////////
-
+		bool setupDone;			// Flag indicating if the room has been set up
 		bool shoeBox;			// Flag indicating if the room was set up as a shoebox
 		float shoeBoxLength;	// Length of the shoebox room
 		float shoeBoxWidth;		// Width of the shoebox room
