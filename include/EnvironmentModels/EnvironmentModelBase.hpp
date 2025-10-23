@@ -62,12 +62,22 @@ namespace BRTEnvironmentModel {
 		virtual void UpdateRoomGeometry() { };
 		virtual void UpdateRoomWallAbsortion(int wallIndex) { };
 		virtual void UpdateRoomAllWallsAbsortion() { };
-
+				
 		virtual bool SetDistanceAttenuationFactor(float _distanceAttenuationDB) { return false; };
 		virtual float GetDistanceAttenuationFactor() { return 0; };
 		
 		virtual bool SetReferenceAttenuationDistance(float _referenceAttenuationDistance) { return false; };
 		virtual float GetReferenceAttenuationDistance() { return 0; };
+
+
+		virtual bool SetReflectionOrder(int _reflectionOrder) { return false; }
+		virtual int GetReflectionOrder() { return 0; }
+
+		virtual bool SetMaxDistanceSourcesToListener(float _maxDistanceSourcesToListener) { return false; }
+		virtual float GetMaxDistanceSourcesToListener() { return 0; }
+
+		virtual bool SetTransitionMeters(float _transitionMeters) { return false; }
+		virtual float GetTransitionMeters() { return 0; }
 
 		virtual bool ConnectSoundSource(const std::string & _sourceID) { return false; }
 		virtual bool DisconnectSoundSource(const std::string & _sourceID) { return false; }	
@@ -116,6 +126,15 @@ namespace BRTEnvironmentModel {
 		 * @param height extension of the room along the Z axis
 		 */
 		bool SetupShoeBoxRoom(float length, float width, float height) {
+			if (length <= 0 || width <= 0 || height <= 0) return false;
+			
+			Common::CVector3 currentRoomDimensions = Common::CVector3::ZERO();
+			if (roomDefinition.IsShoeBox()) { 
+				currentRoomDimensions = roomDefinition.GetShoeBoxRoomSize();				
+			}
+			if (currentRoomDimensions.x == length && currentRoomDimensions.y == width && currentRoomDimensions.z == height) {
+				return true; 				// No need to update
+			}
 			if (roomDefinition.SetupShoeBox(length, width, height)) {
 				UpdateRoomGeometry();
 				return true;
@@ -186,6 +205,35 @@ namespace BRTEnvironmentModel {
 				return true;
 			}
 			return false;
+		}
+		
+		/**
+		 * @brief Enables a wall in the room by its index and updates the room geometry.
+		 * @param _wallIndex Reference to the index of the wall to enable.
+		 */
+		void EnableRoomWall(int & _wallIndex) { 
+			roomDefinition.EnableWall(_wallIndex);
+			UpdateRoomGeometry();
+		}
+		/**
+		 * @brief Disables a wall in the current room by its index and updates the room geometry.
+		 * @param _wallIndex Reference to the index of the wall to disable.
+		 */
+		void DisableRoomWall(int & _wallIndex) { 
+			roomDefinition.DisableWall(_wallIndex);
+			UpdateRoomGeometry();
+		}
+		/**
+		 * @brief Checks if the specified room wall is enabled.
+		 * @param _wallIndex Reference to the index of the wall to check.
+		 * @return True if the room is defined and the specified wall is active; otherwise, false.
+		 */
+		bool IsRoomWallEnabled(int & _wallIndex) const { 
+			
+			if (!roomDefinition.IsRoomDefined()) {
+				return false;
+			}			
+			return roomDefinition.IsWallActive(_wallIndex);		
 		}
 
 
