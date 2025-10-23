@@ -51,6 +51,24 @@ namespace BRTEnvironmentModel {
 		}
 		
 		/**
+		 * @brief Remove a virtual source
+		 * @param _virtualSourceID ID of the virtual source
+		*/ 
+		void RemoveVirtualSource(const std::string& _virtualSourceID) {			
+			auto& it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
+			if (it != virtualSources.end()) {
+				bool result = brtManager->RemoveSoundSource(_virtualSourceID);
+				if (result) {
+					virtualSources.erase(it);
+				} else {
+					SET_RESULT(RESULT_ERROR_UNKNOWN, "The virtual source could not be removed from the BRT Manager.");
+				}
+			} else {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There is no virtual source with that name.");
+			}
+		}
+
+		/**
 		 * @brief Connect all the virtual sources to a listener model
 		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
 		 * @param _source Pointer to the source
