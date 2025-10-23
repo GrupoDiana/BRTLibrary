@@ -59,18 +59,14 @@ namespace BRTEnvironmentModel {
 			 * @param _roomDimensions length, width and height of the room
 			 * @param _roomCentre centre of the room
 			 */
-			void Setup(const int & _reflectionOrder, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, const Common::CRoom & _room) {
-				ISMProcessor->Setup(_reflectionOrder, _maxDistanceSourcesToListener, _windowSlopeDistance, _room);
+			/*bool Setup(const int & _reflectionOrder, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, const Common::CRoom & _room) {
+				return ISMProcessor->Setup(_reflectionOrder, _maxDistanceSourcesToListener, _windowSlopeDistance, _room);
+			}*/
+
+			bool Setup(const int & _reflectionOrder, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, const Common::CRoom & _room, std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
+				return ISMProcessor->Setup(_reflectionOrder, _maxDistanceSourcesToListener, _windowSlopeDistance, _room, _listenerModel);
 			}
-			
-			/**
-			 * @brief Resets the virtual sources associated with the specified listener model.
-			 * @param _listenerModel A shared pointer to the listener model whose virtual sources will be reset.
-			 */
-			void ResetVirtualSources(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
-				ISMProcessor->ResetVirtualSources(_listenerModel);
-			}
-			
+									
 			/**
 			 * @brief Set Wall absortion coefficientes per band
 			 * @param _wallIndex Wall where the coefficients are to be placed. 
@@ -85,7 +81,7 @@ namespace BRTEnvironmentModel {
 			 * @param _enableDirectPath enable or disable direct path
 			 * @param _enableReverbPath enable or disable reverb path
 			 */
-			void SetConfiguration(bool _enableDirectPath, bool _enableReverbPath) {
+			void SetConfiguration(/*bool _enableDirectPath,*/ bool _enableReverbPath) {
 				/*if (_enableDirectPath) {
 					ISMProcessor->MuteLOS(false);
 				} else {
@@ -144,6 +140,7 @@ namespace BRTEnvironmentModel {
 			void ResetBuffers() {			
 				ISMProcessor->ResetProcessBuffers();
 			}
+			
 
 			// Attributes
 			std::string sourceID;
@@ -155,18 +152,18 @@ namespace BRTEnvironmentModel {
 			: CEnviromentModelBase(_environmentModelID)
 
 			, brtManager { _brtManager }
-			, enableDirectPath { true }
+			//, enableDirectPath { true }
 			, enableReverbPath { true }
-			, reflectionOrder {1}
+			, reflectionOrder {0}
 			, maxDistanceSourcesToListener { 3.43 }
 			, windowSlopeDistance { 2 * globalParameters.GetSoundSpeed() * 0.001f }			
 		{ 			
 			// Default room
-			roomDefinition.SetupShoeBox(9, 13, 4.5); // TODO delete me after testing
+			//roomDefinition.SetupShoeBox(10, 10, 5); // TODO delete me after testing
 			//roomDefinition.SetupShoeBox(8, 5, 3); // TODO delete me after testing		
-			roomDefinition.SetAllWallsAbsortion(std::vector<float>(9, 0.5f)); // TODO delete me after testing
-			reflectionOrder = 3; // TODO delete me after testing
-			maxDistanceSourcesToListener = 10; // TODO delete me after testing
+			//roomDefinition.SetAllWallsAbsortion(std::vector<float>(9, 0.5f)); // TODO delete me after testing
+			//reflectionOrder = 2; // TODO delete me after testing
+			//maxDistanceSourcesToListener = 10; // TODO delete me after testing
 		}
 
 		/**
@@ -201,24 +198,24 @@ namespace BRTEnvironmentModel {
 		/**
 		 * @brief Enable Direct Path
 		 */
-		void EnableDirectPath() override {
-			enableDirectPath = true;
-			SetConfigurationInALLSourcesProcessors();
-		}
-		/**
-		 * @brief Disable Direct Path
-		 */
-		void DisableDirectPath() override {
-			enableDirectPath = false;
-			SetConfigurationInALLSourcesProcessors();
-		}		
-		/**
-		 * @brief Check if Direct Path is enabled
-		 * @return True if Direct Path is enabled
-		 */
-		bool IsDirectPathEnabled() override {
-			return enableDirectPath;
-		}
+		//void EnableDirectPath() override {
+		//	enableDirectPath = true;
+		//	SetConfigurationInALLSourcesProcessors();
+		//}
+		///**
+		// * @brief Disable Direct Path
+		// */
+		//void DisableDirectPath() override {
+		//	enableDirectPath = false;
+		//	SetConfigurationInALLSourcesProcessors();
+		//}		
+		///**
+		// * @brief Check if Direct Path is enabled
+		// * @return True if Direct Path is enabled
+		// */
+		//bool IsDirectPathEnabled() override {
+		//	return enableDirectPath;
+		//}
 
 		/**
 		 * @brief Enable Reverb Path
@@ -241,7 +238,7 @@ namespace BRTEnvironmentModel {
 		bool IsReverbPathEnabled() override {
 			return enableReverbPath;
 		}
-
+			
 		/**
 		 * @brief Connect a new source to this listener
 		 * @param _source Pointer to the source
@@ -336,46 +333,108 @@ namespace BRTEnvironmentModel {
 		 * @brief Update room geometry in all sources processors. Called from father class
 		*/
 		void UpdateRoomGeometry() override {
-			std::lock_guard<std::mutex> l(mutex);			
-			
-			// Get listener Model pointer
-			std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTListenerModel::CListenerModelBase>(GetIDEntryPoint("listenerModelID")->GetData());
-			if (_listenerModel == nullptr) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "This environment has not been connected to a listener Model.");
-				return;
-			}
-
-			for (auto & it : sourcesConnectedProcessors) {							
-				it.ResetVirtualSources(_listenerModel);
-				it.Setup(reflectionOrder, maxDistanceSourcesToListener, windowSlopeDistance, roomDefinition);				
-			}
+			std::lock_guard<std::mutex> l(mutex);									
+			ResetAndSetup();		
 		}
+		
 
 		/**
 		 * @brief Update room wall absortion. Called from father class
 		 * @param _wallIndex Pointer to the source
 		*/
-		//void UpdateRoomWallAbsortion(int _wallIndex) override {
-		//	std::lock_guard<std::mutex> l(mutex);			
-		//	std::vector<float> absortionBands = GetRoom().GetWalls().at(_wallIndex).GetAbsortionBand();			
-		//	
-		//	//The SDN has one less band, it does not have the lowest frequency band.
-		//	std::vector<float> _sdnWallAbsortion(absortionBands.begin() + 1, absortionBands.end());
-		//	for (auto& it : sourcesConnectedProcessors) {
-		//		//it.SetWallAbsortion(ToSDNWallIndex(_wallIndex), _sdnWallAbsortion);
-		//	}
-		//}
+		void UpdateRoomWallAbsortion(int _wallIndex) override {
+			std::lock_guard<std::mutex> l(mutex);
+			ResetAndSetup();	
+		}
 		
 		/**
 		 * @brief Update room all walls absortion. Called from father class
 		 */
-		//void UpdateRoomAllWallsAbsortion() override {			
-		//	std::vector<Common::CWall> walls = GetRoom().GetWalls();
-		//	for (int _wallIndex = 0; _wallIndex < walls.size(); _wallIndex++) {
-		//		//UpdateRoomWallAbsortion(ToSDNWallIndex(_wallIndex));				
-		//	}
-		//}
+		void UpdateRoomAllWallsAbsortion() override {			
+			std::lock_guard<std::mutex> l(mutex);
+			ResetAndSetup();	
+		}
 		
+		/**
+		 * @brief Set the reflection order and reset and setup again
+		 * @param _reflectionOrder reflection order should be equal or greater than zero
+		 * @return true if success
+		 */
+		bool SetReflectionOrder(int _reflectionOrder) override { 
+			if (_reflectionOrder<0) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Reflection order must be equal or greater than zero.");
+				return false;
+			}
+			if (_reflectionOrder == reflectionOrder) {
+				return true; // No change
+			}
+			std::lock_guard<std::mutex> l(mutex);
+			reflectionOrder = _reflectionOrder; 			
+			return ResetAndSetup();	
+		}
+
+		/**
+		 * @brief Get the reflection order
+		 * @return reflection order
+		 */
+		int GetReflectionOrder() override { 
+			return reflectionOrder; 
+		}
+
+		/**
+		 * @brief Set the max distance from sources to listener and reset and setup again		 
+		 * @param _maxDistanceSourcesToListener max distance from sources to listener. It must be greater than zero.
+		 * This parameter it is used to limit the image sources generation.		 
+		 * @return 
+		 */
+		bool SetMaxDistanceSourcesToListener(float _maxDistanceSourcesToListener) override	{ 
+			if (_maxDistanceSourcesToListener <= 0) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Max distance from sources to listener must be greater than zero.");
+				return false;
+			}
+			if (_maxDistanceSourcesToListener == maxDistanceSourcesToListener) {
+				return true; // No change
+			}
+			std::lock_guard<std::mutex> l(mutex);
+			maxDistanceSourcesToListener = _maxDistanceSourcesToListener;
+			
+			return ResetAndSetup(); 
+		}
+
+		/**
+		 * @brief Returns the maximum distance from sources to the listener.
+		 * @return The maximum distance between sources and the listener as a float.
+		 */
+		float GetMaxDistanceSourcesToListener() override { 
+			return maxDistanceSourcesToListener; 
+		}
+
+		/**
+		 * @brief Set the transition meters
+		 * @param _transitionMeters 
+		 * @return 
+		*/ 
+		bool SetTransitionMeters(float _transitionMeters) override { 
+			if (_transitionMeters < 0) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Transition meters must be equal or greater than zero.");
+				return false;
+			}
+			if (_transitionMeters == windowSlopeDistance) {
+				return true; // No change
+			}
+			std::lock_guard<std::mutex> l(mutex);
+			windowSlopeDistance = _transitionMeters;
+			return ResetAndSetup();
+		}
+
+		/**
+		 * @brief Get the transition meters
+		 * @return 
+		*/
+		float GetTransitionMeters() override{ 
+			return windowSlopeDistance; 
+		}
+
 		/**
 		 * @brief Update Configuration in all source processor
 		*/
@@ -390,7 +449,7 @@ namespace BRTEnvironmentModel {
 		 * @param sourceProcessor 
 		*/
 		void SetSourceProcessorsConfiguration(CISMProcessors & sourceProcessor) {
-			sourceProcessor.SetConfiguration(enableDirectPath, enableReverbPath);
+			sourceProcessor.SetConfiguration(enableReverbPath);
 		}
 
 
@@ -435,7 +494,7 @@ namespace BRTEnvironmentModel {
 			control = control && brtManager->ConnectModulesSamples(_source, "samples", _newISMProcessors.ISMProcessor, "inputSamples");			
 									
 			if (control) {
-				_newISMProcessors.Setup(reflectionOrder, maxDistanceSourcesToListener, windowSlopeDistance, roomDefinition);
+				_newISMProcessors.Setup(reflectionOrder, maxDistanceSourcesToListener, windowSlopeDistance, roomDefinition, _listenerModel);
 				control = control && _newISMProcessors.ConnectToListenerModel(_listenerModel);
 			}
 			if (control) {
@@ -488,16 +547,36 @@ namespace BRTEnvironmentModel {
 			return false;
 		}
 
-		
+		/**
+		 * @brief Reset and setup all source processors
+		 */
+		bool ResetAndSetup() {												
+			// Get listener Model pointer
+			std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTListenerModel::CListenerModelBase>(GetIDEntryPoint("listenerModelID")->GetData());
+			if (_listenerModel == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This environment has not been connected to a listener Model.");
+				return false;
+			}		
+			
+			brtManager->BeginSetup();			
+			bool result = true;
+			for (auto & it : sourcesConnectedProcessors) {				
+				result = result && it.Setup(reflectionOrder, maxDistanceSourcesToListener, windowSlopeDistance, roomDefinition, _listenerModel);
+				result = result && it.ConnectToListenerModel(_listenerModel);
+			}
+			brtManager->EndSetup();			
+			return result;
+		}
+
 		/////////////////
 		// Attributes
 		/////////////////
 		mutable std::mutex mutex;									// To avoid access collisions		
-		std::vector<CISMProcessors> sourcesConnectedProcessors;
+		std::vector<CISMProcessors> sourcesConnectedProcessors; // A processor per connected source
 		BRTBase::CBRTManager* brtManager;
 		Common::CGlobalParameters globalParameters;		
 
-		bool enableDirectPath; // Enable direct path
+		//bool enableDirectPath; // Enable direct path
 		bool enableReverbPath; // Enable reverb path
 
 		int reflectionOrder; // Reflection order

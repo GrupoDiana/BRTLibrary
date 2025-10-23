@@ -46,7 +46,9 @@ namespace BRTEnvironmentModel {
 			, originalSourceID { "" }
 			//, muteLoS { false }
 			, muteReverbPath { false }		
-			, gain {1.0f} {
+			, gain {1.0f}
+			, numberOfImageSources { 0 }
+		{
 
 			CreateSamplesEntryPoint("inputSamples");
 			CreatePositionEntryPoint("sourcePosition");
@@ -87,41 +89,50 @@ namespace BRTEnvironmentModel {
 		// * @param 		
 		// * @return True if the setup was successful
 		// */
-		bool Setup(const int & _reflectionOrder, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, const Common::CRoom & _room) {
+		//bool Setup(const int & _reflectionOrder, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, const Common::CRoom & _room) {
+		//	std::lock_guard<std::mutex> l(mutex); // Lock the mutex
+		//	if (!initialized) {
+		//		SET_RESULT(RESULT_ERROR_NOTALLOWED, "The ISM environment processor is not initialized");
+		//		return false;
+		//	}
+		//	if (setupDone) {
+		//		SET_RESULT(RESULT_ERROR_NOTALLOWED, "The ISM environment processor is already set up. Call ResetVirtualSources() before setting it up again.");
+		//		return false;
+		//	}			
+		//	
+		//	InitISMEnvironment(_reflectionOrder, _maxDistanceSourcesToListener, _windowSlopeDistance, _room);
+		//	setupDone = true;
+		//	return true;
+		//}
+
+		/**
+		 * @brief Setup ISM simulation parameters
+		 * @param _reflectionOrder order of reflections
+		 * @param _maxDistanceSourcesToListener maximum distance from sources to listener, this is used to prune distant image sources.
+		 * @param _windowSlopeDistance Transition distance for the windowing function.
+		 * @param _room Room definition
+		 * @param _listenerModel listener model to connect the virtual sources to
+		 * @return true if the setup was successful
+		 */
+		bool Setup(const int & _reflectionOrder, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, const Common::CRoom & _room, std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			if (!initialized) {
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "The ISM environment processor is not initialized");
 				return false;
 			}
-			if (setupDone) {
-				SET_RESULT(RESULT_ERROR_NOTALLOWED, "The ISM environment processor is already set up. Call ResetVirtualSources() before setting it up again.");
-				return false;
-			}			
-			
+			if (setupDone) {				
+				setupDone = false;
+				ResetVirtualSources(_listenerModel);
+			}
+			std::cout << "Setting up ISM Environment Processor..." << std::endl;
 			InitISMEnvironment(_reflectionOrder, _maxDistanceSourcesToListener, _windowSlopeDistance, _room);
+			std::cout << "Connecting virtual sources to listener model..." << std::endl;
+			//TODO check result before setting setupDone to true
 			setupDone = true;
 			return true;
 		}
 
-		/**
-		 * @brief Resets the virtual sources by disconnecting from the listener model, removing all virtual sources, and marking setup as incomplete.
-		 * @param _listenerModel A shared pointer to the listener model to disconnect from.
-		 * @return Returns a boolean value indicating the success or failure of the reset operation.
-		 */
-		bool ResetVirtualSources(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
-			bool result = DisconnectToListenerModel(_listenerModel);
-			if (!result && virtualSourcesConnectedToListener) {
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There was an error disconnecting the virtual sources from the listener model");
-				return false;
-			}
-			result = RemoveBRTVirtualSources(); // Remove all the virtual sources			
-			if (!result) {
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There was an error removing the virtual sources");
-				return false;
-			}
-			setupDone = false;
-			return result;
-		}
+		
 
 		/**
 		 * @brief Enable processor
@@ -257,8 +268,8 @@ namespace BRTEnvironmentModel {
 
 			// Get data from entry points
 			CMonoBuffer<float> inBuffer = GetSamplesEntryPoint("inputSamples")->GetData();
-			Common::CTransform sourceLocation = CalculateLocalPosition(GetPositionEntryPoint("sourcePosition")->GetData());
-			Common::CTransform listenerPosition = CalculateLocalPosition(GetPositionEntryPoint("listenerPosition")->GetData());
+			Common::CTransform sourceLocation = GetPositionEntryPoint("sourcePosition")->GetData();
+			Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
 						
 			if (inBuffer.size() == 0) {				
 				SET_RESULT(RESULT_ERROR_BADSIZE, "The input buffer size is 0");
@@ -295,79 +306,7 @@ namespace BRTEnvironmentModel {
 		
 
 	private:
-		
-		/**
-		* @brief Change the room dimensions along one axis
-		* @param newValue New dimension in meters
-		* @param _axis Axis whose dimension needs to be updated
-		*/
-		//void SetRoomDimensions(float newValue, TAxis _axis) {
-		//	//std::lock_guard<std::mutex> l(mutex); // Lock the mutex
-		//	switch (_axis) {
-		//	case AXIS_X:
-		//		dimensions.x = newValue;
-		//		break;
-		//	case AXIS_Y:
-		//		dimensions.y = newValue;
-		//		break;
-		//	case AXIS_Z:
-		//		dimensions.z = newValue;
-		//		break;
-		//	case AXIS_MINUS_X:
-		//		dimensions.x = -newValue;
-		//		break;
-		//	case AXIS_MINUS_Y:
-		//		dimensions.y = -newValue;
-		//		break;
-		//	case AXIS_MINUS_Z:
-		//		dimensions.z = -newValue;
-		//		break;
-		//	default:
-		//		SET_RESULT(RESULT_ERROR_CASENOTDEFINED, "Trying to set an axis which name is not defined");
-		//	}
-
-		//	hasChanged = true;
-		//}
-
-		/**
-		 * @brief Transform a position from global to SDN local
-		 * @param _globalLocation global location
-		 * @return local location
-		 */
-		Common::CTransform CalculateLocalPosition(const Common::CTransform& _globalPosition) {
-			
-			
-			//// Calculate parameter
-			//Common::CVector3 localCentre = (dimensions * 0.5f);
-			//Common::CVector3 transformParameter = localCentre - globalCoordinatesRoomCentre;
-			//// Calculate new position						
-			//Common::CTransform localPosition = _globalPosition;
-			//localPosition.SetPosition(_globalPosition.GetPosition() + transformParameter);
-
-			//return localPosition;
-			return _globalPosition;
-		}
-		
-		/**
-		 * @brief Transform a position from SDN local to global
-		 * @param _globalLocation global location
-		 * @return local location
-		 */
-		Common::CTransform CalculateGlobalPosition(const Common::CTransform & _globalPosition) { 
-			//// Calculate parameter
-			//Common::CVector3 localCentre = (dimensions * 0.5f);
-			//Common::CVector3 transformParameter = globalCoordinatesRoomCentre - localCentre;
-			//// Calculate new position
-			//Common::CTransform globalPosition = _globalPosition;
-			//globalPosition.SetPosition(_globalPosition.GetPosition() + transformParameter);
-
-			return _globalPosition;
-		}
-
-
-
-		
-
+								
 		/**
 		* @brief Initialize the environment variables, required before processing. Room is always positioned
 		*		 with one corner in {0, 0, 0} and the room dimensions taken as coordinates define the opposite corner,
@@ -388,35 +327,67 @@ namespace BRTEnvironmentModel {
 			CMonoBuffer<float> inBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());			
 			virtualSourceBuffers = std::vector<CMonoBuffer<float>>(numberOfImageSources, inBuffer);
 			virtualSourcePositions = std::vector<Common::CTransform>(numberOfImageSources);
-
-			CreateBRTVirtualSources(numberOfImageSources);	
+			
+			CreateBRTVirtualSources();	
 			SyncAllVirtualSourcesToModel();						
 		}
 			
+
+		/**
+		 * @brief Resets the virtual sources by disconnecting from the listener model, removing all virtual sources, and marking setup as incomplete.
+		 * @param _listenerModel A shared pointer to the listener model to disconnect from.
+		 * @return Returns a boolean value indicating the success or failure of the reset operation.
+		 */
+		bool ResetVirtualSources(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
+			//std::lock_guard<std::mutex> l(mutex); // Lock the mutex
+			setupDone = false;
+			bool result = DisconnectToListenerModel(_listenerModel);
+			if (!result && virtualSourcesConnectedToListener) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There was an error disconnecting the virtual sources from the listener model");
+				return false;
+			}
+			std::cout << std::endl<< "Removing BRT virtual sources..." << std::endl;
+			RemoveBRTVirtualSources(); // Remove all the virtual sources
+			std::cout << "BRT virtual sources removed." << std::endl;
+			CISMEnvironment::Reset(); // Reset the ISM environment
+			numberOfImageSources = CISMEnvironment::GetNumberOfImageSources();
+			virtualSourceBuffers.clear();
+			virtualSourcePositions.clear();
+			std::cout << "Virtual sources reset completed." << std::endl;
+
+			if (!result) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There was an error removing the virtual sources");
+				return false;
+			}
+			return result;
+		}
+
 		/**
 		 * @brief Create the BRT virtual sources
 		 */
-		void CreateBRTVirtualSources(size_t numberOfSources) {
-			for (int i = 0; i < numberOfSources; i++) {
+		void CreateBRTVirtualSources() {			
+			for (int i = 0; i < numberOfImageSources; i++) {
 				CreateVirtualSource(GetBRTVirtualSourceID(i), originalSourceID);
-			}
+			}			
 		}
 		
 		/**
 		 * @brief Removes all BRT virtual sound sources managed by the BRT manager.
 		 */
-		bool RemoveBRTVirtualSources() {
-			bool result = true;
-			for (int i = 0; i < virtualSourceBuffers.size(); i++) {
-				result = result && brtManager->RemoveSoundSource(GetBRTVirtualSourceID(i));
+		void RemoveBRTVirtualSources() {			
+			for (int i = 0; i < numberOfImageSources; i++) {
+				RemoveVirtualSource(GetBRTVirtualSourceID(i));
 			}
-			return result;
 		}
+
 		/**
 		 * @brief Sync the virtual sources to the model
 		 */
 		void SyncAllVirtualSourcesToModel() {
-			for (int i = 0; i < virtualSourceBuffers.size(); i++) {
+			
+			ASSERT(virtualSourceBuffers.size() == numberOfImageSources, RESULT_ERROR_BADSIZE, "The number of virtual source buffers does not match the number of image sources", "");
+			ASSERT(virtualSourcePositions.size() == numberOfImageSources, RESULT_ERROR_BADSIZE, "The number of virtual source positions does not match the number of image sources", "");
+			for (int i = 0; i < numberOfImageSources; i++) {
 				SyncOneVirtualSourceToModel(i);
 			}
 		}

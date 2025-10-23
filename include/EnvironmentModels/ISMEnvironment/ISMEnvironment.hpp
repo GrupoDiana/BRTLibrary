@@ -59,6 +59,16 @@ namespace BRTEnvironmentModel {
 				imageSources->Reset();
 				imageSources.reset();
 			}
+			
+			if (order < 0) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Reflection order must be greater than zero");
+				return false;
+			}
+
+			if (!_room.IsRoomDefined() || !_room.IsAnyWallDefined()) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Room is not properly defined");
+				return false;
+			}
 
 			ISMParameters->room = _room;
 			reflectionOrder = order;
@@ -74,10 +84,10 @@ namespace BRTEnvironmentModel {
 			imageSources = std::make_shared<CISMSourceImage>(ISMParameters);
 			imageSources->createImagesTree(ISMParameters->room, reflectionOrder, sourceLocation);
 			UpdateImageSourceDataFromImageTree();
-
-			// TODO check if everything went fine before setting setupDone to true
+			
 			SetupWaveGuideProcessors();
 
+			// TODO check if everything went fine before setting setupDone to true
 			setupDone = true;
 			return true;
 		}
@@ -170,6 +180,20 @@ namespace BRTEnvironmentModel {
 			ApplyVisibilityGainToOutputBuffers(_outBuffers);
 		}
 		
+		void Reset() {
+			std::lock_guard<std::mutex> l(mutex);
+			if (setupDone) {
+				setupDone = false;
+				imageSources->Reset();
+				imageSources.reset();				
+
+				sourceLocation = Common::CVector3(0, 0, 0);
+				imageSourcesPositionList.clear();				
+				imageSourcesDataList.clear();
+				listOfChannelSourceListener.clear();
+			}
+		}
+
 	private:
 		
 		void ApplyVisibilityGainToOutputBuffers(std::vector<CMonoBuffer<float>> & _outBuffers) {
@@ -262,7 +286,7 @@ namespace BRTEnvironmentModel {
 		/** \brief Sets the maximum distance between the listener and each source image to be considered visible
 		*	\details Sources that exceed the maximum distance will be considered non-visible sources.
 		*	\param [in] maxDistanceSourcesToListener
-		*	\param [in] windowSlopeDistance in meters (related to windowSlope time(s) in class CBRIR)
+		*	\param [in] windowSlopeDistance in meters
 		*/
 		bool setMaxDistanceImageSources(float _MaxDistanceSourcesToListener, float _windowSlopeDistance) {
 			if (_windowSlopeDistance / 2 < _MaxDistanceSourcesToListener) {
