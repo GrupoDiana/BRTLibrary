@@ -83,28 +83,7 @@ namespace BRTEnvironmentModel {
 			initialized = true;
 			return true;
 		}
-
-		///**
-		// * @brief Setup the room
-		// * @param 		
-		// * @return True if the setup was successful
-		// */
-		//bool Setup(const int & _reflectionOrder, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, const Common::CRoom & _room) {
-		//	std::lock_guard<std::mutex> l(mutex); // Lock the mutex
-		//	if (!initialized) {
-		//		SET_RESULT(RESULT_ERROR_NOTALLOWED, "The ISM environment processor is not initialized");
-		//		return false;
-		//	}
-		//	if (setupDone) {
-		//		SET_RESULT(RESULT_ERROR_NOTALLOWED, "The ISM environment processor is already set up. Call ResetVirtualSources() before setting it up again.");
-		//		return false;
-		//	}			
-		//	
-		//	InitISMEnvironment(_reflectionOrder, _maxDistanceSourcesToListener, _windowSlopeDistance, _room);
-		//	setupDone = true;
-		//	return true;
-		//}
-
+		
 		/**
 		 * @brief Setup ISM simulation parameters
 		 * @param _reflectionOrder order of reflections
@@ -114,7 +93,7 @@ namespace BRTEnvironmentModel {
 		 * @param _listenerModel listener model to connect the virtual sources to
 		 * @return true if the setup was successful
 		 */
-		bool Setup(const int & _reflectionOrder, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, const Common::CRoom & _room, std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
+		bool Setup(const int & _reflectionOrder, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, std::shared_ptr<Common::CRoom> & _room, std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			if (!initialized) {
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "The ISM environment processor is not initialized");
@@ -123,15 +102,12 @@ namespace BRTEnvironmentModel {
 			if (setupDone) {				
 				setupDone = false;
 				ResetVirtualSources(_listenerModel);
-			}
-			std::cout << "Setting up ISM Environment Processor..." << std::endl;
-			InitISMEnvironment(_reflectionOrder, _maxDistanceSourcesToListener, _windowSlopeDistance, _room);
-			std::cout << "Connecting virtual sources to listener model..." << std::endl;
+			}			
+			InitISMEnvironment(_reflectionOrder, _maxDistanceSourcesToListener, _windowSlopeDistance, _room);			
 			//TODO check result before setting setupDone to true
 			setupDone = true;
 			return true;
 		}
-
 		
 
 		/**
@@ -218,35 +194,7 @@ namespace BRTEnvironmentModel {
 		 */
 		bool GetMuteReverbPath() {
 			return muteReverbPath;
-		}		
-
-		/**
-		* @brief Set a new absortion value for a frequency of a wall in the room
-		* @param newValue New absorption value
-		* @param wallIndex Index of the desired wall, the array of walls is constructed as [X0, XSize, Y0, YSize, Z0, ZSize]
-		* @param freqIndex Index of the frequency to change, the array of frequencies is [125, 250, 500, 1000, 2000, 4000, 8000, 16000]Hz
-		*/
-		//void SetWallFreqAbsorption(float newValue, int wallIndex, int freqIndex)
-		//{
-		//	std::lock_guard<std::mutex> l(mutex); // Lock the mutex
-		//	wallNodes[wallIndex].SetFreqAbsorption(newValue, freqIndex);
-		//}		
-		
-		/**
-		 * @brief Set the frequency absorption values array of a wall
-		 * @param wallIndex Wall index
-		 * @param newValues Absorption values vector, 8 values are expected, the centre frequencies 
-			of which are as follows: [125, 250, 500, 1000, 2000, 4000, 8000, 16000]Hz
-		 */
-		//void SetWallFreqAbsorption(int _wallIndex, std::vector<float> _newValues) {
-		//	std::lock_guard<std::mutex> l(mutex); // Lock the mutex
-		//	if (_newValues.size() != SDNParameters::NUM_FREQ) {
-		//		SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The number of values must be equal to the number of frequencies");
-		//	}
-		//	wallNodes[_wallIndex].SetFreqAbsortion(_newValues);
-		//}
-
-
+		}				
 		
 		/**
 		 * @brief Implementation of CAdvancedEntryPointManager virtual method
@@ -313,7 +261,7 @@ namespace BRTEnvironmentModel {
 		*		 required before calling process
 		* @param roomDimensions Room dimensions in meters expressed as a CVector3 with form {x, y, z}
 		*/
-		void InitISMEnvironment(const int & order, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, const Common::CRoom & _room) {
+		void InitISMEnvironment(const int & order, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, std::shared_ptr<Common::CRoom> & _room) {
 			if (!initialized && setupDone) return; // It is not initialized or it is already setup
 			
 			Common::CTransform sourceTransform = GetPositionEntryPoint("sourcePosition")->GetData();			
@@ -345,15 +293,12 @@ namespace BRTEnvironmentModel {
 			if (!result && virtualSourcesConnectedToListener) {
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There was an error disconnecting the virtual sources from the listener model");
 				return false;
-			}
-			std::cout << std::endl<< "Removing BRT virtual sources..." << std::endl;
-			RemoveBRTVirtualSources(); // Remove all the virtual sources
-			std::cout << "BRT virtual sources removed." << std::endl;
+			}			
+			RemoveBRTVirtualSources(); // Remove all the virtual sources			
 			CISMEnvironment::Reset(); // Reset the ISM environment
 			numberOfImageSources = CISMEnvironment::GetNumberOfImageSources();
 			virtualSourceBuffers.clear();
-			virtualSourcePositions.clear();
-			std::cout << "Virtual sources reset completed." << std::endl;
+			virtualSourcePositions.clear();			
 
 			if (!result) {
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There was an error removing the virtual sources");

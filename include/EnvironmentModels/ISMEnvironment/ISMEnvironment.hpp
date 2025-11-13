@@ -53,7 +53,7 @@ namespace BRTEnvironmentModel {
 		 * @param _room The room configuration to use for the simulation.
 		 * @return Returns true if the setup was successful; returns false if the parameters are invalid or setup fails.
 		 */
-		bool Setup(const int& order, const float& _maxDistanceSourcesToListener, const float& _windowSlopeDistance, const Common::CRoom& _room, const Common::CTransform& _sourceTransform, const Common::CTransform& _listenerTransform) {
+		bool Setup(const int& order, const float& _maxDistanceSourcesToListener, const float& _windowSlopeDistance, std::shared_ptr<Common::CRoom> _room, const Common::CTransform& _sourceTransform, const Common::CTransform& _listenerTransform) {
 			if (setupDone) {
 				setupDone = false;
 				imageSources->Reset();
@@ -65,7 +65,7 @@ namespace BRTEnvironmentModel {
 				return false;
 			}
 
-			if (!_room.IsRoomDefined() || !_room.IsAnyWallDefined()) {
+			if (!_room->IsRoomDefined() || !_room->IsAnyWallDefined()) {
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Room is not properly defined");
 				return false;
 			}
@@ -152,7 +152,7 @@ namespace BRTEnvironmentModel {
 		*/
 		bool IsInBounds(const Common::CVector3& _position) {
 			float distanceToNearestWall = 0.0f;
-			return ISMParameters->room.CheckPointInsideRoom(_position, distanceToNearestWall);			
+			return ISMParameters->room->CheckPointInsideRoom(_position, distanceToNearestWall);			
 		}
 
 		void Process(CMonoBuffer<float> & _inBuffer
@@ -435,7 +435,7 @@ namespace BRTEnvironmentModel {
 												
 			std::cout << "Absortions = ";
 			std::vector<std::vector<float>> wallsAbsortions;
-			ISMParameters->room.GetAllWallsAbsortion(wallsAbsortions);
+			ISMParameters->room->GetAllWallsAbsortion(wallsAbsortions);
 			for (int j = 0; j < NUM_BAND_ABSORTION; j++) {
 			std::cout << wallsAbsortions.at(0).at(j) << ", ";
 			}

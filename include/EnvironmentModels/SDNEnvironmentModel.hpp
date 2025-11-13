@@ -147,7 +147,10 @@ namespace BRTEnvironmentModel {
 			: CEnviromentModelBase(_environmentModelID)
 			, brtManager { _brtManager }
 			, enableDirectPath { true }
-			, enableReverbPath { true } { }
+			, enableReverbPath { true } 
+		{ 
+			room = std::make_shared<Common::CRoom>();
+		}
 
 		/**
 		 * @brief Destructor
@@ -311,46 +314,89 @@ namespace BRTEnvironmentModel {
 			}
 		}
 
-
 		/**
-		 * @brief Update room geometry. Called from father class
-		*/
-		void UpdateRoomGeometry() override {
+		 * @brief Set the room for the environment model
+		 * @param _room 
+		 * @return 
+		 */
+		bool SetRoom(std::shared_ptr<Common::CRoom> _room) override
+		{ 
 			std::lock_guard<std::mutex> l(mutex);
-
+			room = _room;
 			//Get Room dimensions and Room Centre from CRoom object
-			Common::CVector3 roomDimensions = GetRoom().GetShoeBoxRoomSize();
-			Common::CVector3 roomCentre = GetRoom().GetCenter();
+			Common::CVector3 roomDimensions = _room->GetShoeBoxRoomSize();
+			Common::CVector3 roomCentre = _room->GetCenter();
 			// Update Room dimensions and Room Centre in all sources processors
 			for (auto & it : sourcesConnectedProcessors) {
 				it.SetupRoom(roomDimensions, roomCentre);
 			}
+			return true;
+		};
+
+		///**
+		// * @brief Update room geometry. Called from father class
+		//*/
+		//void UpdateRoomGeometry() override {
+		//	std::lock_guard<std::mutex> l(mutex);
+
+		//	//Get Room dimensions and Room Centre from CRoom object
+		//	Common::CVector3 roomDimensions = GetRoom().GetShoeBoxRoomSize();
+		//	Common::CVector3 roomCentre = GetRoom().GetCenter();
+		//	// Update Room dimensions and Room Centre in all sources processors
+		//	for (auto & it : sourcesConnectedProcessors) {
+		//		it.SetupRoom(roomDimensions, roomCentre);
+		//	}
+		//}
+		bool UpdateRoom() override { 
+			//std::lock_guard<std::mutex> l(mutex);
+			if (room == nullptr) return false;			
+
+			UpdateRoomAllWallsAbsortion();
+			return true; 
+		};
+			
+		/**
+		 * @brief Update room all walls absortion. Called from father class
+		 */
+		void UpdateRoomAllWallsAbsortion() {
+			std::lock_guard<std::mutex> l(mutex);
+			const std::vector<Common::CWall> & walls = room->GetWalls();			
+			
+			for (int _wallIndex = 0; _wallIndex < walls.size(); _wallIndex++) {
+				std::vector<float> absortionBands = walls.at(_wallIndex).GetAbsortionBand();				
+				//The SDN has one less band, it does not have the lowest frequency band.
+				std::vector<float> _sdnWallAbsortion(absortionBands.begin() + 1, absortionBands.end());				
+				for (auto & it : sourcesConnectedProcessors) {
+					it.SetWallAbsortion(ToSDNWallIndex(_wallIndex), _sdnWallAbsortion);
+				}
+			}
 		}
+
+
+		/**
+		 * @brief Update room all walls absortion. Called from father class
+		 */
+		/*void UpdateRoomAllWallsAbsortion() {			
+			const std::vector<Common::CWall>& walls = room->GetWalls();
+			for (int _wallIndex = 0; _wallIndex < walls.size(); _wallIndex++) {
+				UpdateRoomWallAbsortion(ToSDNWallIndex(_wallIndex));				
+			}
+		}*/
 
 		/**
 		 * @brief Update room wall absortion. Called from father class
 		 * @param _wallIndex Pointer to the source
 		*/
-		void UpdateRoomWallAbsortion(int _wallIndex) override {
-			std::lock_guard<std::mutex> l(mutex);			
-			std::vector<float> absortionBands = GetRoom().GetWalls().at(_wallIndex).GetAbsortionBand();			
-			
-			//The SDN has one less band, it does not have the lowest frequency band.
-			std::vector<float> _sdnWallAbsortion(absortionBands.begin() + 1, absortionBands.end());
-			for (auto& it : sourcesConnectedProcessors) {
-				it.SetWallAbsortion(ToSDNWallIndex(_wallIndex), _sdnWallAbsortion);
-			}
-		}
-		
-		/**
-		 * @brief Update room all walls absortion. Called from father class
-		 */
-		void UpdateRoomAllWallsAbsortion() override {			
-			std::vector<Common::CWall> walls = GetRoom().GetWalls();
-			for (int _wallIndex = 0; _wallIndex < walls.size(); _wallIndex++) {
-				UpdateRoomWallAbsortion(ToSDNWallIndex(_wallIndex));				
-			}
-		}
+		//void UpdateRoomWallAbsortion(int _wallIndex) {
+		//	std::lock_guard<std::mutex> l(mutex);
+		//	std::vector<float> absortionBands = room->GetWalls().at(_wallIndex).GetAbsortionBand();
+
+		//	//The SDN has one less band, it does not have the lowest frequency band.
+		//	std::vector<float> _sdnWallAbsortion(absortionBands.begin() + 1, absortionBands.end());
+		//	for (auto & it : sourcesConnectedProcessors) {
+		//		it.SetWallAbsortion(ToSDNWallIndex(_wallIndex), _sdnWallAbsortion);
+		//	}
+		//}
 
 		/**
 		 * @brief 
@@ -439,8 +485,8 @@ namespace BRTEnvironmentModel {
 			control = control && _newSDNProcessors.ConnectToListenerModel(_listenerModel);
 									
 			if (control) {	
-				Common::CVector3 roomDimensions = GetRoom().GetShoeBoxRoomSize();
-				Common::CVector3 roomCentre = GetRoom().GetCenter();
+				Common::CVector3 roomDimensions = room->GetShoeBoxRoomSize();
+				Common::CVector3 roomCentre = room->GetCenter();
 				if (roomDimensions == Common::CVector3::ZERO()) {
 					roomDimensions = Common::CVector3(1.0f, 1.0f, 1.0f);				
 				}
@@ -498,13 +544,15 @@ namespace BRTEnvironmentModel {
 		// Attributes
 		/////////////////
 		mutable std::mutex mutex;									// To avoid access collisions		
-		std::vector< CSDNProcessors> sourcesConnectedProcessors;
+				
 		BRTBase::CBRTManager* brtManager;
 		Common::CGlobalParameters globalParameters;		
+		
+		std::shared_ptr<Common::CRoom> room;
+		std::vector<CSDNProcessors> sourcesConnectedProcessors;
 
 		bool enableDirectPath; // Enable direct path
-		bool enableReverbPath; // Enable reverb path
-
+		bool enableReverbPath; // Enable reverb path		
 	};
 }
 #endif

@@ -110,7 +110,7 @@ namespace BRTEnvironmentModel {
 		 * @param _order recursion depth
 		 * @param _sourceLocation Current location of the real (original) source
 		 */
-		void createImagesTree(const Common::CRoom& _room, const int& _order, const Common::CVector3& _sourceLocation) {
+		void createImagesTree(std::shared_ptr<Common::CRoom>& _room, const int& _order, const Common::CVector3& _sourceLocation) {
 			imagesTree.clear();
 						
 			std::vector<Common::CWall> path;			
@@ -255,16 +255,16 @@ namespace BRTEnvironmentModel {
 
 
 
-		void createImagesTree(const Common::CRoom & _currentRoom, int order, std::vector<Common::CWall> & path, std::vector<float> & absorptionCoefficients) {
+		void createImagesTree(std::shared_ptr<Common::CRoom> & _currentRoom, int order, std::vector<Common::CWall> & path, std::vector<float> & absorptionCoefficients) {
 			if (order == 0) return;
 			
-			const auto& wallsList = _currentRoom.GetWalls();
+			const auto& wallsList = _currentRoom->GetWalls();
 			for (auto& wall : wallsList) {
 				
 				if (!wall.IsActive()) continue;
 
 				const auto newImageLocation = wall.GetImagePoint(sourceLocation);
-				Common::CVector3 realRoomCenter = ISMParameters->room.GetCenter();
+				Common::CVector3 realRoomCenter = ISMParameters->room->GetCenter();
 
 				// Filter out reflections that are not physically possible				
 				/* If the image is closer to the room center than the previous original, 
@@ -295,9 +295,9 @@ namespace BRTEnvironmentModel {
 				//child->eq.SetCommandGains(ISMParameters->sampleRate, absorptionCoefficients);
 
 				if (order > 1) {
-					Common::CRoom nextRoom;
+					std::shared_ptr<Common::CRoom> nextRoom = std::make_shared<Common::CRoom>();
 					for (auto& wj : wallsList)
-						nextRoom.InsertWall(wall.GetImageWall(wj));
+						nextRoom->InsertWall(wall.GetImageWall(wj));
 					child->createImagesTree(nextRoom, order - 1, path, absorptionCoefficients);
 				}				
 

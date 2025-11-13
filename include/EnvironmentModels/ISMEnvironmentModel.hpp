@@ -63,7 +63,7 @@ namespace BRTEnvironmentModel {
 				return ISMProcessor->Setup(_reflectionOrder, _maxDistanceSourcesToListener, _windowSlopeDistance, _room);
 			}*/
 
-			bool Setup(const int & _reflectionOrder, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, const Common::CRoom & _room, std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
+			bool Setup(const int & _reflectionOrder, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, std::shared_ptr<Common::CRoom> & _room, std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
 				return ISMProcessor->Setup(_reflectionOrder, _maxDistanceSourcesToListener, _windowSlopeDistance, _room, _listenerModel);
 			}
 									
@@ -159,6 +159,7 @@ namespace BRTEnvironmentModel {
 			, windowSlopeDistance { 2 * globalParameters.GetSoundSpeed() * 0.001f }			
 		{ 			
 			// Default room
+			room = std::make_shared<Common::CRoom>();
 			//roomDefinition.SetupShoeBox(10, 10, 5); // TODO delete me after testing
 			//roomDefinition.SetupShoeBox(8, 5, 3); // TODO delete me after testing		
 			//roomDefinition.SetAllWallsAbsortion(std::vector<float>(9, 0.5f)); // TODO delete me after testing
@@ -328,32 +329,47 @@ namespace BRTEnvironmentModel {
 			}
 		}
 
-
 		/**
-		 * @brief Update room geometry in all sources processors. Called from father class
-		*/
-		void UpdateRoomGeometry() override {
-			std::lock_guard<std::mutex> l(mutex);									
-			ResetAndSetup();		
-		}
-		
-
-		/**
-		 * @brief Update room wall absortion. Called from father class
-		 * @param _wallIndex Pointer to the source
-		*/
-		void UpdateRoomWallAbsortion(int _wallIndex) override {
-			std::lock_guard<std::mutex> l(mutex);
-			ResetAndSetup();	
-		}
-		
-		/**
-		 * @brief Update room all walls absortion. Called from father class
+		 * @brief Set the room and reset and setup again
+		 * @param _room 
+		 * @return 
 		 */
-		void UpdateRoomAllWallsAbsortion() override {			
+		bool SetRoom(std::shared_ptr<Common::CRoom> _room) override {
 			std::lock_guard<std::mutex> l(mutex);
-			ResetAndSetup();	
+			room = _room;
+			return ResetAndSetup();
 		}
+		
+		/**
+		 * @brief Called when the room is updated to reset and setup again
+		 * @return t
+		 */
+		bool UpdateRoom() override { 
+			std::lock_guard<std::mutex> l(mutex);
+			if (room == nullptr) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "Room is not set.");
+				return false;
+			}
+			return ResetAndSetup();			
+		}
+
+		/**
+		 * @brief Get the room object
+		 * @return pointer to the room
+		 */
+		std::shared_ptr<Common::CRoom> GetRoom() const override { 
+			return room; 
+		}	
+
+		/**
+		 * @brief Remove the room
+		 */
+		void RemoveRoom() override { 
+			std::lock_guard<std::mutex> l(mutex);
+			room = std::make_shared<Common::CRoom>();
+			ResetAndSetup();
+		};
+		
 		
 		/**
 		 * @brief Set the reflection order and reset and setup again
@@ -494,7 +510,7 @@ namespace BRTEnvironmentModel {
 			control = control && brtManager->ConnectModulesSamples(_source, "samples", _newISMProcessors.ISMProcessor, "inputSamples");			
 									
 			if (control) {
-				_newISMProcessors.Setup(reflectionOrder, maxDistanceSourcesToListener, windowSlopeDistance, roomDefinition, _listenerModel);
+				_newISMProcessors.Setup(reflectionOrder, maxDistanceSourcesToListener, windowSlopeDistance, room, _listenerModel);
 				control = control && _newISMProcessors.ConnectToListenerModel(_listenerModel);
 			}
 			if (control) {
@@ -561,7 +577,7 @@ namespace BRTEnvironmentModel {
 			brtManager->BeginSetup();			
 			bool result = true;
 			for (auto & it : sourcesConnectedProcessors) {				
-				result = result && it.Setup(reflectionOrder, maxDistanceSourcesToListener, windowSlopeDistance, roomDefinition, _listenerModel);
+				result = result && it.Setup(reflectionOrder, maxDistanceSourcesToListener, windowSlopeDistance, room, _listenerModel);
 				result = result && it.ConnectToListenerModel(_listenerModel);
 			}
 			brtManager->EndSetup();			
@@ -575,6 +591,8 @@ namespace BRTEnvironmentModel {
 		std::vector<CISMProcessors> sourcesConnectedProcessors; // A processor per connected source
 		BRTBase::CBRTManager* brtManager;
 		Common::CGlobalParameters globalParameters;		
+
+		std::shared_ptr<Common::CRoom> room;
 
 		//bool enableDirectPath; // Enable direct path
 		bool enableReverbPath; // Enable reverb path

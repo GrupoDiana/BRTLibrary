@@ -56,7 +56,7 @@ namespace BRTEnvironmentModel {
 
 		int sampleRate;					///< Default sample rate in samples/seconds
 		
-		Common::CRoom room;
+		std::shared_ptr<Common::CRoom> room;
 		float transitionMeters;          // Transition meters associated with the _windowSlopeDistance		
 		float maxDistanceSourcesToListener;		// Maximum distance between the listener and each source image to be considered visible		
 		bool staticDistanceCriterion;    // When enabled, the number of potential images is smaller.NO SABEMOS SI DEBE ESTAR. ES UNA SITUACION ESTATICA (NO SE VAN A MOVER LAS FUENTES) AHORRA FUENTES		
