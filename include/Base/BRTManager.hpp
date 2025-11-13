@@ -833,7 +833,7 @@ namespace BRTBase {
 		 * @param commandJson The command to execute following a json format.
 		*/
 		void ExecuteCommand(std::string commandJson) {
-			std::lock_guard<std::mutex> l(mutex);
+			//std::lock_guard<std::mutex> l(mutex);
 			BRTConnectivity::CCommand command(commandJson);
 			commandsExitPoint->sendData(command);																		
 		}
