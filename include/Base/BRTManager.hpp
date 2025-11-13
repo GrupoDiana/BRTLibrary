@@ -318,6 +318,14 @@ namespace BRTBase {
 			return false;
 		}
 
+		std::vector<std::string> GetEnvironmentModelIDs() {
+			std::vector<std::string> environmentIDs;
+			for (auto& it : environmentModels) {
+				environmentIDs.push_back(it->GetModelID());
+			}
+			return environmentIDs;
+		}
+
 		/**
 		 * @brief Creates a new processor and returns a pointer to it. The brtmanager does NOT save the pointer.
 		 * @tparam T It must be a procesor module, i.e. a class that inherits from the CProcessorBase class.
