@@ -25,7 +25,7 @@
 #define _CISM_PARAMETERS_HPP_
 
 #include <Common/Vector3.hpp>
-#include <Common/Room.hpp>
+#include <ServiceModules/Room.hpp>
 
 
 namespace BRTEnvironmentModel {
@@ -37,7 +37,7 @@ namespace BRTEnvironmentModel {
 		Common::CVector3 location; //Location of the image source
 		bool visible; //If the source is visible it should be rendered
 		float visibility; //1 if visible, 0 if not, something in the middle if in the transition, where the transition is +/-VISIBILITY_MARGIN width
-		std::vector<Common::CWall> reflectionWalls; //list of walls where the source has reflected (last reflection first)
+		std::vector<BRTServices::CWall> reflectionWalls; //list of walls where the source has reflected (last reflection first)
 		std::vector<float> reflectionBands; //coeficients, for each octave Band, to be applied to simulate walls' absortion		
 	};
 
@@ -56,7 +56,7 @@ namespace BRTEnvironmentModel {
 
 		int sampleRate;					///< Default sample rate in samples/seconds
 		
-		std::shared_ptr<Common::CRoom> room;
+		std::shared_ptr<BRTServices::CRoom> room;
 		float transitionMeters;          // Transition meters associated with the _windowSlopeDistance		
 		float maxDistanceSourcesToListener;		// Maximum distance between the listener and each source image to be considered visible		
 		bool staticDistanceCriterion;    // When enabled, the number of potential images is smaller.NO SABEMOS SI DEBE ESTAR. ES UNA SITUACION ESTATICA (NO SE VAN A MOVER LAS FUENTES) AHORRA FUENTES		

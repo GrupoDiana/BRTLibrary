@@ -93,7 +93,7 @@ namespace BRTEnvironmentModel {
 		 * @param _listenerModel listener model to connect the virtual sources to
 		 * @return true if the setup was successful
 		 */
-		bool Setup(const int & _reflectionOrder, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, std::shared_ptr<Common::CRoom> & _room, std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
+		bool Setup(const int & _reflectionOrder, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, std::shared_ptr<BRTServices::CRoom> & _room, std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			if (!initialized) {
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "The ISM environment processor is not initialized");
@@ -261,7 +261,7 @@ namespace BRTEnvironmentModel {
 		*		 required before calling process
 		* @param roomDimensions Room dimensions in meters expressed as a CVector3 with form {x, y, z}
 		*/
-		void InitISMEnvironment(const int & order, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, std::shared_ptr<Common::CRoom> & _room) {
+		void InitISMEnvironment(const int & order, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, std::shared_ptr<BRTServices::CRoom> & _room) {
 			if (!initialized && setupDone) return; // It is not initialized or it is already setup
 			
 			Common::CTransform sourceTransform = GetPositionEntryPoint("sourcePosition")->GetData();			

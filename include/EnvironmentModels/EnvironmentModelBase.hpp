@@ -27,7 +27,7 @@
 #include <Base/ModelBase.hpp>
 #include <SourceModels/SourceModelBase.hpp>
 #include <SourceModels/VirtualSourceModel.hpp>
-#include <Common/Room.hpp>
+#include <ServiceModules/Room.hpp>
 
 namespace BRTSourceModel {
 	class CSourceOmnidirectionalModel;
@@ -59,9 +59,9 @@ namespace BRTEnvironmentModel {
 		virtual void DisablePropagationDelay() {};
 		virtual bool IsPropagationDelayEnabled() { return false; };
 
-		virtual bool SetRoom(std::shared_ptr<Common::CRoom>) { return false; };
+		virtual bool SetRoom(std::shared_ptr<BRTServices::CRoom>) { return false; };
 		virtual bool UpdateRoom() { return false; };
-		virtual std::shared_ptr<Common::CRoom> GetRoom() const { return nullptr; }		
+		virtual std::shared_ptr<BRTServices::CRoom> GetRoom() const { return nullptr; }		
 		virtual void RemoveRoom() { };
 						
 		virtual bool SetDistanceAttenuationFactor(float _distanceAttenuationDB) { return false; };

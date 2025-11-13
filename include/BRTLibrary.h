@@ -25,27 +25,36 @@
 #include "Common/CommonDefinitions.hpp"
 #include "Common/GlobalParameters.hpp"
 #include "Common/ErrorHandler.hpp"
+#include "Common/EnvelopeDetector.hpp"
+
 #include "Base/BRTManager.hpp"
 #include "Base/Listener.hpp"
 #include "Base/ListenerBase.hpp"
+
 #include "SourceModels/SourceOmnidirectionalModel.hpp"
 #include "SourceModels/SourceDirectivityModel.hpp"
+
 #include <ListenerModels/ListenerDirectHRTFConvolution.hpp>
 #include <ListenerModels/ListenerDirectBRIRConvolution.hpp>
 #include <ListenerModels/ListenerAmbisonicVirtualLoudspeakersModel.hpp>
 #include <ListenerModels/ListenerAmbisonicReverberantVirtualLoudspeakersModel.hpp>
+
 #include "ProcessingModules//HRTFConvolverProcessor.hpp"
 #include "ProcessingModules/DirectivityTFConvolver.hpp"
+
 #include "ServiceModules/HRTF.hpp"
 #include "ServiceModules/HRBRIR.hpp"
 #include "ServiceModules/SOSFilters.hpp"
 #include "ServiceModules/DirectivityTF.hpp"
-#include "Readers/SofaReader.hpp"
-#include "third_party_libraries/nlohmann/json.hpp"
-#include "Common/EnvelopeDetector.hpp"
+#include "ServiceModules/Room.hpp"
+
 #include "EnvironmentModels/SDNEnvironmentModel.hpp"
 #include "EnvironmentModels/FreeFieldEnvironmentModel.hpp"
 #include "EnvironmentModels/ISMEnvironmentModel.hpp"
 #include "BilateralFilter/SOSBilateralFilter.hpp"
+
+#include "Readers/SofaReader.hpp"
+#include "Readers/OBJReader.hpp"
+#include "third_party_libraries/nlohmann/json.hpp"
 
 #endif

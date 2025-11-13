@@ -149,7 +149,7 @@ namespace BRTEnvironmentModel {
 			, enableDirectPath { true }
 			, enableReverbPath { true } 
 		{ 
-			room = std::make_shared<Common::CRoom>();
+			room = std::make_shared<BRTServices::CRoom>();
 		}
 
 		/**
@@ -319,7 +319,7 @@ namespace BRTEnvironmentModel {
 		 * @param _room 
 		 * @return 
 		 */
-		bool SetRoom(std::shared_ptr<Common::CRoom> _room) override
+		bool SetRoom(std::shared_ptr<BRTServices::CRoom> _room) override
 		{ 
 			std::lock_guard<std::mutex> l(mutex);
 			room = _room;
@@ -360,7 +360,7 @@ namespace BRTEnvironmentModel {
 		 */
 		void UpdateRoomAllWallsAbsortion() {
 			std::lock_guard<std::mutex> l(mutex);
-			const std::vector<Common::CWall> & walls = room->GetWalls();			
+			const std::vector<BRTServices::CWall> & walls = room->GetWalls();			
 			
 			for (int _wallIndex = 0; _wallIndex < walls.size(); _wallIndex++) {
 				std::vector<float> absortionBands = walls.at(_wallIndex).GetAbsortionBand();				
@@ -548,7 +548,7 @@ namespace BRTEnvironmentModel {
 		BRTBase::CBRTManager* brtManager;
 		Common::CGlobalParameters globalParameters;		
 		
-		std::shared_ptr<Common::CRoom> room;
+		std::shared_ptr<BRTServices::CRoom> room;
 		std::vector<CSDNProcessors> sourcesConnectedProcessors;
 
 		bool enableDirectPath; // Enable direct path

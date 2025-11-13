@@ -27,12 +27,12 @@
 
 #include <vector>
 #include <Common/Vector3.hpp>
-#include <Common/Wall.hpp>
+#include <ServiceModules/Wall.hpp>
 
-namespace Common { 
+namespace BRTServices { 
 	
 	struct TRoomGeometry {		
-		std::vector<CVector3> corners;
+		std::vector<Common::CVector3> corners;
 		std::vector<std::vector<int>> walls;
 	};
 

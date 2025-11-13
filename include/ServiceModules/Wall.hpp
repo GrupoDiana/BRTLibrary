@@ -43,7 +43,7 @@
 #include <vector>
 #include <Common/Vector3.hpp>
 
-namespace Common {
+namespace BRTServices {
 
 class CWall {
 public:

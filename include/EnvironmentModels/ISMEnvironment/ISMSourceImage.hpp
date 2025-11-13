@@ -27,8 +27,8 @@
 #include <Common/Vector3.hpp>
 #include <Common/ErrorHandler.hpp>
 #include <Common/CommonDefinitions.hpp>
-#include <Common/Room.hpp>
-#include <Common/Wall.hpp>
+#include <ServiceModules/Room.hpp>
+#include <ServiceModules/Wall.hpp>
 #include "ISMParameters.hpp"
 
 
@@ -110,10 +110,10 @@ namespace BRTEnvironmentModel {
 		 * @param _order recursion depth
 		 * @param _sourceLocation Current location of the real (original) source
 		 */
-		void createImagesTree(std::shared_ptr<Common::CRoom>& _room, const int& _order, const Common::CVector3& _sourceLocation) {
+		void createImagesTree(std::shared_ptr<BRTServices::CRoom> & _room, const int & _order, const Common::CVector3 & _sourceLocation) {
 			imagesTree.clear();
 						
-			std::vector<Common::CWall> path;			
+			std::vector<BRTServices::CWall> path;			
 			try {
 				path.reserve(_order);
 			}
@@ -255,7 +255,7 @@ namespace BRTEnvironmentModel {
 
 
 
-		void createImagesTree(std::shared_ptr<Common::CRoom> & _currentRoom, int order, std::vector<Common::CWall> & path, std::vector<float> & absorptionCoefficients) {
+		void createImagesTree(std::shared_ptr<BRTServices::CRoom> & _currentRoom, int order, std::vector<BRTServices::CWall> & path, std::vector<float> & absorptionCoefficients) {
 			if (order == 0) return;
 			
 			const auto& wallsList = _currentRoom->GetWalls();
@@ -295,7 +295,7 @@ namespace BRTEnvironmentModel {
 				//child->eq.SetCommandGains(ISMParameters->sampleRate, absorptionCoefficients);
 
 				if (order > 1) {
-					std::shared_ptr<Common::CRoom> nextRoom = std::make_shared<Common::CRoom>();
+					std::shared_ptr<BRTServices::CRoom> nextRoom = std::make_shared<BRTServices::CRoom>();
 					for (auto& wj : wallsList)
 						nextRoom->InsertWall(wall.GetImageWall(wj));
 					child->createImagesTree(nextRoom, order - 1, path, absorptionCoefficients);
@@ -307,18 +307,18 @@ namespace BRTEnvironmentModel {
 			}
 		}
 				
-		void AddCoefficientsFromWall(std::vector<float>& absorptionCoefficients, const Common::CWall& wall) {
+		void AddCoefficientsFromWall(std::vector<float> & absorptionCoefficients, const BRTServices::CWall & wall) {
 			for (int n = 0; n < absorptionCoefficients.size(); n++) {
 				absorptionCoefficients[n] *= std::sqrt(1 - wall.GetAbsortionBand().at(n));
 			}			
 		}
-		void RemoveCoefficientsFromWall(std::vector<float> & absorptionCoefficients, const Common::CWall & wall) {
+		void RemoveCoefficientsFromWall(std::vector<float> & absorptionCoefficients, const BRTServices::CWall & wall) {
 			for (int n = 0; n < absorptionCoefficients.size(); n++) {
 				absorptionCoefficients[n] /= std::sqrt(1 - wall.GetAbsortionBand().at(n));
 			}
 		}
 
-		float CalculateRoomsDistance(const Common::CWall & wall, const std::vector<Common::CWall> & path, const Common::CVector3 & imgPos, const Common::CVector3 & listenerPosition) {
+		float CalculateRoomsDistance(const BRTServices::CWall & wall, const std::vector<BRTServices::CWall> & path, const Common::CVector3 & imgPos, const Common::CVector3 & listenerPosition) {
 			float roomsDistance = 0.0;
 			if (path.size() > 0)
 			{
@@ -346,7 +346,7 @@ namespace BRTEnvironmentModel {
 		/** \brief Returns the  wall where the reflecion produced this image
 		*   \param [out] Reflection wall.
 		*/
-		Common::CWall getMyReflectionWall()
+		BRTServices::CWall getMyReflectionWall()
 		{
 			return reflectionWallsPath.back();
 		}
@@ -366,7 +366,7 @@ namespace BRTEnvironmentModel {
 		bool visible;									// false when visibility = 0, true otherwise
 		float visibility;								// 1.0 if visible, 0.0 if not, something in the middle if the ray is close to the border of walls
 		Common::CVector3 sourceLocation;				// Source location		
-		std::vector<Common::CWall> reflectionWallsPath;			// vector containing the walls where the sound has been reflected in inverse order (last reflection first)
+		std::vector<BRTServices::CWall> reflectionWallsPath; // vector containing the walls where the sound has been reflected in inverse order (last reflection first)
 		std::vector<float> reflectionBands;				// coeficients, for each octave Band, to be applied to simulate walls' absortion
 		std::vector<std::shared_ptr<CISMSourceImage>> imagesTree;	// recursive list of images			
 		//Common::CascadeGraphicEq9OctaveBands eq;		// Filter to simulate walls' absortion		

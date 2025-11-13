@@ -25,7 +25,7 @@
 #include <memory>
 #include <Common/ErrorHandler.hpp>
 #include <Common/Vector3.hpp>
-#include <Common/Room.hpp>
+#include <ServiceModules/Room.hpp>
 #include "ISMParameters.hpp"
 #include "ISMSourceImage.hpp"
 
@@ -53,7 +53,7 @@ namespace BRTEnvironmentModel {
 		 * @param _room The room configuration to use for the simulation.
 		 * @return Returns true if the setup was successful; returns false if the parameters are invalid or setup fails.
 		 */
-		bool Setup(const int& order, const float& _maxDistanceSourcesToListener, const float& _windowSlopeDistance, std::shared_ptr<Common::CRoom> _room, const Common::CTransform& _sourceTransform, const Common::CTransform& _listenerTransform) {
+		bool Setup(const int & order, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, std::shared_ptr<BRTServices::CRoom> _room, const Common::CTransform & _sourceTransform, const Common::CTransform & _listenerTransform) {
 			if (setupDone) {
 				setupDone = false;
 				imageSources->Reset();

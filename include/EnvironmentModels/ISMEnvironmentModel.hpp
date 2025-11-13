@@ -63,7 +63,7 @@ namespace BRTEnvironmentModel {
 				return ISMProcessor->Setup(_reflectionOrder, _maxDistanceSourcesToListener, _windowSlopeDistance, _room);
 			}*/
 
-			bool Setup(const int & _reflectionOrder, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, std::shared_ptr<Common::CRoom> & _room, std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
+			bool Setup(const int & _reflectionOrder, const float & _maxDistanceSourcesToListener, const float & _windowSlopeDistance, std::shared_ptr<BRTServices::CRoom> & _room, std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
 				return ISMProcessor->Setup(_reflectionOrder, _maxDistanceSourcesToListener, _windowSlopeDistance, _room, _listenerModel);
 			}
 									
@@ -159,7 +159,7 @@ namespace BRTEnvironmentModel {
 			, windowSlopeDistance { 2 * globalParameters.GetSoundSpeed() * 0.001f }			
 		{ 			
 			// Default room
-			room = std::make_shared<Common::CRoom>();
+			room = std::make_shared<BRTServices::CRoom>();
 			//roomDefinition.SetupShoeBox(10, 10, 5); // TODO delete me after testing
 			//roomDefinition.SetupShoeBox(8, 5, 3); // TODO delete me after testing		
 			//roomDefinition.SetAllWallsAbsortion(std::vector<float>(9, 0.5f)); // TODO delete me after testing
@@ -334,7 +334,7 @@ namespace BRTEnvironmentModel {
 		 * @param _room 
 		 * @return 
 		 */
-		bool SetRoom(std::shared_ptr<Common::CRoom> _room) override {
+		bool SetRoom(std::shared_ptr<BRTServices::CRoom> _room) override {
 			std::lock_guard<std::mutex> l(mutex);
 			room = _room;
 			return ResetAndSetup();
@@ -357,7 +357,7 @@ namespace BRTEnvironmentModel {
 		 * @brief Get the room object
 		 * @return pointer to the room
 		 */
-		std::shared_ptr<Common::CRoom> GetRoom() const override { 
+		std::shared_ptr<BRTServices::CRoom> GetRoom() const override { 
 			return room; 
 		}	
 
@@ -366,7 +366,7 @@ namespace BRTEnvironmentModel {
 		 */
 		void RemoveRoom() override { 
 			std::lock_guard<std::mutex> l(mutex);
-			room = std::make_shared<Common::CRoom>();
+			room = std::make_shared<BRTServices::CRoom>();
 			ResetAndSetup();
 		};
 		
@@ -592,7 +592,7 @@ namespace BRTEnvironmentModel {
 		BRTBase::CBRTManager* brtManager;
 		Common::CGlobalParameters globalParameters;		
 
-		std::shared_ptr<Common::CRoom> room;
+		std::shared_ptr<BRTServices::CRoom> room;
 
 		//bool enableDirectPath; // Enable direct path
 		bool enableReverbPath; // Enable reverb path
