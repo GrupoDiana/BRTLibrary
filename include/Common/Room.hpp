@@ -31,8 +31,7 @@
 
 namespace Common { 
 	
-	struct TRoomGeometry {
-		
+	struct TRoomGeometry {		
 		std::vector<CVector3> corners;
 		std::vector<std::vector<int>> walls;
 	};
@@ -320,9 +319,10 @@ namespace Common {
 					farthestCorner = center;
 					normal = walls.at(i).GetNormal();
 
-					std::vector<Common::CVector3> corners;
+					/*std::vector<Common::CVector3> corners;
 					CWall tWall = walls.at(i);
-					corners = tWall.GetCorners();
+					corners = tWall.GetCorners();*/
+					const std::vector<Common::CVector3>& corners = walls.at(i).GetCorners();
 
 					float tempDistanceToPlane = walls.at(i).GetDistanceFromPoint(point);
 					if (tempDistanceToPlane < distanceToPlane) distanceToPlane = tempDistanceToPlane;
@@ -387,7 +387,7 @@ namespace Common {
 
 		////////////
 		// Attributes
-		////////////
+		////////////		
 		bool setupDone;			// Flag indicating if the room has been set up
 		bool shoeBox;			// Flag indicating if the room was set up as a shoebox
 		float shoeBoxLength;	// Length of the shoebox room
