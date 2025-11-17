@@ -44,6 +44,8 @@ namespace BRTServices {
 			, shoeBoxHeight {0}
 			, shoeBoxLength { 0 }
 			, shoeBoxWidth { 0 }
+			, walls { std::vector<CWall>() } 
+			, id { "" }
 		{ }
 
 		/** \brief Initializes the object with a shoebox room
@@ -127,6 +129,22 @@ namespace BRTServices {
 			}
 			shoeBox = false;
 			setupDone = true;
+		}
+
+		/**
+		 * @brief Sets the ID of the room
+		 * @param _id 
+		 */
+		void SetID(const std::string& _id) {
+			id = _id;
+		}
+		
+		/**
+		 * @brief Gets the ID of the room
+		 * @return 
+		 */
+		std::string GetID() const {
+			return id;
 		}
 
 		/**
@@ -392,6 +410,8 @@ namespace BRTServices {
 		float shoeBoxHeight;	// Height of the shoebox room
 
 		std::vector<CWall> walls; //Vector with all the walls of the room
+
+		std::string id; // Identifier of the room
 	};
 }
 #endif
