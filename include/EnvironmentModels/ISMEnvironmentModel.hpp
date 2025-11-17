@@ -154,7 +154,7 @@ namespace BRTEnvironmentModel {
 			, brtManager { _brtManager }
 			//, enableDirectPath { true }
 			, enableReverbPath { true }
-			, reflectionOrder {0}
+			, reflectionOrder {1}
 			, maxDistanceSourcesToListener { 3.43 }
 			, windowSlopeDistance { 2 * globalParameters.GetSoundSpeed() * 0.001f }			
 		{ 			
