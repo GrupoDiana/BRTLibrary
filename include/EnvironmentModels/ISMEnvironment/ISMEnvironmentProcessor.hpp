@@ -242,6 +242,14 @@ namespace BRTEnvironmentModel {
 			SyncAllVirtualSourcesToModel();
 		}
 
+		/**
+		 * @brief Get the number of image sources
+		 * @return Number of image sources
+		 */ 
+		size_t GetNumberOfImageSources() const {
+			return numberOfImageSources;
+		}
+
 		void ResetProcessBuffers() {
 			//TODO Implement samples buffer cleaning.
 		}
