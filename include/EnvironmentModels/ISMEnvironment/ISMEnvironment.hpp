@@ -259,7 +259,10 @@ namespace BRTEnvironmentModel {
 			UpdateImageSourceDataFromImageTree();
 			UpdateImageSourcesPositionList();
 			UpdateWaveGuideFiltersVisibility();
+
+#if defined(DEBUG) || defined(_DEBUG)
 			ShowImageSourceData(imageSourcesDataList); // TO DELETE
+#endif
 		}
 
 		/**
