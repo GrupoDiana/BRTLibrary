@@ -363,9 +363,8 @@ namespace BRTServices {
 		*	\details The center is calculated as the average of the centers of the walls
 		*	\param [out] center: point (CVector3) which is the center of the room.
 		*/
-		Common::CVector3& GetCenter() const {
+		Common::CVector3 GetCenter() const {
 			Common::CVector3 center = Common::CVector3::ZERO();
-
 			if (walls.size() > 0) {
 				for (auto i = 0; i < walls.size(); i++) {
 					center = center + walls.at(i).GetCenter();
@@ -373,12 +372,10 @@ namespace BRTServices {
 				center.x /= walls.size();
 				center.y /= walls.size();
 				center.z /= walls.size();
-			}
+			}			
 			return center;
 		}
-
 		
-
 	private:
 
 		bool IsThereThisWall(const int& _wallIndex) const {

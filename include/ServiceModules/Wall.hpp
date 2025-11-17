@@ -54,7 +54,8 @@ public:
 		, C { 0 }
 		, D { 0 }
 		, absortionBands { std::vector<float> (NUM_BAND_ABSORTION, 0.0) }
-		, active { true } {
+		, active { true }
+		, polygon { std::vector<Common::CVector3>() } {
 		//Wall purely reflective by default
 		//Wall active by default
 	}
@@ -164,7 +165,8 @@ public:
 	/** \brief Returns the center of the wall.
 	*	\param [out] Center: central point of the wall.
 	*/
-	Common::CVector3& GetCenter() const {
+	Common::CVector3 GetCenter() const {
+		
 		Common::CVector3 center;
 		
 		center = Common::CVector3::ZERO();
@@ -176,7 +178,7 @@ public:
 		center.x /= polygon.size();
 		center.y /= polygon.size();
 		center.z /= polygon.size();
-
+		
 		return center;
 	}
 	
