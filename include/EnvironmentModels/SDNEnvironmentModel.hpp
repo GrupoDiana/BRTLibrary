@@ -320,12 +320,17 @@ namespace BRTEnvironmentModel {
 		 * @return 
 		 */
 		bool SetRoom(std::shared_ptr<BRTServices::CRoom> _room) override
-		{ 
+		{ 			
+			if (_room == nullptr) return false;
+			if (!_room->IsShoeBox()) return false;
+			if (!_room->IsAnyWallDefined()) return false;
+
 			std::lock_guard<std::mutex> l(mutex);
 			room = _room;
 			//Get Room dimensions and Room Centre from CRoom object
 			Common::CVector3 roomDimensions = _room->GetShoeBoxRoomSize();
 			Common::CVector3 roomCentre = _room->GetCenter();
+						
 			// Update Room dimensions and Room Centre in all sources processors
 			for (auto & it : sourcesConnectedProcessors) {
 				it.SetupRoom(roomDimensions, roomCentre);
@@ -333,20 +338,32 @@ namespace BRTEnvironmentModel {
 			return true;
 		};
 
-		///**
-		// * @brief Update room geometry. Called from father class
-		//*/
-		//void UpdateRoomGeometry() override {
-		//	std::lock_guard<std::mutex> l(mutex);
-
-		//	//Get Room dimensions and Room Centre from CRoom object
-		//	Common::CVector3 roomDimensions = GetRoom().GetShoeBoxRoomSize();
-		//	Common::CVector3 roomCentre = GetRoom().GetCenter();
-		//	// Update Room dimensions and Room Centre in all sources processors
-		//	for (auto & it : sourcesConnectedProcessors) {
-		//		it.SetupRoom(roomDimensions, roomCentre);
-		//	}
-		//}
+		/**
+		 * @brief Get the room object
+		 * @return pointer to the room
+		 */
+		std::shared_ptr<BRTServices::CRoom> GetRoom() const override {
+			return room;
+		}	
+		
+		/**
+		 * @brief Remove the room
+		 */
+		void RemoveRoom() override {						
+			std::lock_guard<std::mutex> l(mutex);
+			room = std::make_shared<BRTServices::CRoom>();
+			//Get Room dimensions and Room Centre from CRoom object
+			Common::CVector3 roomDimensions = Common::CVector3(1,1,1);
+			Common::CVector3 roomCentre = Common::CVector3::ZERO();
+			// Update Room dimensions and Room Centre in all sources processors
+			for (auto & it : sourcesConnectedProcessors) {
+				it.SetupRoom(roomDimensions, roomCentre);
+			}
+		};
+		/**
+		 * @brief Update room all walls absortion. Called from father class
+		 * @return 
+		 */
 		bool UpdateRoom() override { 
 			//std::lock_guard<std::mutex> l(mutex);
 			if (room == nullptr) return false;			

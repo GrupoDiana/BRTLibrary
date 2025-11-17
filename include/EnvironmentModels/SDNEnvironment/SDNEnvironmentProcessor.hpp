@@ -47,7 +47,8 @@ namespace BRTEnvironmentModel {
 			, muteLoS { false }
 			, muteReverbPath { false }
 			, enableProcessor { true }
-			, gain {1.0f} {
+			, gain {1.0f}
+			, globalCoordinatesRoomCentre { Common::CVector3::ZERO() } {
 
 			CreateSamplesEntryPoint("inputSamples");
 			CreatePositionEntryPoint("sourcePosition");
@@ -221,10 +222,10 @@ namespace BRTEnvironmentModel {
 			}
 					
 			// Get data from entry points
-			CMonoBuffer<float> inBuffer = GetSamplesEntryPoint("inputSamples")->GetData();
-			Common::CTransform sourcePosition = CalculateLocalPosition(GetPositionEntryPoint("sourcePosition")->GetData());
-			Common::CTransform listenerPosition = CalculateLocalPosition(GetPositionEntryPoint("listenerPosition")->GetData());
-						
+			CMonoBuffer<float> inBuffer = GetSamplesEntryPoint("inputSamples")->GetData();						
+			Common::CTransform localSourcePosition = CalculateLocalPosition(GetPositionEntryPoint("sourcePosition")->GetData());
+			Common::CTransform localListenerPosition = CalculateLocalPosition(GetPositionEntryPoint("listenerPosition")->GetData());
+			
 			if (inBuffer.size() == 0) {				
 				SET_RESULT(RESULT_ERROR_BADSIZE, "The input buffer size is 0");
 				return;
@@ -237,17 +238,17 @@ namespace BRTEnvironmentModel {
 				virtualSourceBuffers[SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT - 1] = inBuffer;
 				
 				virtualSourcePositions = std::vector<Common::CTransform>(SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT, Common::CTransform());
-				virtualSourcePositions[SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT - 1] = sourcePosition;
+				virtualSourcePositions[SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT - 1] = localSourcePosition;
 				SyncAllVirtualSourcesToModel();
 				return;
 			}	
-
+			
 			// If the source or listener position exceed the size of the room silence the output			
-			if (IsInBounds(sourcePosition.GetPosition()) && IsInBounds(listenerPosition.GetPosition())) {				
-				Process(inBuffer, sourcePosition, listenerPosition, virtualSourceBuffers, virtualSourcePositions);				
-			} else {		
+			if (IsInBounds(localSourcePosition.GetPosition()) && IsInBounds(localListenerPosition.GetPosition())) {								
+				Process(inBuffer, localSourcePosition, localListenerPosition, virtualSourceBuffers, virtualSourcePositions);				
+			} else {						
 				virtualSourceBuffers = std::vector<CMonoBuffer<float>>(SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT, CMonoBuffer<float>(inBuffer.size()));			
-			}
+			}			
 			SyncAllVirtualSourcesToModel();
 		}
 
@@ -302,9 +303,7 @@ namespace BRTEnvironmentModel {
 		 * @param _globalLocation global location
 		 * @return local location
 		 */
-		Common::CTransform CalculateLocalPosition(const Common::CTransform& _globalPosition) {
-			
-			
+		Common::CTransform CalculateLocalPosition(const Common::CTransform& _globalPosition) {									
 			// Calculate parameter
 			Common::CVector3 localCentre = (dimensions * 0.5f);
 			Common::CVector3 transformParameter = localCentre - globalCoordinatesRoomCentre;
