@@ -102,7 +102,7 @@ namespace BRTEnvironmentModel {
 		* @brief Verify if a given position is inside the current room bounds
 		* @return True if position is inside the current room bounds
 		*/
-		bool IsInBounds(Common::CVector3 position)
+		bool IsInBounds(const Common::CVector3& position)
 		{
 			return std::abs(position.x) < std::abs(dimensions.x) && ((position.x > 0) == (dimensions.x > 0)) &&
 				std::abs(position.y) < std::abs(dimensions.y) && ((position.y > 0) == (dimensions.y > 0)) &&

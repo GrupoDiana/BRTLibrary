@@ -27,20 +27,26 @@
 
 #include <vector>
 #include <Common/Vector3.hpp>
-#include <Common/Wall.hpp>
+#include <ServiceModules/Wall.hpp>
 
-namespace Common { 
+namespace BRTServices { 
 	
-	struct TRoomGeometry {
-		
-		std::vector<CVector3> corners;
+	struct TRoomGeometry {		
+		std::vector<Common::CVector3> corners;
 		std::vector<std::vector<int>> walls;
 	};
 
 	class CRoom {
 	public:
 		CRoom()
-			: shoeBox { false } { }
+			: setupDone { false }
+			, shoeBox { false }
+			, shoeBoxHeight {0}
+			, shoeBoxLength { 0 }
+			, shoeBoxWidth { 0 }
+			, walls { std::vector<CWall>() } 
+			, id { "" }
+		{ }
 
 		/** \brief Initializes the object with a shoebox room
 		*	\details creates six walls conforming a shoebox room with 0,0,0 at the center. It must be used right after
@@ -49,9 +55,9 @@ namespace Common {
 		*	\param [in] width: extension of the room along the Y axis.
 		*	\param [in] height: extension of the room along the Z axis
 		*/
-		bool SetupShoeBox(float _length, float _width, float _height) {
+		bool SetupShoeBox(float length, float width, float height) {
 
-			if (_length <= 0 || _width <= 0 || _height <= 0) return false;
+			if (length <= 0 || width <= 0 || height <= 0) return false;
 
 			//If the room was previously set up as a shoebox, it will keep the wall properties if it is redifined with a new shoeboxSetup
 			std::vector<CWall> previousWalls;
@@ -62,35 +68,35 @@ namespace Common {
 			// Now we can clear the walls in case there was a previous definition to set the room up from scratch
 			walls.clear();
 			CWall front, back, left, right, ceiling, floor;
-			front.InsertCorner(_length / 2, _width / 2, -_height / 2);
-			front.InsertCorner(_length / 2, -_width / 2, -_height / 2);
-			front.InsertCorner(_length / 2, _width / 2, _height / 2);
-			front.InsertCorner(_length / 2, -_width / 2, _height / 2);
+			front.InsertCorner(length / 2, width / 2, height / 2);
+			front.InsertCorner(length / 2, width / 2, -height / 2);
+			front.InsertCorner(length / 2, -width / 2, -height / 2);
+			front.InsertCorner(length / 2, -width / 2, height / 2);
 			InsertWall(front);
-			left.InsertCorner(-_length / 2, _width / 2, _height / 2);
-			left.InsertCorner(-_length / 2, _width / 2, -_height / 2);
-			left.InsertCorner(_length / 2, _width / 2, -_height / 2);
-			left.InsertCorner(_length / 2, _width / 2, _height / 2);
+			left.InsertCorner(-length / 2, width / 2, height / 2);
+			left.InsertCorner(-length / 2, width / 2, -height / 2);
+			left.InsertCorner(length / 2, width / 2, -height / 2);
+			left.InsertCorner(length / 2, width / 2, height / 2);
 			InsertWall(left);
-			right.InsertCorner(_length / 2, -_width / 2, _height / 2);
-			right.InsertCorner(_length / 2, -_width / 2, -_height / 2);
-			right.InsertCorner(-_length / 2, -_width / 2, -_height / 2);
-			right.InsertCorner(-_length / 2, -_width / 2, _height / 2);
+			right.InsertCorner(length / 2, -width / 2, height / 2);
+			right.InsertCorner(length / 2, -width / 2, -height / 2);
+			right.InsertCorner(-length / 2, -width / 2, -height / 2);
+			right.InsertCorner(-length / 2, -width / 2, height / 2);
 			InsertWall(right);
-			back.InsertCorner(-_length / 2, -_width / 2, _height / 2);
-			back.InsertCorner(-_length / 2, -_width / 2, -_height / 2);
-			back.InsertCorner(-_length / 2, _width / 2, -_height / 2);
-			back.InsertCorner(-_length / 2, _width / 2, _height / 2);
+			back.InsertCorner(-length / 2, -width / 2, height / 2);
+			back.InsertCorner(-length / 2, -width / 2, -height / 2);
+			back.InsertCorner(-length / 2, width / 2, -height / 2);
+			back.InsertCorner(-length / 2, width / 2, height / 2);
 			InsertWall(back);
-			floor.InsertCorner(_length / 2, _width / 2, -_height / 2);
-			floor.InsertCorner(-_length / 2, _width / 2, -_height / 2);
-			floor.InsertCorner(-_length / 2, -_width / 2, -_height / 2);
-			floor.InsertCorner(_length / 2, -_width / 2, -_height / 2);
+			floor.InsertCorner(length / 2, width / 2, -height / 2);
+			floor.InsertCorner(-length / 2, width / 2, -height / 2);
+			floor.InsertCorner(-length / 2, -width / 2, -height / 2);
+			floor.InsertCorner(length / 2, -width / 2, -height / 2);
 			InsertWall(floor);
-			ceiling.InsertCorner(_length / 2, -_width / 2, _height / 2);
-			ceiling.InsertCorner(-_length / 2, -_width / 2, _height / 2);
-			ceiling.InsertCorner(-_length / 2, _width / 2, _height / 2);
-			ceiling.InsertCorner(_length / 2, _width / 2, _height / 2);
+			ceiling.InsertCorner(length / 2, -width / 2, height / 2);
+			ceiling.InsertCorner(-length / 2, -width / 2, height / 2);
+			ceiling.InsertCorner(-length / 2, width / 2, height / 2);
+			ceiling.InsertCorner(length / 2, width / 2, height / 2);
 			InsertWall(ceiling);
 
 			if (shoeBox) {
@@ -101,10 +107,10 @@ namespace Common {
 				}
 			}
 			shoeBox = true;
-			shoeBoxLength = _length;
-			shoeBoxWidth = _width;
-			shoeBoxHeight = _height;
-			
+			shoeBoxLength = length;
+			shoeBoxWidth = width;
+			shoeBoxHeight = height;
+			setupDone = true;
 			return true;
 		}
 
@@ -112,7 +118,7 @@ namespace Common {
 		*	\details creates a room with arbitrary geometry by means of defining all its corners and the walls as polygons with those corners
 		*	\param [in] roomGeometry: struct containing all the vertices and walls
 		*/
-		void SetupRoomGeometry(TRoomGeometry roomGeometry) {
+		void SetupRoomGeometry(const TRoomGeometry& roomGeometry) {
 			walls.clear();
 			for (int i = 0; i < roomGeometry.walls.size(); i++) {
 				CWall tempWall;
@@ -122,21 +128,70 @@ namespace Common {
 				InsertWall(tempWall);
 			}
 			shoeBox = false;
+			setupDone = true;
 		}
 
+		/**
+		 * @brief Sets the ID of the room
+		 * @param _id 
+		 */
+		void SetID(const std::string& _id) {
+			id = _id;
+		}
+		
+		/**
+		 * @brief Gets the ID of the room
+		 * @return 
+		 */
+		std::string GetID() const {
+			return id;
+		}
+
+		/**
+		 * @brief Checks if the room has been defined
+		 * @details True does not necessarily mean that the room is valid 
+		 * @return true if the room has been defined, false otherwise
+		 */
+		bool IsRoomDefined() const {
+			return setupDone;
+		}
+
+		/** \brief Returns if there is any wall
+		*/
+		bool IsAnyWallDefined() const {
+			if (!setupDone) return false;
+			return walls.size() > 0;
+		}
+
+		bool IsShoeBox() const {
+			if (!setupDone) return false;
+			return shoeBox;
+		}
+
+		/** \brief Gets the shoebox room size
+			Returns if it is a shoebox room it returns the size of the room, otherwise it returns 0,0,0
+		*/
+		Common::CVector3 GetShoeBoxRoomSize() const {
+			if (!shoeBox) return Common::CVector3::ZERO();
+			return Common::CVector3(shoeBoxLength, shoeBoxWidth, shoeBoxHeight);
+		}
+		
 		/** \brief insert a new wall in the room
 		*	\details Instead of using the setup method, this method can be used to create any arbitrary room. It should be
 					 called once per wall to be inserted, after creating a new empty room.
 		*	\param [in] Wall to be inserted.
 		*/
-		void InsertWall(CWall _newWall) {
+		void InsertWall(const CWall& _newWall) {
 			walls.push_back(_newWall);
 		};
 
 		/** \brief Returns a vector of walls containing all the walls of the room.
 		*	\param [out] Walls: vector of walls with all the walls of the room.
 		*/
-		std::vector<CWall> GetWalls() {
+		/*std::vector<CWall> GetWalls() {
+			return walls;
+		}*/
+		const std::vector<CWall>& GetWalls() const {
 			return walls;
 		}
 
@@ -144,7 +199,8 @@ namespace Common {
 		*	\details Sets the i-th wall of the room as active and therefore reflective.
 		*	\param [in] index of the wall to be active.
 		*/
-		void EnableWall(int wallIndex) {
+		void EnableWall(const int& wallIndex) {
+			if (!setupDone) return;
 			if (walls.size() > wallIndex) {
 				walls.at(wallIndex).Enable();
 			}
@@ -154,10 +210,17 @@ namespace Common {
 		*	\details Sets the i-th wall of the room as not active and therefore transparent.
 		*	\param [in] index of the wall to be active.
 		*/
-		void DisableWall(int wallIndex) {
+		void DisableWall(const int& wallIndex) {
+			if (!setupDone) return;
 			if (walls.size() > wallIndex) {
 				walls.at(wallIndex).Disable();
 			}
+		}
+
+		bool IsWallActive(const int& wallIndex) const {
+			if (!setupDone) return false;
+			if (!IsThereThisWall(wallIndex)) return false;
+			return walls.at(wallIndex).IsActive();
 		}
 
 		/** \brief sets the absortion coeficient (frequency independent) of one wall
@@ -188,14 +251,14 @@ namespace Common {
 		*	\param [in] index of the wall.
 		*	\param [in] absortion coeficients for each band (frequency dependent)
 		*/
-		bool SetWallAbsortion(int wallIndex, std::vector<float> absortionPerBand) {
+		bool SetWallAbsortion(int wallIndex, const std::vector<float>& absortionPerBand) {
 			if (!IsThereThisWall(wallIndex)) return false;
 			return walls.at(wallIndex).SetAbsortion(absortionPerBand);
 		};
 
 		/** \brief Sets the absortion coeficient (frequency dependent) of all walls
 		*/
-		bool SetAllWallsAbsortion(std::vector<float> absortionPerBand) {
+		bool SetAllWallsAbsortion(const std::vector<float>& absortionPerBand) {
 			bool control = true;
 			int wallsNumber = walls.size();
 			for (int i = 0; i < wallsNumber; i++) {
@@ -204,14 +267,43 @@ namespace Common {
 			return control;
 		}
 
-		
+		/**
+		 * @brief Sets the absortion coeficient (frequency dependent) of all walls
+		 * @param absortionPerBand walls absortion coeficients for each band (frequency dependent)
+		 * @return 
+		 */
+		bool SetAllWallsAbsortion(const std::vector<std::vector<float>> & absortionPerBand) {
+			bool control = true;
+			
+			if (absortionPerBand.size() != walls.size()) {
+				return false;
+			}
 
+			int wallsNumber = walls.size();
+			for (int i = 0; i < wallsNumber; i++) {
+				control = control && walls.at(i).SetAbsortion(absortionPerBand[i]);
+			}
+			return control;
+		}
+
+		/**
+		 * @brief Gets the absortion coefficients of all the walls in the room
+		 * @param _wallsAbsortions 
+		 */
+		void GetAllWallsAbsortion(std::vector<std::vector<float>> & _wallsAbsortions) const {
+			_wallsAbsortions.clear();
+			for (auto & wall: walls) {
+				_wallsAbsortions.push_back(wall.GetAbsortionBand());
+			}						
+		}
+		
 		/** \brief Returns a vector of image rooms
 		*	\details creates an image (specular) room for each wall of this room and returns a vector contoining them.
 		*	\param [out] ImageRooms: vector containing all image rooms of this room.
 		*/
-		std::vector<CRoom> GetImageRooms() {
-			std::vector<CRoom> roomList;
+		void getImageRooms(std::vector<CRoom> & roomList) const {
+		//std::vector<CRoom> GetImageRooms() {			
+			roomList.clear();
 			for (int i = 0; i < walls.size(); i++) {
 				if (walls.at(i).IsActive()) {
 					CRoom tempRoom;
@@ -222,7 +314,7 @@ namespace Common {
 					roomList.push_back(tempRoom);
 				}
 			}
-			return roomList;
+			//return roomList;
 		};
 
 		/** \brief Checks wether a 3D point is inside the room or not.
@@ -233,11 +325,10 @@ namespace Common {
 		*	\param [out] distance to nearest wall passed by reference
 		*	\param [out] Result: returned boolean indicating if the point is inside the room (true) or not (false)
 		*/
-		bool CheckPointInsideRoom(Common::CVector3 point, float & distanceNearestWall) {
+		bool CheckPointInsideRoom(const Common::CVector3 & point, float & distanceNearestWall) const {
 			float distanceToPlane = FLT_MAX;
-			bool inside;
-
-			inside = true;
+			bool inside = true;
+			
 			for (int i = 0; i < walls.size(); i++) {
 				if (walls.at(i).IsActive()) {
 
@@ -246,9 +337,10 @@ namespace Common {
 					farthestCorner = center;
 					normal = walls.at(i).GetNormal();
 
-					std::vector<Common::CVector3> corners;
+					/*std::vector<Common::CVector3> corners;
 					CWall tWall = walls.at(i);
-					corners = tWall.GetCorners();
+					corners = tWall.GetCorners();*/
+					const std::vector<Common::CVector3>& corners = walls.at(i).GetCorners();
 
 					float tempDistanceToPlane = walls.at(i).GetDistanceFromPoint(point);
 					if (tempDistanceToPlane < distanceToPlane) distanceToPlane = tempDistanceToPlane;
@@ -289,9 +381,8 @@ namespace Common {
 		*	\details The center is calculated as the average of the centers of the walls
 		*	\param [out] center: point (CVector3) which is the center of the room.
 		*/
-		Common::CVector3 GetCenter() {
+		Common::CVector3 GetCenter() const {
 			Common::CVector3 center = Common::CVector3::ZERO();
-
 			if (walls.size() > 0) {
 				for (auto i = 0; i < walls.size(); i++) {
 					center = center + walls.at(i).GetCenter();
@@ -299,40 +390,28 @@ namespace Common {
 				center.x /= walls.size();
 				center.y /= walls.size();
 				center.z /= walls.size();
-			}
+			}			
 			return center;
 		}
-
-		/** \brief Gets the shoebox room size
-			Returns if it is a shoebox room it returns the size of the room, otherwise it returns 0,0,0
-		*/
-		Common::CVector3 GetShoeBoxRoomSize() {
-			if (!shoeBox) return Common::CVector3::ZERO();
-			return Common::CVector3(shoeBoxLength, shoeBoxWidth, shoeBoxHeight);
-		}
-
-		/** \brief Returns if there is any wall
-		*/
-		bool IsAnyWallDefined() {
-			return walls.size() > 0;
-		}
-
+		
 	private:
 
-		bool IsThereThisWall(int _wallIndex) {
+		bool IsThereThisWall(const int& _wallIndex) const {
 			return walls.size() > _wallIndex;
 		}
 
 		////////////
 		// Attributes
-		////////////
-
+		////////////		
+		bool setupDone;			// Flag indicating if the room has been set up
 		bool shoeBox;			// Flag indicating if the room was set up as a shoebox
 		float shoeBoxLength;	// Length of the shoebox room
 		float shoeBoxWidth;		// Width of the shoebox room
 		float shoeBoxHeight;	// Height of the shoebox room
 
 		std::vector<CWall> walls; //Vector with all the walls of the room
+
+		std::string id; // Identifier of the room
 	};
 }
 #endif

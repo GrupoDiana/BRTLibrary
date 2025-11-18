@@ -25,10 +25,13 @@
 #ifndef _CWAVE_GUIDE_H_
 #define _CWAVE_GUIDE_H_
 
+#include <vector>
 #include <Common/Buffer.hpp>
 #include <Common/Vector3.hpp>
 #include <Common/GlobalParameters.hpp>
 #include <boost/circular_buffer.hpp>
+#include <Common/ErrorHandler.hpp>
+#include <Common/CascadeGraphicEq9OctaveBands.hpp>
 
 namespace Common {
 	class CWaveguide
@@ -41,6 +44,7 @@ namespace Common {
 			: enablePropagationDelay(false)
 			, previousListenerPositionInitialized(false)
 			, checkSoundSpeedLimit(0)
+			, propagationFilter { std::make_shared<CCascadeGraphicEq9OctaveBands>() }
 		{}
 
 
@@ -67,6 +71,27 @@ namespace Common {
 		*/
 		bool IsPropagationDelayEnabled() { return enablePropagationDelay; }
 
+		/**
+		 * @brief Enable the propagation filter
+		 */
+		void EnablePropagationFilter() { 
+			propagationFilter->Enable(); 
+		}
+
+		/**
+		 * @brief Disable the propagation filter
+		 */
+		void DisablePropagationFilter() { 
+			propagationFilter->Disable(); 
+		}
+		
+		/**
+		 * @brief Get the flag for propagation filter enabling
+		 * @retval true if the propagation filter is enabled
+		 */
+		bool IsPropagationFilterEnabled() {
+			return propagationFilter->IsEnabled();
+		}
 
 		/** \brief Insert a new frame into the waveguide
 		*/		
@@ -116,6 +141,13 @@ namespace Common {
 			mostRecentBuffer.clear();
 			// Go back to previous state
 			enablePropagationDelay = previousPropagationDelayState;		
+		}
+
+
+		// Temporary method to setup a filter
+		void SetupFilter(const std::vector<float> & _gains) {
+			ASSERT(globalParameters.GetSampleRate() == 48000, RESULT_ERROR_INVALID_PARAM, "The waveguide filter is only compatible with a sampling frequency of 48KHz.", "");
+			propagationFilter->SetCommandGains(_gains);
 		}
 
 	private:
@@ -246,8 +278,10 @@ namespace Common {
 
 			// In other case Get samples from buffer
 			if (samplesToBeExtracted == globalParameters.GetBufferSize()) {
-				// If it doesn't needed to do and expasion or compression								
+				// If it doesn't needed to do and expasion or compression									
 				outbuffer.insert(outbuffer.begin(), circular_buffer.begin(), circular_buffer.begin() + samplesToBeExtracted);
+				// TODO FILTER HERE				
+				propagationFilter->Process(outbuffer);				
 				ShiftLeftSourcePositionsBuffer(samplesToBeExtracted); // Delete samples that have left the buffer storing the source positions.				
 			} else {				
 				if (samplesToBeExtracted > circular_buffer.size()) {					
@@ -256,6 +290,7 @@ namespace Common {
 				}
 				//In case we need to expand or compress
 				CMonoBuffer<float> extractingBuffer(circular_buffer.begin(), circular_buffer.begin() + samplesToBeExtracted);
+				propagationFilter->Process(extractingBuffer);										
 				ShiftLeftSourcePositionsBuffer(samplesToBeExtracted); // Delete samples that have left the buffer storing the source positions.
 				// the capacity of the circular buffer must be increased with the samples that have not been removed
 				RsetCirculaBuffer(circular_buffer.capacity() + globalParameters.GetBufferSize() - samplesToBeExtracted);
@@ -521,6 +556,8 @@ namespace Common {
 		std::vector<TSourcePosition> sourcePositionsBuffer;	/// To store the source positions in each frame
 		CVector3 previousListenerPosition;				/// To store the last position of the listener
 		bool previousListenerPositionInitialized;		/// To store if the last position of the listener has been initialized		
+
+		std::shared_ptr<CCascadeGraphicEq9OctaveBands> propagationFilter; /// To store a simulate waveguide frequency response
 
 		float checkSoundSpeedLimit;						/// To store the limit of the sound speed
 	};

@@ -599,19 +599,24 @@ namespace BRTReaders {
 		 * @param distance Output parameter containing the distance.		 
 		 */
 		void GetReceiverPosition(BRTReaders::CLibMySOFALoader& loader, const std::vector<double>& receiverPositionsVector, std::size_t measure, double& azimuth, double& elevation, double& distance) {			
-			int numberOfCoordinates = loader.getHRTF()->C;
-
-			if (IsReceiverPositionCoordinateSystemsSpherical(loader)) {				
-				azimuth		= receiverPositionsVector[array2DIndex(measure, 0, numberOfCoordinates)];
-				elevation	= receiverPositionsVector[array2DIndex(measure, 1, numberOfCoordinates)];
-				distance	= receiverPositionsVector[array2DIndex(measure, 2, numberOfCoordinates)];
-			}
-			else {
-				double x = receiverPositionsVector[array2DIndex(measure, 0, numberOfCoordinates)];
-				double y = receiverPositionsVector[array2DIndex(measure, 1, numberOfCoordinates)];
-				double z = receiverPositionsVector[array2DIndex(measure, 2, numberOfCoordinates)];
-				ToSpherical(x, y, z, azimuth, elevation, distance);
-			}
+			int numberOfCoordinates = loader.getHRTF()->C;												
+			try {
+				if (IsReceiverPositionCoordinateSystemsSpherical(loader)) {
+					azimuth = receiverPositionsVector.at(array2DIndex(measure, 0, numberOfCoordinates));
+					elevation = receiverPositionsVector.at(array2DIndex(measure, 1, numberOfCoordinates));
+					distance = receiverPositionsVector.at(array2DIndex(measure, 2, numberOfCoordinates));
+				} else {
+					double x = receiverPositionsVector.at(array2DIndex(measure, 0, numberOfCoordinates));
+					double y = receiverPositionsVector.at(array2DIndex(measure, 1, numberOfCoordinates));
+					double z = receiverPositionsVector.at(array2DIndex(measure, 2, numberOfCoordinates));
+					ToSpherical(x, y, z, azimuth, elevation, distance);
+				}				
+			} catch (const std::exception &) {
+				SET_RESULT(RESULT_ERROR_EXCEPTION, "Error getting receiver position from SOFA file. Setting to default (0,0,1).");
+				azimuth = 0.0;
+				elevation = 0.0;
+				distance = 1.0;
+			}			
 		}
 
 
@@ -943,14 +948,22 @@ namespace BRTReaders {
 		 */
 		void Get3DMatrixData(const std::vector<double>& dataIR, std::vector<float>& outIR, int numberOfReceivers, int numberOfSamples, int receiver, int measure) {
 			std::vector<float> IR(numberOfSamples, 0);
+			try {
 
-			for (std::size_t sample = 0; sample < numberOfSamples; sample++)
-			{
-				const std::size_t index = array3DIndex(measure, receiver, sample, numberOfReceivers, numberOfSamples);
-				IR[sample] = dataIR[index];
+				for (std::size_t sample = 0; sample < numberOfSamples; sample++) {
+					const std::size_t index = array3DIndex(measure, receiver, sample, numberOfReceivers, numberOfSamples);
+					IR[sample] = dataIR.at(index);
+				}
+				outIR = std::move(IR);
 			}
-			outIR = std::move(IR);
+			catch (const std::exception&) {
+				SET_RESULT(RESULT_ERROR_EXCEPTION, "Error getting IR data from SOFA file. Fill with an emty vector.");
+				outIR = std::vector<float>(numberOfSamples, 0);
+			}
+		
 		}
+
+
 		const std::size_t array3DIndex(const unsigned long measure, const unsigned long receiver, const unsigned long sample, const unsigned long numberOfReceivers, const unsigned long numberOfSamples)
 		{
 			return numberOfReceivers * numberOfSamples * measure + numberOfSamples * receiver + sample;
@@ -989,13 +1002,17 @@ namespace BRTReaders {
 		 */		 
 		void Get4DMatrixData(const std::vector<double>& dataIR, std::vector<float>& outIR, int numberOfReceivers, int numberOfSamples, int numberOfEmmiters, int measure, int receiver, int emmiter) {
 			std::vector<float> IR(numberOfSamples, 0);
-
-			for (std::size_t sample = 0; sample < numberOfSamples; sample++)
-			{
-				const std::size_t index = array4DIndex(measure, receiver, sample, emmiter, numberOfReceivers, numberOfSamples, numberOfEmmiters);
-				IR[sample] = dataIR[index];
+			try {
+				for (std::size_t sample = 0; sample < numberOfSamples; sample++) {
+					const std::size_t index = array4DIndex(measure, receiver, sample, emmiter, numberOfReceivers, numberOfSamples, numberOfEmmiters);
+					IR[sample] = dataIR.at(index);
+				}
+				outIR = std::move(IR);
 			}
-			outIR = std::move(IR);
+			catch (const std::exception&) {
+				SET_RESULT(RESULT_ERROR_EXCEPTION, "Error getting IR data from SOFA file. Fill with an emty vector.");
+				outIR = std::vector<float>(numberOfSamples, 0);
+			}
 		}
 		
 		const std::size_t array4DIndex(const unsigned long measure, const unsigned long receiver, const unsigned long sample, const unsigned long emitter, const unsigned long numberOfReceivers, const unsigned long numberOfSamples, const unsigned long numberOfEmitters)
@@ -1016,13 +1033,17 @@ namespace BRTReaders {
 		 */
 		void Get2DMatrixData(const std::vector<double>& dataTF, std::vector<float>& outTF, int numberOfSamples, int measure) {
 			std::vector<float> TF(numberOfSamples, 0);
-
-			for (std::size_t sample = 0; sample < numberOfSamples; sample++)
-			{
-				const std::size_t index = array2DIndex(measure, sample, numberOfSamples);
-				TF[sample] = dataTF[index];
+			try {
+				for (std::size_t sample = 0; sample < numberOfSamples; sample++) {
+					const std::size_t index = array2DIndex(measure, sample, numberOfSamples);
+					TF[sample] = dataTF.at(index);
+				}
+				outTF = std::move(TF);
 			}
-			outTF = std::move(TF);
+			catch (const std::exception&) {
+				SET_RESULT(RESULT_ERROR_EXCEPTION, "Error getting TF data from SOFA file. Fill with an emty vector.");
+				outTF = std::vector<float>(numberOfSamples, 0);
+			}				
 		}
 
 		/**
@@ -1035,10 +1056,18 @@ namespace BRTReaders {
 		 */
 		void GetOneVector3From2DMatrix(const std::vector<double>& _inVector, std::vector<double>& _outVector, std::size_t measure, int numberOfCoordinates) {						
 			if (numberOfCoordinates < 3) { _outVector = std::vector<double>({0, 0, 0}); }
-			double a = _inVector[array2DIndex(measure, 0, numberOfCoordinates)];
-			double b = _inVector[array2DIndex(measure, 1, numberOfCoordinates)];
-			double c = _inVector[array2DIndex(measure, 2, numberOfCoordinates)];
-			_outVector = std::vector<double>({ a, b, c });
+			
+			try {
+
+				double a = _inVector.at(array2DIndex(measure, 0, numberOfCoordinates));
+				double b = _inVector.at(array2DIndex(measure, 1, numberOfCoordinates));
+				double c = _inVector.at(array2DIndex(measure, 2, numberOfCoordinates));
+				_outVector = std::vector<double>({ a, b, c });
+			}
+			catch (const std::exception&) {
+				SET_RESULT(RESULT_ERROR_EXCEPTION, "Error getting 3D vector data from SOFA file. Fill with an emty vector.");
+				_outVector = std::vector<double>({ 0, 0, 0 });
+			}
 		}
 
 		const std::size_t array2DIndex(const unsigned long measure, const unsigned long sample,  const unsigned long numberOfSamples)

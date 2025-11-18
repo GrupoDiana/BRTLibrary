@@ -5,6 +5,27 @@ All notable changes to the Binaural Rendering Toolbox (BRT) will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2025-11-18
+
+### Added
+- New environment simulation model based on the image method (ISM)
+- Added new 9 octave graphic equaliser filter.
+- New OBJ file reader for room definition.
+
+### Changed
+- The waveguides now include a configurable filter. For now, they only support 9 octave graphic equaliser filter, but this limitation will be expanded in the next release.
+- The definitions of rooms and walls have been improved and expanded.
+- Rooms become a service, like other resources. This means they can be changed and configured in real time.
+
+## Fixed
+- The SOFA file reader now controls more parameters to prevent the loading of malformed files.
+- The BRTManager adds lock control to prevent certain types of collisions.
+
+## [2.3.1] - 2025-08-28
+
+### Changed
+- After testing it, we have decided that the normalization feature is not useful, so we have finally removed it from the audio mixer. In fact, including it in the previous release was a mistake.
+From now on, we will revert to the classic behavior of simply adding together buffers from different sources. Any problems with samples that fall outside the dynamic range will need to be addressed from the application's point of view.
 
 ## [2.3.0] - 2025-07-29
 

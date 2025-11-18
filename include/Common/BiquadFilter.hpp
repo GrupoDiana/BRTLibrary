@@ -43,7 +43,10 @@ namespace Common {
 	enum T_filterType {
 		LOWPASS = 0,	///< Low pass filter
 		HIGHPASS = 1,	///< High pass filter
-		BANDPASS = 2	///< Band pass filter
+		BANDPASS = 2,	///< Band pass filter
+		LOWSHELF = 3,	///< Low shelf filter
+		HIGHSHELF = 4,	///< High shelf filter
+		PEAKNOTCH = 5	///< Peak Notch filter
 	};
 
 	/** \brief Type definition for a vector of filter coefficients for one biquad
@@ -79,6 +82,7 @@ namespace Common {
 		*	\param [in] b2 coefficient b2
 		*	\param [in] a1 coefficient a1
 		*	\param [in] a2 coefficient a2
+		*	\param [in] _crossfadingEnabled true when cross fading must be applied between frames
 		*   \eh On error, an error code is reported to the error handler.
 		*/		
 		void Setup(float b0, float b1, float b2, float a1, float a2, bool _crossfadingEnabled = true)
@@ -87,10 +91,20 @@ namespace Common {
 			SetCoefficients(b0, b1, b2, a1, a2);
 		}
 
+		/**
+		 * @brief Set up coefficients of the filter
+		 * @param coefficients coefficients coefficients vector. Order: b0, b1, a1, a2 
+		 * @param _crossfadingEnabled true when cross fading must be applied between frames
+		 */
 		void Setup(const TBiquadCoefficients& coefficients, bool _crossfadingEnabled = true)
 		{
 			crossfadingEnabled = _crossfadingEnabled;
 			SetCoefficients(coefficients);
+		}
+
+		void Setup(float frequency, float Q, T_filterType filterType, double commandGain, bool _crossfadingEnabled = true) {			
+			crossfadingEnabled = _crossfadingEnabled;
+			SetCoefficients(frequency, Q, filterType, commandGain);
 		}
 
 		/** \brief Set up the filter
@@ -100,11 +114,11 @@ namespace Common {
 		*	\param [in] filterType type of filter
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		void Setup(float frequency, float Q, T_filterType filterType, bool _crossfadingEnabled = true)
+		/*void Setup(float frequency, float Q, T_filterType filterType, bool _crossfadingEnabled = true)
 		{			
 			crossfadingEnabled = _crossfadingEnabled;
 			SetCoefficients(frequency, Q, filterType);
-		}
+		}*/
 		
 
 		/** \brief Set the sampling frequency at which audio samples were acquired
@@ -131,111 +145,122 @@ namespace Common {
 		*	\pre Input and output buffers must have the same size, which should be greater than 0.
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		void Process(CMonoBuffer<float> &inBuffer, CMonoBuffer<float> & outBuffer, bool addResult = false)		
-		{
-			int size = inBuffer.size();
-
-			if (size <= 0)
-			{
-				//SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The input buffer is empty");
-				SET_RESULT(RESULT_ERROR_BADSIZE, "Attempt to process a biquad filter with an empty input buffer");
-				return;
-			}
-			else if (size != outBuffer.size())
-			{
-				//SET_RESULT( RESULT_ERROR_INVALID_PARAM, "Input and output buffers size must agree" );
-				SET_RESULT(RESULT_ERROR_BADSIZE, "Attempt to process a biquad filter with different sizes for input and output buffers");
-				return;
-			}
-
-			//SET_RESULT(RESULT_OK, "");
-
-			// This is expression of the biquad filter but the implementation follows a more efficient
-			// approach in which only 2 delays cells are used.
-			//   See schemes in: https://en.wikipedia.org/wiki/Digital_biquad_filter
-			//   y(n) = b0.x(n) + b1.x(n-1) + b2.x(n-2) + a1.y(n-1) + a2.y(n-2) 	
-
-			if (crossfadingEnabled && size > 0)  // size > 1 to avoid division by zero if size were 1 while calculating alpha
-			{
-				if (firstBuffer) {
-					for (int c = 0; c < size; c++) {
-						double res = ProcessSample(inBuffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1, new_z2);
-						outBuffer[c] = addResult ? outBuffer[c] + res : res;
-					}
-					firstBuffer = false;
-				}
-				else {
-					for (int c = 0; c < size; c++)
-					{
-						// To ensure alpha is in [0,1] we use -2 because the buffer is stereo
-						double alpha = ((double)c) / ((double)(size - 1));
-
-						double     sample = ProcessSample(inBuffer[c], a1, a2, b0, b1, b2, z1, z2);
-						double new_sample = ProcessSample(inBuffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1, new_z2);
-
-						double res = sample * (1.0 - alpha) + new_sample * alpha;
-
-						outBuffer[c] = addResult ? outBuffer[c] + res : res;
-					}
-				}
-				UpdateAttributesAfterCrossfading();
-			}
-			else
-			{
-				for (int c = 0; c < size; c++)
-				{
-					double res = ProcessSample(inBuffer[c], a1, a2, b0, b1, b2, z1, z2);
-					outBuffer[c] = addResult ? outBuffer[c] + res : res;
-				}
-			}
-			CheckCoeficientsNanValues();
+		void CBiquadFilter::Process(const CMonoBuffer<float> & inBuffer, CMonoBuffer<float> & outBuffer, bool addResult = false) {
+			ProcessInternal(inBuffer, &outBuffer, addResult);
 		}
-
 
 		/**
-		\overload
-		*/
-		void Process(CMonoBuffer<float> &buffer)		
-		{
-			int size = buffer.size();
-
-			if (size <= 0)
-			{
-				SET_RESULT(RESULT_ERROR_BADSIZE, "Attempt to process a biquad filter with an empty input buffer");
-				return;
-			}
-
-			//SET_RESULT(RESULT_OK, "Biquad filter process succesfull");
-			
-			if (crossfadingEnabled)
-			{
-				if (firstBuffer) {
-					for (int c = 0; c < size; c++) {
-						buffer[c] = ProcessSample(buffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1, new_z2);
-					}
-					firstBuffer = false;
-				}
-				else {
-					for (int c = 0; c < size; c++)
-					{
-						double alpha = ((double)c) / ((double)(size - 1));
-
-						double     sample = ProcessSample(buffer[c], a1, a2, b0, b1, b2, z1, z2);
-						double new_sample = ProcessSample(buffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1, new_z2);
-
-						buffer[c] = sample * (1.0 - alpha) + new_sample * alpha;
-					}
-				}
-				UpdateAttributesAfterCrossfading();
-			}
-			else
-			{
-				for (int c = 0; c < size; c++)
-					buffer[c] = ProcessSample(buffer[c], a1, a2, b0, b1, b2, z1, z2);
-			}
-
-			CheckCoeficientsNanValues();
+		 * @brief Filter the input data according to the filter setup.
+		 * @param buffer input and output buffer
+		 */
+		void CBiquadFilter::Process(CMonoBuffer<float> & buffer) {
+			ProcessInternal(buffer, &buffer, false);
 		}
+		//void Process(const CMonoBuffer<float> &inBuffer, CMonoBuffer<float> & outBuffer, bool addResult = false)		
+		//{
+		//	int size = inBuffer.size();
+
+		//	if (size <= 0)
+		//	{
+		//		//SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The input buffer is empty");
+		//		SET_RESULT(RESULT_ERROR_BADSIZE, "Attempt to process a biquad filter with an empty input buffer");
+		//		return;
+		//	}
+		//	else if (size != outBuffer.size())
+		//	{
+		//		//SET_RESULT( RESULT_ERROR_INVALID_PARAM, "Input and output buffers size must agree" );
+		//		SET_RESULT(RESULT_ERROR_BADSIZE, "Attempt to process a biquad filter with different sizes for input and output buffers");
+		//		return;
+		//	}
+
+		//	//SET_RESULT(RESULT_OK, "");
+
+		//	// This is expression of the biquad filter but the implementation follows a more efficient
+		//	// approach in which only 2 delays cells are used.
+		//	//   See schemes in: https://en.wikipedia.org/wiki/Digital_biquad_filter
+		//	//   y(n) = b0.x(n) + b1.x(n-1) + b2.x(n-2) + a1.y(n-1) + a2.y(n-2) 	
+
+		//	if (crossfadingEnabled && size > 0)  // size > 1 to avoid division by zero if size were 1 while calculating alpha
+		//	{
+		//		if (firstBuffer) {
+		//			for (int c = 0; c < size; c++) {
+		//				double res = ProcessSample(inBuffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1, new_z2);
+		//				outBuffer[c] = addResult ? outBuffer[c] + res : res;
+		//			}
+		//			firstBuffer = false;
+		//		}
+		//		else {
+		//			for (int c = 0; c < size; c++)
+		//			{
+		//				// To ensure alpha is in [0,1] we use -2 because the buffer is stereo
+		//				double alpha = ((double)c) / ((double)(size - 1));
+
+		//				double     sample = ProcessSample(inBuffer[c], a1, a2, b0, b1, b2, z1, z2);
+		//				double new_sample = ProcessSample(inBuffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1, new_z2);
+
+		//				double res = sample * (1.0 - alpha) + new_sample * alpha;
+
+		//				outBuffer[c] = addResult ? outBuffer[c] + res : res;
+		//			}
+		//		}
+		//		UpdateAttributesAfterCrossfading();
+		//	}
+		//	else
+		//	{
+		//		for (int c = 0; c < size; c++)
+		//		{
+		//			double res = ProcessSample(inBuffer[c], a1, a2, b0, b1, b2, z1, z2);
+		//			outBuffer[c] = addResult ? outBuffer[c] + res : res;
+		//		}
+		//	}
+		//	CheckCoeficientsNanValues();
+		//}
+
+
+		///**
+		//\overload
+		//*/
+		//void Process(CMonoBuffer<float> &buffer)		
+		//{
+		//	int size = buffer.size();
+
+		//	if (size <= 0)
+		//	{
+		//		SET_RESULT(RESULT_ERROR_BADSIZE, "Attempt to process a biquad filter with an empty input buffer");
+		//		return;
+		//	}
+
+		//	//SET_RESULT(RESULT_OK, "Biquad filter process succesfull");
+		//	
+		//	if (crossfadingEnabled)
+		//	{
+		//		if (firstBuffer) {
+		//			for (int c = 0; c < size; c++) {
+		//				buffer[c] = ProcessSample(buffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1, new_z2);
+		//			}
+		//			firstBuffer = false;
+		//		}
+		//		else {
+		//			for (int c = 0; c < size; c++)
+		//			{
+		//				double alpha = ((double)c) / ((double)(size - 1));
+
+		//				double     sample = ProcessSample(buffer[c], a1, a2, b0, b1, b2, z1, z2);
+		//				double new_sample = ProcessSample(buffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1, new_z2);
+
+		//				buffer[c] = sample * (1.0 - alpha) + new_sample * alpha;
+		//			}
+		//		}
+		//		UpdateAttributesAfterCrossfading();
+		//	}
+		//	else
+		//	{
+		//		for (int c = 0; c < size; c++)
+		//			buffer[c] = ProcessSample(buffer[c], a1, a2, b0, b1, b2, z1, z2);
+		//	}
+
+		//	CheckCoeficientsNanValues();
+		//}
 
 		/** \brief Set the gain of the filter 
 		*	\param [in] _gain filter gain 
@@ -271,10 +296,61 @@ namespace Common {
 		}
 
 	private:
-		////////////////////
-		// PRIVATE METHODS
-		///////////////////
 		
+		/// METHODS
+
+		/**
+		 * @brief Filter the input data according to the filter setup.
+		 * @param inBuffer 
+		 * @param outBuffer 
+		 * @param addResult 
+		 */
+		void ProcessInternal(const CMonoBuffer<float> & inBuffer, CMonoBuffer<float> * outBuffer, bool addResult) {
+			const int size = inBuffer.size();
+
+			if (size <= 0) {
+				SET_RESULT(RESULT_ERROR_BADSIZE, "Attempt to process a biquad filter with an empty input buffer");
+				return;
+			}
+			if (!outBuffer || size != outBuffer->size()) {
+				SET_RESULT(RESULT_ERROR_BADSIZE, "Input and output buffers size must agree");
+				return;
+			}
+
+			auto writeSample = [&](int i, double v) {
+				// addResult only applies when output != input and the caller asks for it
+				(*outBuffer)[i] = addResult ? (*outBuffer)[i] + static_cast<float>(v)
+											: static_cast<float>(v);
+			};
+
+			if (crossfadingEnabled) {
+				if (firstBuffer) {
+					for (int c = 0; c < size; ++c) {
+						const double r = ProcessSample(inBuffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1, new_z2);
+						writeSample(c, r);
+					}
+					firstBuffer = false;
+				} else {
+					for (int c = 0; c < size; ++c) {
+						const double alpha = static_cast<double>(c) / static_cast<double>(size - 1);
+						const double s0 = ProcessSample(inBuffer[c], a1, a2, b0, b1, b2, z1, z2);
+						const double s1 = ProcessSample(inBuffer[c], new_a1, new_a2, new_b0, new_b1, new_b2, new_z1, new_z2);
+						writeSample(c, s0 * (1.0 - alpha) + s1 * alpha);
+					}
+				}
+				UpdateAttributesAfterCrossfading();
+			} else {
+				for (int c = 0; c < size; ++c) {
+					const double r = ProcessSample(inBuffer[c], a1, a2, b0, b1, b2, z1, z2);
+					writeSample(c, r);
+				}
+			}
+			CheckCoeficientsNanValues();
+		}		
+		
+		/**
+		 * @brief 
+		 */
 		void InitFilterCoefficients() {
 			z1 = 0;
 			z2 = 0;			
@@ -358,16 +434,23 @@ namespace Common {
 		*	\param [in] filterType type of filter
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		void SetCoefficients(float frequency, float Q, T_filterType filterType)
+		void SetCoefficients(float & frequency, float & Q, T_filterType & filterType, double & commandGain)
 		{
-			if (filterType == LOWPASS)
+			if (filterType == LOWPASS) {
 				SetCoefsFor_LPF(frequency, Q);
-
-			else if (filterType == HIGHPASS)
+			} else if (filterType == HIGHPASS) {
 				SetCoefsFor_HPF(frequency, Q);
-
-			else if (filterType == BANDPASS)
+			} else if (filterType == BANDPASS) {
 				SetCoefsFor_BandPassFilter(frequency, Q);
+			} else if (filterType == LOWSHELF) {
+				SetCoefsFor_LowShelf(frequency, Q, commandGain);
+			} else if (filterType == HIGHSHELF) {
+				SetCoefsFor_HighShelf(frequency, Q, commandGain);
+			} else if (filterType == PEAKNOTCH) {
+				SetCoefsFor_PeakNotch(frequency, Q, commandGain);
+			} else {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Invalid filter type");
+			}
 		}		
 
 		/**
@@ -499,9 +582,169 @@ namespace Common {
 			}
 		}
 
-		// Does the basic processing of the biquad filter. Receives the current sample, the coefficients and the delayed samples
-		// Returns the result of the biquad filter 
-		double ProcessSample(const double sample, const double a1, const double a2, const double b0, const double b1, const double b2, double &z1, double &z2)		
+		/**
+		 * @brief Calculates the coefficients of a biquad peak/notch filter.
+		 * @param cutoffFreq 
+		 * @param Q 
+		 * @param gain 
+		 * @return 
+		 */
+		bool SetCoefsFor_LowShelf(double cutoffFreq, double Q, double gain) {
+			float samplingFreq = globalParameters.GetSampleRate();
+			if (cutoffFreq > samplingFreq / 2.0) // To prevent aliasing problems
+			{
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Cutoff frequency of biquad (LOWSHELF) filter is higher than Nyquist frequency");
+				return false;
+			}
+
+			try // -> To handle division by 0
+			{
+				// Low shelf implementation from Välimäki, V., Reiss, J. D., "All About Audio Equalization: Solutions and Frontiers", MDPI, 2016
+				//      https://www.mdpi.com/2076-3417/6/5/129
+				double sqrtGain = std::sqrt(gain);
+				double fourthrtGain = std::sqrt(sqrtGain);
+				double wc = 2 * M_PI * cutoffFreq / samplingFreq;
+				double sigma = std::tan(wc / 2);
+				double sigma2 = sigma * sigma;
+
+				double _b0 = sqrtGain * (sqrtGain * sigma2 + std::sqrt(2.0) * sigma * fourthrtGain + 1);
+				double _b1 = sqrtGain * 2 * (sqrtGain * sigma2 - 1);
+				double _b2 = sqrtGain * (sqrtGain * sigma2 - std::sqrt(2.0) * sigma * fourthrtGain + 1);
+				double _a0 = sqrtGain + std::sqrt(2.0) * sigma * fourthrtGain + sigma2;
+				double _a1 = +2 * (sigma2 - sqrtGain);
+				double _a2 = sqrtGain - std::sqrt(2.0) * sigma * fourthrtGain + sigma2;
+
+				_b2 = _b2 / _a0;
+				_b1 = _b1 / _a0;
+				_b0 = _b0 / _a0;
+				_a2 = _a2 / _a0;
+				_a1 = _a1 / _a0;
+
+				SetCoefficients(_b0, _b1, _b2, _a1, _a2);
+
+				SET_RESULT(RESULT_OK, "LOWSHELF filter coefficients of biquad filter succesfully set");
+
+				return true;
+			} catch (std::exception e) {
+				SET_RESULT(RESULT_ERROR_DIVBYZERO, "Division by zero setting coefficients for LOWSHELF biquad filter");
+				return false;
+			}
+		}
+
+		/**
+		 * @brief Calculates the coefficients of a biquad peak/notch filter.
+		 * @param cutoffFreq 
+		 * @param Q 
+		 * @param gain 		 
+		 * @return 
+		 */
+		bool SetCoefsFor_HighShelf(double cutoffFreq, double Q, double gain) {
+			float samplingFreq = globalParameters.GetSampleRate();
+			if (cutoffFreq > samplingFreq / 2.0) // To prevent aliasing problems
+			{
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Cutoff frequency of biquad (LOWSHELF) filter is higher than Nyquist frequency");
+				return false;
+			}
+
+			try // -> To handle division by 0
+			{
+				// High shelf implementation from Välimäki, V., Reiss, J. D., "All About Audio Equalization: Solutions and Frontiers", MDPI, 2016
+				//      https://www.mdpi.com/2076-3417/6/5/129
+				double sqrtGain = std::sqrt(gain);
+				double fourthrtGain = std::sqrt(sqrtGain);
+				double wc = 2 * M_PI * cutoffFreq / samplingFreq;
+				double sigma = std::tan(wc / 2);
+				double sigma2 = sigma * sigma;
+
+				double _b0 = sqrtGain * (sqrtGain + std::sqrt(2.0) * sigma * fourthrtGain + sigma2);
+				double _b1 = sqrtGain * (-2) * (sqrtGain - sigma2);
+				double _b2 = sqrtGain * (sqrtGain - std::sqrt(2.0) * sigma * fourthrtGain + sigma2);
+				double _a0 = sqrtGain * sigma2 + std::sqrt(2.0) * sigma * fourthrtGain + 1;
+				double _a1 = 2 * (sqrtGain * sigma2 - 1);
+				double _a2 = sqrtGain * sigma2 - std::sqrt(2.0) * sigma * fourthrtGain + 1;
+
+				_b2 = _b2 / _a0;
+				_b1 = _b1 / _a0;
+				_b0 = _b0 / _a0;
+				_a2 = _a2 / _a0;
+				_a1 = _a1 / _a0;
+
+				SetCoefficients(_b0, _b1, _b2, _a1, _a2);
+
+				SET_RESULT(RESULT_OK, "LOWSHELF filter coefficients of biquad filter succesfully set");
+
+				return true;
+			} catch (std::exception e) {
+				SET_RESULT(RESULT_ERROR_DIVBYZERO, "Division by zero setting coefficients for LOWSHELF biquad filter");
+				return false;
+			}
+		}
+
+
+		/**
+		 * @brief Calculates the coefficients of a biquad peak/notch filter.
+		 * @param centerFreqHz 
+		 * @param Q 
+		 * @param gain 
+		 * @return 
+		 */
+		bool SetCoefsFor_PeakNotch(double centerFreqHz, double Q, double gain) {
+			
+			float samplingFreq = globalParameters.GetSampleRate();
+			// Use Vällimäki's method to calculate the coefficients of a peak-notch filter
+			// See: Välimäki, V., Reiss, J. D., "All About Audio Equalization: Solutions and Frontiers", MDPI, 2016
+			//      https://www.mdpi.com/2076-3417/6/5/129
+			if (gain < 0) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Gain of biquad (peak-notch) filter is negative");
+				return false;
+			}
+			if (centerFreqHz > samplingFreq / 2.0) // To warn of aliasing problems
+			{
+				SET_RESULT(RESULT_WARNING, "Cutoff frequency of biquad (peak-notch) filter is higher than Nyquist frequency");
+			}
+
+			try { // -> To handle division by 0
+				double A = std::sqrt(gain);
+				double Wc = 2 * M_PI * centerFreqHz / samplingFreq;
+				double Bw = Wc / Q;
+
+				double _b0 = A + gain * std::tan(Bw / 2);
+				double _b1 = -2 * A * std::cos(Wc);
+				double _b2 = A - gain * std::tan(Bw / 2);
+				double _a0 = A + std::tan(Bw / 2);
+				double _a1 = -2 * A * std::cos(Wc);
+				double _a2 = A - std::tan(Bw / 2);
+
+				_b2 = _b2 / _a0;
+				_b1 = _b1 / _a0;
+				_b0 = _b0 / _a0;
+				_a2 = _a2 / _a0;
+				_a1 = _a1 / _a0;
+
+				SetCoefficients(_b0, _b1, _b2, _a1, _a2);
+
+				SET_RESULT(RESULT_OK, "Peak-Notch filter coefficients of biquad filter succesfully set");
+
+				return true;
+			} catch (std::exception & e) {
+				SET_RESULT(RESULT_ERROR_DIVBYZERO, "Division by zero setting coefficients for peak-notch biquad filter");
+				return false;
+			}
+		}
+		
+		/**
+		 * @brief Processes a single sample through a biquad digital filter using the Direct Form II implementation.
+		 * @param sample The input sample to be filtered.
+		 * @param a1 The filter coefficient for y(n-1).
+		 * @param a2 The filter coefficient for y(n-2).
+		 * @param b0 The filter coefficient for x(n).
+		 * @param b1 The filter coefficient for x(n-1).
+		 * @param b2 The filter coefficient for x(n-2).
+		 * @param z1 Reference to the first delay cell (state variable), updated in-place.
+		 * @param z2 Reference to the second delay cell (state variable), updated in-place.
+		 * @return The filtered output sample.
+		 */
+		double ProcessSample(const double& sample, const double& a1, const double& a2, const double& b0, const double& b1, const double& b2, double &z1, double &z2)		
 		{
 			// This is expression of the biquad filter but the implementation follows a more efficient
 			// approach in which only 2 delays cells are used.
@@ -514,8 +757,11 @@ namespace Common {
 			z1 = m_l;
 			return res;
 		}
-
-		/// Set current coefficients to new cofficients and updates the delay cells and the crossfadingNeeded attribute.
+				
+		/**
+		 * @brief Updates filter attributes after crossfading by assigning new values and disabling crossfading.
+		 * @details Set current coefficients to new cofficients and updates the delay cells. Also update the crossfading Needed attribute.
+		 */
 		void UpdateAttributesAfterCrossfading()
 		{
 			crossfadingEnabled = false;
