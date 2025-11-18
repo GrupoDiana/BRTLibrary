@@ -146,6 +146,7 @@ namespace Common {
 
 		// Temporary method to setup a filter
 		void SetupFilter(const std::vector<float> & _gains) {
+			ASSERT(globalParameters.GetSampleRate() == 48000, RESULT_ERROR_INVALID_PARAM, "The waveguide filter is only compatible with a sampling frequency of 48KHz.", "");
 			propagationFilter->SetCommandGains(_gains);
 		}
 
