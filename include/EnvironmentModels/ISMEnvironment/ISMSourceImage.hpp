@@ -292,7 +292,6 @@ namespace BRTEnvironmentModel {
 				
 				AddCoefficientsFromWall(absorptionCoefficients, wall); // Calculate EQ
 				child->reflectionBands.assign(absorptionCoefficients.begin(), absorptionCoefficients.end());				
-				//child->eq.SetCommandGains(ISMParameters->sampleRate, absorptionCoefficients);
 
 				if (order > 1) {
 					std::shared_ptr<BRTServices::CRoom> nextRoom = std::make_shared<BRTServices::CRoom>();
