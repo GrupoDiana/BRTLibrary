@@ -115,9 +115,12 @@ namespace Common {
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "CascadeGraphicEq9OctaveBands: gains vector must have " + std::to_string(NUM_BANDS) + " elements");
                 return false;
             }
-            commandGains = _gains;
-            ResetFiltersChain(CalculatePeakGains());
-			enable = true;
+            else {
+                commandGains = _gains;
+                ResetFiltersChain(CalculatePeakGains());
+                enable = true;
+                return true;
+            }
         }
 
         /** 
