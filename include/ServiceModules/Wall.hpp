@@ -144,7 +144,7 @@ public:
 	/** \brief Returns the normal vector to the wall. If the wall is properly defined, it points towards inside the room.
 	*	\param [out] Normal: normal vector to the wall.
 	*/
-	Common::CVector3& GetNormal() const {
+	Common::CVector3 GetNormal() const {
 		Common::CVector3 p1, p2, normal;
 		float modulus;
 
@@ -257,7 +257,7 @@ public:
 	*	\param [in] Z coordinate of the point to be projected.
 	*	\param [out] Projection: porjected point in the woall's plane.
 	*/
-	Common::CVector3 & GetProjectionPoint(float & x0, float & y0, float & z0) const { 
+	Common::CVector3 GetProjectionPoint(float & x0, float & y0, float & z0) const { 
 		Common::CVector3 point(x0, y0, z0);
 		return GetProjectionPoint(point);
 	}
@@ -266,7 +266,7 @@ public:
 	*	\param [in] Point: point to be projected.
 	*	\param [out] Projection: porjected point in the woall's plane.
 	*/
-	Common::CVector3 & GetProjectionPoint(const Common::CVector3 & point) const {
+	Common::CVector3 GetProjectionPoint(const Common::CVector3 & point) const {
 		// Vectorial Ec. of straight line --> (X,Y,Z) = (x0, y0, z0) + lambda (normalV.x, normalV.y, normalV.z)
 		// Plane of the wall              --> AX+BY+CZ+D = 0
 
