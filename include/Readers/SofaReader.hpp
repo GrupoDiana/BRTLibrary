@@ -1,4 +1,4 @@
-﻿/**
+/**
 * \class CSOFAReader
 *
 * \brief Declaration of CSOFAReader class
@@ -882,7 +882,7 @@ namespace BRTReaders {
 			}
 
 			std::filesystem::path p(sofafile);
-			std::string fileName{ p.filename().u8string() };
+			std::string fileName{ p.filename().string() };
 			dataHRTF->SetFilename(fileName);
 		}			
 
