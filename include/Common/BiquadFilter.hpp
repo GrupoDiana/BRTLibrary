@@ -145,7 +145,7 @@ namespace Common {
 		*	\pre Input and output buffers must have the same size, which should be greater than 0.
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		void CBiquadFilter::Process(const CMonoBuffer<float> & inBuffer, CMonoBuffer<float> & outBuffer, bool addResult = false) {
+		void Process(const CMonoBuffer<float> & inBuffer, CMonoBuffer<float> & outBuffer, bool addResult = false) {
 			ProcessInternal(inBuffer, &outBuffer, addResult);
 		}
 
@@ -153,7 +153,7 @@ namespace Common {
 		 * @brief Filter the input data according to the filter setup.
 		 * @param buffer input and output buffer
 		 */
-		void CBiquadFilter::Process(CMonoBuffer<float> & buffer) {
+		void Process(CMonoBuffer<float> & buffer) {
 			ProcessInternal(buffer, &buffer, false);
 		}
 		//void Process(const CMonoBuffer<float> &inBuffer, CMonoBuffer<float> & outBuffer, bool addResult = false)		
