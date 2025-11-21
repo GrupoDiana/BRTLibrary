@@ -92,7 +92,9 @@ namespace BRTEnvironmentModel {
 			for (auto& image : imagesTree) {
 				TImageSourceData temp;
 				temp.location = image->getImageLocation();
+#if defined(_DEBUG) || defined(DEBUG)
 				temp.reflectionWalls = image->reflectionWallsPath;
+#endif
 				temp.reflectionBands = image->reflectionBands;
 				temp.visibility = image->visibility;
 				temp.visible = image->visible;

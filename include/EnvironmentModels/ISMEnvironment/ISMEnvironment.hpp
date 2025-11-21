@@ -268,7 +268,7 @@ namespace BRTEnvironmentModel {
 		 */
 		void ActionsAfterUpdateImageSourcePositionsOrVisibilities() {			
 			UpdateImageSourceDataFromImageTree();
-			UpdateImageSourcesPositionList();
+			//UpdateImageSourcesPositionList();
 			UpdateWaveGuideFiltersVisibility();
 
 #if defined(DEBUG) || defined(_DEBUG)
