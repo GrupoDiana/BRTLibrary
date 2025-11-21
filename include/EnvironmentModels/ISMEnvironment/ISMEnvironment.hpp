@@ -42,6 +42,9 @@ namespace BRTEnvironmentModel {
 			, ISMParameters{ std::make_shared<CISMParameters>() }
 			, sourceLocation{ Common::CVector3(0, 0, 0) }
 			, imageSources{ nullptr }
+			, imageSourcesPositionList { std::vector<Common::CVector3>() }
+			, imageSourcesDataList { std::vector<TImageSourceData>() }
+			, numVisibleImageSources { 0 }						
 		{
 		};
 
@@ -132,8 +135,16 @@ namespace BRTEnvironmentModel {
 		 * @brief Returns the number of image sources available.
 		 * @return The total count of image sources as a size_t value.
 		 */
-		size_t GetNumberOfImageSources() {			
+		size_t GetNumberOfImageSources() const {			
 			return imageSourcesPositionList.size();
+		}
+
+		/**
+		 * @brief Returns the number of visible image sources available.
+		 * @return The count of visible image sources as a size_t value.
+		 */
+		size_t GetNumberOfVisibleImageSources() const {
+			return numVisibleImageSources;
 		}
 		
 		/** \brief Returns data of all image sources
@@ -281,8 +292,10 @@ namespace BRTEnvironmentModel {
 		 */
 		void UpdateImageSourcesPositionList() {			
 			imageSourcesPositionList.clear();
+			numVisibleImageSources = 0;
 			for (auto & image : imageSourcesDataList) {
 				imageSourcesPositionList.push_back(image.location);
+				if (image.visible) numVisibleImageSources++;
 			}
 		}
 		
@@ -461,6 +474,8 @@ namespace BRTEnvironmentModel {
 		std::vector<TImageSourceData> imageSourcesDataList; // List of image source data (location, visibility, reflection walls, etc)
 
 		std::vector<Common::CWaveguide> listOfChannelSourceListener; // Waveguide processors
+
+		size_t numVisibleImageSources;
 	};
 }
 

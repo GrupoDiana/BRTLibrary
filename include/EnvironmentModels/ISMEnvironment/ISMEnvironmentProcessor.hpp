@@ -250,6 +250,10 @@ namespace BRTEnvironmentModel {
 			return numberOfImageSources;
 		}
 
+		size_t GetNumberOfVisibleImageSources() const {
+			return CISMEnvironment::GetNumberOfVisibleImageSources();
+		}
+
 		void ResetProcessBuffers() {
 			//TODO Implement samples buffer cleaning.
 		}
