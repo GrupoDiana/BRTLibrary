@@ -44,14 +44,16 @@
 
 #include "ServiceModules/HRTF.hpp"
 #include "ServiceModules/HRBRIR.hpp"
-#include "ServiceModules/SOSFilters.hpp"
+#include "ServiceModules/SOSCoefficients.hpp"
 #include "ServiceModules/DirectivityTF.hpp"
 #include "ServiceModules/Room.hpp"
+#include "ServiceModules/GeneralFIR.hpp"
 
 #include "EnvironmentModels/SDNEnvironmentModel.hpp"
 #include "EnvironmentModels/FreeFieldEnvironmentModel.hpp"
 #include "EnvironmentModels/ISMEnvironmentModel.hpp"
-#include "BilateralFilter/SOSBilateralFilter.hpp"
+#include "BilateralFilterModels/SOSBilateralFilterModel.hpp"
+#include "BilateralFilterModels/FIRBilateralFilterModel.hpp"
 
 #include "Readers/SofaReader.hpp"
 #include "Readers/OBJReader.hpp"

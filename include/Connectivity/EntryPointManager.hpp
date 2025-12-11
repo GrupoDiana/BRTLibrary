@@ -59,23 +59,20 @@ namespace BRTConnectivity {
             EntryPointCreated(entryPointID, _notify);
         }
 
-        void CreateIDEntryPoint(std::string entryPointID, bool _notify = false) {
-            //std::shared_ptr<BRTBase::CEntryPointID> _newEntryPoint = std::make_shared<BRTBase::CEntryPointID >(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+        void CreateIDEntryPoint(std::string entryPointID, bool _notify = false) {            
 			std::shared_ptr<BRTConnectivity::CEntryPointID> _newEntryPoint = CreateGenericEntryPoint<BRTConnectivity::CEntryPointID>(entryPointID, _notify);
             
             idEntryPoints.push_back(_newEntryPoint);
             EntryPointCreated(entryPointID, _notify);
         }
 
-        void CreateHRTFPtrEntryPoint(std::string entryPointID, bool _notify = false) {
-            //std::shared_ptr<BRTBase::CEntryPointHRTFPtr> _newEntryPoint = std::make_shared<BRTBase::CEntryPointHRTFPtr>(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+        void CreateHRTFPtrEntryPoint(std::string entryPointID, bool _notify = false) {            
 			std::shared_ptr<BRTConnectivity::CEntryPointHRTFPtr> _newEntryPoint = CreateGenericEntryPoint<BRTConnectivity::CEntryPointHRTFPtr>(entryPointID, _notify);
             hrtfPtrEntryPoints.push_back(_newEntryPoint);
             EntryPointCreated(entryPointID, _notify);
         }
 
-        void CreateILDPtrEntryPoint(std::string entryPointID, bool _notify = false) {
-            //std::shared_ptr<BRTBase::CEntryPointILDPtr> _newEntryPoint = std::make_shared<BRTBase::CEntryPointILDPtr>(std::bind(&CEntryPointManager::updateFromEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+        void CreateILDPtrEntryPoint(std::string entryPointID, bool _notify = false) {            
 			std::shared_ptr<BRTConnectivity::CEntryPointILDPtr> _newEntryPoint = CreateGenericEntryPoint<BRTConnectivity::CEntryPointILDPtr>(entryPointID, _notify);
             ildPtrEntryPoints.push_back(_newEntryPoint);
             EntryPointCreated(entryPointID, _notify);
@@ -92,8 +89,7 @@ namespace BRTConnectivity {
             hrbrirPtrEntryPoints.push_back(_newEntryPoint);
             EntryPointCreated(entryPointID, _notify);
         }
-
-
+         
         template <class T>
         std::shared_ptr<T> CreateGenericEntryPoint(std::string entryPointID, bool _notify) {
             std::shared_ptr<T> _newEntryPoint = std::make_shared<T>(std::bind(&CEntryPointManager::UpdateEntryPointData, this, std::placeholders::_1), entryPointID, _notify);
@@ -363,8 +359,7 @@ namespace BRTConnectivity {
         std::vector<std::shared_ptr <BRTConnectivity::CEntryPointILDPtr>> ildPtrEntryPoints;
         std::vector<std::shared_ptr <BRTConnectivity::CEntryPointABIRPtr>> abirPtrEntryPoints;
         std::vector<std::shared_ptr <BRTConnectivity::CEntryPointID> > idEntryPoints;
-        std::vector<std::shared_ptr <BRTConnectivity::CEntryPointHRBRIRPtr>> hrbrirPtrEntryPoints;
-        
+        std::vector<std::shared_ptr <BRTConnectivity::CEntryPointHRBRIRPtr>> hrbrirPtrEntryPoints;		        
     };
 };
 #endif

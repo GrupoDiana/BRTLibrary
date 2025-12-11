@@ -198,24 +198,30 @@ namespace BRTServices {
 	class CServicesBase {
 		
 	public:
-		CServicesBase() {}
+		CServicesBase()
+			: spatiallyOriented { false }
+		{}
 		virtual ~CServicesBase() {}		
 
 		virtual std::string GetLastError() { return ""; }
 
-		virtual bool BeginSetup() { return true; }		
+		virtual bool BeginSetup() { return false; }		
 		virtual bool BeginSetup(int32_t _IRLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) { return false; }		
 		virtual bool EndSetup() { return false; }
 
 		virtual void SetGridSamplingStep(int _samplingStep) {};
 		virtual void SetTitle(std::string _title) {}
+		virtual std::string GetTitle() { return ""; }
 		virtual void SetDatabaseName(std::string _databaseName) {}
 		virtual void SetListenerShortName(std::string _listenerShortName) {};
 		virtual void SetFilename(std::string _fileName) {}
 		virtual std::string GetFilename() { return ""; };
 		
 		virtual void SetSamplingRate(int samplingRate) {};
-		virtual void SetNumberOfEars(int _numberOfEars) {}
+		
+		virtual void SetNumberOfEars(int& _numberOfEars) {}
+		virtual int GetNumberOfEars() { return 0; }
+		
 		virtual void SetHeadRadius(float _headRadius)  {};
 		virtual void SetEarPosition(Common::T_ear _ear, Common::CVector3 _earPosition) {};
 		virtual void SetCranialGeometryAsDefault() {};
@@ -223,23 +229,44 @@ namespace BRTServices {
 		virtual void SetWindowingParameters(float _fadeInBegin, float _riseTime, float _fadeOutCutoff, float _fallTime) {};
 		virtual void GetWindowingParameters(float & _fadeInBegin, float & _riseTime, float & _fadeOutCutoff, float & _fallTime) {};
 
-		virtual void AddHRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRIR) {};
-		//virtual void AddHRBRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRBRIR) {}
+		virtual void AddHRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRIR) {};		
 		virtual void AddCoefficients(float azimuth, float distance, TSOSFilterStruct&& newCoefs) {}
 		virtual void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF) {}
 		
 		virtual void AddImpulseResponse(int channel, const THRIRStruct&& newIR) {}		
 		virtual void AddImpulseResponse(int channel, const THRIRPartitionedStruct&& newPartitionedIR) {}
-
+		
 		virtual int32_t GetHRIRLength() const { return 0; }
-		virtual const int32_t GetHRIRNumberOfSubfilters() const { return 0; }
-		virtual const int32_t GetHRIRSubfilterLength() const { return 0; }
+		virtual const int32_t GetHRIRNumberOfSubfilters() const { return 0; } // To be removed
+		virtual const int32_t GetHRIRSubfilterLength() const { return 0; } // To be removed
+		
+		virtual const int32_t GetIRTFNumberOfSubfilters() const { return 0; }
+		virtual const int32_t GetIRTFSubfilterLength() const { return 0; }
+
 		virtual float GetHeadRadius() { return 0.0f; }
 		virtual void RestoreHeadRadius() { }
 		virtual Common::CVector3 GetEarLocalPosition(Common::T_ear _ear) { return Common::CVector3(); }
 		
 		virtual float GetHRTFDistanceOfMeasurement() { return 0; }
-				
+		
+		virtual std::vector<Common::CVector3> GetListenerPositions() {
+			return std::vector<Common::CVector3> { Common::CVector3() };
+		}
+
+		virtual std::vector<float> GetSOSFilterCoefficients(Common::T_ear ear, float distance_m, float azimuth) { 
+			return std::vector<float>();
+		}
+
+		virtual const CMonoBuffer<float> GetIRTimeDomain(const float & _azimuth, const float & _elevation, const float & _distance, const Common::T_ear & ear) const {
+			return CMonoBuffer<float>();
+		}
+
+		virtual const std::vector<CMonoBuffer<float>> GetIRTFPartitioned(const Common::T_ear & ear) const {	return std::vector<CMonoBuffer<float>>();}
+		virtual const std::vector<CMonoBuffer<float>> GetIRTFPartitionedSpatiallyOriented(const float & _azimuth, const float & _elevation, const Common::T_ear & ear, bool _findNearest) const	{ return std::vector<CMonoBuffer<float>>();	}
+		
+		virtual void GetIRTFPartitioned2Ears(std::vector<CMonoBuffer<float>> & leftEarIRTF, std::vector<CMonoBuffer<float>> & rightEarIRTF) const { }
+		virtual void GetIRTFPartitionedSpatiallyOriented2Ears(std::vector<CMonoBuffer<float>> & leftEarIRTF, std::vector<CMonoBuffer<float>> & rightEarIRTF, const float & _azimuth, const float & _elevation, bool _findNearest) const { }
+
 		virtual const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, const Common::CTransform& _listenerLocation) const
 		{
 			return std::vector < CMonoBuffer<float>>();
@@ -249,7 +276,16 @@ namespace BRTServices {
 			return THRIRPartitionedStruct();
 		};	
 
-		virtual std::vector <Common::CVector3> GetListenerPositions() {	return std::vector <Common::CVector3>{Common::CVector3()};	}
-	};}
+		
+
+		// Public Methods
+
+		bool IsSpatiallyOriented() const { return spatiallyOriented; }
+	protected:
+
+		bool spatiallyOriented;
+		
+	};
+}
 
 #endif

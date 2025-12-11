@@ -28,6 +28,7 @@
 #include <ServiceModules/Room.hpp>
 #include "ISMParameters.hpp"
 #include "ISMSourceImage.hpp"
+#include <Filters/CascadeGraphicEq9OctaveBands.hpp>
 
 namespace BRTEnvironmentModel {
 	
@@ -329,13 +330,23 @@ namespace BRTEnvironmentModel {
 		 */ 
 		void SetupWaveGuidesFilters() {
 			if (listOfChannelSourceListener.size() != imageSourcesDataList.size()) return;
-			for (int i = 0; i < listOfChannelSourceListener.size(); i++) {				
-				listOfChannelSourceListener[i].SetupFilter(imageSourcesDataList[i].reflectionBands);
+			for (int i = 0; i < listOfChannelSourceListener.size(); i++) {	
+				
+				std::shared_ptr<BRTFilters::CFilterBase> _filter;
+				_filter = std::make_shared<BRTFilters::CCascadeGraphicEq9OctaveBands>();
+				_filter->SetCommandGains(imageSourcesDataList[i].reflectionBands);
 				if (imageSourcesDataList[i].visibility > visibilityThreshold) {
+					_filter->Enable();
+				} else {
+					_filter->Disable();
+				}
+				listOfChannelSourceListener[i].SetPropagationFilter(_filter);
+				//listOfChannelSourceListener[i].SetupFilter(imageSourcesDataList[i].reflectionBands);
+				/*if (imageSourcesDataList[i].visibility > visibilityThreshold) {
 					listOfChannelSourceListener[i].EnablePropagationFilter();
 				} else {
 					listOfChannelSourceListener[i].DisablePropagationFilter();
-				}
+				}*/
 			}
 		}
 		/**

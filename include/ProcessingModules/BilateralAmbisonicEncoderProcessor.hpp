@@ -72,7 +72,7 @@ class CBilateralAmbisonicEncoderProcessor : public BRTConnectivity::CBRTConnecti
 			Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();												
 			std::weak_ptr<BRTServices::CServicesBase> listenerHRTF = GetHRTFPtrEntryPoint("listenerHRTF")->GetData();
 			std::weak_ptr<BRTServices::CServicesBase> listenerHRBRIR = GetHRBRIRPtrEntryPoint("listenerHRBRIR")->GetData();
-			std::weak_ptr<BRTServices::CSOSFilters> listenerNFCFilters = GetILDPtrEntryPoint("listenerILD")->GetData();
+			std::weak_ptr<BRTServices::CServicesBase> listenerNFCFilters = GetILDPtrEntryPoint("listenerILD")->GetData();
 			
 			if (listenerHRTF.lock() != nullptr) {
 				Process(buffer, leftAmbisonicChannelsBuffers, rightAmbisonicChannelsBuffers, sourcePosition, listenerPosition, listenerHRTF, listenerNFCFilters);

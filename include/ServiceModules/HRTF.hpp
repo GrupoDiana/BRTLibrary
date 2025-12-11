@@ -446,7 +446,7 @@ namespace BRTServices
 		int32_t HRIR_partitioned_NumberOfSubfilters;	// Number of subfilters (blocks) for the UPC algorithm
 		int32_t HRIR_partitioned_SubfilterLength;		// Size of one HRIR subfilter
 		float distanceOfMeasurement;					// Distance where the HRIR have been measurement		
-		Common::CCranialGeometry cranialGeometry;					// Cranial geometry of the listener
+		Common::CCranialGeometry cranialGeometry;				// Cranial geometry of the listener
 		Common::CCranialGeometry originalCranialGeometry;		// Cranial geometry of the listener
 		TEXTRAPOLATION_METHOD extrapolationMethod;		// Methods that is going to be used to extrapolate
 

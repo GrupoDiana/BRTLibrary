@@ -22,8 +22,8 @@
 * \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 */
 
-#ifndef _CBIQUADILTER_H_
-#define _CBIQUADILTER_H_
+#ifndef _BIQUAD_FILTER_HPP_
+#define _BIQUAD_FILTER_HPP_
 
 #include <Common/Buffer.hpp>
 #include "CommonDefinitions.hpp"
@@ -33,17 +33,15 @@
 #include <iomanip>
 
 #define _USE_MATH_DEFINES // TODO: Test in windows! Might also be problematic for other platforms??
-//#define DEFAULT_SAMPLING_RATE 44100
 
-
-namespace Common {
+namespace BRTProcessing {
 
 	/** \brief Type definition for specifying the type of filter
 	*/
-	enum T_filterType {
-		LOWPASS = 0,	///< Low pass filter
-		HIGHPASS = 1,	///< High pass filter
-		BANDPASS = 2,	///< Band pass filter
+	enum TBiquadType {
+		LOWPASS_BUTTERWORTH = 0,	///< Low pass filter
+		HIGHPASS_BUTTERWORTH = 1,	///< High pass filter
+		BANDPASS_BUTTERWORTH = 2,	///< Band pass filter
 		LOWSHELF = 3,	///< Low shelf filter
 		HIGHSHELF = 4,	///< High shelf filter
 		PEAKNOTCH = 5	///< Peak Notch filter
@@ -102,7 +100,7 @@ namespace Common {
 			SetCoefficients(coefficients);
 		}
 
-		void Setup(float frequency, float Q, T_filterType filterType, double commandGain, bool _crossfadingEnabled = true) {			
+		void Setup(float frequency, float Q, TBiquadType filterType, double commandGain, bool _crossfadingEnabled = true) {			
 			crossfadingEnabled = _crossfadingEnabled;
 			SetCoefficients(frequency, Q, filterType, commandGain);
 		}
@@ -434,13 +432,13 @@ namespace Common {
 		*	\param [in] filterType type of filter
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		void SetCoefficients(float & frequency, float & Q, T_filterType & filterType, double & commandGain)
+		void SetCoefficients(float & frequency, float & Q, TBiquadType & filterType, double & commandGain)
 		{
-			if (filterType == LOWPASS) {
+			if (filterType == LOWPASS_BUTTERWORTH) {
 				SetCoefsFor_LPF(frequency, Q);
-			} else if (filterType == HIGHPASS) {
+			} else if (filterType == HIGHPASS_BUTTERWORTH) {
 				SetCoefsFor_HPF(frequency, Q);
-			} else if (filterType == BANDPASS) {
+			} else if (filterType == BANDPASS_BUTTERWORTH) {
 				SetCoefsFor_BandPassFilter(frequency, Q);
 			} else if (filterType == LOWSHELF) {
 				SetCoefsFor_LowShelf(frequency, Q, commandGain);

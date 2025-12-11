@@ -54,9 +54,9 @@ class CModelBase : public BRTConnectivity::CBRTConnectivity {
 
 		virtual void SetGain(float _gain) { gain = _gain; }
 		virtual float GetGain() { return gain; }
-				
-		/*virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) { return false; }		
-		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) { return false; }					*/
+		
+		virtual bool IsConnectedToListener() { return false; }
+		virtual bool IsConnectedToListenerModel() { return false; }
 	};
 }
 #endif
