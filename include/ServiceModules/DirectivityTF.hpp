@@ -60,33 +60,33 @@ namespace BRTServices
 			:resamplingStep{ DEFAULT_DIRECTIVITYTF_RESAMPLING_STEP }, directivityTFloaded{ false }, setupDirectivityTFInProgress{ false }
 		{}
 
-		/** \brief Set the title of the SOFA file
-		*    \param [in]	_title		string contains title
-		*/
-		void SetTitle(std::string _title) {
-			title = _title;
-		}
+		///** \brief Set the title of the SOFA file
+		//*    \param [in]	_title		string contains title
+		//*/
+		//void SetTitle(std::string _title) {
+		//	title = _title;
+		//}
 
 		/** \brief Set the name of the database of the SOFA file
 		*    \param [in]	_title		string contains title
 		*/
-		void SetDatabaseName(std::string _databaseName) {
+		/*void SetDatabaseName(std::string _databaseName) {
 			databaseName = _databaseName;
-		}
+		}*/
 
 		/** \brief Set the file name of the SOFA file
 		*    \param [in]	_fileName		string contains filename
 		*/
-		void SetFilename(std::string _fileName) {
-			fileName = _fileName;
-		}
+		//void SetFilename(std::string _fileName) {
+		//	fileName = _fileName;
+		//}
 
-		/** \brief Get the file name of the SOFA file
-		*   \return string contains filename
-		*/
-		std::string GetFilename() {
-			return fileName;
-		}
+		///** \brief Get the file name of the SOFA file
+		//*   \return string contains filename
+		//*/
+		//std::string GetFilename() {
+		//	return fileName;
+		//}
 		
 		/** \Start a new DirectivityTF configuration
 		* *	\param [in] directivityTFPartLength number of samples in the frequency domain (size of the real part or the imaginary part)

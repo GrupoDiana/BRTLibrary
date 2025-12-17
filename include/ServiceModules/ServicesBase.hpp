@@ -194,12 +194,26 @@ namespace BRTServices {
 		CMonoBuffer<float> realPart;
 		CMonoBuffer<float> imagPart;
 	};
+	
+	enum class TServiceType {
+		none,
+		hrir_database,
+		brir_database,
+		ir_database,
+		sos_filter_database,
+		directivity_tf_database
+	};
 
 	class CServicesBase {
 		
 	public:
 		CServicesBase()
 			: spatiallyOriented { false }
+			, serviceType { TServiceType::none }
+			, title { "" }
+			, fileName { "" }
+			, databaseName { "" }
+			, listenerShortName { "" }
 		{}
 		virtual ~CServicesBase() {}		
 
@@ -210,13 +224,7 @@ namespace BRTServices {
 		virtual bool EndSetup() { return false; }
 
 		virtual void SetGridSamplingStep(int _samplingStep) {};
-		virtual void SetTitle(std::string _title) {}
-		virtual std::string GetTitle() { return ""; }
-		virtual void SetDatabaseName(std::string _databaseName) {}
-		virtual void SetListenerShortName(std::string _listenerShortName) {};
-		virtual void SetFilename(std::string _fileName) {}
-		virtual std::string GetFilename() { return ""; };
-		
+										
 		virtual void SetSamplingRate(int samplingRate) {};
 		
 		virtual void SetNumberOfEars(int& _numberOfEars) {}
@@ -281,10 +289,66 @@ namespace BRTServices {
 		// Public Methods
 
 		bool IsSpatiallyOriented() const { return spatiallyOriented; }
+		
+		TServiceType GetServiceType() const { return serviceType; }
+
+		void SetTitle(const std::string & _title) {
+			title = _title;
+		}
+		
+		std::string GetTitle() {
+			return title;
+		}
+
+		/** \brief Set the file name of the SOFA file
+		*    \param [in]	_fileName		string contains filename
+		*/
+		void SetFilename(const std::string & _fileName) { 
+			fileName = _fileName;
+		}
+
+		/** \brief Get the file name of the SOFA file
+		* \return string contains filename
+		*/
+		std::string GetFilename() { 
+			return fileName;
+		};
+
+		/** \brief Set the name of the database of the SOFA file
+		*    \param [in]	_title		string contains title
+		*/
+		void SetDatabaseName(const std::string & _databaseName) { 
+			databaseName = _databaseName;
+		}
+
+		/** \brief Get the name of the database of the SOFA file
+		* \return string contains title 
+		*/
+		std::string GetDatabaseName() { 
+			return databaseName;
+		}
+
+		/**
+		 * @brief set the listener short name from the SOFA file
+		 * @param _listenerShortName 
+		 */
+		void SetListenerShortName(const std::string & _listenerShortName) { 
+			listenerShortName = _listenerShortName;
+		}
+		std::string GetListenerShortName() { 
+			return listenerShortName;
+		}
+
 	protected:
 
 		bool spatiallyOriented;
-		
+		TServiceType serviceType;
+
+	private:
+		std::string title;
+		std::string fileName;
+		std::string databaseName;
+		std::string listenerShortName;
 	};
 }
 

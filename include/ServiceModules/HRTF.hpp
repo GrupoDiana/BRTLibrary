@@ -61,7 +61,7 @@ namespace BRTServices
 		*   \eh Nothing is reported to the error handler.
 		*/
 		CHRTF()
-			:enableWoodworthITD{ false }, gridSamplingStep{ DEFAULT_GRIDSAMPLING_STEP }, gapThreshold{ DEFAULT_GAP_THRESHOLD }, HRIRLength{ 0 }, fileName{ "" },
+			:enableWoodworthITD{ false }, gridSamplingStep{ DEFAULT_GRIDSAMPLING_STEP }, gapThreshold{ DEFAULT_GAP_THRESHOLD }, HRIRLength{ 0 },
 			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE },
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER },
 			epsilon_sewing{ EPSILON_SEWING }, samplingRate{ -1 }, elevationNorth{ 0 }, elevationSouth{ 0 }, extrapolationMethod{ TEXTRAPOLATION_METHOD::nearest_point }
@@ -311,41 +311,41 @@ namespace BRTServices
 			return distanceOfMeasurement;
 		}
 
-		/** \brief Set the title of the SOFA file
-		*    \param [in]	_title		string contains title
-		*/
-		void SetTitle(std::string _title) override {
-			title = _title;
-		}
+		///** \brief Set the title of the SOFA file
+		//*    \param [in]	_title		string contains title
+		//*/
+		//void SetTitle(std::string _title) override {
+		//	title = _title;
+		//}
 
 		/** \brief Set the title of the SOFA file
 		*    \param [in]	_title		string contains title
 		*/
-		void SetDatabaseName(std::string _databaseName) override {
+		/*void SetDatabaseName(std::string _databaseName) override {
 			databaseName = _databaseName;
-		}
+		}*/
 
 		/** \brief Set the title of the SOFA file
 		*    \param [in]	_title		string contains title
 		*/
-		void SetListenerShortName(std::string _listenerShortName) override {
+		/*void SetListenerShortName(std::string _listenerShortName) override {
 			listenerShortName = _listenerShortName;
-		}
+		}*/
 
 
-		/** \brief Set the name of the SOFA file 
-		*    \param [in]	_fileName		string contains filename
-		*/
-		void SetFilename(std::string _fileName) override {
-			fileName = _fileName;
-		}
+		///** \brief Set the name of the SOFA file 
+		//*    \param [in]	_fileName		string contains filename
+		//*/
+		//void SetFilename(std::string _fileName) override {
+		//	fileName = _fileName;
+		//}
 
-		/** \brief Get the name of the SOFA file 
-		*   \return string contains filename
-		*/
-		std::string GetFilename() override { 
-			return fileName;
-		}
+		///** \brief Get the name of the SOFA file 
+		//*   \return string contains filename
+		//*/
+		//std::string GetFilename() override { 
+		//	return fileName;
+		//}
 
 		/** \brief	Set the radius of the listener head
 		*   \eh Nothing is reported to the error handler.
@@ -465,10 +465,10 @@ namespace BRTServices
 
 		
 
-		std::string title;
+		/*std::string title;
 		std::string databaseName;
 		std::string listenerShortName;
-		std::string fileName;
+		std::string fileName;*/
 		int samplingRate;
 
 		// HRTF tables							

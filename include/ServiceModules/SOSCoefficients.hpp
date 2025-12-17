@@ -86,8 +86,16 @@ namespace BRTServices {
 		*	\details Leaves SOS Filter Table empty. Use SetSOSFilterTable to load.
 		*   \eh Nothing is reported to the error handler.
 		*/
-		CSOSCoefficients() : setupInProgress{ false }, SOSCoefficientsLoaded{ false }, numberOfEars{ -1 },azimuthStep{-1}, distanceStep{-1}, fileTitle{""}, fileName{""}
-		{					
+		CSOSCoefficients() 
+			: setupInProgress{ false }
+			, SOSCoefficientsLoaded{ false }			
+			, numberOfEars{ -1 }
+			, azimuthStep{-1}
+			, distanceStep{-1}
+			, fileTitle{""}
+			, fileName{""}
+		{
+			serviceType = TServiceType::sos_filter_database;
 		}
 
 
@@ -120,48 +128,48 @@ namespace BRTServices {
 		}
 	
 
-		/** \brief Set the title of the SOFA file
-		*    \param [in]	_title		string contains title
-		*/
-		void SetTitle(std::string _title) override {
-			fileTitle = _title;
-		}
+		///** \brief Set the title of the SOFA file
+		//*    \param [in]	_title		string contains title
+		//*/
+		//void SetTitle(std::string _title) override {
+		//	fileTitle = _title;
+		//}
 		
-		/** \brief Get the title of the SOFA file
-		*   \return string contains title
-		*/
-		std::string GetTitle() override {
-			return fileTitle;
-		}
+		///** \brief Get the title of the SOFA file
+		//*   \return string contains title
+		//*/
+		//std::string GetTitle() override {
+		//	return fileTitle;
+		//}
 
 		/** \brief Set the title of the SOFA file
 		*    \param [in]	_title		string contains title
 		*/
-		void SetDatabaseName(std::string _databaseName) override {
+		/*void SetDatabaseName(std::string _databaseName) override {
 			databaseName = _databaseName;
-		}
+		}*/
 
 		/** \brief Set the title of the SOFA file
 		*    \param [in]	_title		string contains title
 		*/
-		void SetListenerShortName(std::string _listenerShortName) override {
+		/*void SetListenerShortName(std::string _listenerShortName) override {
 			listenerShortName = _listenerShortName;
-		}
+		}*/
 
 
-		/** \brief Set the name of the SOFA file
-		*    \param [in]	_fileName		string contains filename
-		*/
-		void SetFilename(std::string _fileName) override {
-			fileName = _fileName;
-		}
+		///** \brief Set the name of the SOFA file
+		//*    \param [in]	_fileName		string contains filename
+		//*/
+		//void SetFilename(std::string _fileName) override {
+		//	fileName = _fileName;
+		//}
 
-		/** \brief Get the name of the SOFA file
-		*   \return string contains filename
-		*/
-		std::string GetFilename() {
-			return fileName;
-		}		
+		///** \brief Get the name of the SOFA file
+		//*   \return string contains filename
+		//*/
+		//std::string GetFilename() {
+		//	return fileName;
+		//}		
 
 		/** \brief Set the samplingRate of the SOFA file
 		*    \param [in]	samplingRate	int contains samplingRate

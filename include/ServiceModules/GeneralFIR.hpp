@@ -35,13 +35,10 @@
 #include <Common/ErrorHandler.hpp>
 #include <Common/GlobalParameters.hpp>
 #include <Common/CommonDefinitions.hpp>
-//#include <Common/CranicalGeometry.hpp>
+#include <Common/CranicalGeometry.hpp>
 #include <ServiceModules/ServicesBase.hpp>
 #include <ServiceModules/HRTFDefinitions.hpp>
 #include <ServiceModules/HRTFAuxiliarMethods.hpp>
-//#include <ServiceModules/OnlineInterpolation.hpp>
-//#include <ServiceModules/GridsManager.hpp>
-//#include <ServiceModules/Extrapolation.hpp>
 #include <ServiceModules/OfflineInterpolation.hpp>
 #include <ServiceModules/OfflineInterpolationAuxiliarMethods.hpp>
 #include <ServiceModules/InterpolationAuxiliarMethods.hpp>
@@ -61,15 +58,17 @@ namespace BRTServices
 		*   \eh Nothing is reported to the error handler.
 		*/
 		CGeneralFIR()
-			: IRLength{ 0 }
-			, fileName{ "" }
+			: IRLength{ 0 }			
 			, FIRLoaded{ false }
 			, setupInProgress{ false }
 			, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }
 			, samplingRate{ -1 }
 			, IR_TFpartitioned_NumberOfSubfilters { 0 }
 			, IR_TFpartitioned_SubfilterLength { 0 }
-		{ }
+			, numberOfEars { 0 }
+		{ 
+			serviceType = TServiceType::ir_database;
+		}
 
 		/** \brief Get size of each HRIR buffer
 		*	\retval size number of samples of each HRIR buffer for one ear
@@ -451,41 +450,41 @@ namespace BRTServices
 			return distanceOfMeasurement;
 		}
 
-		/** \brief Set the title of the SOFA file
-		*    \param [in]	_title		string contains title
-		*/
-		void SetTitle(std::string _title) override {
-			title = _title;
-		}
+		///** \brief Set the title of the SOFA file
+		//*    \param [in]	_title		string contains title
+		//*/
+		//void SetTitle(std::string _title) override {
+		//	title = _title;
+		//}
 
 		/** \brief Set the title of the SOFA file
 		*    \param [in]	_title		string contains title
 		*/
-		void SetDatabaseName(std::string _databaseName) override {
+		/*void SetDatabaseName(std::string _databaseName) override {
 			databaseName = _databaseName;
-		}
+		}*/
 
 		/** \brief Set the title of the SOFA file
 		*    \param [in]	_title		string contains title
 		*/
-		void SetListenerShortName(std::string _listenerShortName) override {
+		/*void SetListenerShortName(std::string _listenerShortName) override {
 			listenerShortName = _listenerShortName;
-		}
+		}*/
 
 
 		/** \brief Set the name of the SOFA file 
 		*    \param [in]	_fileName		string contains filename
 		*/
-		void SetFilename(std::string _fileName) override {
-			fileName = _fileName;
-		}
+		//void SetFilename(std::string _fileName) override {
+		//	fileName = _fileName;
+		//}
 
-		/** \brief Get the name of the SOFA file 
-		*   \return string contains filename
-		*/
-		std::string GetFilename() override { 
-			return fileName;
-		}
+		///** \brief Get the name of the SOFA file 
+		//*   \return string contains filename
+		//*/
+		//std::string GetFilename() override { 
+		//	return fileName;
+		//}
 
 		/** \brief	Set the radius of the listener head
 		*   \eh Nothing is reported to the error handler.
@@ -694,10 +693,10 @@ namespace BRTServices
 		//bool enableWoodworthITD;					// Indicate the use of a customized delay
 		//int gapThreshold;							// Max distance between pole and next elevation to be consider as a gap
 		
-		std::string title;
-		std::string databaseName;
-		std::string listenerShortName;
-		std::string fileName;
+		//std::string title;
+		//std::string databaseName;
+		//std::string listenerShortName;
+		//std::string fileName;
 		int samplingRate;
 		int numberOfEars;
 
