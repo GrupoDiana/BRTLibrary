@@ -35,8 +35,16 @@
 
 namespace BRTReaders {
 
-	class CSOFAReader {				
+	enum TSupportedDataType {
+	FIR,
+	FIR_E,	
+	SOS,
+	TF,
+	UNKNOWN
+	};
 
+	class CSOFAReader {				
+		
 	public:
 		
 		CSOFAReader()
@@ -76,6 +84,37 @@ namespace BRTReaders {
 			}			
 		}
 
+
+		TSupportedDataType GetDataTypeFromSofa(const std::string& sofafile)
+		{
+			BRTReaders::CLibMySOFALoader loader(sofafile);
+			int error = loader.getError();
+			if (error) {
+				errorDescription = "Error reading SOFA file - " + loader.GetErrorName(error);
+				return TSupportedDataType::UNKNOWN;
+			}
+			std::string dataType = loader.GetDataType();
+			if (dataType == "FIR") {
+				ResetError();
+				return TSupportedDataType::FIR;
+			}
+			else if (dataType == "FIR-E") {
+				ResetError();
+				return TSupportedDataType::FIR_E;
+			}
+			else if (dataType == "SOS") {
+				ResetError();
+				return TSupportedDataType::SOS;
+			}
+			else if (dataType == "TF") {
+				ResetError();
+				return TSupportedDataType::TF;
+			}
+			else {
+				errorDescription = "The data type contained in the sofa file is not valid - " + dataType;
+				return TSupportedDataType::UNKNOWN;
+			}
+		}
 		/** \brief Loads an HRTF from a sofa file
 		*	\param [in] path of the sofa file
 		*	\param [out] listener affected by the hrtf
