@@ -300,14 +300,7 @@ namespace BRTBase {
 		}
 
 		template <typename T>
-		std::shared_ptr<T> GetEnvironmentModel(const std::string & _environmentModelID) {
-			/*for (auto & it : environmentModels) {
-				if (it->GetID() == _environmentModelID) {
-					return it;
-				}
-			}
-			return nullptr;*/
-
+		std::shared_ptr<T> GetEnvironmentModel(const std::string & _environmentModelID) {			
 			return FindModel(environmentModels, _environmentModelID);
 		}
 
@@ -442,6 +435,18 @@ namespace BRTBase {
 		template <typename T>
 		std::shared_ptr<T> GetBinauralFilter(const std::string & _binauralFilterID) {
 			return FindModel(binauralFilters, _binauralFilterID);
+		}
+
+		/**
+		 * @brief Get binaural filter IDs list 
+		 * @return List of binaural filter IDs
+		 */
+		std::vector<std::string> GetBinauralFilterIDs() {
+			std::vector<std::string> binauralFilterIDs;
+			for (auto& it : binauralFilters) {
+				binauralFilterIDs.push_back(it->GetModelID());
+			}
+			return binauralFilterIDs;
 		}
 
 		/**
