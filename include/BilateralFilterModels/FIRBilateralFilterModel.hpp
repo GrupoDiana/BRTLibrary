@@ -39,7 +39,7 @@ namespace BRTBilateralFilter {
 			: CBilateralFilterModelBase(_binauraFilterID)
 			, brtManager { _brtManager }
 		{
-
+			filterType = T_BilateralFilterType::FIR_FILTER;
 		}
 
 		/**
@@ -75,7 +75,10 @@ namespace BRTBilateralFilter {
 		std::shared_ptr<BRTServices::CGeneralFIR> GetFIRTable() const override { 
 			return firFilter.GetFIRTable(); 
 		}
-				
+		
+		void RemoveFIRTable() override {
+			firFilter.RemoveFIRTable();			
+		}	
 
 		/**
 		 * @brief Connect listener model to this listener
@@ -116,6 +119,8 @@ namespace BRTBilateralFilter {
 
 			//listenerModelsConnected.push_back(_listenerModel); //TO solved
 			_listener->AddListenerModelConnected(_listenerModel);
+			AddInputConnection(_listenerModel->GetModelID());
+
 			SendMyID();
 			return control;
 		};
@@ -184,8 +189,9 @@ namespace BRTBilateralFilter {
 			control = control && brtManager->DisconnectModuleID(this, _listenerModel, "binauralFilterID");
 			control = control && brtManager->DisconnectModuleID(_listener, _listenerModel, "listenerID");
 
-			return control;
+			RemoveInputConnection(_listenerModel->GetModelID());
 
+			return control;
 		}
 
 	private:

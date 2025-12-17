@@ -208,6 +208,7 @@ namespace BRTBase {
 			}
 
 			binauralFiltersConnected.push_back(_binauralFilter);
+			_binauralFilter->ConnectionToListenerEstablished(GetID());
 			SendMyID();
 			return control;
 		};
@@ -366,16 +367,20 @@ namespace BRTBase {
 		*	\param[in] pointer to NFCFilters to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetSOSFilter(std::shared_ptr<BRTServices::CSOSCoefficients> _SOSFilter) {
+		bool SetBinauralSOSFilter(std::shared_ptr<BRTServices::CSOSCoefficients> _SOSFilter) {
 
-			for (auto & _binauralFilter : binauralFiltersConnected) {
-				//if (_binauralFilter->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {
-				return _binauralFilter->SetSOSFilter(_SOSFilter);
-				//}
+			for (auto & _binauralFilter : binauralFiltersConnected) {				
+				return _binauralFilter->SetSOSFilterCoefficients(_SOSFilter);				
 			}
 			return false;
 		}
 
+		bool SetBinauralFIRTable(std::shared_ptr<BRTServices::CGeneralFIR> _FIRTable) {
+			for (auto& _binauralFilter : binauralFiltersConnected) {				
+				return _binauralFilter->SetFIRTable(_FIRTable);				
+			}
+			return false;
+		}
 
 		/** \brief SET NFCFilters of listener
 		*	\param[in] pointer to NFCFilters to be stored

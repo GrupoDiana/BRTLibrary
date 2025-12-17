@@ -30,15 +30,21 @@
 #include <ServiceModules/GeneralFIR.hpp>
 
 namespace BRTBilateralFilter {
-	class CBilateralFilterModelBase : public BRTBase::CModelBase {
-	public:
+	enum T_BilateralFilterType {
+		none,
+		SOS_FILTER,
+		FIR_FILTER
+	};
 
-		virtual bool SetSOSFilter(std::shared_ptr<BRTServices::CSOSCoefficients> _listenerILD) { return false; };
+	class CBilateralFilterModelBase : public BRTBase::CModelBase {
+	public:		
+		virtual bool SetSOSFilterCoefficients(std::shared_ptr<BRTServices::CSOSCoefficients> _listenerILD) { return false; };
 		virtual std::shared_ptr<BRTServices::CSOSCoefficients> GetSOSFilter() const { return nullptr; }
 		virtual void RemoveSOSFilter() {};
 		
 		virtual bool SetFIRTable(std::shared_ptr<BRTServices::CGeneralFIR> _firTable) { return false; };
 		virtual std::shared_ptr<BRTServices::CGeneralFIR> GetFIRTable() const { return nullptr; }
+		virtual void RemoveFIRTable() { };
 
 		virtual bool ConnectListenerModel(const std::string & _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) { return false; };
 		virtual bool DisconnectListenerModel(const std::string & _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) { return false; };
@@ -46,6 +52,7 @@ namespace BRTBilateralFilter {
 
 		CBilateralFilterModelBase(const std::string & _binauraFilterID)
 			: CModelBase(_binauraFilterID)
+			, filterType { T_BilateralFilterType::none }			
 			{
 			
 			leftChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
@@ -59,6 +66,10 @@ namespace BRTBilateralFilter {
 			CreateSamplesExitPoint("rightEar");
 		}
 
+
+		T_BilateralFilterType GeBilateralFilterType() const {
+			return filterType;
+		}
 		/**
 		 * @brief Check if this binaural filter is connected to a listener
 		 * @return true if connected, false otherwise
@@ -69,6 +80,10 @@ namespace BRTBilateralFilter {
 				return true;
 			}
 			return false;
+		}				
+		
+		void ConnectionToListenerEstablished(const std::string & _listenerID) {
+			AddOuputConnections(_listenerID);
 		}
 
 	private:
@@ -129,16 +144,17 @@ namespace BRTBilateralFilter {
 			buffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
 		}
 
-
 		// Attributes
 		Common::CGlobalParameters globalParameters;	
 	
 	protected:
 
 		void SendMyID() { GetIDExitPoint()->sendData(modelID); }
-
+		
 		Common::CAudioMixer leftChannelMixer;
-		Common::CAudioMixer rightChannelMixer;		
+		Common::CAudioMixer rightChannelMixer;
+
+		T_BilateralFilterType filterType;
 	};
 }
 #endif

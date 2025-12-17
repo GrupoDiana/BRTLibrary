@@ -41,7 +41,8 @@ namespace BRTBilateralFilter {
 		CSOSBilateralFilterModel(const std::string & _binauraFilterID, BRTBase::CBRTManager * _brtManager)
 			: CBilateralFilterModelBase(_binauraFilterID)
 			, brtManager { _brtManager }
-		{						
+		{
+			filterType = T_BilateralFilterType::SOS_FILTER;
 		}
 
 		/**
@@ -67,7 +68,7 @@ namespace BRTBilateralFilter {
 		/** \brief SET SOS filters of the Binaural Filter
 		*	\param[in] pointer to SOS filter to be stored		
 		*/
-		bool SetSOSFilter(std::shared_ptr<BRTServices::CSOSCoefficients> _SOSFilterCoefficientsTable) override {
+		bool SetSOSFilterCoefficients(std::shared_ptr<BRTServices::CSOSCoefficients> _SOSFilterCoefficientsTable) override {
 			SOSFilterCoefficientsTable = _SOSFilterCoefficientsTable;			
 			FiltersSetup();						
 			return true;
@@ -125,6 +126,7 @@ namespace BRTBilateralFilter {
 
 			//listenerModelsConnected.push_back(_listenerModel); //TO solved
 			_listener->AddListenerModelConnected(_listenerModel);
+			AddInputConnection(_listenerModel->GetModelID());
 			SendMyID();
 			return control;
 		};
@@ -192,6 +194,7 @@ namespace BRTBilateralFilter {
 
 			control = control && brtManager->DisconnectModuleID(this, _listenerModel, "binauralFilterID");
 			control = control && brtManager->DisconnectModuleID(_listener, _listenerModel, "listenerID");
+			RemoveInputConnection(_listenerModel->GetModelID());
 
 			return control;
 

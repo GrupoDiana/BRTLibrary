@@ -75,6 +75,11 @@ namespace BRTFilters {
 			return firTable;
 		}
 
+		void RemoveFIRTable() {
+			firTable = nullptr;
+			ResetBuffers();
+		}
+
 		void Process(const CMonoBuffer<float> & _inBuffer, CMonoBuffer<float> & outBuffer, const int & _channel) override
 		{			
 			outBuffer = _inBuffer;
