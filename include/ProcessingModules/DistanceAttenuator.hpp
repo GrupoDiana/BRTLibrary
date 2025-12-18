@@ -160,6 +160,25 @@ public:
 		if (outBuffer.size() != 0)
 			outBuffer.ApplyGainExponentially(previousAttenuation_Channel, unnecessary_fixme, attenuation, globalParameters.GetBufferSize(), globalParameters.GetSampleRate());
 	}
+	
+	float CalculateDistanceAttenuation(Common::CTransform sourceTransform, Common::CTransform listenerTransform) {
+		if (!enableProcessor) {
+			return 1.0f;
+		}
+
+		if ((distanceAttenuationFactorDB >= 0) || (referenceAttenuationDistance <= 0)) {
+			SET_RESULT(RESULT_ERROR_PHYSICS, "DistanceAttenuator has not been set up correctly");
+			return 1.0f;
+		}
+
+		// Calculate distance
+		float distance = CalculateDistance(sourceTransform, listenerTransform);
+
+		// Attenuation is computed
+		float attenuation = GetDistanceAttenuation(distanceAttenuationFactorDB, distance, 0);
+		return attenuation;
+	}
+
 
 private:
 	
