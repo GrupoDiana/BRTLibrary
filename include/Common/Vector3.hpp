@@ -28,10 +28,12 @@
 //#define _USE_MATH_DEFINES // TODO: Test in windows! Might also be problematic for other platforms??	// TODO not working in visual 2019 //TO FIXME
 #include <cmath>
 #include <iostream>
-#include <Common/ErrorHandler.hpp>
-#include <Common/Conventions.hpp>
 #include <string>
 #include <vector>
+#include <Common/CommonDefinitions.hpp>
+#include <Common/ErrorHandler.hpp>
+#include <Common/Conventions.hpp>
+
 
 const double PI_D = 3.141592653589793238463;
 const float  PI_F = 3.14159265358979f;
@@ -462,7 +464,10 @@ namespace Common {
 		{
 			return CVector3(x - _rightHand.x, y - _rightHand.y, z - _rightHand.z);
 		}
-
+		CVector3 operator-(CVector3 const _rightHand) const
+		{
+			return CVector3(x - _rightHand.x, y - _rightHand.y, z - _rightHand.z);
+		}
 		/** \brief Component-wise addition
 		*/
 		const CVector3 operator+(CVector3 const _rightHand) const
@@ -479,15 +484,25 @@ namespace Common {
 		/** \brief Component-wise equal to 
 		*/
 		bool operator==(CVector3 const _rightHand) 
-		{
-			return (x == _rightHand.x && y == _rightHand.y && z == _rightHand.z);
-		}
+		{						
+			return (Common::almostEqual(x, _rightHand.x) && Common::almostEqual(y, _rightHand.y) && Common::almostEqual(z, _rightHand.z)); 
+			//return (x == _rightHand.x && y == _rightHand.y && z == _rightHand.z);
+		}				
+		bool operator==(const CVector3&  _rightHand) const {
+			return (Common::almostEqual(x, _rightHand.x) && Common::almostEqual(y, _rightHand.y) && Common::almostEqual(z, _rightHand.z));
+			//return (x == _rightHand.x && y == _rightHand.y && z == _rightHand.z);
+		}	
 
 		/** \brief Component-wise not equal to
 */
 		bool operator!=(CVector3 const _rightHand)
 		{
-			return (x != _rightHand.x || y != _rightHand.y || z != _rightHand.z);
+			return (Common::almostEqual(x, _rightHand.x) == false || Common::almostEqual(y, _rightHand.y) == false || Common::almostEqual(z, _rightHand.z) == false);
+			//return (x != _rightHand.x || y != _rightHand.y || z != _rightHand.z);
+		}
+		bool operator!=(const CVector3& _rightHand) const {
+			return (Common::almostEqual(x, _rightHand.x) == false || Common::almostEqual(y, _rightHand.y) == false || Common::almostEqual(z, _rightHand.z) == false);
+			//return (x != _rightHand.x || y != _rightHand.y || z != _rightHand.z);
 		}
 
 

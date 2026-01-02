@@ -26,7 +26,6 @@
 #define _COMMON_DEFINITIONS_HPP_
 
 #include <cmath>
-#include <Common/Vector3.hpp>
 
 namespace Common {
 
@@ -35,6 +34,9 @@ namespace Common {
 	const char COMMAND_EXIT_POINT_ID[] = "command";
 	const char COMMAND_ENTRY_POINT_ID[] = "command";
 
+	constexpr double PI_D = 3.141592653589793238463;
+	constexpr float PI_F = 3.14159265358979f;
+	constexpr float _2PI_F = 2.0f * PI_F;
 
 	//----------------------------------------------------------------------
 	/** \brief Type definition for specifying one ear
@@ -65,29 +67,7 @@ namespace Common {
 		T right;	///< right channel
 	};
 
-	static bool AreSameDouble(double a, double b, double epsilon)
-	{
-		//float absA = fabs(a);
-		//float absB = fabs(b);
-		float diff = std::fabs(a - b);
-
-		return diff < epsilon;
-	}
-
-	static bool AreSame(float a, float b, float epsilon)
-	{
-		//float absA = fabs(a);
-		//float absB = fabs(b);
-		float diff = std::fabs(a - b);
-
-		return diff < epsilon;
-	}
-
-	static bool AreSame(Common::CVector3 a, Common::CVector3 b, float epsilon)
-	{
-		return AreSame(a.x, b.x, epsilon) && AreSame(a.y, b.y, epsilon) && AreSame(a.z, b.z, epsilon);
-	}
-
+		
 	/** \brief This method check if a number is a power of 2
 		*	\param [in] integer to check
 		*	\param [out] return true if the number is power of two
@@ -114,5 +94,100 @@ namespace Common {
 		v++;
 		return v;
 	}
-}
+	
+	/**
+	 * @brief This method checks if two floating point numbers are almost equal, considering both absolute and relative tolerances.
+	 * @tparam type T
+	 * @param a First floating point number.
+	 * @param b Second floating point number.
+	 * @param relEpsilon relative comparison tolerance
+	 * @param absEpsilon absolute comparison tolerance
+	 * @return 
+	 */
+	template <typename T>
+	bool almostEqual(T a, T b, T relEpsilon, T absEpsilon) {
+		T diff = std::fabs(a - b);
+
+		// Absolute comparison (near 0)
+		if (diff <= absEpsilon) return true;
+
+		// Relative comparison (for large values)
+		return diff <= relEpsilon * std::max(std::fabs(a), std::fabs(b));
+	}
+	
+	/**
+	 * @brief This method checks if two floating point numbers are almost equal, considering both absolute and relative tolerances.
+	 * @details The method uses default tolerances based on the type of floating point number (float, double, long double).
+	 * @tparam type T
+	 * @param a First floating point number.
+	 * @param b Second floating point number.
+	 * @return true if the numbers are almost equal, false otherwise.
+	 */
+	template <typename T>
+	bool almostEqual(T a, T b) {
+		T relEpsilon;
+		T absEpsilon;
+
+		if constexpr (std::is_same_v<T, float>) {
+			relEpsilon = 1e-5f;
+			absEpsilon = 1e-8f;
+		} else if constexpr (std::is_same_v<T, double>) {
+			relEpsilon = 1e-12;
+			absEpsilon = 1e-15;
+		} else if constexpr (std::is_same_v<T, long double>) {
+			relEpsilon = 1e-15L;
+			absEpsilon = 1e-18L;
+		} else {
+			// generic fallback: use epsilon of the implementation
+			relEpsilon = std::numeric_limits<T>::epsilon();
+			absEpsilon = std::numeric_limits<T>::epsilon();
+		}
+
+		T diff = std::fabs(a - b);
+
+		// Absolute comparison (for small values, close to 0)
+		if (diff <= absEpsilon) {
+			return true;
+		}
+
+		// Relative comparison (for large values)
+		return diff <= relEpsilon * std::max(std::fabs(a), std::fabs(b));
+	}
+
+	/**
+	 * @brief Determines if the first value is strictly greater than the second, excluding cases where they are almost equal.
+	 * @tparam T The type of the values to compare.
+	 * @param a The first value to compare.
+	 * @param b The second value to compare.
+	 * @return True if 'a' is greater than 'b' and they are not almost equal; otherwise, false.
+	 */
+	template <typename T>
+	bool is_greater(T a, T b) {
+		return (a > b) && !almostEqual(a, b);
+	}
+
+	/**
+	 * @brief Determines if the first value is greater than or approximately equal to the second value.
+	 * @tparam T The type of the values to compare.
+	 * @param a The first value to compare.
+	 * @param b The second value to compare.
+	 * @return True if the first value is greater than or approximately equal to the second value; otherwise, false.
+	 */
+	template <typename T>
+	bool is_greater_or_equal(T a, T b) {
+		return (a > b) || almostEqual(a, b);
+	}
+
+	static bool AreSameDouble(double a, double b, double epsilon) {
+		//float diff = std::fabs(a - b);
+		//return diff < epsilon;
+		return almostEqual<double>(a, b, 0.0, epsilon); // I only use absolute comparison to ensure that it works exactly the same as before.
+	}
+
+	static bool AreSame(float a, float b, float epsilon) {
+		//float diff = std::fabs(a - b);
+		//return diff < epsilon;
+		return almostEqual(a, b, 0.0f, epsilon); //I only use absolute comparison to ensure that it works exactly the same as before.
+	}
+	}
 #endif

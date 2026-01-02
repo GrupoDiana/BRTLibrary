@@ -1,3 +1,6 @@
 [submodule "include/third_party_libraries/eigen"]
 	path = include/third_party_libraries/eigen
 	url = https://gitlab.com/libeigen/eigen.git
+[submodule "include/third_party_libraries/rapidobj"]
+	path = include/third_party_libraries/rapidobj
+	url = https://github.com/GrupoDiana/rapidobj.git

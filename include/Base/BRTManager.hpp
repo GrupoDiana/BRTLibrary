@@ -47,6 +47,7 @@ namespace BRTBase {
 		 * @brief Starts the configuration mode, where you can create/destroy and connect/disconnect modules.
 		*/
 		void BeginSetup() {
+			std::lock_guard<std::mutex> l(mutex);
 			setupModeActivated = true;
 		}
 
@@ -56,6 +57,7 @@ namespace BRTBase {
 		 * @return Right now always returns true
 		*/
 		bool EndSetup() {
+			std::lock_guard<std::mutex> l(mutex);
 			bool control = false;
 			if (setupModeActivated) {
 				//TODO Check the connections if they are OK return true
@@ -314,6 +316,14 @@ namespace BRTBase {
 				return true;
 			}
 			return false;
+		}
+
+		std::vector<std::string> GetEnvironmentModelIDs() {
+			std::vector<std::string> environmentIDs;
+			for (auto& it : environmentModels) {
+				environmentIDs.push_back(it->GetModelID());
+			}
+			return environmentIDs;
 		}
 
 		/**
@@ -817,7 +827,8 @@ namespace BRTBase {
 		*/
 		void ProcessAll(bool _multiThread = false) {
 			if (setupModeActivated) return;
-			
+			std::lock_guard<std::mutex> l(mutex);
+
 			if (!_multiThread) {
 				std::thread thread1 = std::thread(&BRTBase::CBRTManager::ProcessMonoThread, this);
 				thread1.join();
@@ -829,22 +840,14 @@ namespace BRTBase {
 		 * @brief Executes the received command. To do so, it distributes it to all the connected modules, which are responsible for executing the relevant actions.
 		 * @param commandJson The command to execute following a json format.
 		*/
-		void ExecuteCommand(std::string commandJson) {			
+		void ExecuteCommand(std::string commandJson) {
+			//std::lock_guard<std::mutex> l(mutex);
 			BRTConnectivity::CCommand command(commandJson);
 			commandsExitPoint->sendData(command);																		
 		}
 
 	private:
-		std::shared_ptr<BRTConnectivity::CExitPointCommand> commandsExitPoint; // Exit point to emit control commands
 		
-		std::vector<std::shared_ptr<BRTSourceModel::CSourceModelBase>> audioSources; // List of audio sources 
-		std::vector<std::shared_ptr<CListenerBase>>			listeners;			// List of listeners		
-		std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> listenerModels; // List of listener Models
-		std::vector<std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase>> environmentModels; // List of virtual sources environments
-		std::vector<std::shared_ptr<BRTBilateralFilter::CBilateralFilterBase>> binauralFilters;		// List of binaural filters
-
-		bool initialized;
-		bool setupModeActivated;
 
 		/////////////////
 		// Methods
@@ -906,6 +909,21 @@ namespace BRTBase {
 			}
 			return nullptr;
 		}
+
+		///////////////
+		// Attributes
+		///////////////
+		std::shared_ptr<BRTConnectivity::CExitPointCommand> commandsExitPoint; // Exit point to emit control commands
+
+		std::vector<std::shared_ptr<BRTSourceModel::CSourceModelBase>> audioSources; // List of audio sources
+		std::vector<std::shared_ptr<CListenerBase>> listeners; // List of listeners
+		std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> listenerModels; // List of listener Models
+		std::vector<std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase>> environmentModels; // List of virtual sources environments
+		std::vector<std::shared_ptr<BRTBilateralFilter::CBilateralFilterBase>> binauralFilters; // List of binaural filters
+
+		bool initialized;
+		bool setupModeActivated;
+		mutable std::mutex mutex;
 	};
 }
 #endif

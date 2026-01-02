@@ -43,7 +43,7 @@
 #include <vector>
 #include <Common/Vector3.hpp>
 
-namespace Common {
+namespace BRTServices {
 
 class CWall {
 public:
@@ -54,7 +54,8 @@ public:
 		, C { 0 }
 		, D { 0 }
 		, absortionBands { std::vector<float> (NUM_BAND_ABSORTION, 0.0) }
-		, active { true } {
+		, active { true }
+		, polygon { std::vector<Common::CVector3>() } {
 		//Wall purely reflective by default
 		//Wall active by default
 	}
@@ -67,8 +68,26 @@ public:
 	*	\param [in] Corner: vector containing the new corner to be inserted (expresed in m).
 	*	\param [out] CORRECT: 1 if the new corner is in the same plane of the others. 0 if not and a projection to the plane is carried out.
 	*/
-	int InsertCorner(Common::CVector3 _corner) {
-		return InsertCorner(_corner.x, _corner.y, _corner.z);
+	int InsertCorner(const Common::CVector3& _corner) {
+		if (polygon.size() < 3) {
+			polygon.push_back(_corner);
+			return true;
+		}
+		// Now we have 3 corners
+		if (polygon.size() == 3) {
+			Calculate_ABCD();
+		}
+		double diff = _corner.x * A + _corner.y * B + _corner.z * C + D;
+		diff = std::fabs(diff);
+		if (diff < THRESHOLD) // ¿DBL_EPSILON? ¿THRESHOLD?
+		{
+			polygon.push_back(_corner);
+			return true;
+		} else {
+			Common::CVector3 _calculatedCorner = GetProjectionPoint(_corner);
+			polygon.push_back(_calculatedCorner);
+			return false;
+		}	
 	}
 
 	/** \brief Insert a new corner (vertex) in the wall by coordinates
@@ -81,42 +100,22 @@ public:
 	*	\param [in] Z coordinate of the corner to be inserted (m).
 	*	\param [out] CORRECT: 1 if the new corner is in the same plane of the others. 0 if not and a projection to the plane is carried out.
 	*/
-	int InsertCorner(float _x, float _y, float _z) { 
+	int InsertCorner(const float& _x, const float& _y, const float& _z) { 
 		Common::CVector3 tempCorner(_x, _y, _z);
-		if (polygon.size() < 3) {
-			polygon.push_back(tempCorner);
-			if (polygon.size() == 3) {
-				Calculate_ABCD();
-				return 1;
-			} else {
-				return 0;
-			}
-		} else {
-			double diff = _x * A + _y * B + _z * C + D;
-			diff = std::fabs(diff);
-			if (diff < WALL_THRESHOLD) // ¿DBL_EPSILON? ¿THRESHOLD?
-			{
-				polygon.push_back(tempCorner);
-				return 1;
-			} else {
-				tempCorner = GetPointProjection(_x, _y, _z);
-				polygon.push_back(tempCorner);
-				return 0;
-			}
-		}		
+		return InsertCorner(tempCorner);			
 	}
 	
 	/** \brief Returns the corners of the wall
 	*	\param [out] Corners: vector containing the set of corners of the wall in teh same order as they are defined.
 	*/
-	std::vector<Common::CVector3> GetCorners() {
+	const std::vector<Common::CVector3>& GetCorners() const {
 		return polygon;
 	}
 
 	/** \brief set the absortion coeficient (frequency independent) of the wall
 	*   \param [in] Absortion: absortion coeficient of the wall (expressed as a number between 0 (no absortion) and 1 (total absortion).
 	*/
-	bool SetAbsortion(float _absortion) {		
+	bool SetAbsortion(const float& _absortion) {		
 		if (_absortion < 0 || _absortion > 1) {
 			return false;
 		}
@@ -127,7 +126,7 @@ public:
 	/** \brief set the absortion coeficients for each band of the wall
 	*	\param [in] Absortion: Vector with absortion coeficients of the wall (expressed as a number between 0 (no absortion) and 1 (total absortion).
 	*/
-	bool SetAbsortion(std::vector<float> _absortionPerBand) { 
+	bool SetAbsortion(const std::vector<float>& _absortionPerBand) { 
 		if (IsValidAbsortionsCoefficientsVector(_absortionPerBand)) {
 			absortionBands = _absortionPerBand;
 			return true;
@@ -138,14 +137,14 @@ public:
 	/** \brief Returns the vector with absortion coeficients of the wall. 
 	*	\param [out] Absortion: absortion of the wall. Vector with the absorption coefficients of each band.
 	*/
-	std::vector<float> GetAbsortionBand() {
+	const std::vector<float>& GetAbsortionBand() const {
 		return absortionBands;
 	}
 
 	/** \brief Returns the normal vector to the wall. If the wall is properly defined, it points towards inside the room.
 	*	\param [out] Normal: normal vector to the wall.
 	*/
-	Common::CVector3 GetNormal() {
+	Common::CVector3& GetNormal() const {
 		Common::CVector3 p1, p2, normal;
 		float modulus;
 
@@ -166,7 +165,8 @@ public:
 	/** \brief Returns the center of the wall.
 	*	\param [out] Center: central point of the wall.
 	*/
-	Common::CVector3 GetCenter() {
+	Common::CVector3 GetCenter() const {
+		
 		Common::CVector3 center;
 		
 		center = Common::CVector3::ZERO();
@@ -178,17 +178,17 @@ public:
 		center.x /= polygon.size();
 		center.y /= polygon.size();
 		center.z /= polygon.size();
-
+		
 		return center;
 	}
 	
 	/** \brief Returns the distance of a given point to the wall's plane.
-	*	\param [in] Point: point for whhich the distance to the wall's plane will be calculated (m).
-	*	\param [out] Distance: shorterst distance to teh wall's plane (m).
+	*	\param [in] Point: point for which the distance to the wall's plane will be calculated (m).
+	*	\param [out] Distance: shorterst distance to the wall's plane (m).
 	*/
-	float GetDistanceFromPoint(Common::CVector3 point) {
+	float GetDistanceFromPoint(const Common::CVector3& point) const {
 		float distance;
-		Calculate_ABCD();
+		//Calculate_ABCD();
 		distance = fabs(A * point.x + B * point.y + C * point.z + D);
 		distance = distance / sqrtf(A * A + B * B + C * C);
 		return distance;
@@ -203,7 +203,7 @@ public:
 	*	\param [in] wall: wall to compute the distance to this one.
 	*	\param [out] Distance: shorterst distance to teh wall's plane (m).
 	*/
-	float GetMinimumDistanceFromWall(CWall wall) {
+	float GetMinimumDistanceFromWall(const CWall& wall) const {
 		Common::CVector3 cornerDistance = polygon.at(0) - wall.polygon.at(0);
 		float minimumDistance = cornerDistance.GetDistance();
 		for (int i = 0; i < polygon.size(); i++) {
@@ -221,10 +221,9 @@ public:
 	*	\param [in] Point: original point for which the image reflected in the wall will be calculated.
 	*	\param [out] Image: location of the image point.
 	*/
-	Common::CVector3 GetImagePoint(Common::CVector3 point) {
-		float distance;
+	Common::CVector3 GetImagePoint(const Common::CVector3& point) const {		
 		Common::CVector3 imagePoint, normalRay;
-		distance = GetDistanceFromPoint(point);
+		float distance = GetDistanceFromPoint(point);
 
 		normalRay = GetNormal();
 		normalRay.x *= -(2 * distance);
@@ -240,7 +239,7 @@ public:
 	*	\param [in] Wall: original wall.
 	*	\param [out] ImageWall: image wall, result of reflection of the original wall.
 	*/
-	CWall GetImageWall(CWall _wall) {
+	CWall GetImageWall(const CWall& _wall) const {
 		CWall tempWall;
 		std::vector<Common::CVector3> corners = _wall.GetCorners();
 		for (int i = corners.size() - 1; i >= 0; i--) {
@@ -258,32 +257,42 @@ public:
 	*	\param [in] Z coordinate of the point to be projected.
 	*	\param [out] Projection: porjected point in the woall's plane.
 	*/
-	Common::CVector3 GetPointProjection(float x0, float y0, float z0) { 
+	Common::CVector3 & GetProjectionPoint(float & x0, float & y0, float & z0) const { 
+		Common::CVector3 point(x0, y0, z0);
+		return GetProjectionPoint(point);
+	}
+
+	/** \brief Returns the poin projected in the wall's plane of a given point.
+	*	\param [in] Point: point to be projected.
+	*	\param [out] Projection: porjected point in the woall's plane.
+	*/
+	Common::CVector3 & GetProjectionPoint(const Common::CVector3 & point) const {
 		// Vectorial Ec. of straight line --> (X,Y,Z) = (x0, y0, z0) + lambda (normalV.x, normalV.y, normalV.z)
 		// Plane of the wall              --> AX+BY+CZ+D = 0
-		Common::CVector3 normalV, point(x0, y0, z0);
+
+		Common::CVector3 normalV;
 		double rX1, rY1, rZ1, lambda;
 		double rX2, rY2, rZ2;
 		double diff1, diff2;
 		float rX, rY, rZ;
 
-		Calculate_ABCD();
+		//calculate_ABCD();
 		normalV = GetNormal();
 		lambda = (double)GetDistanceFromPoint(point);
 
 		// lambda could be positive or negative
 		//
-		rX1 = x0 + lambda * normalV.x;
-		rY1 = y0 + lambda * normalV.y;
-		rZ1 = z0 + lambda * normalV.z;
+		rX1 = point.x + lambda * normalV.x;
+		rY1 = point.y + lambda * normalV.y;
+		rZ1 = point.z + lambda * normalV.z;
 		diff1 = rX1 * A + rY1 * B + rZ1 * C + D;
-		diff1 = std::fabs(diff1);
+		diff1 = fabs(diff1);
 
-		rX2 = x0 - lambda * normalV.x;
-		rY2 = y0 - lambda * normalV.y;
-		rZ2 = z0 - lambda * normalV.z;
+		rX2 = point.x - lambda * normalV.x;
+		rY2 = point.y - lambda * normalV.y;
+		rZ2 = point.z - lambda * normalV.z;
 		diff2 = rX2 * A + rY2 * B + rZ2 * C + D;
-		diff2 = std::fabs(diff2);
+		diff2 = fabs(diff2);
 
 		if (diff1 < diff2) {
 			rX = rX1;
@@ -294,16 +303,8 @@ public:
 			rY = rY2;
 			rZ = rZ2;
 		}
-
-		return Common::CVector3(rX, rY, rZ);
-	}
-
-	/** \brief Returns the poin projected in the wall's plane of a given point.
-	*	\param [in] Point: point to be projected.
-	*	\param [out] Projection: porjected point in the woall's plane.
-	*/
-	Common::CVector3 GetPointProjection(Common::CVector3 point) {
-		return GetPointProjection(point.x, point.y, point.z);
+		Common::CVector3 projectionPoint = Common::CVector3(rX, rY, rZ);
+		return projectionPoint;	
 	}
 
 	/** \brief Returns the poin where a given line intersects the wall's plane.
@@ -313,7 +314,7 @@ public:
 	*	\param [in] Point2: the other point to define the line.
 	*	\param [out] Intersection: point of intersection of teh given line and the wall's plane.
 	*/
-	Common::CVector3 GetIntersectionPointWithLine(Common::CVector3 point1, Common::CVector3 point2) {
+	Common::CVector3 GetIntersectionPointWithLine(const Common::CVector3& point1, const Common::CVector3& point2) const {
 		Common::CVector3 cutPoint, vecLine;
 		float modulus, lambda;
 
@@ -344,7 +345,7 @@ public:
 				2 --> Point is coming out of the wall
 						visibility (sharpness) is between (0.5 ,  0] if distanceToBorder <= THRESHOLD_BORDER
 	*/
-	int CheckPointInsideWall(Common::CVector3 point, float & distanceNearestEdge, float & sharpness) {
+	int CheckPointInsideWall(const Common::CVector3& point, float & distanceNearestEdge, float & sharpness)const {
 		float modulus = GetDistanceFromPoint(point);
 		if (modulus > 5 * WALL_THRESHOLD) {
 			sharpness = 0.0;
@@ -399,11 +400,11 @@ public:
 	*	\param [in] Point: point to be checked.
 	*	\param [out] Result: distance to the nearest edge.
 	*/
-	float CalculateDistanceNearestEdge(Common::CVector3 point) {
+	float CalculateDistanceNearestEdge(const Common::CVector3& point) const {
 		float minDistance = 0.0, distance = 0.0;
 		int n = polygon.size();
 		for (auto i = 0; i < n; i++) {
-			distance = DistancePointToLine(point, polygon[i], polygon[(i + 1) % n]);
+			distance = CalculateDistancePointToLine(point, polygon[i], polygon[(i + 1) % n]);
 			if (i == 0)
 				minDistance = distance;
 			else {
@@ -418,7 +419,7 @@ public:
 	*	\param [in] Point: 3D point, 3D point_1 of line,  3D point_2 of line.
 	*	\param [out] Result: distance to the nearest edge.
 	*/
-	float DistancePointToLine(Common::CVector3 point, Common::CVector3 pointLine1, Common::CVector3 pointLine2) {
+	float CalculateDistancePointToLine(const Common::CVector3& point, const Common::CVector3& pointLine1, const Common::CVector3& pointLine2) const {
 		float distance = 0, vectorModulus;
 		Common::CVector3 vector1, vector2, vector3;
 		vector1 = pointLine2 - pointLine1;
@@ -445,15 +446,17 @@ public:
 	*	\details Every wall can be active (it reflects) or not (i does not reflect anything, so it is as it does not exist.
 				This method returs wether the wall is active or not.
 	*/
-	bool IsActive() { return active; }
+	bool IsActive() const { return active; }
 
 private:
 	////////////
 	// Methods
 	////////////
-
-	/** \brief calculates the general (cartesian) equation of the plane containing the wall. Parameters are stored in private attributes
-		*/
+		
+	/**
+	 * @brief calculates the general (cartesian) equation of the plane containing the wall. 
+	 *		  Parameters are stored in private attributes
+	 */
 	void Calculate_ABCD() {
 		Common::CVector3 normal;
 		normal = GetNormal();
@@ -480,9 +483,9 @@ private:
 	///////////////
 	std::vector<Common::CVector3> polygon;	// corners of the wall
 	std::vector<float> absortionBands;		// absortion coeficients (absorved energy / incident energy) for each octave Band
-	bool active;							//sets wether the wall is active or not (if false, the wall is transparent)
+	bool active;							// sets wether the wall is active or not (if false, the wall is transparent)
 
-	float A, B, C, D; // General Plane Eq.: Ax + By + Cz + D = 0
+	float A, B, C, D;						// General Plane Eq.: Ax + By + Cz + D = 0
 };
 }
 #endif
