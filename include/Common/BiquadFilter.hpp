@@ -145,7 +145,7 @@ namespace Common {
 		*	\pre Input and output buffers must have the same size, which should be greater than 0.
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		void CBiquadFilter::Process(const CMonoBuffer<float> & inBuffer, CMonoBuffer<float> & outBuffer, bool addResult = false) {
+		void Process(const CMonoBuffer<float> & inBuffer, CMonoBuffer<float> & outBuffer, bool addResult = false) {
 			ProcessInternal(inBuffer, &outBuffer, addResult);
 		}
 
@@ -153,7 +153,7 @@ namespace Common {
 		 * @brief Filter the input data according to the filter setup.
 		 * @param buffer input and output buffer
 		 */
-		void CBiquadFilter::Process(CMonoBuffer<float> & buffer) {
+		void Process(CMonoBuffer<float> & buffer) {
 			ProcessInternal(buffer, &buffer, false);
 		}
 		//void Process(const CMonoBuffer<float> &inBuffer, CMonoBuffer<float> & outBuffer, bool addResult = false)		
@@ -599,7 +599,7 @@ namespace Common {
 
 			try // -> To handle division by 0
 			{
-				// Low shelf implementation from Välimäki, V., Reiss, J. D., "All About Audio Equalization: Solutions and Frontiers", MDPI, 2016
+				// Low shelf implementation from Vï¿½limï¿½ki, V., Reiss, J. D., "All About Audio Equalization: Solutions and Frontiers", MDPI, 2016
 				//      https://www.mdpi.com/2076-3417/6/5/129
 				double sqrtGain = std::sqrt(gain);
 				double fourthrtGain = std::sqrt(sqrtGain);
@@ -648,7 +648,7 @@ namespace Common {
 
 			try // -> To handle division by 0
 			{
-				// High shelf implementation from Välimäki, V., Reiss, J. D., "All About Audio Equalization: Solutions and Frontiers", MDPI, 2016
+				// High shelf implementation from Vï¿½limï¿½ki, V., Reiss, J. D., "All About Audio Equalization: Solutions and Frontiers", MDPI, 2016
 				//      https://www.mdpi.com/2076-3417/6/5/129
 				double sqrtGain = std::sqrt(gain);
 				double fourthrtGain = std::sqrt(sqrtGain);
@@ -691,8 +691,8 @@ namespace Common {
 		bool SetCoefsFor_PeakNotch(double centerFreqHz, double Q, double gain) {
 			
 			float samplingFreq = globalParameters.GetSampleRate();
-			// Use Vällimäki's method to calculate the coefficients of a peak-notch filter
-			// See: Välimäki, V., Reiss, J. D., "All About Audio Equalization: Solutions and Frontiers", MDPI, 2016
+			// Use Vï¿½llimï¿½ki's method to calculate the coefficients of a peak-notch filter
+			// See: Vï¿½limï¿½ki, V., Reiss, J. D., "All About Audio Equalization: Solutions and Frontiers", MDPI, 2016
 			//      https://www.mdpi.com/2076-3417/6/5/129
 			if (gain < 0) {
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Gain of biquad (peak-notch) filter is negative");

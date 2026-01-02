@@ -55,7 +55,7 @@ namespace BRTEnvironmentModel {
 		 * @param _virtualSourceID ID of the virtual source
 		*/ 
 		void RemoveVirtualSource(const std::string& _virtualSourceID) {			
-			auto& it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
+			auto&& it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
 			if (it != virtualSources.end()) {
 				bool result = brtManager->RemoveSoundSource(_virtualSourceID);
 				if (result) {
@@ -106,7 +106,7 @@ namespace BRTEnvironmentModel {
 
 		void SetVirtualSourceBuffer(const std::string& _virtualSourceID, const CMonoBuffer<float>& _buffer) {
 			
-			auto& it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
+			auto&& it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
 			if (it != virtualSources.end()) {					
 				it[0]->SetBuffer(_buffer);								
 			}
@@ -117,7 +117,7 @@ namespace BRTEnvironmentModel {
 
 
 		void SetVirtualSourcePosition(const std::string& _virtualSourceID, const Common::CTransform& _sourcePosition) {
-			auto& it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
+			auto&& it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
 			if (it != virtualSources.end()) {
 				it[0]->SetSourceTransform(_sourcePosition);
 			}

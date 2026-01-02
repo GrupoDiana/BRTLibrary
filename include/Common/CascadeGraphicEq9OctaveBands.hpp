@@ -149,7 +149,7 @@ namespace Common {
          * @brief Get the filters in the chain 
          * 
          */
-        shared_ptr<CBiquadFilter> GetFilter(int index) {
+        std::shared_ptr<CBiquadFilter> GetFilter(int index) {
             return CFiltersChain::GetFilter(index);
         }
 #endif

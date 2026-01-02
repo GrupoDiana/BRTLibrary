@@ -25,6 +25,7 @@
 #ifndef _CROOM_HPP_
 #define _CROOM_HPP_
 
+#include <float.h>
 #include <vector>
 #include <Common/Vector3.hpp>
 #include <ServiceModules/Wall.hpp>
