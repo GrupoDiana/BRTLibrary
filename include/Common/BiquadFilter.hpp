@@ -599,7 +599,7 @@ namespace Common {
 
 			try // -> To handle division by 0
 			{
-				// Low shelf implementation from V�lim�ki, V., Reiss, J. D., "All About Audio Equalization: Solutions and Frontiers", MDPI, 2016
+				// Low shelf implementation from Välimäki, V., Reiss, J. D., "All About Audio Equalization: Solutions and Frontiers", MDPI, 2016
 				//      https://www.mdpi.com/2076-3417/6/5/129
 				double sqrtGain = std::sqrt(gain);
 				double fourthrtGain = std::sqrt(sqrtGain);
@@ -648,7 +648,7 @@ namespace Common {
 
 			try // -> To handle division by 0
 			{
-				// High shelf implementation from V�lim�ki, V., Reiss, J. D., "All About Audio Equalization: Solutions and Frontiers", MDPI, 2016
+				// High shelf implementation from Välimäki, V., Reiss, J. D., "All About Audio Equalization: Solutions and Frontiers", MDPI, 2016
 				//      https://www.mdpi.com/2076-3417/6/5/129
 				double sqrtGain = std::sqrt(gain);
 				double fourthrtGain = std::sqrt(sqrtGain);
@@ -691,8 +691,8 @@ namespace Common {
 		bool SetCoefsFor_PeakNotch(double centerFreqHz, double Q, double gain) {
 			
 			float samplingFreq = globalParameters.GetSampleRate();
-			// Use V�llim�ki's method to calculate the coefficients of a peak-notch filter
-			// See: V�lim�ki, V., Reiss, J. D., "All About Audio Equalization: Solutions and Frontiers", MDPI, 2016
+			// Use Välimäki's method to calculate the coefficients of a peak-notch filter
+			// See: Välimäki, V., Reiss, J. D., "All About Audio Equalization: Solutions and Frontiers", MDPI, 2016
 			//      https://www.mdpi.com/2076-3417/6/5/129
 			if (gain < 0) {
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Gain of biquad (peak-notch) filter is negative");
