@@ -92,70 +92,7 @@ namespace BRTProcessing {
 		 * @brief Get the flag to know if the processor is enabled.
 		 * @return true if the processor is enabled, false otherwise
 		 */
-		bool IsProcessorEnabled() { return enableProcessor; }
-		
-
-		/**
-		 * @brief Filter the input signal with the binaural filter taking into account the source and listener position
-		 * @param _inLeftBuffer left ear input buffer
-		 * @param _inRightBuffer right ear input buffer
-		 * @param outLeftBuffer out left ear buffer
-		 * @param outRightBuffer out right ear buffer
-		 * @param sourceTransform source position and orientation
-		 * @param listenerTransform listener position and orientation
-		 * @param _SOSFilterWeakPtr pointer to SOS filter 
-		 */	
-		//void Process(const int & _channel, const CMonoBuffer<float> & _inBuffer, CMonoBuffer<float> & outBuffer, const Common::CTransform & sourceTransform, const Common::CTransform & listenerTransform, const Common::T_ear _ear, std::weak_ptr<BRTServices::CSOSCoefficients> & _SOSFilterWeakPtr) override
-		//{
-		//	outBuffer = _inBuffer;			
-		//	
-		//	if (!initialized) return;
-
-		//	// Check process flag
-		//	if (!enable) { return;	}
-
-		//	if (_channel < 0 || _channel >= numberOfChannels) {
-		//		SET_RESULT(RESULT_ERROR_OUTOFRANGE, "The channel number is out of range in BRTFilters::BiquadChainTable::Process");
-		//		return;
-		//	}
-		//	
-		//	float distance = Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerDistance(sourceTransform, listenerTransform);			
-		//	
-		//	if (distance > DISTANCE_MODEL_THRESHOLD_NEAR) {
-		//		return;
-		//	}
-		//	if (Common::AreSame(distance, 0, MINIMUM_DISTANCE_SOURCE_LISTENER)) {
-		//		SET_RESULT(RESULT_WARNING, "The source is inside the listener's head.");
-		//		//outLeftBuffer = _inLeftBuffer;				
-		//		return;
-		//	}
-
-		//	ASSERT(_inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");			
-		//	
-		//	// Check listener ILD
-		//	std::shared_ptr<BRTServices::CSOSCoefficients> _SOSFilterPtr= _SOSFilterWeakPtr.lock();
-		//	if (!_SOSFilterPtr) {
-		//		SET_RESULT(RESULT_ERROR_NULLPOINTER, "SOS filter pointer is null when trying to use in BRTProcessing::CBiquadChainTable");				
-		//		outBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);				
-		//		return;
-		//	}
-
-		//	float interauralAzimuth = CalculateInterauralAzimuth(sourceTransform, listenerTransform);
-
-		//	//Get coefficients from the ILD table			
-		//	std::vector<float> coefficients = _SOSFilterPtr->GetSOSFilterCoefficients(_ear, distance, interauralAzimuth);
-		//				
-		//	if (coefficients.size() != numberOfCoefficientsPerChannel) {
-		//		SET_RESULT(RESULT_WARNING, "No SOS filter coefficients found for the given distance and azimuth in BRTProcessing::CBiquadChainTable");
-		//		return;
-		//	}						
-		//	
-		//	SetCoefficients(biquadChainTable[_channel], coefficients); //Set coefficients			
-
-		//	// Process the signal
-		//	biquadChainTable[_channel].Process(outBuffer);			
-		//}
-
+		bool IsProcessorEnabled() { return enableProcessor; }				
 
 		/**
 		 * @brief Filter the input signal with the binaural filter
