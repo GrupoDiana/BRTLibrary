@@ -62,24 +62,24 @@ class CModelBase : public BRTConnectivity::CBRTConnectivity {
 		std::vector<std::string> GetInputs() { return inputConnections; }
 		std::vector<std::string> GetOutputs() { return outputConnections; }
 
-		protected:
+	protected:
 
-			void AddInputConnection(const std::string & _modelID) {
-				inputConnections.push_back(_modelID);
-			}
-			void RemoveInputConnection(const std::string & _modelID) {
-				inputConnections.erase(std::remove(inputConnections.begin(), inputConnections.end(), _modelID), inputConnections.end());
-			}
+		void AddInputConnection(const std::string & _modelID) {
+			inputConnections.push_back(_modelID);
+		}
+		void RemoveInputConnection(const std::string & _modelID) {
+			inputConnections.erase(std::remove(inputConnections.begin(), inputConnections.end(), _modelID), inputConnections.end());
+		}
 
-			void AddOuputConnections(const std::string& _modelID) {
-				outputConnections.push_back(_modelID);
-			}
-			void RemoveOutputConnections(const std::string& _modelID) {
-				outputConnections.erase(std::remove(outputConnections.begin(), outputConnections.end(), _modelID), outputConnections.end());
-			}
+		void AddOuputConnections(const std::string& _modelID) {
+			outputConnections.push_back(_modelID);
+		}
+		void RemoveOutputConnections(const std::string& _modelID) {
+			outputConnections.erase(std::remove(outputConnections.begin(), outputConnections.end(), _modelID), outputConnections.end());
+		}
 
-			std::vector<std::string> inputConnections;
-			std::vector<std::string> outputConnections;
-	};
+		std::vector<std::string> inputConnections;
+		std::vector<std::string> outputConnections;
+};
 }
 #endif
