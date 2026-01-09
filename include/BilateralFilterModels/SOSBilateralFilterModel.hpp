@@ -218,8 +218,10 @@ namespace BRTBilateralFilter {
 			sosFilter.Process(leftBuffer, outLeftBuffer, Common::T_ear::LEFT);
 			sosFilter.Process(rightBuffer, outRightBuffer, Common::T_ear::RIGHT);
 			
-			outLeftBuffer.ApplyGain(gain);
-			outRightBuffer.ApplyGain(gain);
+			if (enableModel) {
+				outLeftBuffer.ApplyGain(gain);
+				outRightBuffer.ApplyGain(gain);
+			}
 
 			GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
 			GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);			
