@@ -1,14 +1,36 @@
+ï»¿/**
+* \class KDTree
+*
+* \brief Declaration of KDTree class
+* \date	Dec 2025
+*
+* \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco ||
+* Coordinated by , A. Reyes-Lecuona (University of Malaga)||
+* \b Contact: areyes@uma.es
+*
+* \b Copyright: University of Malaga
+* 
+* \b Contributions: (additional authors/contributors can be added here)
+*
+* \b Project: SONICOM ||
+* \b Website: https://www.sonicom.eu/
+*
+* \b Acknowledgement: This project has received funding from the European Unionï¿½s Horizon 2020 research and innovation programme under grant agreement no.101017743
+* 
+* \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+*/
+
 #pragma once
 #ifndef _KD_TREE_HPP
 #define _KD_TREE_HPP
 
-	#include <algorithm>
-	#include <array>
-	#include <cmath>
-	#include <limits>
-	#include <memory>
-	#include <numeric>
-	#include <vector>
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <limits>
+#include <memory>
+#include <numeric>
+#include <vector>
 
 /*
     KDTree.hpp (header-only)
@@ -36,7 +58,7 @@
         - azimuth must be normalized to [0, 360)
         - elevation must follow your convention:
             [0, 90] U [270, 360)
-          (so 350° is close to 10° through wrap-around)
+          (so 350Â° is close to 10Â° through wrap-around)
 */
 
 namespace BRTServices {
