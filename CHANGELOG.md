@@ -27,6 +27,7 @@ In addition to this, new filtering elements have been implemented. See the ‘Ad
 - The signal processing class ‘CMultichannelBiquadFilterChain’ has been created, allowing the implementation of simultaneous N-channel biquad IIR filters. 
 - A new class has been added for convolution in the frequency domain of the signal with the impulse response of FIR filters.
 - A new service module has been created to store the impulse response. This new service module does not perform any type of interpolation after loading the impulse responses.
+- A class has been added to search for the response closest to a given impulse using a KD tree.
 	
 ## Fixed
 - The source position was not propagated when the free environment model was disabled.
