@@ -5,6 +5,34 @@ All notable changes to the Binaural Rendering Toolbox (BRT) will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-01-XX
+
+### Changed
+- The classes related to filtering have been refactored. The aim was to achieve a generic and flexible implementation based on a general interface. 
+This will allow them to be used in the same way in any processing chain we wish. This has meant that:
+	- existing classes, in addition to being modified, have been moved from one folder and namespace to another.
+	- new classes and folders have been created.
+- The basic processing classes CBiquadFilter and CBiquadFilterChain have been moved to the processing modules folder and namespace. CBiquadFilterChain has been renamed from its original name.
+- Classes that perform filtering, such as the SOS and CascadeGraphicEq9OctaveBands filters, have been moved to the filters folder and namespace. 
+In addition to this, new filtering elements have been implemented. See the ‘Additions’ section.
+- The name of the service module that stores the SOS filter coefficients has been changed. We believe the previous name was confusing. 
+- The name of the bilateral filter models has been changed, with the suffix ‘Models’ added. This change is based on maintaining the same naming convention as the rest of the models. 
+- The SOFA loader has been modified to read responses to the impulse of FIR filters and store them in the new GeneralFIR service module.
+- The parent class of the models has been improved to unify common attributes and methods.
+
+### Added
+- Signal processing classes for filtering have been added (and refactored). Now there are classes for: 
+	- FIR filtering based on convolution with impulse responses. For spatialisation-oriented and non-spatialisation-oriented situations.
+	- IIR filtering based on biquad filter chains. For spatialisation-oriented and non-spatialisation-oriented situations.
+- The signal processing class ‘CMultichannelBiquadFilterChain’ has been created, allowing the implementation of simultaneous N-channel biquad IIR filters. 
+- A new class has been added for convolution in the frequency domain of the signal with the impulse response of FIR filters.
+- A new service module has been created to store the impulse response. This new service module does not perform any type of interpolation after loading the impulse responses.
+	
+## Fixed
+- The source position was not propagated when the free environment model was disabled.
+- Distance attenuation is added to the propagation model of virtual sources in the ISM environment model.
+- Fixed a bug so that in bilateral filter models, the gain is not applied when the model is disabled.
+
 ## [2.4.0] - 2025-11-18
 
 ### Added
