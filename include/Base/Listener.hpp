@@ -277,13 +277,15 @@ namespace BRTBase {
 			
 			bool control = false;
 			for (auto& _listenerModel : listenerModelsConnected) {
-				bool result = _listenerModel->SetHRTF(_listenerHRTF);
-				if (result) {
-					control = true;
+
+				if (_listenerModel->GetListenerModelCharacteristics().SupportHRTF()) {
+					bool result = _listenerModel->SetHRTF(_listenerHRTF);
+					if (result) {
+						control = true;
+					} else {
+						SET_RESULT(RESULT_ERROR_NOTSET, "ERROR: Unknown error when trying to set the HRTF in the listener model with ID " + _listenerModel->GetModelID());
+					}
 				}
-				else {
-					SET_RESULT(RESULT_ERROR_NOTSET, "ERROR: Unknown error when trying to set the HRTF in the listener model with ID " + _listenerModel->GetModelID());
-				}				
 			}
 			return control;
 		}
