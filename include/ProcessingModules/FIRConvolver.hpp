@@ -1,4 +1,4 @@
-﻿/**
+/**
 * \class CFIRConvolver
 *
 * \brief Declaration of CFIRConvolver class
@@ -138,7 +138,7 @@ namespace BRTProcessing {
 				_IR_partitioned = _irTablePtr->GetIRTFPartitioned(Common::T_ear(channel));
 			}
 			if (_IR_partitioned.size() == 0) {
-				SET_RESULT(RESULT_ERROR_BADSIZE, "FIRConvolver::Process: No IR partitions found in FIR table for the requested ear", "");
+				SET_RESULT(RESULT_ERROR_BADSIZE, "FIRConvolver::Process: No IR partitions found in FIR table for the requested ear");
 				_outBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);				
 				return;
 			}
@@ -159,7 +159,7 @@ namespace BRTProcessing {
 			}
 
 			if (channelsConvolvers.size() < 2) {
-				SET_RESULT(RESULT_ERROR_OUTOFRANGE, "FIRConvolver::Process: Number of channels is less than 2, cannot process stereo output", "");
+				SET_RESULT(RESULT_ERROR_OUTOFRANGE, "FIRConvolver::Process: Number of channels is less than 2, cannot process stereo output");
 				_outLeftBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 				_outRightBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 				return;
@@ -185,7 +185,7 @@ namespace BRTProcessing {
 				_irTablePtr->GetIRTFPartitioned2Ears(_leftIRPartitioned, _rightIRPartitioned);
 			}
 			if (_leftIRPartitioned.size() == 0 || _rightIRPartitioned.size() == 0) {
-				SET_RESULT(RESULT_ERROR_BADSIZE, "FIRConvolver::Process: No IR partitions found in FIR table for the requested ear", "");
+				SET_RESULT(RESULT_ERROR_BADSIZE, "FIRConvolver::Process: No IR partitions found in FIR table for the requested ear");
 				_outLeftBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 				_outRightBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 				return;
@@ -237,7 +237,7 @@ namespace BRTProcessing {
 			_IR_partitioned = _irTablePtr->GetIRTFPartitionedSpatiallyOriented(leftAzimuth, leftElevation, Common::T_ear(_channel), enableFindNearestIR);			
 						
 			if (_IR_partitioned.size() == 0) {
-				SET_RESULT(RESULT_ERROR_BADSIZE, "FIRConvolver::Process: No IR partitions found in FIR table for the requested ear", "");
+				SET_RESULT(RESULT_ERROR_BADSIZE, "FIRConvolver::Process: No IR partitions found in FIR table for the requested ear");
 				_outBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 				return;
 			}
