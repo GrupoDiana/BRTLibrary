@@ -1,7 +1,7 @@
 /**
-* \class CFiltersChain
+* \class CBiquadFilterChain
 *
-* \brief Declaration of FiltersChain class interface.
+* \brief Declaration of CBiquadFilterChain class interface.
 * \date	June 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
@@ -22,16 +22,16 @@
 * \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 */
 
-#ifndef _CFILTERS_CHAIN_HPP_
-#define _CFILTERS_CHAIN_HPP_
+#ifndef _BIQUAD_FILTER_CHAIN_HPP_
+#define _BIQUAD_FILTER_CHAIN_HPP_
 
-#include <Common/BiquadFilter.hpp>
-#include <Common/ErrorHandler.hpp>
 #include <vector>
 #include <memory>
+#include <Common/ErrorHandler.hpp>
+#include <ProcessingModules/BiquadFilter.hpp>
 
 
-namespace Common {
+namespace BRTProcessing {
 
 	/** \brief Type definition for a set of coefficients of a filters chain
 	*/
@@ -39,7 +39,7 @@ namespace Common {
 
 	/** \details Class to handle a set of cascade digital filters that are arranged so the samples are processed along a pipeline
 	*/
-	class CFiltersChain
+	class CBiquadFilterChain
 	{
 	public:
 		/////////////
@@ -49,9 +49,19 @@ namespace Common {
 		/** \brief Default constructor
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		CFiltersChain() {};
+		CBiquadFilterChain() {};
 
-
+			
+		/**
+		 * @brief Add multiple biquad filters to the chain.
+		 * @param nFilters number of filters to add
+		 */
+		void AddNFilters(int nFilters) {
+			if (nFilters < 0) return;
+			for (int i = 0; i < nFilters; i++) {
+				AddFilter();
+			}
+		}
 		/** \brief Create and add a new CBiquadFilter object to the chain
 		*	\retval filter shared pointer to filter created and added to the bank
 		*   \throws May throw exceptions and errors to debugger
@@ -172,7 +182,7 @@ namespace Common {
 				RemoveFilters();
 				for (int i = 0; i < coefficients.size(); i++)
 				{
-					std::shared_ptr<Common::CBiquadFilter> newBiquad = AddFilter();
+					std::shared_ptr<BRTProcessing::CBiquadFilter> newBiquad = AddFilter();
 					newBiquad->Setup(coefficients[i]);
 				}
 			}

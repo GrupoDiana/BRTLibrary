@@ -28,6 +28,7 @@
 #include <ServiceModules/Room.hpp>
 #include "ISMParameters.hpp"
 #include "ISMSourceImage.hpp"
+#include <Filters/CascadeGraphicEq9OctaveBands.hpp>
 
 namespace BRTEnvironmentModel {
 	
@@ -42,6 +43,9 @@ namespace BRTEnvironmentModel {
 			, ISMParameters{ std::make_shared<CISMParameters>() }
 			, sourceLocation{ Common::CVector3(0, 0, 0) }
 			, imageSources{ nullptr }
+			, imageSourcesPositionList { std::vector<Common::CVector3>() }
+			, imageSourcesDataList { std::vector<TImageSourceData>() }
+			, numVisibleImageSources { 0 }						
 		{
 		};
 
@@ -86,6 +90,7 @@ namespace BRTEnvironmentModel {
 			UpdateImageSourceDataFromImageTree();
 			
 			SetupWaveGuideProcessors();
+			SetupDistanceAttenuator();
 
 			// TODO check if everything went fine before setting setupDone to true
 			setupDone = true;
@@ -132,8 +137,16 @@ namespace BRTEnvironmentModel {
 		 * @brief Returns the number of image sources available.
 		 * @return The total count of image sources as a size_t value.
 		 */
-		size_t GetNumberOfImageSources() {			
+		size_t GetNumberOfImageSources() const {			
 			return imageSourcesPositionList.size();
+		}
+
+		/**
+		 * @brief Returns the number of visible image sources available.
+		 * @return The count of visible image sources as a size_t value.
+		 */
+		size_t GetNumberOfVisibleImageSources() const {
+			return numVisibleImageSources;
 		}
 		
 		/** \brief Returns data of all image sources
@@ -168,16 +181,12 @@ namespace BRTEnvironmentModel {
 
 
 			SetSourceAndListenerPositions_withoutLock(_sourceTransform.GetPosition(), _listenerTransform.GetPosition());
-			// Process the waveguide
-			//Common::CVector3 waveGuideOutSourcePosition;			
-			PushToWaveGuideProcessors(_inBuffer);
-			//CMonoBuffer<float> _waveGuideOutBuffer;			
-			
+			// Process the waveguide			
+			PushToWaveGuideProcessors(_inBuffer);						
 			// Pop front the waveguide to get the output buffer and the effective source position (with propagation delay)
-			PopFromWaveGuideProcessors(_outBuffers, _virtualSourcePositions);		
-						
-			//Apply visiblity gain to each output buffer
-			ApplyVisibilityGainToOutputBuffers(_outBuffers);
+			PopFromWaveGuideProcessors(_outBuffers, _virtualSourcePositions);								
+			//Apply visiblity and distance gain to each output buffer			
+			ApplyGainToOutputBuffers(_outBuffers, _virtualSourcePositions, _listenerTransform);
 		}
 		
 		void Reset() {
@@ -190,19 +199,34 @@ namespace BRTEnvironmentModel {
 				sourceLocation = Common::CVector3(0, 0, 0);
 				imageSourcesPositionList.clear();				
 				imageSourcesDataList.clear();
-				listOfChannelSourceListener.clear();
+				listOfChannelSourceListener.clear();		
+				imageSourcesPreviousAttenuationList.clear();
 			}
 		}
 
 	private:
 		
-		void ApplyVisibilityGainToOutputBuffers(std::vector<CMonoBuffer<float>> & _outBuffers) {
+		//void ApplyVisibilityGainToOutputBuffers(std::vector<CMonoBuffer<float>> & _outBuffers) {
+		//	if (_outBuffers.size() != imageSourcesDataList.size()) return;
+		//	for (int i = 0; i < _outBuffers.size(); i++) {
+		//		if (!imageSourcesDataList[i].visible) {
+		//			_outBuffers[i] = CMonoBuffer<float>(globalParameters.GetBufferSize(), 0.0f); //Set to zero
+		//		} else if (imageSourcesDataList[i].visibility < 1.0f) {
+		//			_outBuffers[i].ApplyGain(imageSourcesDataList[i].visibility);
+		//		}
+		//	}
+		//}
+
+		void ApplyGainToOutputBuffers(std::vector<CMonoBuffer<float>> & _outBuffers, const std::vector<Common::CTransform> & _virtualSourcePositions, const Common::CTransform & _listenerTransform) { 
 			if (_outBuffers.size() != imageSourcesDataList.size()) return;
-			for (int i = 0; i < _outBuffers.size(); i++) {
+			for (int i = 0; i < _outBuffers.size(); i++) { 
 				if (!imageSourcesDataList[i].visible) {
 					_outBuffers[i] = CMonoBuffer<float>(globalParameters.GetBufferSize(), 0.0f); //Set to zero
-				} else if (imageSourcesDataList[i].visibility < 1.0f) {
-					_outBuffers[i].ApplyGain(imageSourcesDataList[i].visibility);
+				} else {
+					float distanceAttenuation = distanceAttenuator.CalculateDistanceAttenuation(_virtualSourcePositions[i].GetPosition(), _listenerTransform);
+					float attenuation = distanceAttenuation * imageSourcesDataList[i].visibility;
+					float unnecessary_fixme;
+					_outBuffers[i].ApplyGainExponentially(imageSourcesPreviousAttenuationList[i], unnecessary_fixme, attenuation, globalParameters.GetBufferSize(), globalParameters.GetSampleRate());
 				}
 			}
 		}
@@ -257,8 +281,8 @@ namespace BRTEnvironmentModel {
 		 */
 		void ActionsAfterUpdateImageSourcePositionsOrVisibilities() {			
 			UpdateImageSourceDataFromImageTree();
-			UpdateImageSourcesPositionList();
-			UpdateWaveGuideFiltersVisibility();
+			//UpdateImageSourcesPositionList();
+			UpdateWaveGuideFiltersVisibility();			
 
 #if defined(DEBUG) || defined(_DEBUG)
 			ShowImageSourceData(imageSourcesDataList); // TO DELETE
@@ -281,8 +305,10 @@ namespace BRTEnvironmentModel {
 		 */
 		void UpdateImageSourcesPositionList() {			
 			imageSourcesPositionList.clear();
+			numVisibleImageSources = 0;
 			for (auto & image : imageSourcesDataList) {
 				imageSourcesPositionList.push_back(image.location);
+				if (image.visible) numVisibleImageSources++;
 			}
 		}
 		
@@ -306,23 +332,30 @@ namespace BRTEnvironmentModel {
 		 */
 		void SetupWaveGuideProcessors() { 			
 			listOfChannelSourceListener.clear();			
-			listOfChannelSourceListener.resize(imageSourcesPositionList.size());
+			//listOfChannelSourceListener.resize(imageSourcesPositionList.size());
+			for (int i = 0; i < imageSourcesPositionList.size(); i++) { 
+				listOfChannelSourceListener.push_back(std::make_unique<Common::CWaveguide>());
+			}
 			SetupWaveGuidesFilters();
 			EnablePropagationDelay();
 		}
-
+		
 		/**
 		 * @brief Sets up filters for all waveguide processors in the list using the reflection bands from the image sources data.
 		 */ 
 		void SetupWaveGuidesFilters() {
 			if (listOfChannelSourceListener.size() != imageSourcesDataList.size()) return;
-			for (int i = 0; i < listOfChannelSourceListener.size(); i++) {				
-				listOfChannelSourceListener[i].SetupFilter(imageSourcesDataList[i].reflectionBands);
+			for (int i = 0; i < listOfChannelSourceListener.size(); i++) {	
+				
+				std::shared_ptr<BRTFilters::CFilterBase> _filter;
+				_filter = std::make_shared<BRTFilters::CCascadeGraphicEq9OctaveBands>();
+				_filter->SetCommandGains(imageSourcesDataList[i].reflectionBands);
 				if (imageSourcesDataList[i].visibility > visibilityThreshold) {
-					listOfChannelSourceListener[i].EnablePropagationFilter();
+					_filter->Enable();
 				} else {
-					listOfChannelSourceListener[i].DisablePropagationFilter();
+					_filter->Disable();
 				}
+				listOfChannelSourceListener[i]->SetPropagationFilter(_filter);				
 			}
 		}
 		/**
@@ -332,9 +365,9 @@ namespace BRTEnvironmentModel {
 			if (listOfChannelSourceListener.size() != imageSourcesDataList.size()) return;
 			for (int i = 0; i < listOfChannelSourceListener.size(); i++) {
 				if (imageSourcesDataList[i].visibility > visibilityThreshold) {
-					listOfChannelSourceListener[i].EnablePropagationFilter();
+					listOfChannelSourceListener[i]->EnablePropagationFilter();
 				} else {
-					listOfChannelSourceListener[i].DisablePropagationFilter();
+					listOfChannelSourceListener[i]->DisablePropagationFilter();
 				}
 			}
 		}		
@@ -344,7 +377,7 @@ namespace BRTEnvironmentModel {
 		 */
 		void EnablePropagationDelay() {
 			for (auto& _channel : listOfChannelSourceListener) {
-				_channel.EnablePropagationDelay();
+				_channel->EnablePropagationDelay();
 			}
 		}
 		
@@ -353,7 +386,7 @@ namespace BRTEnvironmentModel {
 		 */
 		void DisablePropagationDelay() {
 			for (auto& _channel : listOfChannelSourceListener) {
-				_channel.DisablePropagationDelay();
+				_channel->DisablePropagationDelay();
 			}
 		}
 
@@ -361,7 +394,7 @@ namespace BRTEnvironmentModel {
 			ASSERT(listOfChannelSourceListener.size() == imageSourcesPositionList.size(), RESULT_ERROR_BADSIZE, "Number of waveguide processors must be equal to the number of image sources", "");
 			
 			for (int i = 0; i < listOfChannelSourceListener.size(); i++) {
-				listOfChannelSourceListener[i].PushBack(_inBuffer, imageSourcesPositionList[i], ISMParameters->listenerPosition);
+				listOfChannelSourceListener[i]->PushBack(_inBuffer, imageSourcesPositionList[i], ISMParameters->listenerPosition);
 			}
 		}
 
@@ -370,11 +403,11 @@ namespace BRTEnvironmentModel {
 			for (auto & _channel : listOfChannelSourceListener) {
 				CMonoBuffer<float> _channelOutBuffer;
 				Common::CVector3 _channelOutSourcePosition;
-				_channel.PopFront(_channelOutBuffer, ISMParameters->listenerPosition, _channelOutSourcePosition);
+				_channel->PopFront(_channelOutBuffer, ISMParameters->listenerPosition, _channelOutSourcePosition);
 				
 				_outBuffers[i]=_channelOutBuffer;
 				
-				if (_channel.IsPropagationDelayEnabled()) {
+				if (_channel->IsPropagationDelayEnabled()) {
 					_virtualSourcePositions[i] = Common::CTransform(_channelOutSourcePosition);
 				} else {
 					_virtualSourcePositions[i] = Common::CTransform(sourceLocation);
@@ -382,7 +415,16 @@ namespace BRTEnvironmentModel {
 				i++;
 			}
 		};
+	
+		void SetupDistanceAttenuator() {
+			distanceAttenuator.SetDistanceAttenuationFactor(globalParameters.distanceAttenuationFactorDB);
+			distanceAttenuator.SetReferenceAttenuationDistance(globalParameters.referenceAttenuationDistance);
+			distanceAttenuator.EnableProcessor();
 
+			imageSourcesPreviousAttenuationList.resize(imageSourcesPositionList.size(), 0.0f);
+		}
+		
+#if defined(DEBUG) || defined(_DEBUG)
 		// TO remove
 		void ShowImageSourceData(const std::vector<TImageSourceData> & data) {
 			Common::CVector3 listenerLocation = ISMParameters->listenerPosition;
@@ -444,7 +486,7 @@ namespace BRTEnvironmentModel {
 			}
 			std::cout << std::endl << std::endl;
 		}
-
+#endif
 		////////////////
 		// Attributes
 		////////////////
@@ -460,7 +502,12 @@ namespace BRTEnvironmentModel {
 		std::vector<Common::CVector3> imageSourcesPositionList; // List of image source locations
 		std::vector<TImageSourceData> imageSourcesDataList; // List of image source data (location, visibility, reflection walls, etc)
 
-		std::vector<Common::CWaveguide> listOfChannelSourceListener; // Waveguide processors
+		std::vector<std::unique_ptr<Common::CWaveguide>> listOfChannelSourceListener; // Waveguide processors
+		BRTProcessing::CDistanceAttenuator distanceAttenuator;		// Distance attenuation processor
+
+		std::vector<float> imageSourcesPreviousAttenuationList;
+
+		size_t numVisibleImageSources;
 	};
 }
 

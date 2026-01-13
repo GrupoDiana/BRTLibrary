@@ -52,7 +52,8 @@ namespace BRTServices
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION },
 			HRIR_partitioned_NumberOfSubfilters{ 0 }, HRIR_partitioned_SubfilterLength{ 0 },
 			fadeInBegin { 0 }, riseTime{ 0 }, fadeOutCutoff{ 0 }, fallTime{ 0 },
-			elevationNorth{ 0 }, elevationSouth{ 0 }, title{""},	databaseName{""}, listenerShortName{""}, fileName{""} {}
+			elevationNorth{ 0 }, elevationSouth{ 0 }
+		{}
 
 
 
@@ -229,42 +230,42 @@ namespace BRTServices
 		int GetGridSamplingStep() {
 			return gridSamplingStep;
 		}
-		
-		/** \brief Set the title of the SOFA file
-		*    \param [in]	_title		string contains title
-		*/
-		void SetTitle(std::string _title) {
-			title = _title;
-		}
+		//
+		///** \brief Set the title of the SOFA file
+		//*    \param [in]	_title		string contains title
+		//*/
+		//void SetTitle(std::string _title) {
+		//	title = _title;
+		//}
 
 		/** \brief Set the title of the SOFA file
 		*    \param [in]	_title		string contains title
 		*/
-		void SetDatabaseName(std::string _databaseName) {
+		/*void SetDatabaseName(std::string _databaseName) {
 			databaseName = _databaseName;
-		}
+		}*/
 
 		/** \brief Set the title of the SOFA file
 		*    \param [in]	_title		string contains title
 		*/
-		void SetListenerShortName(std::string _listenerShortName) {
+		/*void SetListenerShortName(std::string _listenerShortName) {
 			listenerShortName = _listenerShortName;
-		}
+		}*/
 
 
 		/** \brief Set the name of the SOFA file
 		*    \param [in]	_fileName		string contains filename
 		*/
-		void SetFilename(std::string _fileName) {
-			fileName = _fileName;
-		}
+		//void SetFilename(std::string _fileName) {
+		//	fileName = _fileName;
+		//}
 
-		/** \brief Get the name of the SOFA file
-		*   \return string contains filename
-		*/
-		std::string GetFilename() {
-			return fileName;
-		}
+		///** \brief Get the name of the SOFA file
+		//*   \return string contains filename
+		//*/
+		//std::string GetFilename() {
+		//	return fileName;
+		//}
 
 		/** \brief Set the sampling rate for the HRTF
 		*	\param [in] sampling rate
@@ -681,10 +682,10 @@ namespace BRTServices
 
 		Common::CGlobalParameters globalParameters;
 
-		std::string title;
-		std::string databaseName;
-		std::string listenerShortName;
-		std::string fileName;
+		//std::string title;
+		//std::string databaseName;
+		//std::string listenerShortName;
+		//std::string fileName;
 		
 		int samplingRate;
 

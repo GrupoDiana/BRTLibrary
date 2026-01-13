@@ -81,6 +81,7 @@ namespace BRTEnvironmentModel {
 		virtual float GetTransitionMeters() { return 0; }
 
 		virtual size_t GetNumberOfVirtualSources() { return 0; }
+		virtual size_t GetNumberOfActiveVirtualSources() { return 0; }
 
 		virtual bool ConnectSoundSource(const std::string & _sourceID) { return false; }
 		virtual bool DisconnectSoundSource(const std::string & _sourceID) { return false; }	

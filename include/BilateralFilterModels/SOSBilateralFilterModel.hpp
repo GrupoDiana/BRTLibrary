@@ -1,7 +1,7 @@
 ﻿/**
-* \class CSOSBinauralFilter
+* \class CSOSBilateralFilterModel
 *
-* \brief This class implements a SOS binaural filter.
+* \brief This class implements a bilateral filter.
 * \date	Nov 2024
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo ||
@@ -20,26 +20,29 @@
 * \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 */
 
-#ifndef _C_SOS_BINAURAL_FILTER_HPP_
-#define _C_SOS_BINAURAL_FILTER_HPP_
+#ifndef _SOS_BILATERAL_FILTER_MODEL_HPP_
+#define _SOS_BILATERAL_FILTER_MODEL_HPP_
 
 #include <Base/BRTManager.hpp>
-#include <BilateralFilter/BilateralFilterBase.hpp>
+#include <Base/Listener.hpp>
+#include <ServiceModules/SOSCoefficients.hpp>
+#include <BilateralFilterModels/BilateralFilterModelBase.hpp>
+#include <Filters/FilterBase.hpp>
+#include <Filters/SOSFilter.hpp>
 #include <ListenerModels/ListenerModelBase.hpp>
-#include <ProcessingModules/BinauralFilter.hpp>
 
 #define NUMBER_OF_COEFFICIENTS_IN_STAGE_SOS 6
 
 namespace BRTBilateralFilter { 
 
-	class CSOSBilateralFilter : public CBilateralFilterBase { 
+	class CSOSBilateralFilterModel : public CBilateralFilterModelBase { 
 	public:
 
-		CSOSBilateralFilter(const std::string & _binauraFilterID, BRTBase::CBRTManager * _brtManager)
-			: CBilateralFilterBase(_binauraFilterID)
+		CSOSBilateralFilterModel(const std::string & _binauraFilterID, BRTBase::CBRTManager * _brtManager)
+			: CBilateralFilterModelBase(_binauraFilterID)
 			, brtManager { _brtManager }
 		{
-
+			filterType = T_BilateralFilterType::SOS_FILTER;
 		}
 
 		/**
@@ -48,7 +51,8 @@ namespace BRTBilateralFilter {
 		void EnableModel() override {
 			std::lock_guard<std::mutex> l(mutex);
 			enableModel = true;	
-			binauralFilter.EnableProcessor();
+			//binauralFilter.EnableProcessor();
+			sosFilter.Enable();
 		};
 
 		/**
@@ -57,34 +61,32 @@ namespace BRTBilateralFilter {
 		void DisableModel() override {
 			std::lock_guard<std::mutex> l(mutex);
 			enableModel = false;	
-			binauralFilter.DisableProcessor();
+			//binauralFilter.DisableProcessor();
+			sosFilter.Disable();
 		};
-
-
-		///
+		
 		/** \brief SET SOS filters of the Binaural Filter
 		*	\param[in] pointer to SOS filter to be stored		
 		*/
-		bool SetSOSFilter(std::shared_ptr<BRTServices::CSOSFilters> _listenerILD) override {
-			SOSFilter = _listenerILD;			
-			FilterSetup(SOSFilter);						
+		bool SetSOSFilterCoefficients(std::shared_ptr<BRTServices::CSOSCoefficients> _SOSFilterCoefficientsTable) override {
+			SOSFilterCoefficientsTable = _SOSFilterCoefficientsTable;			
+			FiltersSetup();						
 			return true;
 		}
 
 		/** \brief Get the SOS filter of the Binaural Filter
 		*	\retval SOS filter of the listener
 		*/
-		std::shared_ptr<BRTServices::CSOSFilters> GetSOSFilter() const override {
-			return SOSFilter;
+		std::shared_ptr<BRTServices::CSOSCoefficients> GetSOSFilter() const override {
+			return SOSFilterCoefficientsTable;
 		}
 
 		/** \brief Remove the SOS filter of the Binaural Filter		
 		*/
 		void RemoveSOSFilter() override {
-			SOSFilter = nullptr;
+			SOSFilterCoefficientsTable = nullptr;
 		}
 		
-
 		/**
 		 * @brief Connect listener model to this listener
 		 * @param _listener Pointer to the source
@@ -124,6 +126,7 @@ namespace BRTBilateralFilter {
 
 			//listenerModelsConnected.push_back(_listenerModel); //TO solved
 			_listener->AddListenerModelConnected(_listenerModel);
+			AddInputConnection(_listenerModel->GetModelID());
 			SendMyID();
 			return control;
 		};
@@ -191,6 +194,7 @@ namespace BRTBilateralFilter {
 
 			control = control && brtManager->DisconnectModuleID(this, _listenerModel, "binauralFilterID");
 			control = control && brtManager->DisconnectModuleID(_listener, _listenerModel, "listenerID");
+			RemoveInputConnection(_listenerModel->GetModelID());
 
 			return control;
 
@@ -210,11 +214,14 @@ namespace BRTBilateralFilter {
 			CMonoBuffer<float> rightBuffer = rightChannelMixer.GetMixedBuffer();
 			
 			if (leftBuffer.size() == 0 || rightBuffer.size() == 0) return;
+						
+			sosFilter.Process(leftBuffer, outLeftBuffer, Common::T_ear::LEFT);
+			sosFilter.Process(rightBuffer, outRightBuffer, Common::T_ear::RIGHT);
 			
-			binauralFilter.Process(leftBuffer, rightBuffer, outLeftBuffer, outRightBuffer);			
-
-			outLeftBuffer.ApplyGain(gain);
-			outRightBuffer.ApplyGain(gain);
+			if (enableModel) {
+				outLeftBuffer.ApplyGain(gain);
+				outRightBuffer.ApplyGain(gain);
+			}
 
 			GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
 			GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);			
@@ -226,13 +233,24 @@ namespace BRTBilateralFilter {
 		}
 		
 
-		void FilterSetup(std::shared_ptr<BRTServices::CSOSFilters> _filterSOSData) {
-			std::vector<float> coefficientsLeft = _filterSOSData->GetSOSFilterCoefficients(Common::T_ear::LEFT, 0.1, 0);
-			std::vector<float> coefficientsRight = _filterSOSData->GetSOSFilterCoefficients(Common::T_ear::RIGHT, 0.1, 0);
+		void FiltersSetup() {
+			std::vector<float> coefficientsLeft = SOSFilterCoefficientsTable->GetSOSFilterCoefficients(Common::T_ear::LEFT, 0.1, 0);
+			std::vector<float> coefficientsRight = SOSFilterCoefficientsTable->GetSOSFilterCoefficients(Common::T_ear::RIGHT, 0.1, 0);
 
-			int numberOfStages = coefficientsLeft.size() / NUMBER_OF_COEFFICIENTS_IN_STAGE_SOS;
-			binauralFilter.Setup(numberOfStages);
-			binauralFilter.SetCoefficients(coefficientsLeft, coefficientsRight);		
+			int numberOfStages = coefficientsLeft.size() / NUMBER_OF_COEFFICIENTS_IN_STAGE_SOS;			
+
+			sosFilter.Setup(2, numberOfStages); //2 ears
+			sosFilter.SetCoefficients(Common::T_ear::LEFT, coefficientsLeft);
+			sosFilter.SetCoefficients(Common::T_ear::RIGHT, coefficientsRight);
+			UpdatedEnabledDisabledSOSFilter();			
+		}
+
+		void UpdatedEnabledDisabledSOSFilter() {
+			if (enableModel) {
+				sosFilter.Enable();
+			} else {
+				sosFilter.Disable();
+			}
 		}
 
 		/////////////////
@@ -240,10 +258,9 @@ namespace BRTBilateralFilter {
 		/////////////////
 		mutable std::mutex mutex;												// To avoid access collisions
 		BRTBase::CBRTManager * brtManager;										// Pointer to the BRT Manager
-		std::shared_ptr<BRTServices::CSOSFilters> SOSFilter; // SOS Filter of listener
-
-		BRTProcessing::CBinauralFilter binauralFilter; // Binaural filter
-
+		std::shared_ptr<BRTServices::CSOSCoefficients> SOSFilterCoefficientsTable; // SOS Filter of listener
+		
+		BRTFilters::CSOSFilter sosFilter; // Biquad chain table
 	};
 }
 

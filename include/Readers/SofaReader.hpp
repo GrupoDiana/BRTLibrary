@@ -31,13 +31,20 @@
 #include <ServiceModules/HRTF.hpp>
 #include <Common/ErrorHandler.hpp>
 #include <Readers/LibMySofaLoader.hpp>
-//#include "ofxlibMySofa.h"
 #include <third_party_libraries/libmysofa/include/mysofa.h>
 
 namespace BRTReaders {
 
-	class CSOFAReader {				
+	enum TSupportedDataType {
+	FIR,
+	FIR_E,	
+	SOS,
+	TF,
+	UNKNOWN
+	};
 
+	class CSOFAReader {				
+		
 	public:
 		
 		CSOFAReader()
@@ -77,6 +84,37 @@ namespace BRTReaders {
 			}			
 		}
 
+
+		TSupportedDataType GetDataTypeFromSofa(const std::string& sofafile)
+		{
+			BRTReaders::CLibMySOFALoader loader(sofafile);
+			int error = loader.getError();
+			if (error) {
+				errorDescription = "Error reading SOFA file - " + loader.GetErrorName(error);
+				return TSupportedDataType::UNKNOWN;
+			}
+			std::string dataType = loader.GetDataType();
+			if (dataType == "FIR") {
+				ResetError();
+				return TSupportedDataType::FIR;
+			}
+			else if (dataType == "FIR-E") {
+				ResetError();
+				return TSupportedDataType::FIR_E;
+			}
+			else if (dataType == "SOS") {
+				ResetError();
+				return TSupportedDataType::SOS;
+			}
+			else if (dataType == "TF") {
+				ResetError();
+				return TSupportedDataType::TF;
+			}
+			else {
+				errorDescription = "The data type contained in the sofa file is not valid - " + dataType;
+				return TSupportedDataType::UNKNOWN;
+			}
+		}
 		/** \brief Loads an HRTF from a sofa file
 		*	\param [in] path of the sofa file
 		*	\param [out] listener affected by the hrtf
@@ -115,7 +153,7 @@ namespace BRTReaders {
 		*	\param [out] listener affected by the hrtf
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		bool ReadSOSFiltersFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CSOSFilters>& listenerNFCFilters)
+		bool ReadSOSFiltersFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CSOSCoefficients>& listenerNFCFilters)
 		{
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerNFCFilters;
 			
@@ -194,7 +232,7 @@ namespace BRTReaders {
 
 			// Discover the file type
 			std::string dataType = loader.GetDataType();
-			std::string sofaConvention = loader.GetSofaConvention();
+			//std::string sofaConvention = loader.GetSofaConvention();
 
 			// Load Data
 			if (dataType == "FIR" || dataType == "FIR-E") {
@@ -207,6 +245,34 @@ namespace BRTReaders {
 			}													
 		}
 		
+		bool ReadIRFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CGeneralFIR> filterIr) {
+
+			std::shared_ptr<BRTServices::CServicesBase> data = filterIr;
+
+			// Open file
+			BRTReaders::CLibMySOFALoader loader(sofafile);
+			bool error = loader.getError();
+			if (error) {
+				errorDescription = "Error reading SOFA file - " + loader.GetErrorName(error);
+				return false;
+			}
+
+			// Discover the file type
+			std::string dataType = loader.GetDataType();
+			//std::string sofaConvention = loader.GetSofaConvention();
+
+			// Load Data
+			if (dataType == "FIR" || dataType == "FIR-E") {
+				ResetError();
+				return ReadFromSofaFIRDataType(loader, sofafile, data, 0, BRTServices::TEXTRAPOLATION_METHOD::none, 0.0f, 0.0f, 0.0f, 0.0f);		
+			} else {
+				errorDescription = "The data type contained in the sofa file is not valid for loading HRTFs - " + dataType;
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, errorDescription);
+				return false;
+			}
+		}
+
+
 	private:
 				
 		// Methods
@@ -362,7 +428,7 @@ namespace BRTReaders {
 			float _fadeInBegin, float _riseTime, float _fadeOutCutoff, float _fallTime) {
 			
 			// Get and Save data			
-			GetAndSaveGlobalAttributes(loader, CLibMySOFALoader::TSofaConvention::SingleRoomMIMOSRIR ,sofafile, data);			// GET and Save Global Attributes			
+			GetAndSaveGlobalAttributes(loader, CLibMySOFALoader::TSofaConvention::GeneralFIR ,sofafile, data);			// GET and Save Global Attributes			
 			GetAndSaveReceiverPosition(loader, data); // Get and Save listener ear
 			
 			data->SetWindowingParameters(_fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);
@@ -399,7 +465,13 @@ namespace BRTReaders {
 			//Listener
 			std::vector<double> listenerPositionsVector = std::move(loader.GetListenerPositionVector());
 			std::vector<double> listenerViewVector = std::move(loader.GetListenerViewVector());
+			if (listenerViewVector.size() == 0) {
+				listenerViewVector = std::vector<double>({ 1,0,0 });
+			}
 			std::vector<double> listenerUpVector = std::move(loader.GetListenerUpVector());
+			if (listenerUpVector.size() == 0) {
+				listenerUpVector = std::vector<double>({ 0,0,1 });
+			}
 			//Delays
 			std::vector< double > dataDelayVector(loader.getHRTF()->DataDelay.values, loader.getHRTF()->DataDelay.values + loader.getHRTF()->DataDelay.elements);
 			//IRs
@@ -473,7 +545,6 @@ namespace BRTReaders {
 				}
 			}
 			return true;
-
 		}
 				
 		/////////////////////////
@@ -653,7 +724,7 @@ namespace BRTReaders {
 		std::vector<double> GetListenerView(BRTReaders::CLibMySOFALoader& loader, const std::vector<double>& _listenerViewVector, std::size_t numberOfMeasurements, std::size_t measure) {
 			std::vector<double> _listenerView;
 			int numberOfCoordinates = loader.getHRTF()->C;
-									
+						
 			if (_listenerViewVector.size() != numberOfMeasurements * numberOfCoordinates) { measure = 0; }
 			GetOneVector3From2DMatrix(_listenerViewVector, _listenerView, measure, numberOfCoordinates);
 
@@ -674,7 +745,7 @@ namespace BRTReaders {
 		 */
 		std::vector<double> GetListenerUp(BRTReaders::CLibMySOFALoader& loader, const std::vector<double>& _listenerUpVector, std::size_t numberOfMeasurements, std::size_t measure) {
 			std::vector<double> _listenerUp;
-			int numberOfCoordinates = loader.getHRTF()->C;
+			int numberOfCoordinates = loader.getHRTF()->C;			
 			
 			if (_listenerUpVector.size() != numberOfMeasurements * numberOfCoordinates) { measure = 0; }
 			GetOneVector3From2DMatrix(_listenerUpVector, _listenerUp, measure, numberOfCoordinates);
@@ -794,12 +865,14 @@ namespace BRTReaders {
 
 		// Listener View Coordinate Systems Checks
 		bool IsListenerViewCoordinateSystemsSpherical(BRTReaders::CLibMySOFALoader& loader) {
-			return CheckListenerViewCoordinateSystemsNew(loader, "spherical");
+			return CheckListenerViewCoordinateSystems(loader, "spherical");
 		}
 		bool IsListenerViewCoordinateSystemsCartesian(BRTReaders::CLibMySOFALoader& loader) {
-			return CheckListenerViewCoordinateSystemsNew(loader, "cartesian");
+			return CheckListenerViewCoordinateSystems(loader, "cartesian");
 		}
-		bool CheckListenerViewCoordinateSystemsNew(BRTReaders::CLibMySOFALoader& loader, std::string _coordinateSystem) {
+		bool CheckListenerViewCoordinateSystems(BRTReaders::CLibMySOFALoader& loader, std::string _coordinateSystem) {																		
+			if (loader.getHRTF()->ListenerView.values == NULL) return false;	
+			if (loader.getHRTF()->ListenerView.attributes->value == NULL) return false;			
 			if (mysofa_getAttribute(loader.getHRTF()->ListenerView.attributes, "Type") == _coordinateSystem) { return true; }
 			return false;
 		}
@@ -863,11 +936,15 @@ namespace BRTReaders {
 				data->SetEarPosition(Common::T_ear::LEFT, leftEarPos);
 
 				if (numberOfReceivers >= 2) {
-					Common::CVector3 rightEarPos;
-					rightEarPos.SetAxis(FORWARD_AXIS, receiverPosition[3]);
-					rightEarPos.SetAxis(RIGHT_AXIS, receiverPosition[4]);
-					rightEarPos.SetAxis(UP_AXIS, receiverPosition[5]);
-					data->SetEarPosition(Common::T_ear::RIGHT, rightEarPos);
+					if (receiverPosition.size() < 6) {
+						SET_RESULT(RESULT_ERROR_BADSIZE, "SOFA file does not contain enough data for right ear position");
+					} else {
+						Common::CVector3 rightEarPos;
+						rightEarPos.SetAxis(FORWARD_AXIS, receiverPosition[3]);
+						rightEarPos.SetAxis(RIGHT_AXIS, receiverPosition[4]);
+						rightEarPos.SetAxis(UP_AXIS, receiverPosition[5]);
+						data->SetEarPosition(Common::T_ear::RIGHT, rightEarPos);
+					}
 				}
 				data->SetCranialGeometryAsDefault();
 			}

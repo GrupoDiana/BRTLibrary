@@ -67,7 +67,7 @@ namespace Common {
 			*   \throws May throw warnings to debugger
 			*   \eh Nothing is reported to the error handler.
 			*/		
-		const CVector3 GetVectorTo(CTransform target) const
+		const CVector3 GetVectorTo(const CTransform & target) const
 		{
 			// Error handler:
 			// Trust in RotateVector for setting result

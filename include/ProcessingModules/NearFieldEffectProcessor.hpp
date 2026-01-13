@@ -26,13 +26,13 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
-#include <Connectivity/BRTConnectivity.hpp>
 #include <Common/Buffer.hpp>
-#include <ProcessingModules/BinauralFilter.hpp>
+#include <Connectivity/BRTConnectivity.hpp>
+#include <Filters/SpatiallyOrientedSOSFilter.hpp>
 
 
 namespace BRTProcessing {
-class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity, public BRTProcessing::CBinauralFilter {
+class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity/*, public BRTProcessing::CBilateralSOSFilter*/ {
 		
     public:
 		CNearFieldEffectProcessor() {
@@ -48,9 +48,41 @@ class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity, publ
             CreateSamplesExitPoint("leftEar");
             CreateSamplesExitPoint("rightEar");
 
-			Setup(2);
+			//Setup(2);
+			spatiallyOrientedSOSFilter.Setup(2, 2); //2 ears, 2 filter stages per ear
         }
 
+		/**
+		 * @brief Enable processor
+		 */
+		void EnableProcessor() {
+			spatiallyOrientedSOSFilter.Enable();
+		}
+
+		/**
+		 * @brief Disable processor
+		 */
+		void DisableProcessor() {
+			spatiallyOrientedSOSFilter.Disable();
+		}
+
+		/**
+		 * @brief Store the coefficients of the filter. For a filter independent of the source and listener position.
+		 * @param _coefficientsLeft vector of coefficients for the left ear
+		 * @param _coefficientsRight vector of coefficients for the right ear
+		 */
+		void SetCoefficients(const std::vector<float> & _coefficientsLeft, const std::vector<float> & _coefficientsRight) {			
+			spatiallyOrientedSOSFilter.SetCoefficients(0, _coefficientsLeft); //Set LEFT coefficients
+			spatiallyOrientedSOSFilter.SetCoefficients(1, _coefficientsRight); //Set RIGHT coefficients
+		}
+		
+
+		void ResetProcessBuffers() {
+			spatiallyOrientedSOSFilter.ResetBuffers();
+		}
+
+		      
+    private:
 		/**
 		 * @brief Implementation of CAdvancedEntryPointManager virtual method
 		*/
@@ -62,12 +94,15 @@ class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity, publ
 
 			Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
 			Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();												
-			std::weak_ptr<BRTServices::CSOSFilters> listenerNFCFilters = GetILDPtrEntryPoint("listenerILD")->GetData();
+			std::weak_ptr<BRTServices::CServicesBase> listenerNFCFilters = GetILDPtrEntryPoint("listenerILD")->GetData();
 				
 			if (leftBuffer.size() != 0  || rightBuffer.size() !=0)  {
 				CMonoBuffer<float> outLeftBuffer;
 				CMonoBuffer<float> outRightBuffer;
-				Process(leftBuffer, rightBuffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerNFCFilters);
+				//Process(leftBuffer, rightBuffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerNFCFilters);
+				spatiallyOrientedSOSFilter.Process(Common::T_ear::LEFT, leftBuffer, outLeftBuffer, sourcePosition, listenerPosition, Common::T_ear::LEFT, listenerNFCFilters);
+				spatiallyOrientedSOSFilter.Process(Common::T_ear::RIGHT, rightBuffer, outRightBuffer, sourcePosition, listenerPosition, Common::T_ear::RIGHT, listenerNFCFilters);
+
 				GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
 				GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);
 			}							
@@ -82,23 +117,27 @@ class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity, publ
 			if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
 				if (command.GetCommand() == "/nearFieldProcessor/enable") {
 					if (command.GetBoolParameter("enable")) {
-						EnableProcessor();
+						//EnableProcessor();						
+						spatiallyOrientedSOSFilter.Enable();
 					}
-					else { DisableProcessor(); }
+					else { 
+						//DisableProcessor(); 
+						spatiallyOrientedSOSFilter.Disable();
+					}
 				}
 				else if (command.GetCommand() == "/nearFieldProcessor/resetBuffers") {
-					ResetProcessBuffers();
+					//ResetProcessBuffers();
+					spatiallyOrientedSOSFilter.ResetBuffers();
 				}
 			}
 			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
 				if (command.GetCommand() == "/source/resetBuffers") {
-					ResetProcessBuffers();
+					//ResetProcessBuffers();
+					spatiallyOrientedSOSFilter.ResetBuffers();
 				}
 			}
 		} 
-      
-    private:
-		mutable std::mutex mutex;
+						
 		bool IsToMySoundSource(std::string _sourceID) {
 			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
 			return mySourceID == _sourceID;
@@ -114,6 +153,12 @@ class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity, publ
 			}
 		}
 		
+		///////////////
+		// Attributes
+		///////////////
+
+		mutable std::mutex mutex;
+		BRTFilters::CSpatiallyOrientedSOSFilter spatiallyOrientedSOSFilter;
     };
 }
 #endif
