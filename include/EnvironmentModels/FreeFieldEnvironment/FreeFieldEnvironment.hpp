@@ -154,6 +154,7 @@ namespace BRTEnvironmentModel {
 			
 			if (!enableProcessor) {
 				_outBuffer = _inBuffer;
+				_effectiveSourceTransform = _sourceTransform;
 				return;
 			}
 

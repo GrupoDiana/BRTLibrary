@@ -30,7 +30,7 @@
 #include <ProcessingModules/AmbisonicEncoder.hpp>
 #include <Common/AddDelayExpansionMethod.hpp>
 #include <Common/SourceListenerRelativePositionCalculation.hpp>
-#include <ProcessingModules/BinauralFilter.hpp>
+//#include <ProcessingModules/BinauralFilter.hpp>
 #include <ServiceModules/HRTF.hpp>
 
 #include <memory>
@@ -99,11 +99,11 @@ namespace BRTProcessing {
 		bool IsITDSimulationEnabled() { return enableITDSimulation; };
 
 		///Enable near field effect for this source
-		void EnableNearFieldEffect() { nearFieldEffectProcess.EnableProcessor(); };
+		void EnableNearFieldEffect() { nearFieldEffectProcess.Enable(); };
 		///Disable near field effect for this source
-		void DisableNearFieldEffect() { nearFieldEffectProcess.DisableProcessor(); };
+		void DisableNearFieldEffect() { nearFieldEffectProcess.Disable(); };
 		///Get the flag for near field effect enabling
-		bool IsNearFieldEffectEnabled() { return nearFieldEffectProcess.IsProcessorEnabled(); };
+		bool IsNearFieldEffectEnabled() { return nearFieldEffectProcess.IsEnabled(); };
 
 		void EnableParallaxCorrection() { enableParallaxCorrection = true; };
 		void DisableParallaxCorrection() { enableParallaxCorrection = false; };
@@ -119,7 +119,7 @@ namespace BRTProcessing {
 		 * @param _listenerHRTFWeak Weak smart pointer to the listener HRTF
 		 * @param _listenerILDWeak Weak smart pointer to the listener ILD
 		*/
-		void Process(CMonoBuffer<float>& _inBuffer, std::vector<CMonoBuffer<float>>& leftChannelsBuffers, std::vector<CMonoBuffer<float>>& rightChannelsBuffers, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CServicesBase>& _listenerHRTFWeak, std::weak_ptr<BRTServices::CSOSFilters>& _listenerILDWeak) {
+		void Process(CMonoBuffer<float> & _inBuffer, std::vector<CMonoBuffer<float>> & leftChannelsBuffers, std::vector<CMonoBuffer<float>> & rightChannelsBuffers, Common::CTransform & sourceTransform, Common::CTransform & listenerTransform, std::weak_ptr<BRTServices::CServicesBase> & _listenerHRTFWeak, std::weak_ptr<BRTServices::CServicesBase> & _listenerILDWeak) {
 
 			std::lock_guard<std::mutex> l(mutex);
 			
@@ -186,7 +186,9 @@ namespace BRTProcessing {
 			// Near Field Proccess
 			CMonoBuffer<float> nearFilteredLeftEarBuffer;
 			CMonoBuffer<float> nearFilteredRightEarBuffer;			
-			nearFieldEffectProcess.Process(delayedLeftEarBuffer, delayedRightEarBuffer, nearFilteredLeftEarBuffer, nearFilteredRightEarBuffer, sourceTransform, listenerTransform, _listenerILDWeak);
+			//nearFieldEffectProcess.Process(delayedLeftEarBuffer, delayedRightEarBuffer, nearFilteredLeftEarBuffer, nearFilteredRightEarBuffer, sourceTransform, listenerTransform, _listenerILDWeak);
+			nearFieldEffectProcess.Process(Common::T_ear::LEFT, delayedLeftEarBuffer, nearFilteredLeftEarBuffer, sourceTransform, listenerTransform, Common::T_ear::LEFT, _listenerILDWeak);
+			nearFieldEffectProcess.Process(Common::T_ear::RIGHT, delayedRightEarBuffer, nearFilteredRightEarBuffer, sourceTransform, listenerTransform, Common::T_ear::RIGHT, _listenerILDWeak);
 
 			// Ambisonic Encoder						
 			ambisonicEncoder.EncodedIR(nearFilteredLeftEarBuffer, leftChannelsBuffers, leftAzimuth, leftElevation);
@@ -199,16 +201,16 @@ namespace BRTProcessing {
 			//Init buffer to store delay to be used in the ProcessAddDelay_ExpansionMethod method
 			leftChannelDelayBuffer.clear();
 			rightChannelDelayBuffer.clear();
-			nearFieldEffectProcess.ResetProcessBuffers();
+			nearFieldEffectProcess.ResetBuffers();
 		}
 
 	private:
 		/// Atributes
 		mutable std::mutex mutex;								// Thread management
 		Common::CGlobalParameters globalParameters;				// Get access to global render parameters
-		BRTProcessing::CBinauralFilter nearFieldEffectProcess; // NearField effect processor instance
-		//Common::CAmbisonicEncoder leftAmbisonicEncoder;			// Left ear encoder
-		//Common::CAmbisonicEncoder rightAmbisonicEncoder;		// Right ear enconder
+		//BRTProcessing::CBilateralSOSFilter nearFieldEffectProcess; // NearField effect processor instance
+		BRTFilters::CSpatiallyOrientedSOSFilter nearFieldEffectProcess;
+
 		BRTProcessing::CAmbisonicEncoder ambisonicEncoder; // Ambisonic encoder
 
 		CMonoBuffer<float> leftChannelDelayBuffer;				// To store the delay of the left channel of the expansion method

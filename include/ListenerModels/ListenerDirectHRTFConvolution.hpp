@@ -71,7 +71,7 @@ namespace BRTListenerModel {
 				else { binauralConvolverProcessor->DisableInterpolation(); }
 
 				if (enableNearFieldEffect) {
-					nearFieldEffectProcessor->EnableProcessor();
+					nearFieldEffectProcessor->EnableProcessor();					
 				} else {
 					nearFieldEffectProcessor->DisableProcessor();
 				}	
@@ -168,7 +168,7 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetNearFieldCompensationFilters(std::shared_ptr<BRTServices::CSOSFilters> _listenerILD) override {
+		bool SetNearFieldCompensationFilters(std::shared_ptr<BRTServices::CSOSCoefficients> _listenerILD) override {
 			listenerNFCFilters = _listenerILD;
 			GetILDExitPoint()->sendDataPtr(listenerNFCFilters);				
 			return true;
@@ -178,7 +178,7 @@ namespace BRTListenerModel {
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr<BRTServices::CSOSFilters> GetNearFieldCompensationFilters() const override
+		std::shared_ptr<BRTServices::CSOSCoefficients> GetNearFieldCompensationFilters() const override
 		{
 			return listenerNFCFilters;
 		}
@@ -624,7 +624,7 @@ namespace BRTListenerModel {
 		mutable std::mutex mutex;									// To avoid access collisions
 		std::string listenerID;										// Store unique listener ID
 		std::shared_ptr<BRTServices::CHRTF>		listenerHRTF;		// HRTF of listener			
-		std::shared_ptr<BRTServices::CSOSFilters> listenerNFCFilters;		// SOS Filter of listener						
+		std::shared_ptr<BRTServices::CSOSCoefficients> listenerNFCFilters;		// SOS Filter of listener						
 		std::vector< CSourceProcessors> sourcesConnectedProcessors;
 		BRTBase::CBRTManager* brtManager;
 		Common::CGlobalParameters globalParameters;

@@ -1,7 +1,7 @@
 /**
-* \class CSOSFilters
+* \class CSOSCoefficients
 *
-* \brief Declaration of CSOSFilters class
+* \brief Declaration of CSOSCoefficients class
 * \date	June 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
@@ -22,17 +22,17 @@
 * \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 */
 
-#ifndef _CSOS_FILTER_HPP_
-#define _CSOS_FILTER_HPP_
+#ifndef _CSOS_COEFFICIENTS_HPP_
+#define _CSOS_COEFFICIENTS_HPP_
 
 #include <unordered_map>
-#include <Common/FiltersChain.hpp>
+//#include <Common/FiltersChain.hpp>
 #include <Common/Buffer.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/ServicesBase.hpp>
 
 
-	/** \brief Class to be used as Key in the hash table used by CSOSFilters
+	/** \brief Class to be used as Key in the hash table used by CSOSCoefficients
 	*/
 	class CSOSFilter_Key
 	{
@@ -68,13 +68,13 @@
 
 	/** \brief Hash table that contains a set of coefficients for two biquads filters that are indexed through a pair of distance
 	 and azimuth values (interaural coordinates). */	
-	typedef std::unordered_map<CSOSFilter_Key, BRTServices::TSOSFilterStruct> T_SOSFilter_HashTable;
+	typedef std::unordered_map<CSOSFilter_Key, BRTServices::TSOSFilterStruct> T_SOSCoefficients_HashTable;
 
 namespace BRTServices {
 
 	/** \details This class models the effect of frequency-dependent Interaural Level Differences when the sound source is close to the listener
 	*/
-	class CSOSFilters : public CServicesBase
+	class CSOSCoefficients : public CServicesBase
 	{
 
 	public:
@@ -86,20 +86,28 @@ namespace BRTServices {
 		*	\details Leaves SOS Filter Table empty. Use SetSOSFilterTable to load.
 		*   \eh Nothing is reported to the error handler.
 		*/
-		CSOSFilters() : setupInProgress{ false }, NFCFiltersLoaded{ false }, numberOfEars{ -1 },azimuthStep{-1}, distanceStep{-1}, fileTitle{""}, fileName{""}
-		{					
+		CSOSCoefficients() 
+			: setupInProgress{ false }
+			, SOSCoefficientsLoaded{ false }			
+			, numberOfEars{ -1 }
+			, azimuthStep{-1}
+			, distanceStep{-1}
+			, fileTitle{""}
+			, fileName{""}
+		{
+			serviceType = TServiceType::sos_filter_database;
 		}
 
 
-		bool BeginSetup() {
+		bool BeginSetup() override {
 			setupInProgress = true;			
-			NFCFiltersLoaded = false;			
+			SOSCoefficientsLoaded = false;			
 			Clear();
-			SET_RESULT(RESULT_OK, "SOS Filter Setup started");
+			SET_RESULT(RESULT_OK, "SOS Coefficients Setup started");
 			return true;
 		}
 
-		bool EndSetup()
+		bool EndSetup() override
 		{
 			if (setupInProgress) {
 				setupInProgress = false;
@@ -108,70 +116,60 @@ namespace BRTServices {
 				distanceStep = CalculateTableDistanceStep();
 
 				if (numberOfEars != -1 && azimuthStep != -1 && distanceStep != -1) {															
-					NFCFiltersLoaded = true;
+					SOSCoefficientsLoaded = true;
 					SET_RESULT(RESULT_OK, "SOS Filter Setup finished");
 					azimuthList.clear();
 					distanceList.clear();
 					return true;
 				}								
 			}
-			SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Some parameter is missing in order to finish the data upload in BRTServices::CSOSFilters.");
+			SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Some parameter is missing in order to finish the data upload in BRTServices::CSOSCoefficients.");
 			return false;
 		}
+	
 
-		void Clear() {
-			t_SOSFilter.clear();
-			azimuthList.clear();
-			distanceList.clear();			
-			numberOfEars = -1;
-			azimuthStep = -1;
-			distanceStep = -1;
-		}
-
+		///** \brief Set the title of the SOFA file
+		//*    \param [in]	_title		string contains title
+		//*/
+		//void SetTitle(std::string _title) override {
+		//	fileTitle = _title;
+		//}
 		
+		///** \brief Get the title of the SOFA file
+		//*   \return string contains title
+		//*/
+		//std::string GetTitle() override {
+		//	return fileTitle;
+		//}
 
 		/** \brief Set the title of the SOFA file
 		*    \param [in]	_title		string contains title
 		*/
-		void SetTitle(std::string _title) {
-			fileTitle = _title;
-		}
-		
-		/** \brief Get the title of the SOFA file
-		*   \return string contains title
-		*/
-		std::string GetTitle() {
-			return fileTitle;
-		}
-
-		/** \brief Set the title of the SOFA file
-		*    \param [in]	_title		string contains title
-		*/
-		void SetDatabaseName(std::string _databaseName) {
+		/*void SetDatabaseName(std::string _databaseName) override {
 			databaseName = _databaseName;
-		}
+		}*/
 
 		/** \brief Set the title of the SOFA file
 		*    \param [in]	_title		string contains title
 		*/
-		void SetListenerShortName(std::string _listenerShortName) {
+		/*void SetListenerShortName(std::string _listenerShortName) override {
 			listenerShortName = _listenerShortName;
-		}
+		}*/
 
 
-		/** \brief Set the name of the SOFA file
-		*    \param [in]	_fileName		string contains filename
-		*/
-		void SetFilename(std::string _fileName) {
-			fileName = _fileName;
-		}
+		///** \brief Set the name of the SOFA file
+		//*    \param [in]	_fileName		string contains filename
+		//*/
+		//void SetFilename(std::string _fileName) override {
+		//	fileName = _fileName;
+		//}
 
-		/** \brief Get the name of the SOFA file
-		*   \return string contains filename
-		*/
-		std::string GetFilename() {
-			return fileName;
-		}		
+		///** \brief Get the name of the SOFA file
+		//*   \return string contains filename
+		//*/
+		//std::string GetFilename() {
+		//	return fileName;
+		//}		
 
 		/** \brief Set the samplingRate of the SOFA file
 		*    \param [in]	samplingRate	int contains samplingRate
@@ -187,17 +185,19 @@ namespace BRTServices {
 		//	return samplingRate;
 		//}
 
-		/** \brief Set the samplingRate of the SOFA file
-		*    \param [in]	samplingRate	int contains samplingRate
-		*/
-		void SetNumberOfEars(int _numberOfEars) {
+		/**
+		 * @brief Set the number of ears
+		 * @param _numberOfEars number of ears
+		 */
+		void SetNumberOfEars(int& _numberOfEars) override {
 			numberOfEars = _numberOfEars;
 		}
 
-		/** \brief Get the samplingRate of the SOFA file
-		*   \return int contains samplingRate
-		*/
-		int GetNumberOfEars() {
+		/**
+		 * @brief get the number of ears
+		 * @return number of ears
+		 */
+		int GetNumberOfEars() override {
 			return numberOfEars;
 		}
 	
@@ -206,7 +206,7 @@ namespace BRTServices {
 		*   \param [in]	_earPosition	ear local position
 		*   \eh <<Error not allowed>> is reported to error handler
 		*/
-		void SetEarPosition(Common::T_ear _ear, Common::CVector3 _earPosition) {
+		void SetEarPosition(Common::T_ear _ear, Common::CVector3 _earPosition) override {
 			if (_ear == Common::T_ear::LEFT) { leftEarLocalPosition = _earPosition; }
 			else if (_ear == Common::T_ear::RIGHT) { rightEarLocalPosition = _earPosition; }
 			else if (_ear == Common::T_ear::BOTH || _ear == Common::T_ear::NONE)
@@ -219,7 +219,7 @@ namespace BRTServices {
 		*	\param [in] newTable data for hash table
 		*   \eh Nothing is reported to the error handler.
 		*/					
-		void AddSOSFilterTable(T_SOSFilter_HashTable && newTable)
+		void AddSOSFilterTable(T_SOSCoefficients_HashTable && newTable)
 		{
 			t_SOSFilter = newTable;
 		}
@@ -230,7 +230,7 @@ namespace BRTServices {
 		*	\param [in] newHRIR HRIR data for both ears
 		*   \eh Warnings may be reported to the error handler.
 		*/
-		void AddCoefficients(float azimuth, float distance, TSOSFilterStruct&& newCoefs)
+		void AddCoefficients(float azimuth, float distance, TSOSFilterStruct&& newCoefs) override
 		{
 			if (setupInProgress) {
 				int iAzimuth = static_cast<int> (round(azimuth));
@@ -261,7 +261,7 @@ namespace BRTServices {
 		*	\retval hashTable data from the hash table
 		*   \eh Nothing is reported to the error handler.
 		*/
-		const T_SOSFilter_HashTable & GetSOSFilterTable() { return t_SOSFilter; }
+		const T_SOSCoefficients_HashTable & GetSOSFilterTable() { return t_SOSFilter; }
 		
 		/** \brief Get the internal hash table used for computing ILD Spatialization
 		*	\retval hashTable data from the hash table
@@ -276,9 +276,9 @@ namespace BRTServices {
 		*	\retval std::vector<float> contains the coefficients following this order [f1_b0, f1_b1, f1_b2, f1_a1, f1_a2, f2_b0, f2_b1, f2_b2, f2_a1, f2_a2]
 		*   \eh On error, an error code is reported to the error handler.
 		*/				
-		std::vector<float> GetSOSFilterCoefficients(Common::T_ear ear, float distance_m, float azimuth)
+		std::vector<float> GetSOSFilterCoefficients(Common::T_ear ear, float distance_m, float azimuth) override
 		{
-			if (!NFCFiltersLoaded) {
+			if (!SOSCoefficientsLoaded) {
 				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "SOS Filter table was not initialized in BRTServices::CILD::GetSOSFilterCoefficients()");
 				return std::vector<float>();
 			}
@@ -319,8 +319,13 @@ namespace BRTServices {
 				return std::vector<float>();
 			}						
 		}
-		
-		/// Rounds a value to the next valid integer according to a step value
+								
+		/**
+		 * @brief Round a value to the nearest valid integer according to a step value
+		 * @param value value to round
+		 * @param roundStep step value
+		 * @return 
+		 */
 		int GetRoundUp(float value, int roundStep) {			
 			float sign = value > 0 ? 1 : -1;			
 			return roundStep * (int)((value + sign * ((float)roundStep) / 2) / roundStep);
@@ -328,6 +333,15 @@ namespace BRTServices {
 		
 	private:
 		
+		void Clear() {
+			t_SOSFilter.clear();
+			azimuthList.clear();
+			distanceList.clear();
+			numberOfEars = -1;
+			azimuthStep = -1;
+			distanceStep = -1;
+		}
+
 		int CalculateTableAzimuthStep() {			
 			// Order azimuth and remove duplicates
 			std::sort(azimuthList.begin(), azimuthList.end());
@@ -384,9 +398,9 @@ namespace BRTServices {
 		///////////////	
 
 		bool setupInProgress;						// Variable that indicates the SOS Filter load is in process
-		bool NFCFiltersLoaded;						// Variable that indicates if the SOS Filter has been loaded correctly
+		bool SOSCoefficientsLoaded;						// Variable that indicates if the SOS Filter has been loaded correctly
 
-		T_SOSFilter_HashTable t_SOSFilter;
+		T_SOSCoefficients_HashTable t_SOSFilter;
 		int azimuthStep;							// In degress
 		int distanceStep;							// In milimeters
 		std::vector<double> azimuthList;

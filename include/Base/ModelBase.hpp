@@ -23,6 +23,7 @@
 #ifndef _C_MODEL_BASE_HPP_
 #define _C_MODEL_BASE_HPP_
 
+#include <string>
 #include <Connectivity/BRTConnectivity.hpp>
 #include "SourceModels/SourceOmnidirectionalModel.hpp"
 #include <SourceModels/SourceDirectivityModel.hpp>
@@ -54,9 +55,31 @@ class CModelBase : public BRTConnectivity::CBRTConnectivity {
 
 		virtual void SetGain(float _gain) { gain = _gain; }
 		virtual float GetGain() { return gain; }
-				
-		/*virtual bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) { return false; }		
-		virtual bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) { return false; }					*/
-	};
+		
+		virtual bool IsConnectedToListener() { return false; }
+		virtual bool IsConnectedToListenerModel() { return false; }
+
+		std::vector<std::string> GetInputs() { return inputConnections; }
+		std::vector<std::string> GetOutputs() { return outputConnections; }
+
+	protected:
+
+		void AddInputConnection(const std::string & _modelID) {
+			inputConnections.push_back(_modelID);
+		}
+		void RemoveInputConnection(const std::string & _modelID) {
+			inputConnections.erase(std::remove(inputConnections.begin(), inputConnections.end(), _modelID), inputConnections.end());
+		}
+
+		void AddOuputConnections(const std::string& _modelID) {
+			outputConnections.push_back(_modelID);
+		}
+		void RemoveOutputConnections(const std::string& _modelID) {
+			outputConnections.erase(std::remove(outputConnections.begin(), outputConnections.end(), _modelID), outputConnections.end());
+		}
+
+		std::vector<std::string> inputConnections;
+		std::vector<std::string> outputConnections;
+};
 }
 #endif

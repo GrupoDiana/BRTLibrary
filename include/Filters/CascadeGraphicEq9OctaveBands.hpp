@@ -23,11 +23,15 @@
 #ifndef _CASCADE_GRAPHIC_EQ_9_OCTAVE_BANDS_H_
 #define _CASCADE_GRAPHIC_EQ_9_OCTAVE_BANDS_H_
 
-#include <Common/FiltersChain.hpp>
+#include <vector>
+#include <Filters/FilterBase.hpp>
+#include <ProcessingModules/BiquadFilter.hpp>
+#include <ProcessingModules/BiquadFilterChain.hpp>
 
-namespace Common {
 
-    class CCascadeGraphicEq9OctaveBands : private CFiltersChain {
+namespace BRTFilters {
+
+    class CCascadeGraphicEq9OctaveBands : public CFilterBase, private BRTProcessing::CBiquadFilterChain {
         constexpr static int NUM_BANDS = 9;
         constexpr static float Q = 1.414213562373095; // sqrt(2)
         constexpr static float BANDS_CENTERS[NUM_BANDS] = {62.5, 125, 250, 500, 1000, 2000, 4000, 8000, 16000};
@@ -53,11 +57,15 @@ namespace Common {
          * \brief Default constructor which creates a chain of 9 octave bands graphic equalizer filters.
          */
 		CCascadeGraphicEq9OctaveBands()
-			: enable { false }
-            , generalGain { 0 }
+			: CFilterBase { BRTFilters::TFilterType::IIR_CASCADE_GRAPHIC_EQ}
+            //, enable { false }
+            //, generalGain { 0 }
 			, commandGains { std::vector<float> (NUM_BANDS, 1.0f) }
         {            
-            SetCommandGains(commandGains);
+            
+			enable = false;
+			generalGain = 0;			
+			SetCommandGains(commandGains);
         }
         
         /** 
@@ -65,33 +73,37 @@ namespace Common {
          * \param commandGains Vector of command gains at each band (note that these are not the peak gains of each inidividual filter)
         */
 		CCascadeGraphicEq9OctaveBands(const std::vector<float> & _commandGains)
-			: enable { false }
-            , generalGain { 0 } 
+			: CFilterBase { BRTFilters::TFilterType::IIR_CASCADE_GRAPHIC_EQ }
+            //,enable { false }
+            //, generalGain { 0 } 
             , commandGains { std::vector<float>(NUM_BANDS, 1.0f) }
         {                        
-            SetCommandGains(_commandGains);
+            
+			enable = false;
+			generalGain = 0;
+			SetCommandGains(_commandGains);
         }
 
         /** 
          * \brief Process an buffer through the whole set of filters
          * \param buffer Buffer to be processed
         */
-        void Process(CMonoBuffer<float> &buffer) {
+        void Process(CMonoBuffer<float> &buffer) override {
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			if (!enable) return;
-            return CFiltersChain::Process(buffer);
+            return CBiquadFilterChain::Process(buffer);
        }
 
        /** 
         * \brief Process an buffer through the whole set of filters
         */
-       void Process(CMonoBuffer<float> &buffer, CMonoBuffer <float> &output) {
+       void Process(const CMonoBuffer<float> &buffer, CMonoBuffer <float> &output) override {
 		   std::lock_guard<std::mutex> l(mutex); // Lock the mutex
            if (!enable) {
                output = buffer;
 			   return;
            }
-           return CFiltersChain::Process(buffer, output);
+           return CBiquadFilterChain::Process(buffer, output);
         }
 
         /** 
@@ -100,7 +112,7 @@ namespace Common {
         void RemoveFilters() {
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			enable = false;
-            return CFiltersChain::RemoveFilters();
+            return CBiquadFilterChain::RemoveFilters();
         }
 
         /** 
@@ -109,7 +121,7 @@ namespace Common {
          * \param gains Vector of command gains to be obtained at each band. Note that these are not the peak gains of each inidividual filter. 
          * \return True if the gains were set correctly, false otherwise
         */
-        bool SetCommandGains(const std::vector<float> & _gains) {
+		bool SetCommandGains(const std::vector<float> & _gains) override {        
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
             if (_gains.size() != NUM_BANDS) {
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "CascadeGraphicEq9OctaveBands: gains vector must have " + std::to_string(NUM_BANDS) + " elements");
@@ -130,18 +142,18 @@ namespace Common {
         /** 
          * \brief Enable the processing of the filter chain
         */
-        void Enable() {	enable = true; }
+        //void Enable() {	enable = true; }
 
         /** 
          * \brief Disable the processing of the filter chain
         */
-        void Disable() { enable = false; }
+        //void Disable() { enable = false; }
 
         /** 
          * \brief Check if the processing of the filter chain is enabled
          * \retval true if the processing is enabled, false otherwise
         */
-        bool IsEnabled() const { return enable; }
+        //bool IsEnabled() const { return enable; }
 
 
 #ifndef NDEBUG
@@ -149,8 +161,11 @@ namespace Common {
          * @brief Get the filters in the chain 
          * 
          */
-        std::shared_ptr<CBiquadFilter> GetFilter(int index) {
-            return CFiltersChain::GetFilter(index);
+
+//        std::shared_ptr<CBiquadFilter> GetFilter(int index) {
+  //          return CFiltersChain::GetFilter(index);
+		std::shared_ptr<BRTProcessing::CBiquadFilter> GetFilter(int index) {
+            return CBiquadFilterChain::GetFilter(index);
         }
 #endif
     private:
@@ -205,21 +220,21 @@ namespace Common {
          * \param gains Vector of gains to be set
         */
        void ResetFiltersChain(const std::vector<float> & peakGains) {            
-		    CFiltersChain::RemoveFilters();
+		    CBiquadFilterChain::RemoveFilters();
             // Create first low shelf filter
-			auto propagationFilter = CFiltersChain::AddFilter();
+			auto propagationFilter = CBiquadFilterChain::AddFilter();
             constexpr float dummyQ = 1.0; // Not used inside the low shelf filter nor the high shelf filter
-            propagationFilter->Setup(62.5 * Q, dummyQ, T_filterType::LOWSHELF, peakGains[0]);
+			propagationFilter->Setup(62.5 * Q, dummyQ, BRTProcessing::TBiquadType::LOWSHELF, peakGains[0]);
 
             // Create 7 peak notch filters
             for (int i = 1; i < 8; i++) {
-				propagationFilter = CFiltersChain::AddFilter();
-                propagationFilter->Setup(BANDS_CENTERS[i], Q, T_filterType::PEAKNOTCH, peakGains[i]);
+				propagationFilter = CBiquadFilterChain::AddFilter();
+				propagationFilter->Setup(BANDS_CENTERS[i], Q, BRTProcessing::TBiquadType::PEAKNOTCH, peakGains[i]);
             }
 
             // Create last high shelf filter
-			propagationFilter = CFiltersChain::AddFilter();
-            propagationFilter->Setup(16000 / Q, dummyQ, T_filterType::HIGHSHELF, peakGains[8]); 
+			propagationFilter = CBiquadFilterChain::AddFilter();
+			propagationFilter->Setup(16000 / Q, dummyQ, BRTProcessing::TBiquadType::HIGHSHELF, peakGains[8]); 
 
             // Set general gain of last filter
             propagationFilter->SetGeneralGain(generalGain);                        
@@ -229,7 +244,7 @@ namespace Common {
        // Attributes
        //////////////
 	   mutable std::mutex mutex; // To avoid access collisions
-	   bool enable; 
+	   //bool enable; 
 
        /** 
         * \brief Latest vector of commnand gains of the filters in the chain
@@ -240,7 +255,7 @@ namespace Common {
 	   /**
         * \brief general gain applied to last filter, updated in CalculatePeakGains
         */
-	   float generalGain;
+	   //float generalGain;
 
        
     };

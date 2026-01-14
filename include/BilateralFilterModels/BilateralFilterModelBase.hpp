@@ -20,27 +20,39 @@
 * \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 */
 
-#ifndef _C_BINAURAL_FILTER_BASE_HPP_
-#define _C_BINAURAL_FILTER_BASE_HPP_
+#ifndef _BILATERAL_FILTER_MODEL_BASE_HPP_
+#define _BILATERAL_FILTER_MODEL_BASE_HPP_
 
 #include <Base/ModelBase.hpp>
 #include <Common/Buffer.hpp>
 #include <Common/AudioMixer.hpp>
+#include <ServiceModules/SOSCoefficients.hpp>
+#include <ServiceModules/GeneralFIR.hpp>
 
 namespace BRTBilateralFilter {
-	class CBilateralFilterBase : public BRTBase::CModelBase {
-	public:
+	enum T_BilateralFilterType {
+		none,
+		SOS_FILTER,
+		FIR_FILTER
+	};
 
-		virtual bool SetSOSFilter(std::shared_ptr<BRTServices::CSOSFilters> _listenerILD) { return false; };
-		virtual std::shared_ptr<BRTServices::CSOSFilters> GetSOSFilter() const { return nullptr; }
+	class CBilateralFilterModelBase : public BRTBase::CModelBase {
+	public:		
+		virtual bool SetSOSFilterCoefficients(std::shared_ptr<BRTServices::CSOSCoefficients> _listenerILD) { return false; };
+		virtual std::shared_ptr<BRTServices::CSOSCoefficients> GetSOSFilter() const { return nullptr; }
 		virtual void RemoveSOSFilter() {};
 		
+		virtual bool SetFIRTable(std::shared_ptr<BRTServices::CGeneralFIR> _firTable) { return false; };
+		virtual std::shared_ptr<BRTServices::CGeneralFIR> GetFIRTable() const { return nullptr; }
+		virtual void RemoveFIRTable() { };
+
 		virtual bool ConnectListenerModel(const std::string & _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) { return false; };
 		virtual bool DisconnectListenerModel(const std::string & _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) { return false; };
 
 
-		CBilateralFilterBase(const std::string & _binauraFilterID)
+		CBilateralFilterModelBase(const std::string & _binauraFilterID)
 			: CModelBase(_binauraFilterID)
+			, filterType { T_BilateralFilterType::none }			
 			{
 			
 			leftChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
@@ -54,26 +66,32 @@ namespace BRTBilateralFilter {
 			CreateSamplesExitPoint("rightEar");
 		}
 
+
+		T_BilateralFilterType GeBilateralFilterType() const {
+			return filterType;
+		}
 		/**
 		 * @brief Check if this binaural filter is connected to a listener
 		 * @return true if connected, false otherwise
 		 */
-		bool IsConnectedToListener() {
+		bool IsConnectedToListener() override {
 			std::string _listenerID = GetIDEntryPoint("listenerID")->GetData();
 			if (_listenerID != "") {
 				return true;
 			}
 			return false;
+		}				
+		
+		void ConnectionToListenerEstablished(const std::string & _listenerID) {
+			AddOuputConnections(_listenerID);
 		}
 
 	private:
-		
-		
+				
 		/**
 		 * @brief Implementation of CAdvancedEntryPointManager virtual method
 		 * @param _entryPointId entryPoint ID
 		*/
-
 		void OneEntryPointOneDataReceived(std::string _entryPointId) override {
 
 			if (_entryPointId == "leftEar") {				
@@ -126,16 +144,17 @@ namespace BRTBilateralFilter {
 			buffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
 		}
 
-
 		// Attributes
 		Common::CGlobalParameters globalParameters;	
 	
 	protected:
 
 		void SendMyID() { GetIDExitPoint()->sendData(modelID); }
-
+		
 		Common::CAudioMixer leftChannelMixer;
-		Common::CAudioMixer rightChannelMixer;		
+		Common::CAudioMixer rightChannelMixer;
+
+		T_BilateralFilterType filterType;
 	};
 }
 #endif
