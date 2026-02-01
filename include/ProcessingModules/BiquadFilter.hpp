@@ -26,7 +26,7 @@
 #define _BIQUAD_FILTER_HPP_
 
 #include <Common/Buffer.hpp>
-#include "CommonDefinitions.hpp"
+#include <Common/CommonDefinitions.hpp>
 #include <Common/GlobalParameters.hpp>
 
 #include <cmath>
