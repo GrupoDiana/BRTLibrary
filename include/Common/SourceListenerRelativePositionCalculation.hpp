@@ -35,7 +35,7 @@
 namespace Common {
 	class CSourceListenerRelativePositionCalculation {
 	public:
-				
+
 		/**
 		 * @brief Calculates the parameters derived from the source and listener position
 		 * @param _sourceTransform source transform
@@ -80,8 +80,10 @@ namespace Common {
 
 				Common::CVector3 leftVectorTo = leftEarTransform.GetVectorTo(_sourceTransform);
 				Common::CVector3 rightVectorTo = rightEarTransform.GetVectorTo(_sourceTransform);
-				Common::CVector3 leftVectorTo_sphereProjection = GetSphereProjectionPosition(leftVectorTo, leftEarLocalPosition, _listenerHRTF->GetHRTFDistanceOfMeasurement());
-				Common::CVector3 rightVectorTo_sphereProjection = GetSphereProjectionPosition(rightVectorTo, rightEarLocalPosition, _listenerHRTF->GetHRTFDistanceOfMeasurement());
+
+				double HRTFDistanceOfMeasurement = _listenerHRTF->GetDistanceOfMeasurement(_listenerTransform, centerAzimuth, centerElevation, _distanceToListener);
+				Common::CVector3 leftVectorTo_sphereProjection = GetSphereProjectionPosition(leftVectorTo, leftEarLocalPosition, HRTFDistanceOfMeasurement);
+				Common::CVector3 rightVectorTo_sphereProjection = GetSphereProjectionPosition(rightVectorTo, rightEarLocalPosition, HRTFDistanceOfMeasurement);
 
 				leftElevation = leftVectorTo_sphereProjection.GetElevationDegrees();	//Get left elevation
 				if (!Common::AreSame(ELEVATION_SINGULAR_POINT_UP, leftElevation, EPSILON) && !Common::AreSame(ELEVATION_SINGULAR_POINT_DOWN, leftElevation, EPSILON))
@@ -112,9 +114,15 @@ namespace Common {
 		}
 	
 	private:
-
-		// In orther to obtain the position where the HRIR is needed, this method calculate the projection of each ear in the sphere where the HRTF has been measured
-		static const Common::CVector3 GetSphereProjectionPosition(Common::CVector3 vectorToEar, Common::CVector3 earLocalPosition, float distance)
+				
+		/**
+		 * @brief In orther to obtain the position where the HRIR is needed, this method calculate the projection of each ear in the sphere where the HRTF has been measured
+		 * @param vectorToEar 
+		 * @param earLocalPosition 
+		 * @param distance 
+		 * @return 
+		 */
+		static const Common::CVector3 GetSphereProjectionPosition(const Common::CVector3 & vectorToEar, const Common::CVector3 &earLocalPosition, const float& distance)
 		{
 			//get axis according to the defined convention
 			float rightAxis = vectorToEar.GetAxis(RIGHT_AXIS);

@@ -48,6 +48,7 @@
 #include "ServiceModules/DirectivityTF.hpp"
 #include "ServiceModules/Room.hpp"
 #include "ServiceModules/GeneralFIR.hpp"
+#include "ServiceModules/SphericalFIRTable.hpp"
 
 #include "EnvironmentModels/SDNEnvironmentModel.hpp"
 #include "EnvironmentModels/FreeFieldEnvironmentModel.hpp"

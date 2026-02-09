@@ -57,7 +57,7 @@ namespace BRTServices
 			 * @param _hemisphereParts Vector that contains all the oritations divided in the four quadrants
 			 * @return 
 			*/
-			BRTServices::TDirectivityTFStruct operator () (T_DirectivityTFTable& _t_DirectivityTF_DataBase, int _DirectivityTFLength, std::vector < std::vector <orientation>> _hemisphereParts) {
+			BRTServices::TDirectivityTFStruct operator () (T_DirectivityTFTable& _t_DirectivityTF_DataBase, int _DirectivityTFLength, std::vector < std::vector <TOrientation>> _hemisphereParts) {
 
 				BRTServices::TDirectivityTFStruct calculatedDirectivityTF;
 
@@ -78,7 +78,7 @@ namespace BRTServices
 
 					for (auto it = _hemisphereParts[q].begin(); it != _hemisphereParts[q].end(); it++)
 					{
-						auto itDirectivityTF = _t_DirectivityTF_DataBase.find(orientation(it->azimuth, it->elevation));
+						auto itDirectivityTF = _t_DirectivityTF_DataBase.find(TOrientation(it->azimuth, it->elevation));
 
 						//Get the DirectivityTF
 						for (int i = 0; i < _DirectivityTFLength; i++) {
@@ -120,7 +120,7 @@ namespace BRTServices
 			 * @param _elevation This data is not used
 			 * @return TDirectivityTFStruct filled with zeros
 			*/
-			TDirectivityTFStruct operator() (const T_DirectivityTFTable& table, const std::vector<orientation>& orientationsList, int _DirectivityTFLength, double _azimuth, double _elevation) {
+			TDirectivityTFStruct operator() (const T_DirectivityTFTable& table, const std::vector<TOrientation>& orientationsList, int _DirectivityTFLength, double _azimuth, double _elevation) {
 				
 				TDirectivityTFStruct directivityTFZeros;								
 				directivityTFZeros.realPart.resize(_DirectivityTFLength, 0.0f);
@@ -145,7 +145,7 @@ namespace BRTServices
 			 * @param _barycentricCoordinates Value of the three barycentric coordinates used to get the new interpolated DitectivityTF
 			 * @return 
 			*/
-			BRTServices::TDirectivityTFStruct operator () (const T_DirectivityTFTable& _table, orientation _orientation1, orientation _orientation2, orientation _orientation3, int _DirectivityTFLength, BRTServices::TBarycentricCoordinatesStruct _barycentricCoordinates) {
+			BRTServices::TDirectivityTFStruct operator () (const T_DirectivityTFTable& _table, TOrientation _orientation1, TOrientation _orientation2, TOrientation _orientation3, int _DirectivityTFLength, BRTServices::TBarycentricCoordinatesStruct _barycentricCoordinates) {
 
 				BRTServices::TDirectivityTFStruct calculatedDirectivityTF;
 				calculatedDirectivityTF.realPart.resize(_DirectivityTFLength, 0.0f);
@@ -166,7 +166,7 @@ namespace BRTServices
 				}
 
 				else {
-					SET_RESULT(RESULT_WARNING, "GetDirectivityTF_OffInterpolationMethod return empty because DirectivityTF with a specific orientation was not found");
+					SET_RESULT(RESULT_WARNING, "GetDirectivityTF_OffInterpolationMethod return empty because DirectivityTF with a specific TOrientation was not found");
 					return calculatedDirectivityTF;
 				}
 
@@ -185,7 +185,7 @@ namespace BRTServices
 			 * @param _elevation point of interest elevation
 			 * @return TDirectivityTFStruct filled with the nearest point data
 			*/
-			TDirectivityTFStruct operator() (const T_DirectivityTFTable& table, const std::vector<orientation>& orientationsList, int _DirectivityTFLength, double _azimuth, double _elevation) {
+			TDirectivityTFStruct operator() (const T_DirectivityTFTable& table, const std::vector<TOrientation>& orientationsList, int _DirectivityTFLength, double _azimuth, double _elevation) {
 				// Order list of orientation
 				std::vector<T_PairDistanceOrientation> pointsOrderedByDistance = CInterpolationAuxiliarMethods::GetListOrderedDistancesToPoint(orientationsList, _azimuth, _elevation);
 				// Get nearest
@@ -194,7 +194,7 @@ namespace BRTServices
 				// Find nearest HRIR and copy
 				TDirectivityTFStruct nearestDirectivityTF;
 
-				auto it = table.find(orientation(nearestAzimuth, nearestElevation));
+				auto it = table.find(TOrientation(nearestAzimuth, nearestElevation));
 				if (it != table.end()) {
 					nearestDirectivityTF = it->second;
 				}
@@ -224,14 +224,14 @@ namespace BRTServices
 			 * @param orientation_pto3 Orientation of one of the three points used for the interpolation
 			 * @return 
 			*/
-			const TDirectivityInterlacedTFStruct operator()(const T_DirectivityTFInterlacedDataTable& _resampledTable, int32_t _numberOfSubfilters, int32_t _subfilterLength, TBarycentricCoordinatesStruct _barycentricCoordinates, orientation orientation_pto1, orientation orientation_pto2, orientation orientation_pto3)
+			const TDirectivityInterlacedTFStruct operator()(const T_DirectivityTFInterlacedDataTable& _resampledTable, int32_t _numberOfSubfilters, int32_t _subfilterLength, TBarycentricCoordinatesStruct _barycentricCoordinates, TOrientation orientation_pto1, TOrientation orientation_pto2, TOrientation orientation_pto3)
 			{
 				TDirectivityInterlacedTFStruct newDirectivityTF;
 
 				// Find the HRIR for the given t_HRTF_DataBase_ListOfOrientations
-				auto it1 = _resampledTable.find(orientation(orientation_pto1.azimuth, orientation_pto1.elevation));
-				auto it2 = _resampledTable.find(orientation(orientation_pto2.azimuth, orientation_pto2.elevation));
-				auto it3 = _resampledTable.find(orientation(orientation_pto3.azimuth, orientation_pto3.elevation));
+				auto it1 = _resampledTable.find(TOrientation(orientation_pto1.azimuth, orientation_pto1.elevation));
+				auto it2 = _resampledTable.find(TOrientation(orientation_pto2.azimuth, orientation_pto2.elevation));
+				auto it3 = _resampledTable.find(TOrientation(orientation_pto3.azimuth, orientation_pto3.elevation));
 
 				if (it1 != _resampledTable.end() && it2 != _resampledTable.end() && it3 != _resampledTable.end())
 				{

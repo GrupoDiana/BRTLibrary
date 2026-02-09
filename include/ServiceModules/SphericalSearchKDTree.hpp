@@ -1,7 +1,10 @@
 ﻿/**
-* \class KDTree
+* \class CSphericalSearchKDTree
 *
-* \brief Declaration of KDTree class
+* \brief Declaration of CSphericalSearchKDTree class.
+* \detail Balanced 3D KD-tree for nearest-neighbor search on a sphere. Converts (azimuth, elevation) to a 3D unit direction vector.
+	Nearest neighbor search minimizes angular distance on the sphere. For unit vectors, minimizing angular distance is equivalent to 
+	minimizing Euclidean distance (monotonic relationship).
 * \date	Dec 2025
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco ||
@@ -32,39 +35,12 @@
 #include <numeric>
 #include <vector>
 
-/*
-    KDTree.hpp (header-only)
-
-    Balanced 3D KD-tree for nearest-neighbor search on a sphere.
-
-    - Converts (azimuth, elevation) to a 3D unit direction vector.
-    - Nearest neighbor search minimizes angular distance on the sphere.
-      For unit vectors, minimizing angular distance is equivalent to
-      minimizing Euclidean distance (monotonic relationship).
-
-    Typical usage:
-
-        KDTreeHRTF::KDTree<orientation> kd;
-        kd.build(orientationsVector);          // once (e.g., EndSetup)
-
-        orientation nearestOri = kd.nearest(az, el); // runtime
-
-    Requirements on OrientationT:
-        double azimuth;
-        double elevation;
-        (distance field is ignored here)
-
-    IMPORTANT:
-        - azimuth must be normalized to [0, 360)
-        - elevation must follow your convention:
-            [0, 90] U [270, 360)
-          (so 350° is close to 10° through wrap-around)
-*/
-
 namespace BRTServices {
-template <class OrientationT> class KDTree {
-public:
-	KDTree() = default;
+
+	template <class OrientationT> 
+	class CSphericalSearchKDTree {
+	public:
+	CSphericalSearchKDTree() = default;
 
 	// Build the KD-tree from a vector of orientations (internal copy).
 	void build(const std::vector<OrientationT> & orientations) {

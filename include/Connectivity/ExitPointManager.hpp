@@ -29,6 +29,9 @@
 namespace BRTConnectivity {
     class CExitPointManager {
     public:
+		const std::string HRTF_EXIT_POINT_ID = "moduleHRTF";
+
+
         /////////////////////
         // Transform
         /////////////////////
@@ -117,10 +120,35 @@ namespace BRTConnectivity {
         }
 
         /////////////////////
-       // HRTFs 
-       /////////////////////
+		// Service Modules
+		/////////////////////
+		void CreateServiceExitPoint(const std::string & _exitPointID) {
+			std::shared_ptr<CExitPointServicePtr> newExitPoint = std::make_shared<CExitPointServicePtr>(_exitPointID);
+			serviceExitPointList.push_back(std::move(newExitPoint));
+		}
+
+		std::shared_ptr<CExitPointServicePtr> GetServiceExitPoint(const std::string & _exitPointID) {			
+			for (auto & it : serviceExitPointList) {
+				if (it->GetID() == _exitPointID) {
+					return it;
+				}
+			}
+			ASSERT(false, RESULT_ERROR_INVALID_PARAM, "No service exit point has been found with this id." + _exitPointID, "");
+			return nullptr;
+		}
+
+        /////////////////////
+        // HRTFs 
+        /////////////////////
+        void CreateHRTFExitPoint2() {			
+			CreateServiceExitPoint(HRTF_EXIT_POINT_ID);
+        }
+		std::shared_ptr<CExitPointServicePtr> GetHRTFExitPoint2() {
+			return GetServiceExitPoint(HRTF_EXIT_POINT_ID);
+		}
+
         void CreateHRTFExitPoint() {
-            hrtfExitPoint = std::make_shared<CExitPointHRTFPtr>("moduleHRTF");
+			hrtfExitPoint = std::make_shared<CExitPointHRTFPtr>(HRTF_EXIT_POINT_ID);
         }
 
         std::shared_ptr<CExitPointHRTFPtr> GetHRTFExitPoint() {
@@ -166,6 +194,7 @@ namespace BRTConnectivity {
 		std::vector<std::shared_ptr<BRTConnectivity::CExitPointMultipleSamplesVector>> multipleSamplesVectorExitPoints;
         std::shared_ptr<CExitPointID> moduleIDExitPoint;
         
+        std::vector<std::shared_ptr<CExitPointServicePtr>> serviceExitPointList;
         std::shared_ptr<CExitPointHRTFPtr>  hrtfExitPoint;
         std::shared_ptr<CExitPointILDPtr>   ildExitPoint;
         std::shared_ptr< CExitPointABIRPtr> abirExitPoint;

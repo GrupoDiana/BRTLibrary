@@ -81,7 +81,7 @@ class CBilateralAmbisonicEncoderProcessor : public BRTConnectivity::CBRTConnecti
 				Process(buffer, leftAmbisonicChannelsBuffers, rightAmbisonicChannelsBuffers, sourcePosition, listenerPosition, listenerHRBRIR, listenerNFCFilters);
 			}
 			else {
-				SET_RESULT(RESULT_ERROR_NOTSET, "Bilateral Ambisonic Encoder Processor ERROR: No HRTF or HRBRIR data available");
+				SET_RESULT(RESULT_ERROR_NOTSET, "Bilateral Ambisonic Encoder Processor ERROR: No nonInterpolatedHRTF or HRBRIR data available");
 				return;
 			}								
 			GetMultipleSamplesVectorExitPoint("leftAmbisonicChannels")->sendData(leftAmbisonicChannelsBuffers);

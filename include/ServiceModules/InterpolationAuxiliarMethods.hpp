@@ -48,7 +48,7 @@ namespace BRTServices
 
 	/** \brief Type definition for a distance-orientation pair
 */
-	typedef std::pair <float, orientation> T_PairDistanceOrientation;
+	typedef std::pair <float, TOrientation> T_PairDistanceOrientation;
 
 	/**	\brief Type definition for barycentric coordinates
 */
@@ -73,17 +73,20 @@ namespace BRTServices
 		 *  @param [in] azimuth to be checked and transformed, just in case.
 		 *  @return azimuth changed to the new range
 		*/
-		static double CalculateAzimuthIn0_360Range(double _azimuth) {
-			if (_azimuth < 0) {
-				_azimuth = std::fmod(_azimuth, (float)360) + 360;
-			}
-			else if (_azimuth >= 360) {
-				_azimuth = std::fmod(_azimuth, (float)360);
-			}
-			else {
-				//DO nothing
-			}
-
+		static double NormalizeAzimuth0_360(double _azimuth) {
+			//if (_azimuth < 0) {
+			//	_azimuth = std::fmod(_azimuth, 360.0) + 360.0;
+			//}
+			//else if (_azimuth >= 360) {
+			//	_azimuth = std::fmod(_azimuth, 360.0);
+			//}
+			//else {
+			//	//DO nothing
+			//}
+			//return _azimuth;
+			_azimuth = std::fmod(_azimuth, 360.0);
+			if (_azimuth < 0.0)
+				_azimuth += 360.0;
 			return _azimuth;
 		}
 
@@ -110,33 +113,30 @@ namespace BRTServices
 
 
 		/**
-		 *	@brief ransform elevation range from [-90, 90] to the ([0,90] U [270, 360])
+		 *	@brief Transform elevation range to [0,90] U [270,360]
 		 *  @param [in] elevation to be checked and transformed, just in case.
-		 *	@return azimuth changed to the new range
+		 *	@return elevation changed to the new range
 		*/
-		static double CalculateElevationIn0_90_270_360Range(double _elevation) {
-			if (_elevation >= -90 && _elevation < 0) {
-				_elevation += 360;
-			}
-			else if (_elevation == 360) {
-				_elevation = 0;
-			}
-			return _elevation;
-		}
-		static float CalculateElevationIn0_90_270_360Range(float _elevation)
-		{
-			/*if (elevation < 0) { elevation = elevation + 360; }
-			if (elevation >= 360) { elevation = elevation - 360; }
-			return elevation;*/
-			if (_elevation >= -90 && _elevation < 0) {
-				_elevation += 360;
-			}
-			else if (_elevation == 360) {
-				_elevation = 0;
-			}
-			return _elevation;
+		template <typename T>
+		static T WrapToMinus180_180(T deg) {			
+			ASSERT(std::is_floating_point<T>::value, RESULT_ERROR_INVALID_PARAM, "float/double only", "");
+			
+			deg = std::fmod(deg, T(360));
+			if (deg < T(-180)) deg += T(360);
+			if (deg >= T(180)) deg -= T(360);
+			return deg;
 		}
 
+		template <typename T>
+		static T NormalizeElevation_0_90_270_360(T elevation) {
+			elevation = WrapToMinus180_180(elevation);
+			
+			if (elevation < T(0))
+				elevation += T(360);
+
+			return elevation; // [0,360)
+		}
+								
 		/**
 		 *	@brief ransform elevation range from [-90, 90] to the ([0,90] U [270, 360])
 		 *  @param [in] elevation to be checked and transformed, just in case.
@@ -204,7 +204,7 @@ namespace BRTServices
 		 * @param _newElevation Reference point elevation
 		 * @return List of orientations ordered by distance to the point
 		*/
-		static std::vector<T_PairDistanceOrientation> GetListOrderedDistancesToPoint(const std::vector<orientation>& listToSort, double _pointAzimuth, double _pointElevation)
+		static std::vector<T_PairDistanceOrientation> GetListOrderedDistancesToPoint(const std::vector<TOrientation>& listToSort, double _pointAzimuth, double _pointElevation)
 		{
 			std::vector<T_PairDistanceOrientation> sortedList;
 			sortedList.reserve(listToSort.size());
@@ -213,7 +213,7 @@ namespace BRTServices
 			for (auto it = listToSort.begin(); it != listToSort.end(); ++it)
 			{
 				float distance = CalculateDistance_HaversineFormula(_pointAzimuth, _pointElevation, it->azimuth, it->elevation);
-				orientation _orientation(it->azimuth, it->elevation);
+				TOrientation _orientation(it->azimuth, it->elevation);
 				T_PairDistanceOrientation temp(distance, _orientation);
 				/*temp.first = distance;
 				temp.second.azimuth = it->azimuth;

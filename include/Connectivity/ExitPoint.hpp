@@ -65,6 +65,7 @@ namespace BRTConnectivity {
     using CExitPointCommand = CExitPointBase<BRTConnectivity::CCommand>;
     using CExitPointID = CExitPointBase<std::string>;
 
+    using CExitPointServicePtr = CExitPointBase< std::weak_ptr<BRTServices::CServicesBase> >;
     using CExitPointHRTFPtr = CExitPointBase< std::weak_ptr<BRTServices::CHRTF> >;
     using CExitPointHRBRIRPtr = CExitPointBase< std::weak_ptr<BRTServices::CHRBRIR> >;
     using CExitPointILDPtr = CExitPointBase< std::weak_ptr<BRTServices::CSOSCoefficients> >;

@@ -28,6 +28,7 @@
 #include <EnvironmentModels/EnvironmentModelBase.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/HRBRIR.hpp>
+#include <ServiceModules/SphericalFIRTable.hpp>
 #include <ProcessingModules/HRTFConvolverProcessor.hpp>
 #include <ProcessingModules/NearFieldEffectProcessor.hpp>
 #include <SourceModels/SourceModelBase.hpp>
@@ -121,20 +122,32 @@ namespace BRTListenerModel {
 			, enableParallaxCorrection{ true }
 			, enableITDSimulation{ true }  {
 			
-			
-			//listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// Create a empty HRTF		
+						
 			listenerHRTF = nullptr;
+			CreateHRTFExitPoint2();
 			CreateHRTFExitPoint();
 			CreateHRBRIRExitPoint();
 			CreateILDExitPoint();									
 		}
 
+		bool SetListenerHeadIRModel(std::shared_ptr<BRTServices::CSphericalFIRTable> _listenerHeadIRModel) override {
+			
+			if (_listenerHeadIRModel->GetSamplingRate() != globalParameters.GetSampleRate()) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This nonInterpolatedHRTF has not been assigned to the listener. The sample rate of the nonInterpolatedHRTF does not match the one set in the library Global Parameters.");
+				return false;
+			}
+			listenerHeadIRModel = _listenerHeadIRModel;			
+			GetHRTFExitPoint2()->sendDataPtr(listenerHeadIRModel);
+			ResetProcessorBuffers();
+
+			return true;
+		}
 		
 		/** \brief SET HRTF to this listener model
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) override{			
+		/*bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) override {			
 			
 			if (_listenerHRTF->GetSamplingRate() != globalParameters.GetSampleRate()) { 
 				SET_RESULT(RESULT_ERROR_NOTSET, "This HRTF has not been assigned to the listener. The sample rate of the HRTF does not match the one set in the library Global Parameters.");
@@ -145,13 +158,27 @@ namespace BRTListenerModel {
 			ResetProcessorBuffers();
 						
 			return true;
+		}*/
+
+		bool SetHRTF(std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF) override {
+
+			if (_listenerHRTF->GetSamplingRate() != globalParameters.GetSampleRate()) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "This nonInterpolatedHRTF has not been assigned to the listener. The sample rate of the nonInterpolatedHRTF does not match the one set in the library Global Parameters.");
+				return false;
+			}
+			listenerHRTF = _listenerHRTF;
+			//GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
+			GetHRTFExitPoint2()->sendDataPtr(listenerHRTF);
+			ResetProcessorBuffers();
+
+			return true;
 		}
 
 		/** \brief Get HRTF of this listener model
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/		
-		std::shared_ptr<BRTServices::CHRTF> GetHRTF() const override
+		std::shared_ptr<BRTServices::CServicesBase> GetHRTF2() const override
 		{
 			return listenerHRTF;
 		}
@@ -556,7 +583,8 @@ namespace BRTListenerModel {
 
 			control = control && brtManager->ConnectModuleTransform(_listener, _newSourceProcessors.binauralConvolverProcessor, "listenerPosition");
 			control = control && brtManager->ConnectModuleTransform(_listener, _newSourceProcessors.nearFieldEffectProcessor, "listenerPosition");
-			control = control && brtManager->ConnectModuleHRTF(this, _newSourceProcessors.binauralConvolverProcessor, "listenerHRTF");
+			//control = control && brtManager->ConnectModuleHRTF(this, _newSourceProcessors.binauralConvolverProcessor, "listenerHRTF");
+			control = control && brtManager->ConnectModuleHRTF2(this, _newSourceProcessors.binauralConvolverProcessor, "listenerHRTF");
 			control = control && brtManager->ConnectModuleILD(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerILD");
 			control = control && brtManager->ConnectModuleID(_listener, _newSourceProcessors.binauralConvolverProcessor, "listenerID"); // this or listener??
 
@@ -622,8 +650,10 @@ namespace BRTListenerModel {
 		// Attributes
 		/////////////////
 		mutable std::mutex mutex;									// To avoid access collisions
-		std::string listenerID;										// Store unique listener ID
-		std::shared_ptr<BRTServices::CHRTF>		listenerHRTF;		// HRTF of listener			
+		std::string listenerID;										// Store unique listener ID		
+		std::shared_ptr<BRTServices::CSphericalFIRTable> listenerHeadIRModel;	// Head model of listener
+		//std::shared_ptr<BRTServices::CHRTF>		listenerHRTF;					// HRTF of listener
+		std::shared_ptr<BRTServices::CServicesBase> listenerHRTF;				// HRTF of listener
 		std::shared_ptr<BRTServices::CSOSCoefficients> listenerNFCFilters;		// SOS Filter of listener						
 		std::vector< CSourceProcessors> sourcesConnectedProcessors;
 		BRTBase::CBRTManager* brtManager;

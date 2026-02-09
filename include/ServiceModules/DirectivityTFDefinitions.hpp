@@ -44,8 +44,8 @@ namespace BRTServices
 	};
 
 	/** \brief Type definition for the DirectivityTF table */
-	typedef std::unordered_map<orientation, BRTServices::TDirectivityTFStruct> T_DirectivityTFTable;
-	typedef std::unordered_map<orientation, BRTServices::TDirectivityInterlacedTFStruct> T_DirectivityTFInterlacedDataTable;
+	typedef std::unordered_map<TOrientation, BRTServices::TDirectivityTFStruct> T_DirectivityTFTable;
+	typedef std::unordered_map<TOrientation, BRTServices::TDirectivityInterlacedTFStruct> T_DirectivityTFInterlacedDataTable;
 
 }
 

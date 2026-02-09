@@ -36,6 +36,7 @@
 #include <Common/CommonDefinitions.hpp>
 #include <Common/GlobalParameters.hpp>
 #include <ServiceModules/ServicesBase.hpp>
+#include <ServiceModules/SphericalSearchKDTree.hpp>
 
 namespace BRTServices {
 
@@ -48,7 +49,7 @@ namespace BRTServices {
 #endif
 
 #ifndef DEFAULT_HRTF_MEASURED_DISTANCE
-#define DEFAULT_HRTF_MEASURED_DISTANCE 1.95f
+#define DEFAULT_HRTF_MEASURED_DISTANCE 1.95f	//TO be deleted
 #endif
 
 #ifndef DEFAULT_EXTRAPOLATION_STEP
@@ -84,14 +85,15 @@ namespace BRTServices {
 	//	}
 	//};
 
-
+	
+	
 	/** \brief Type definition for table HRTF, this is the one read from the SOFA file.
 	*/
-	typedef std::unordered_map<orientation, BRTServices::THRIRStruct> T_HRTFTable;
+	typedef std::unordered_map<TOrientation, BRTServices::THRIRStruct> T_HRTFTable;
 
 	/** \brief Type definition for the HRTF table, this is the one our grid has and is the one used for rendering.
 	*/
-	typedef std::unordered_map<orientation, THRIRPartitionedStruct> T_HRTFPartitionedTable;
+	typedef std::unordered_map<TOrientation, THRIRPartitionedStruct> T_HRTFPartitionedTable;
 
 	/**
 	 * @brief Type definition for table HRBRIR, this is the one read from the SOFA file.
@@ -102,6 +104,60 @@ namespace BRTServices {
 	 * @brief Type definition for the HRBRIR table, this is the one our grid has and is the one used for rendering.
 	 */
 	typedef std::unordered_map<TVector3, T_HRTFPartitionedTable> T_HRBRIRPartitionedTable;
+						
 
+	// Spherical FIR Table definitions
+	using TSphericalFIRTable = std::unordered_map<TOrientation_key, BRTServices::TIRStruct>;	// Base
+			
+	////////////////////////////////////////////////////
+	// SOFA Table definitions
+	///////////////////////////////////////////////////	
+	struct TSofaDataBucket {		
+		Common::CVector3 referencePosition;		
+		BRTServices::TIRStruct data;
+	};	
+	using TRawSofaData = std::vector<TSofaDataBucket>;
+
+	///////////////////////////////////////////////////
+	//// Spherical Partitioned FIR Table definitions
+	////////////////////////////////////////////////////
+	// IR Table ordered by orientation
+	using TSphericalFIRTablePartitioned = std::unordered_map<TOrientation_key, BRTServices::TFRPartitionedStruct>;
+	
+	// One distance bucket: one sphere (same distance), many directions
+	struct TDistanceBucket {
+		int32_t distance_mm = 0;
+		CSphericalSearchKDTree<TOrientation> searchTree;
+		TSphericalFIRTablePartitioned table;
+	};
+
+	// One reference position bucket: multiple distances
+	struct TReferenceBucket {
+		TVector3_key referenceKey;
+		Common::CVector3 referencePos;
+		std::vector<TDistanceBucket> distances;
+	};
+
+	// Fast lookup by exact reference key
+	using TReferenceBucketMap  = std::unordered_map<TVector3_key, TReferenceBucket>;
+	
+	// Small list to do nearest-reference search
+	struct TReferenceEntry
+	{
+		TVector3_key key;
+		int32_t x_mm = 0;
+		int32_t y_mm = 0;
+		int32_t z_mm = 0;
+
+		TReferenceEntry() = default;
+		TReferenceEntry(const TVector3_key& _key, int32_t _x_mm, int32_t _y_mm, int32_t _z_mm)
+			: key{ _key }
+			, x_mm{ _x_mm }
+			, y_mm{ _y_mm }
+			, z_mm{ _z_mm } { }
+	};
+	using TReferenceEntryList = std::vector<TReferenceEntry>;
+
+			
 }
 #endif

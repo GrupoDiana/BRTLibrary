@@ -49,7 +49,7 @@ namespace Common {
 		CTransform()
 		{
 			position = CVector3::ZERO();
-			orientation = CQuaternion::UNIT();			
+			TOrientation = CQuaternion::UNIT();			
 		}
 
 		CTransform(CVector3 _position)
@@ -79,7 +79,7 @@ namespace Common {
 			targetPositionGlobal = targetPositionGlobal - position;
 
 			// Find new coordinates in "this" frame (rotated with respect to global)
-			CVector3 targetPositionThis = orientation.Inverse().RotateVector(targetPositionGlobal);
+			CVector3 targetPositionThis = TOrientation.Inverse().RotateVector(targetPositionGlobal);
 
 			return targetPositionThis;
 		}
@@ -99,7 +99,7 @@ namespace Common {
 		*/		
 		CQuaternion GetOrientation() const
 		{
-			return orientation;
+			return TOrientation;
 		}
 
 		////////////////////////////////
@@ -121,7 +121,7 @@ namespace Common {
 		*/		
 		void SetOrientation(CQuaternion _orientation)
 		{
-			orientation = _orientation;
+			TOrientation = _orientation;
 		}
 
 		////////////////////////////////
@@ -149,7 +149,7 @@ namespace Common {
 			// Trust in FromAxisAngle and Rotate for setting result
 
 			CQuaternion rotation = CQuaternion::FromAxisAngle(_axis, _angle);
-			orientation.Rotate(rotation);
+			TOrientation.Rotate(rotation);
 		}
 
 		/** Returns a new transform with a local translation applied to the position
@@ -162,16 +162,16 @@ namespace Common {
 			// Error handler: trust in called methods for setting result
 
 			CTransform result;
-			CVector3 newGlobalPosition = orientation.RotateVector(_translation) + position;
+			CVector3 newGlobalPosition = TOrientation.RotateVector(_translation) + position;
 			result.SetPosition(newGlobalPosition);
-			result.SetOrientation(orientation);
+			result.SetOrientation(TOrientation);
 			return result;
 		}
 
 		// ATTRIBUTES
 	private:
 		CVector3 position;
-		CQuaternion orientation;
+		CQuaternion TOrientation;
 	};
 }//end namespace Common
 #endif

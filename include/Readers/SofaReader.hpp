@@ -29,6 +29,7 @@
 #include <string>
 #include <ServiceModules/ServicesBase.hpp>
 #include <ServiceModules/HRTF.hpp>
+#include <ServiceModules/SphericalFIRTable.hpp>
 #include <Common/ErrorHandler.hpp>
 #include <Readers/LibMySofaLoader.hpp>
 #include <third_party_libraries/libmysofa/include/mysofa.h>
@@ -36,11 +37,11 @@
 namespace BRTReaders {
 
 	enum TSupportedDataType {
-	FIR,
-	FIR_E,	
-	SOS,
-	TF,
-	UNKNOWN
+		FIR,
+		FIR_E,	
+		SOS,
+		TF,
+		UNKNOWN
 	};
 
 	class CSOFAReader {				
@@ -139,6 +140,7 @@ namespace BRTReaders {
 			// Load Data
 			if (dataType == "FIR" || dataType == "FIR-E") {	
 				ResetError();
+				data->SetServiceType(BRTServices::TServiceType::hrir_database_interpolated);
 				return ReadFromSofaFIRDataType(loader, sofafile, data, _spatialResolution, _extrapolationMethod, 0.0f, 0.0f, 0.0f, 0.0f);		
 			} else {
 				errorDescription = "The data type contained in the sofa file is not valid for loading HRTFs - " + dataType;
@@ -147,6 +149,33 @@ namespace BRTReaders {
 			}				
 		}
 		
+		bool ReadHRTFFromSofa2(const std::string & sofafile, std::shared_ptr<BRTServices::CSphericalFIRTable> listenerHRTF, int _spatialResolution, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
+
+			std::shared_ptr<BRTServices::CServicesBase> data = listenerHRTF;
+
+			// Open file
+			BRTReaders::CLibMySOFALoader loader(sofafile);
+			bool error = loader.getError();
+			if (error) {
+				errorDescription = "Error reading SOFA file - " + loader.GetErrorName(error);
+				return false;
+			}
+
+			// Discover the file type
+			std::string dataType = loader.GetDataType();
+			//std::string sofaConvention = loader.GetSofaConvention();
+
+			// Load Data
+			if (dataType == "FIR" || dataType == "FIR-E") {
+				ResetError();
+				data->SetServiceType(BRTServices::TServiceType::hrir_database);
+				return ReadFromSofaFIRDataType(loader, sofafile, data, _spatialResolution, _extrapolationMethod, 0.0f, 0.0f, 0.0f, 0.0f);
+			} else {
+				errorDescription = "The data type contained in the sofa file is not valid for loading HRTFs - " + dataType;
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, errorDescription);
+				return false;
+			}
+		}
 		
 		/** \brief Loads an ILD from a sofa file
 		*	\param [in] path of the sofa file
@@ -172,6 +201,7 @@ namespace BRTReaders {
 			// Load Data			
 			if (dataType == "SOS") {
 				ResetError();
+				data->SetServiceType(BRTServices::TServiceType::sos_filter_database);
 				return ReadFromSofaSOSDataType(loader, sofafile, data);			
 			} else {			
 				errorDescription = "The data type contained in the sofa file is not valid for loading NFC Filters - " + dataType;
@@ -203,6 +233,7 @@ namespace BRTReaders {
 			// Load Data						
 			if (dataType == "TF") {
 				ResetError();
+				data->SetServiceType(BRTServices::TServiceType::directivity_tf_database);
 				return ReadFromSofaTFDataType(loader, sofafile, data, _spatialResolution, _extrapolationMethod);
 			} else {		
 				errorDescription = "The data type contained in the sofa file is not valid for loading Directivity TF - " + dataType;
@@ -237,6 +268,7 @@ namespace BRTReaders {
 			// Load Data
 			if (dataType == "FIR" || dataType == "FIR-E") {
 				ResetError();
+				data->SetServiceType(BRTServices::TServiceType::brir_database);
 				return ReadFromSofaFIRDataType(loader, sofafile, data, _spatialResolution, _extrapolationMethod, _fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);			
 			} else {
 				errorDescription = "The data type contained in the sofa file is not valid for loading BRIRs - " + dataType;
@@ -264,6 +296,7 @@ namespace BRTReaders {
 			// Load Data
 			if (dataType == "FIR" || dataType == "FIR-E") {
 				ResetError();
+				data->SetServiceType(BRTServices::TServiceType::ir_database);
 				return ReadFromSofaFIRDataType(loader, sofafile, data, 0, BRTServices::TEXTRAPOLATION_METHOD::none, 0.0f, 0.0f, 0.0f, 0.0f);		
 			} else {
 				errorDescription = "The data type contained in the sofa file is not valid for loading HRTFs - " + dataType;
@@ -427,11 +460,11 @@ namespace BRTReaders {
 			int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, 
 			float _fadeInBegin, float _riseTime, float _fadeOutCutoff, float _fallTime) {
 			
-			// Get and Save data			
-			GetAndSaveGlobalAttributes(loader, CLibMySOFALoader::TSofaConvention::GeneralFIR ,sofafile, data);			// GET and Save Global Attributes			
+			// Get and Save data					
+			GetAndSaveGlobalAttributes(loader, loader.GetSofaConventionType(), sofafile, data);
 			GetAndSaveReceiverPosition(loader, data); // Get and Save listener ear
 			
-			data->SetWindowingParameters(_fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);
+			data->SetWindowingParameters(_fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);			
 			bool result;			
 			result = GetBRIRs(loader, data, _extrapolationMethod);			
 			if (!result) {
@@ -447,7 +480,7 @@ namespace BRTReaders {
 
 		}
 		
-		bool GetBRIRs(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& dataHRBRIR, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
+		bool GetBRIRs(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& data, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
 			//Get source positions												
 			std::vector<double> sourcePositionsVector	= std::move(loader.GetSourcePositionVector());
 			
@@ -483,14 +516,13 @@ namespace BRTReaders {
 			const unsigned int numberOfSamples = loader.getHRTF()->N;
 			const int numberOfEmitters = loader.getHRTF()->E;
 			const int numberOfCoordinates = loader.getHRTF()->C;
-
 			
-			bool success = dataHRBRIR->BeginSetup(numberOfSamples, _extrapolationMethod);
+			bool success = data->BeginSetup(numberOfSamples, _extrapolationMethod);
 			if (!success) {
-				errorDescription = dataHRBRIR->GetLastError();
+				errorDescription = data->GetLastError();
 				return false;
 			}
-			dataHRBRIR->SetSamplingRate(loader.GetSamplingRate());
+			data->SetSamplingRate(loader.GetSamplingRate());
 			const int left_ear = 0;
 			const int right_ear = 1;
 
@@ -541,7 +573,8 @@ namespace BRTReaders {
 					listenerPositionBRTConvention.SetAxis(RIGHT_AXIS, listenerPosition.y);
 					listenerPositionBRTConvention.SetAxis(UP_AXIS, listenerPosition.z);
 					// Set data to HRBIR struct
-					dataHRBRIR->AddHRIR(_relativeAzimuthListenerEmitter, _relativeElevationListenerEmitter, _relativeDistanceListenerEmitter, listenerPosition, std::move(hrir_value));					
+					data->AddHRIR(_relativeAzimuthListenerEmitter, _relativeElevationListenerEmitter, _relativeDistanceListenerEmitter, listenerPosition, std::move(hrir_value));
+					data->AddIR(listenerPosition, _relativeAzimuthListenerEmitter, _relativeElevationListenerEmitter, _relativeDistanceListenerEmitter, std::move(hrir_value));
 				}
 			}
 			return true;
@@ -766,7 +799,7 @@ namespace BRTReaders {
 				leftDelay = _dataDelaysVector[array2DIndex(measure, 0, numberOfReceivers)];
 				rightDelay = _dataDelaysVector[array2DIndex(measure, 1, numberOfReceivers)];
 			} else if (_dataDelaysVector.size() == 2) {
-				SET_RESULT(RESULT_WARNING, "This HRTF file does not contain individual delays for each HRIR. Therefore, some comb filter effect can be perceived due to interpolations and custom head radius should not be used.");
+				SET_RESULT(RESULT_WARNING, "This nonInterpolatedHRTF file does not contain individual delays for each HRIR. Therefore, some comb filter effect can be perceived due to interpolations and custom head radius should not be used.");
 				leftDelay = _dataDelaysVector[0];
 				rightDelay = _dataDelaysVector[1];										
 			} else {

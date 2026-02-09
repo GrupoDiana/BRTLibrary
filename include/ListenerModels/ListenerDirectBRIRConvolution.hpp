@@ -201,7 +201,7 @@ namespace BRTListenerModel {
 		*/
 		bool SetHRBRIR(std::shared_ptr<BRTServices::CHRBRIR> _listenerBRIR) override {			    
 			if (_listenerBRIR->GetSamplingRate() != globalParameters.GetSampleRate()) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "This HRTF has not been assigned to the listener. The sample rate of the HRTF does not match the one set in the library Global Parameters.");
+				SET_RESULT(RESULT_ERROR_NOTSET, "This nonInterpolatedHRTF has not been assigned to the listener. The sample rate of the nonInterpolatedHRTF does not match the one set in the library Global Parameters.");
 				return false;
 			}
 			listenerHRBRIR = _listenerBRIR;

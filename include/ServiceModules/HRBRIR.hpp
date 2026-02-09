@@ -47,7 +47,10 @@ namespace BRTServices
 	{
 	public:
 
-		CHRBRIR() : setupInProgress{ false }, HRBRIRLoaded{ false }, samplingRate{0}, HRIRLength{-1}, gridSamplingStep{DEFAULT_GRIDSAMPLING_STEP},
+		CHRBRIR() : setupInProgress{ false }
+			, HRBRIRLoaded{ false }
+			//, samplingRate{0}
+			, HRIRLength{-1}, gridSamplingStep{DEFAULT_GRIDSAMPLING_STEP},
 			gapThreshold {DEFAULT_GAP_THRESHOLD}, sphereBorder{ SPHERE_BORDER }, epsilon_sewing{ EPSILON_SEWING }, extrapolationMethod{ TEXTRAPOLATION_METHOD::zero_insertion },
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION },
 			HRIR_partitioned_NumberOfSubfilters{ 0 }, HRIR_partitioned_SubfilterLength{ 0 },
@@ -62,7 +65,7 @@ namespace BRTServices
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
-		bool BeginSetup(int32_t _HRIRLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) override {
+		bool BeginSetup(const int32_t & _HRIRLength, const BRTServices::TEXTRAPOLATION_METHOD & _extrapolationMethod) override {
 			std::lock_guard<std::mutex> l(mutex);
 			//Change class state
 			setupInProgress = true;
@@ -92,14 +95,14 @@ namespace BRTServices
 
 		void AddHRIR(double _azimuth, double _elevation, double _distance, /*Common::CVector3 emitterPosition,*/ Common::CVector3 listenerPosition, THRIRStruct&& newHRBRIR) {
 			if (setupInProgress) {
-				_azimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
-				_elevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
+				_azimuth = CInterpolationAuxiliarMethods::NormalizeAzimuth0_360(_azimuth);
+				_elevation = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(_elevation);
 				bool error = false;
 				//Check if the listenerPosition is already in the table
 				auto it = t_HRBRIR_DataBase.find(TVector3(listenerPosition));
 				if (it != t_HRBRIR_DataBase.end())
 				{
-					auto returnValue = it->second.emplace(orientation(_azimuth, _elevation, _distance), std::forward<THRIRStruct>(newHRBRIR));
+					auto returnValue = it->second.emplace(TOrientation(_azimuth, _elevation, _distance), std::forward<THRIRStruct>(newHRBRIR));
 					if (!returnValue.second) {
 						error = true;
 					}
@@ -107,7 +110,7 @@ namespace BRTServices
 				else
 				{
 					T_HRTFTable orientationTable;
-					auto returnValue = orientationTable.emplace(orientation(_azimuth, _elevation, _distance), std::forward<THRIRStruct>(newHRBRIR));
+					auto returnValue = orientationTable.emplace(TOrientation(_azimuth, _elevation, _distance), std::forward<THRIRStruct>(newHRBRIR));
 					if (returnValue.second) {
 						auto returnValue2 = t_HRBRIR_DataBase.emplace(TVector3(listenerPosition), std::forward<T_HRTFTable>(orientationTable));
 						if (returnValue2.second) {
@@ -143,7 +146,7 @@ namespace BRTServices
 					// Preparation of table read from sofa file
 					for (auto it = t_HRBRIR_DataBase.begin(); it != t_HRBRIR_DataBase.end(); it++) {						
 						//RemoveCommonDelay_HRTFDataBaseTable();				// Delete the common delay of every HRIR functions of the DataBase Table											
-						std::vector<orientation> orientationsList = offlineInterpolation.CalculateListOfOrientations(it->second);
+						std::vector<TOrientation> orientationsList = offlineInterpolation.CalculateListOfOrientations(it->second);
 						CalculateExtrapolation(it->second, orientationsList);	// Make the extrapolation if it's needed
 						offlineInterpolation.CalculateTF_InPoles<T_HRTFTable, BRTServices::THRIRStruct>(it->second, HRIRLength, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts());
 						offlineInterpolation.CalculateTF_SphericalCaps<T_HRTFTable, BRTServices::THRIRStruct>(it->second, HRIRLength, gapThreshold, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
@@ -186,7 +189,7 @@ namespace BRTServices
 		*	\retval n Number of HRIR subfilters
 		*   \eh Nothing is reported to the error handler.
 		*/
-		const int32_t GetHRIRNumberOfSubfilters() const {
+		const int32_t GetTFNumberOfSubfilters() const override {
 			return HRIR_partitioned_NumberOfSubfilters;
 		}
 
@@ -194,7 +197,7 @@ namespace BRTServices
 		*	\retval size Size of HRIR subfilters
 		*   \eh Nothing is reported to the error handler.
 		*/
-		const int32_t GetHRIRSubfilterLength() const {
+		const int32_t GetTFSubfilterLength() const override {
 			return HRIR_partitioned_SubfilterLength;
 		}
 
@@ -270,16 +273,16 @@ namespace BRTServices
 		/** \brief Set the sampling rate for the HRTF
 		*	\param [in] sampling rate
 		*/
-		void SetSamplingRate(int _samplingRate) {
-			samplingRate = _samplingRate;
-		}
+		//void SetSamplingRate(int _samplingRate) {
+		//	samplingRate = _samplingRate;
+		//}
 
-		/** \brief Ask for the sampling rate
-		*	\retval sampling step
-		*/
-		int GetSamplingRate() {
-			return samplingRate;
-		}
+		///** \brief Ask for the sampling rate
+		//*	\retval sampling step
+		//*/
+		//int GetSamplingRate() {
+		//	return samplingRate;
+		//}
 						
 		/** \brief	Set the relative position of one ear (to the listener head center)
 		* 	\param [in]	_ear			ear type
@@ -419,7 +422,7 @@ namespace BRTServices
 			}
 
 			if (setupInProgress) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRTF Setup in progress return empty");
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: nonInterpolatedHRTF Setup in progress return empty");
 				return newHRIR;
 
 			}
@@ -452,7 +455,7 @@ namespace BRTServices
 
 			if (setupInProgress)
 			{
-				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIRDelay: HRTF Setup in progress return empty");
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIRDelay: nonInterpolatedHRTF Setup in progress return empty");
 				return data;
 			}
 
@@ -498,14 +501,14 @@ namespace BRTServices
 		/**
 		* @brief Call the extrapolation method
 		*/
-		void CalculateExtrapolation(T_HRTFTable& _table, std::vector<orientation>& _orientationList) {
+		void CalculateExtrapolation(T_HRTFTable& _table, std::vector<TOrientation>& _orientationList) {
 			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.			
 			if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::zero_insertion) {
-				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded HRTF sofa file, an extrapolation with zeros will be performed to fill it.");
+				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded nonInterpolatedHRTF sofa file, an extrapolation with zeros will be performed to fill it.");
 				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(_table, _orientationList, HRIRLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetZerosHRIR());
 			}
 			else if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::nearest_point) {
-				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded HRTF sofa file, an extrapolation will be made to the nearest point to fill it.");
+				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded nonInterpolatedHRTF sofa file, an extrapolation will be made to the nearest point to fill it.");
 				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(_table, _orientationList, HRIRLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetNearestPointHRIR());
 			}
 			else {
@@ -687,7 +690,7 @@ namespace BRTServices
 		//std::string listenerShortName;
 		//std::string fileName;
 		
-		int samplingRate;
+		//int samplingRate;
 
 		int32_t HRIRLength;									// HRIR vector length
 		//int32_t bufferSize;								// Input signal buffer size		
@@ -723,7 +726,7 @@ namespace BRTServices
 		// HRBRIR tables			
 		T_HRBRIRTable					t_HRBRIR_DataBase;					// Store original data, normally read from SOFA file
 		T_HRBRIRPartitionedTable		t_HRBRIR_Resampled_partitioned;		// Data in our grid, interpolated 
-		std::unordered_map<orientation, float> stepVector;					// Store hrtf interpolated grids steps
+		std::unordered_map<TOrientation, float> stepVector;					// Store hrtf interpolated grids steps
 		
 		std::vector<Common::CVector3>	t_HRBRIR_DataBase_ListenerPositions;
 		//std::vector<Common::CVector3>	t_HRBRIR_DataBase_EmitterPositions;

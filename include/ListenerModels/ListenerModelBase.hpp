@@ -28,6 +28,7 @@
 #include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/SOSCoefficients.hpp>
+#include <ServiceModules/SphericalFIRTable.hpp>
 #include <Common/AudioMixer.hpp>
 
 namespace BRTServices {
@@ -96,10 +97,15 @@ namespace BRTListenerModel {
 		// Virtual Methods
 		virtual ~CListenerModelBase() {}		
 		
-		virtual bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) { return false; };				
+		virtual bool SetHRTF(std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF) { return false; };
+		virtual std::shared_ptr<BRTServices::CServicesBase> GetHRTF2() const { return nullptr; }
+
+		virtual bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) { return false; };
 		virtual std::shared_ptr < BRTServices::CHRTF> GetHRTF() const { return nullptr; }
 		virtual void RemoveHRTF() {};
-		
+
+		virtual bool SetListenerHeadIRModel(std::shared_ptr<BRTServices::CSphericalFIRTable> _listenerBRIR) { return false; };
+
 		virtual bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CSOSCoefficients > _listenerILD) { return false; };
 		virtual std::shared_ptr < BRTServices::CSOSCoefficients> GetNearFieldCompensationFilters() const { return nullptr; }
 		virtual void RemoveNearFierldCompensationFilters() {};

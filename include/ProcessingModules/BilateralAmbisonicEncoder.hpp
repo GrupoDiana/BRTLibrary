@@ -138,7 +138,7 @@ namespace BRTProcessing {
 			// Check listener HRTF
 			std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF = _listenerHRTFWeak.lock();
 			if (!_listenerHRTF) {
-				SET_RESULT(RESULT_ERROR_NULLPOINTER, "HRTF listener pointer is null when trying to use in Bilateral Ambisonic Encoder");				
+				SET_RESULT(RESULT_ERROR_NULLPOINTER, "nonInterpolatedHRTF listener pointer is null when trying to use in Bilateral Ambisonic Encoder");				
 				return;
 			}
 			

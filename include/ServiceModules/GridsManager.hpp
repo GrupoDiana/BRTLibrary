@@ -47,9 +47,9 @@ namespace BRTServices
 	template <typename T>
 	class CAngularBasedDistribution  {
 	public:
-		void CreateGrid(T_HRTFPartitionedTable& table, std::unordered_map<orientation, float>& stepVector, int _resamplingStep) {}
+		void CreateGrid(T_HRTFPartitionedTable& table, std::unordered_map<TOrientation, float>& stepVector, int _resamplingStep) {}
 
-		void FindNearestHRIR(const T_HRTFPartitionedTable& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<orientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int resamplingStep)const
+		void FindNearestHRIR(const T_HRTFPartitionedTable& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<TOrientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int resamplingStep)const
 		{
 			int nearestAzimuth = static_cast<int>(round(_azimuth / resamplingStep) * resamplingStep);
 			int nearestElevation = static_cast<int>(round(_elevation / resamplingStep) * resamplingStep);
@@ -58,7 +58,7 @@ namespace BRTServices
 			if (nearestElevation == DEFAULT_MAX_ELEVATION) { nearestElevation = DEFAULT_MIN_ELEVATION; }
 			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
 			if ((nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
-			auto it = table.find(orientation(nearestAzimuth, nearestElevation));
+			auto it = table.find(TOrientation(nearestAzimuth, nearestElevation));
 			if (it != table.end())
 			{
 				if (ear == Common::T_ear::LEFT)
@@ -76,7 +76,7 @@ namespace BRTServices
 			}
 		}
 
-		void FindNearestDelay(const T_HRTFPartitionedTable& table, float& HRIR_delay, const std::unordered_map<orientation, float >& stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int resamplingStep)const
+		void FindNearestDelay(const T_HRTFPartitionedTable& table, float& HRIR_delay, const std::unordered_map<TOrientation, float >& stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int resamplingStep)const
 		{
 
 			int nearestAzimuth = static_cast<int>(round(_azimuthCenter / resamplingStep) * resamplingStep);
@@ -88,7 +88,7 @@ namespace BRTServices
 			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
 			if ((nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
 
-			auto it = table.find(orientation(nearestAzimuth, nearestElevation));
+			auto it = table.find(TOrientation(nearestAzimuth, nearestElevation));
 			if (it != table.end())
 			{
 				if (ear == Common::T_ear::LEFT)
@@ -114,7 +114,7 @@ namespace BRTServices
 	class CQuasiUniformSphereDistribution {
 	public:
 		template <typename T, typename U>
-		static void CreateGrid(T& table, std::unordered_map<orientation, float>& stepVector, int _resamplingStep) {
+		static void CreateGrid(T& table, std::unordered_map<TOrientation, float>& stepVector, int _resamplingStep) {
 			int n_divisions_by_elev;
 
 			double elevationInRange;
@@ -127,7 +127,7 @@ namespace BRTServices
 			float actual_Ele_Step = 90.0f / n_rings_hemisphere;
 			
 			// Saving in -1,-1 the Elevation Step, same for all grid
-			stepVector.emplace(orientation(-1, -1), actual_Ele_Step);
+			stepVector.emplace(TOrientation(-1, -1), actual_Ele_Step);
 
 			// Round newElevation to avoid not saving elevation 90 due to float adding problems
 			for (double newElevation = -90.0f; round(newElevation) <= 90.0f; newElevation = newElevation + actual_Ele_Step)
@@ -150,27 +150,27 @@ namespace BRTServices
 				elevationInRange = AdjustElevationRange(temp_elevation);
 
 				// Create the vector
-				stepVector.emplace(orientation(0, elevationInRange), actual_Azi_Step);
+				stepVector.emplace(TOrientation(0, elevationInRange), actual_Azi_Step);
 
 				// Ceil to avoid error with the sum of decimal digits and not emplace 360 azimuth
 				for (double newAzimuth = DEFAULT_MIN_AZIMUTH; std::ceil(newAzimuth) < DEFAULT_MAX_AZIMUTH; newAzimuth = newAzimuth + actual_Azi_Step)
 				{
-					table.emplace(orientation(newAzimuth, elevationInRange), emptyData);
+					table.emplace(TOrientation(newAzimuth, elevationInRange), emptyData);
 				}
 			}					
 		}
 
 		template <typename T, typename U>
-		static U FindNearest(const T& table, const std::unordered_map<orientation, float>& stepMap, /*Common::T_ear ear,*/ float _azimuth, float _elevation)
+		static U FindNearest(const T& table, const std::unordered_map<TOrientation, float>& stepMap, /*Common::T_ear ear,*/ float _azimuth, float _elevation)
 		{
 			U emptyData;
-			float eleStep = stepMap.find(orientation(-1, -1))->second;
+			float eleStep = stepMap.find(TOrientation(-1, -1))->second;
 
 			float nearestElevation = (round(_elevation / eleStep) * eleStep);
 
-			nearestElevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(nearestElevation);
+			nearestElevation = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(nearestElevation);
 
-			auto nearestElevationStep = stepMap.find(orientation(0, nearestElevation));
+			auto nearestElevationStep = stepMap.find(TOrientation(0, nearestElevation));
 			if (nearestElevationStep == stepMap.end()) {
 				SET_RESULT(RESULT_ERROR_OUTOFRANGE, "Error rounding the elevation looking in the GRID, this should not happen, it is a coding error.");
 				return emptyData;
@@ -185,7 +185,7 @@ namespace BRTServices
 			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
 			if ((nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
 
-			auto it = table.find(orientation(nearestAzimuth, nearestElevation));
+			auto it = table.find(TOrientation(nearestAzimuth, nearestElevation));
 			if (it != table.end())
 			{				
 				return it->second;

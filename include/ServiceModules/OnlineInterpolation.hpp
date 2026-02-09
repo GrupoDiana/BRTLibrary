@@ -50,12 +50,12 @@ namespace BRTServices
 		 * @return 
 		*/
 		template <typename T, typename U, typename Functor>
-		U CalculateTF_OnlineMethod(const T& resampledTable, int32_t numberOfSubfilters, int32_t subfilterLength, float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap, Functor f) const
+		U CalculateTF_OnlineMethod(const T& resampledTable, int32_t numberOfSubfilters, int32_t subfilterLength, float _azimuth, float _elevation, std::unordered_map<TOrientation, float> stepMap, Functor f) const
 		{
 			U data;
 
 			TBarycentricCoordinatesStruct barycentricCoordinates;
-			orientation orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoP;
+			TOrientation orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoP;
 			std::pair<float, float>nearestElevations;
 
 			find_4Nearest_Points(_azimuth, _elevation, stepMap, orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoP, nearestElevations);
@@ -118,7 +118,7 @@ namespace BRTServices
 		*/
 		template <typename T, typename U, typename Functor>
 		U CalculateTF_BarycentricInterpolation(const T& resampledTable, int32_t numberOfSubfilters, int32_t subfilterLength,
-			float _azimuth, float _elevation, float elevationCeil, float elevationFloor, orientation point1, orientation point2, orientation point3, orientation point4, Functor f) const
+			float _azimuth, float _elevation, float elevationCeil, float elevationFloor, TOrientation point1, TOrientation point2, TOrientation point3, TOrientation point4, Functor f) const
 		{
 			U data;
 			TBarycentricCoordinatesStruct barycentricCoordinates = CInterpolationAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, point1.azimuth, point1.elevation, point2.azimuth, point2.elevation, point3.azimuth, point3.elevation);
@@ -162,25 +162,25 @@ namespace BRTServices
 		 * @param orientation_ptoP 
 		 * @param nearestElevations 
 		*/
-		void find_4Nearest_Points(float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap, orientation& orientation_ptoA, orientation& orientation_ptoB, orientation& orientation_ptoC, orientation& orientation_ptoD, orientation& orientation_ptoP, std::pair<float, float>& nearestElevations)const
+		void find_4Nearest_Points(float _azimuth, float _elevation, std::unordered_map<TOrientation, float> stepMap, TOrientation& orientation_ptoA, TOrientation& orientation_ptoB, TOrientation& orientation_ptoC, TOrientation& orientation_ptoD, TOrientation& orientation_ptoP, std::pair<float, float>& nearestElevations)const
 		{
 			float aziCeilBack, aziCeilFront, aziFloorBack, aziFloorFront;
 
-			float eleStep = stepMap.find(orientation(-1, -1))->second; // Elevation Step -- Same always
+			float eleStep = stepMap.find(TOrientation(-1, -1))->second; // Elevation Step -- Same always
 			int idxEle = ceil(_elevation / eleStep);
 			float eleCeil = eleStep * idxEle;
 			float eleFloor = eleStep * (idxEle - 1);
 
-			eleCeil = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(eleCeil);				//			   Back	  Front
-			eleFloor = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(eleFloor);				//	Ceil		A		B
+			eleCeil = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(eleCeil);				//			   Back	  Front
+			eleFloor = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(eleFloor);				//	Ceil		A		B
 
-			auto stepItr = stepMap.find(orientation(0, eleCeil));													//	Floor		C		D
+			auto stepItr = stepMap.find(TOrientation(0, eleCeil));													//	Floor		C		D
 			float aziStepCeil = stepItr->second;
 
 			CInterpolationAuxiliarMethods::CalculateAzimuth_BackandFront(aziCeilBack, aziCeilFront, aziStepCeil, _azimuth);
 			// azimuth values passed by reference
 
-			auto stepIt = stepMap.find(orientation(0, eleFloor));
+			auto stepIt = stepMap.find(TOrientation(0, eleFloor));
 			float aziStepFloor = stepIt->second;
 
 			CInterpolationAuxiliarMethods::CalculateAzimuth_BackandFront(aziFloorBack, aziFloorFront, aziStepFloor, _azimuth);
@@ -192,7 +192,7 @@ namespace BRTServices
 			// to avoid take points above under 0 like 345,350,355 and compare with them
 			float elevation_ptoP = (eleCeil - eleStep * 0.5f);
 
-			orientation_ptoP = orientation(azimuth_ptoP, elevation_ptoP);
+			orientation_ptoP = TOrientation(azimuth_ptoP, elevation_ptoP);
 
 			// Particular case of points near poles
 			if (eleCeil == ELEVATION_NORTH_POLE) { aziCeilFront = aziFloorFront; }
@@ -221,7 +221,7 @@ namespace BRTServices
 		 * @param pnt4 
 		 * @return 
 		*/
-		TBarycentricCoordinatesStruct Check_Triangles_Left(float _azimuth, float _elevation, orientation pnt1, orientation pnt2, orientation pnt3, orientation pnt4)const
+		TBarycentricCoordinatesStruct Check_Triangles_Left(float _azimuth, float _elevation, TOrientation pnt1, TOrientation pnt2, TOrientation pnt3, TOrientation pnt4)const
 		{
 			// The triangle with points 1, 2 and 3 is the one just check, so we are going to check the others
 
@@ -248,13 +248,13 @@ namespace BRTServices
 		///**
 		// * @brief Calculate from resample table HRIR subfilters using a barycentric interpolation of the three nearest orientation.
 		template <typename T, typename U, typename Functor>
-		static U CalculateTF_OnlineMethod(const T& resampledTable, int32_t numberOfSubfilters, int32_t subfilterLength, float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap, Functor f)
+		static U CalculateTF_OnlineMethod(const T& resampledTable, int32_t numberOfSubfilters, int32_t subfilterLength, float _azimuth, float _elevation, std::unordered_map<TOrientation, float> stepMap, Functor f)
 		{
 			U data;
 			TBarycentricCoordinatesStruct barycentricCoordinates;
 
 			// Find four nearest points					
-			orientation orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoP;
+			TOrientation orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoP;
 			std::pair<float, float>nearestElevations;
 
 			Find_4Nearest_Points(_azimuth, _elevation, stepMap, orientation_ptoA, orientation_ptoB, orientation_ptoC, orientation_ptoD, orientation_ptoP, nearestElevations);
@@ -309,7 +309,7 @@ namespace BRTServices
 		*/
 		template <typename T, typename U, typename Functor>
 		static U CalculateTF_BarycentricInterpolation(const T& resampledTable, int32_t numberOfSubfilters, int32_t subfilterLength,
-			float _azimuth, float _elevation, float elevationCeil, float elevationFloor, orientation point1, orientation point2, orientation point3, orientation point4, Functor f)
+			float _azimuth, float _elevation, float elevationCeil, float elevationFloor, TOrientation point1, TOrientation point2, TOrientation point3, TOrientation point4, Functor f)
 		{
 			U data;
 			TBarycentricCoordinatesStruct barycentricCoordinates = CInterpolationAuxiliarMethods::GetBarycentricCoordinates(_azimuth, _elevation, point1.azimuth, point1.elevation, point2.azimuth, point2.elevation, point3.azimuth, point3.elevation);
@@ -349,26 +349,26 @@ namespace BRTServices
 		 * @param orientation_ptoP 
 		 * @param nearestElevations 
 		*/
-		static void Find_4Nearest_Points(float _azimuth, float _elevation, std::unordered_map<orientation, float> stepMap, orientation& orientation_ptoA, orientation& orientation_ptoB, orientation& orientation_ptoC, orientation& orientation_ptoD, orientation& orientation_ptoP, std::pair<float, float>& nearestElevations)
+		static void Find_4Nearest_Points(float _azimuth, float _elevation, std::unordered_map<TOrientation, float> stepMap, TOrientation& orientation_ptoA, TOrientation& orientation_ptoB, TOrientation& orientation_ptoC, TOrientation& orientation_ptoD, TOrientation& orientation_ptoP, std::pair<float, float>& nearestElevations)
 		{
 			float azimuthCeilBack, azimuthCeilFront, azimuthFloorBack, azimuthFloorFront;
 			float azimuthStepCeil, azimuthStepFloor;
 
-			float elevationStep = stepMap.find(orientation(-1, -1))->second; // Elevation Step -- Same always
+			float elevationStep = stepMap.find(TOrientation(-1, -1))->second; // Elevation Step -- Same always
 			int indexElevation = ceil(_elevation / elevationStep);
 			float elevationCeil = elevationStep * indexElevation;
 			float elevationFloor = elevationStep * (indexElevation - 1);
 
-			elevationCeil = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(elevationCeil);				//			   Back	  Front
-			elevationFloor = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(elevationFloor);				//	Ceil		A		B
+			elevationCeil = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(elevationCeil);				//			   Back	  Front
+			elevationFloor = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(elevationFloor);				//	Ceil		A		B
 
-			auto stepItr = stepMap.find(orientation(0, elevationCeil));															//	Floor		C		D
+			auto stepItr = stepMap.find(TOrientation(0, elevationCeil));															//	Floor		C		D
 			if(stepItr!= stepMap.end()){ azimuthStepCeil = stepItr->second; }
 			else { SET_RESULT(RESULT_ERROR_NOTSET, "OrientationCeil not found in the ONline interpolation (Find4Nearest algorithm)"); }
 			
 			CInterpolationAuxiliarMethods::CalculateAzimuth_BackandFront(azimuthCeilBack, azimuthCeilFront, azimuthStepCeil, _azimuth);
 
-			auto stepIt = stepMap.find(orientation(0, elevationFloor));
+			auto stepIt = stepMap.find(TOrientation(0, elevationFloor));
 			if (stepItr != stepMap.end()) { azimuthStepFloor = stepIt->second;	}
 			else { SET_RESULT(RESULT_ERROR_NOTSET, "OrientationFloor not found in the ONline interpolation (Find4Nearest algorithm)"); }
 			
@@ -381,7 +381,7 @@ namespace BRTServices
 			// to avoid take points above under 0 like 345,350,355 and compare with them
 			float elevation_ptoP = (elevationCeil - elevationStep * 0.5f);
 
-			orientation_ptoP = orientation(azimuth_ptoP, elevation_ptoP);
+			orientation_ptoP = TOrientation(azimuth_ptoP, elevation_ptoP);
 
 			// Particular case of points near poles
 			if (elevationCeil == ELEVATION_NORTH_POLE) { azimuthCeilFront = azimuthFloorFront; }

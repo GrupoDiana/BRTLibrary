@@ -280,13 +280,13 @@ namespace BRTProcessing {
 				}
 				else
 				{
-					SET_RESULT(RESULT_ERROR_BADSIZE, "The input buffer size is not correct or there is not a valid HRTF loded");
+					SET_RESULT(RESULT_ERROR_BADSIZE, "The input buffer size is not correct or there is not a valid nonInterpolatedHRTF loded");
 					outBuffer.resize(inBuffer_Time.size(), 0.0f);
 				}
 			}
 			else
 			{
-				SET_RESULT(RESULT_ERROR_NOTSET, "HRTF storage buffer to perform UP convolution with memory has not been initialized");
+				SET_RESULT(RESULT_ERROR_NOTSET, "nonInterpolatedHRTF storage buffer to perform UP convolution with memory has not been initialized");
 			}
 
 		}

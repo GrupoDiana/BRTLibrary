@@ -33,7 +33,7 @@ namespace BRTServices {
 
 
 		/** \brief Type definition for the AmbisonicIR table*/
-		typedef std::unordered_map<int, orientation> TVirtualSpeakerPositionTable;
+		typedef std::unordered_map<int, TOrientation> TVirtualSpeakerPositionTable;
 
 
 	public:
@@ -69,9 +69,9 @@ namespace BRTServices {
 		 * @brief Returns list of virtual speakers orientation
 		 * @return Virtual speaker position list
 		*/
-		std::vector< orientation> GetVirtualSpeakersPositions() {
+		std::vector< TOrientation> GetVirtualSpeakersPositions() {
 
-			std::vector< orientation> virtualSpeakerOrientationList;
+			std::vector< TOrientation> virtualSpeakerOrientationList;
 
 			if (initialized) {
 				for (auto& it : virtualSpeakerPositionTable) {
@@ -96,13 +96,13 @@ namespace BRTServices {
 		 * @param _virtualSpeakerID ID of the virtual speaker, a int between 1 and NumberOfVirtualSpeakers
 		 * @return Virtual speaker orientation. Returns (0, 0) if the ID doen't exist.
 		*/
-		orientation GetVirtualSpeakerOrientation(int _virtualSpeakerID) {
+		TOrientation GetVirtualSpeakerOrientation(int _virtualSpeakerID) {
 			auto it = virtualSpeakerPositionTable.find(_virtualSpeakerID);						
 			if (it != virtualSpeakerPositionTable.end())
 			{
 				return it->second;
 			}
-			return orientation(0, 0);
+			return TOrientation(0, 0);
 		}
 
 	private:
@@ -115,30 +115,30 @@ namespace BRTServices {
 		// Sets the position of virtual speakers for order 1
 		void InitializeOrder1() {			
 			virtualSpeakerPositionTable = {
-				{1, orientation(90, 0)},
-				{2, orientation(270, 0)},
-				{3, orientation(0, 90)},
-				{4, orientation(0, 270)},
-				{5, orientation(0, 0)},
-				{6, orientation(180, 0)}
+				{1, TOrientation(90, 0)},
+				{2, TOrientation(270, 0)},
+				{3, TOrientation(0, 90)},
+				{4, TOrientation(0, 270)},
+				{5, TOrientation(0, 0)},
+				{6, TOrientation(180, 0)}
 			};
 		}
 		
 		// Sets the position of virtual speakers for order 2
 		void InitializeOrder2() {			
 			virtualSpeakerPositionTable = {
-				{1, orientation(328.28, 0)},
-				{2, orientation(31.72, 0)},
-				{3, orientation(148.28, 0)},
-				{4, orientation(211.72, 0)},
-				{5, orientation(270, 328.28)},
-				{6, orientation(90, 328.28)},
-				{7, orientation(270, 31.72)},
-				{8, orientation(90, 31.72)},
-				{9, orientation(180, 301.72)},
-				{10, orientation(0, 301.72)},
-				{11, orientation(180, 58.28)},
-				{12, orientation(0, 58.28)}
+				{1, TOrientation(328.28, 0)},
+				{2, TOrientation(31.72, 0)},
+				{3, TOrientation(148.28, 0)},
+				{4, TOrientation(211.72, 0)},
+				{5, TOrientation(270, 328.28)},
+				{6, TOrientation(90, 328.28)},
+				{7, TOrientation(270, 31.72)},
+				{8, TOrientation(90, 31.72)},
+				{9, TOrientation(180, 301.72)},
+				{10, TOrientation(0, 301.72)},
+				{11, TOrientation(180, 58.28)},
+				{12, TOrientation(0, 58.28)}
 			};
 		}
 
@@ -146,26 +146,26 @@ namespace BRTServices {
 		void InitializeOrder3() {
 			
 			virtualSpeakerPositionTable = {
-				{1 , orientation(290.91, 0)},
-				{2 , orientation(69.1, 0)},
-				{3 , orientation(249.1, 0)},
-				{4 , orientation(110.91, 0)},
-				{5 , orientation(315, 35.26)},
-				{6 , orientation(45, 35.26)},
-				{7 , orientation(225, 35.26)},
-				{8 , orientation(135, 35.26)},
-				{9 , orientation(315, 324.74)},
-				{10, orientation(45, 324.74)},
-				{11, orientation(225, 324.74)},
-				{12, orientation(135, 324.74)},
-				{13, orientation(0, 339.1)},
-				{14, orientation(180, 339.1)},
-				{15, orientation(0, 20.91)},
-				{16, orientation(180, 20.91)},
-				{17, orientation(270, 69.1)},
-				{18, orientation(90, 69.1)},
-				{19, orientation(270, 290.91)},
-				{20, orientation(90, 290.91)},
+				{1 , TOrientation(290.91, 0)},
+				{2 , TOrientation(69.1, 0)},
+				{3 , TOrientation(249.1, 0)},
+				{4 , TOrientation(110.91, 0)},
+				{5 , TOrientation(315, 35.26)},
+				{6 , TOrientation(45, 35.26)},
+				{7 , TOrientation(225, 35.26)},
+				{8 , TOrientation(135, 35.26)},
+				{9 , TOrientation(315, 324.74)},
+				{10, TOrientation(45, 324.74)},
+				{11, TOrientation(225, 324.74)},
+				{12, TOrientation(135, 324.74)},
+				{13, TOrientation(0, 339.1)},
+				{14, TOrientation(180, 339.1)},
+				{15, TOrientation(0, 20.91)},
+				{16, TOrientation(180, 20.91)},
+				{17, TOrientation(270, 69.1)},
+				{18, TOrientation(90, 69.1)},
+				{19, TOrientation(270, 290.91)},
+				{20, TOrientation(90, 290.91)},
 			};
 		}
 	};

@@ -99,7 +99,7 @@ namespace BRTServices
 		 * @return 
 		*/
 		template <typename T, typename U, typename Functor>
-		U CalculateHRIR_offlineMethod(const T& _table, Functor f_CalculateTF_Offline, std::vector<orientation>& listToSort, double _newAzimuth, double _newElevation, int _TFLength, int pole = 0)
+		U CalculateHRIR_offlineMethod(const T& _table, Functor f_CalculateTF_Offline, std::vector<TOrientation>& listToSort, double _newAzimuth, double _newElevation, int _TFLength, int pole = 0)
 		{
 			U newTF;
 			// Get a list sorted by distances to the orientation of interest
@@ -111,7 +111,7 @@ namespace BRTServices
 
 			// Obtain  the valid Barycentric coordinates:
 			TBarycentricCoordinatesStruct barycentricCoordinates;
-			std::vector<orientation> mygroup(sortedList.size());
+			std::vector<TOrientation> mygroup(sortedList.size());
 			auto it = sortedList.begin();
 			for (int copy = 0; copy < sortedList.size(); copy++) {
 				mygroup[copy] = it->second;
@@ -143,7 +143,7 @@ namespace BRTServices
 
 							barycentricCoordinates = CInterpolationAuxiliarMethods::GetBarycentricCoordinates(newAzimuthTransformed, newElevationTransformed, iAzimuthTransformed, iElevationTransformed, jAzimuthTransformed, jElevationTransformed, kAzimuthTransformed, kElevationTransformed);
 							//FIXME: It's not checking of the barycentric coordinates are bigger than zero, and sometimes are not.
-							newTF = f_CalculateTF_Offline(_table, orientation(mygroup[i].azimuth, mygroup[i].elevation), orientation(mygroup[j].azimuth, mygroup[j].elevation), orientation(mygroup[k].azimuth, mygroup[k].elevation), _TFLength, barycentricCoordinates);
+							newTF = f_CalculateTF_Offline(_table, TOrientation(mygroup[i].azimuth, mygroup[i].elevation), TOrientation(mygroup[j].azimuth, mygroup[j].elevation), TOrientation(mygroup[k].azimuth, mygroup[k].elevation), _TFLength, barycentricCoordinates);
 							
 							return newTF;
 						}
@@ -157,7 +157,7 @@ namespace BRTServices
 
 
 	private:
-		std::vector<T_PairDistanceOrientation> GetSortedDistancesList(const std::vector<orientation>& listToSort, float newAzimuth, float newElevation)
+		std::vector<T_PairDistanceOrientation> GetSortedDistancesList(const std::vector<TOrientation>& listToSort, float newAzimuth, float newElevation)
 		{
 
 			T_PairDistanceOrientation temp;
@@ -212,9 +212,9 @@ namespace BRTServices
 		 * @return 
 		*/
 		template <typename T, typename W_TFStruct, typename Functor>
-		W_TFStruct CalculateHRIR_offlineMethod(const T& _table, Functor f_CalculateTF_Offline, std::vector<orientation>& listToSort, int _TFLength, double _newAzimuth, double _newElevation, int pole = 0)
+		W_TFStruct CalculateHRIR_offlineMethod(const T& _table, Functor f_CalculateTF_Offline, std::vector<TOrientation>& listToSort, int _TFLength, double _newAzimuth, double _newElevation, int pole = 0)
 		{
-			std::vector<orientation> azimuthBackList, azimuthFrontList, backCeilList, backFloorList, frontCeilList, frontFloorList;
+			std::vector<TOrientation> azimuthBackList, azimuthFrontList, backCeilList, backFloorList, frontCeilList, frontFloorList;
 			TBarycentricCoordinatesStruct barycentricCoordinates;
 
 			//THRIRStruct emptyHRIR;
@@ -262,7 +262,7 @@ namespace BRTServices
 
 				if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f)
 				{
-					newTF = f_CalculateTF_Offline(_table, orientation(backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation), orientation(backFloorListSortedByDistance[0].second.azimuth, backFloorListSortedByDistance[0].second.elevation), orientation(frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation), _TFLength, barycentricCoordinates);
+					newTF = f_CalculateTF_Offline(_table, TOrientation(backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation), TOrientation(backFloorListSortedByDistance[0].second.azimuth, backFloorListSortedByDistance[0].second.elevation), TOrientation(frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation), _TFLength, barycentricCoordinates);
 					return newTF;
 				}
 				else
@@ -279,7 +279,7 @@ namespace BRTServices
 
 				if (barycentricCoordinates.alpha >= 0.0f && barycentricCoordinates.beta >= 0.0f && barycentricCoordinates.gamma >= 0.0f)
 				{
-					newTF = f_CalculateTF_Offline(_table, orientation(backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation), orientation(frontCeilListSortedByDistance[0].second.azimuth, frontCeilListSortedByDistance[0].second.elevation), orientation(frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation), _TFLength, barycentricCoordinates);
+					newTF = f_CalculateTF_Offline(_table, TOrientation(backCeilListSortedByDistance[0].second.azimuth, backCeilListSortedByDistance[0].second.elevation), TOrientation(frontCeilListSortedByDistance[0].second.azimuth, frontCeilListSortedByDistance[0].second.elevation), TOrientation(frontFloorlListSortedByDistance[0].second.azimuth, frontFloorlListSortedByDistance[0].second.elevation), _TFLength, barycentricCoordinates);
 					return newTF;
 				}
 				else
@@ -292,11 +292,11 @@ namespace BRTServices
 
 	private:
 
-		void SortListByAzimuthAndSplit(double _newAzimuth, std::vector<orientation>& listToSort, std::vector<orientation>& _azimuthBackList, std::vector<orientation>& _azimuthFrontList)
+		void SortListByAzimuthAndSplit(double _newAzimuth, std::vector<TOrientation>& listToSort, std::vector<TOrientation>& _azimuthBackList, std::vector<TOrientation>& _azimuthFrontList)
 		{
 			// Sort List By Azimuth
 			if (listToSort.size() != 0) {
-				std::sort(listToSort.begin(), listToSort.end(), [](const orientation& a, const orientation& b) { return a.azimuth < b.azimuth; });
+				std::sort(listToSort.begin(), listToSort.end(), [](const TOrientation& a, const TOrientation& b) { return a.azimuth < b.azimuth; });
 			}
 			else {
 				SET_RESULT(RESULT_WARNING, "Orientation list sorted is empty");
@@ -339,11 +339,11 @@ namespace BRTServices
 			}
 		}
 
-		void SortListByElevationAndSplit(double _newElevation, std::vector<orientation>& listToSort, std::vector<orientation>& ceilList, std::vector<orientation>& floorList)
+		void SortListByElevationAndSplit(double _newElevation, std::vector<TOrientation>& listToSort, std::vector<TOrientation>& ceilList, std::vector<TOrientation>& floorList)
 		{
 			// Sort List By Elevation
 			if (listToSort.size() != 0) {
-				std::sort(listToSort.begin(), listToSort.end(), [](const orientation& a, const orientation& b) { return a.elevation < b.elevation; });
+				std::sort(listToSort.begin(), listToSort.end(), [](const TOrientation& a, const TOrientation& b) { return a.elevation < b.elevation; });
 			}
 			else {
 				SET_RESULT(RESULT_WARNING, "Orientation list sorted by distances is empty");

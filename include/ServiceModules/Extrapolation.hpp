@@ -50,7 +50,7 @@ namespace BRTServices
 		 * @param f Structure containing an operator () function that calculates the extrapolation for a point.
 		*/
 		template <typename T, typename U, typename Functor>
-		void Process(T& table, const std::vector<orientation>& orientationsList, int _TFSize, int extrapolationStep, Functor f) {
+		void Process(T& table, const std::vector<TOrientation>& orientationsList, int _TFSize, int extrapolationStep, Functor f) {
 			// Look for gaps and their borders
 			TAzimuthElevationBorders borders;
 			TGapsFound gapsFound = AreGapsInIRGrid(table, borders);
@@ -117,10 +117,10 @@ namespace BRTServices
 			if ((180 + _borders.minAzimuth) > (2 * averageStep)) { gapsFound.gapMinAzimuth = true; }
 
 			// Transforrm back to library ranges
-			_borders.maxAzimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_borders.maxAzimuth);
-			_borders.minAzimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_borders.minAzimuth);
-			_borders.maxElevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_borders.maxElevation);
-			_borders.minElevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_borders.minElevation);
+			_borders.maxAzimuth = CInterpolationAuxiliarMethods::NormalizeAzimuth0_360(_borders.maxAzimuth);
+			_borders.minAzimuth = CInterpolationAuxiliarMethods::NormalizeAzimuth0_360(_borders.minAzimuth);
+			_borders.maxElevation = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(_borders.maxElevation);
+			_borders.minElevation = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(_borders.minElevation);
 			
 			return gapsFound;
 		}
@@ -151,7 +151,7 @@ namespace BRTServices
 		 * @brief Perform the extrapolation
 		*/
 		template <typename T, typename U, typename Functor>
-		void FillGaps(T& table, const std::vector<orientation>& orientationsList, int _TFSize, int extrapolationStep, TGapsFound gapsFound, TAzimuthElevationBorders borders, Functor f) {
+		void FillGaps(T& table, const std::vector<TOrientation>& orientationsList, int _TFSize, int extrapolationStep, TGapsFound gapsFound, TAzimuthElevationBorders borders, Functor f) {
 			
 			T originalTable = table;
 			int cont = 0;			
@@ -159,7 +159,7 @@ namespace BRTServices
 			if (gapsFound.gapMaxElevation) {
 				bool gapMaxElevationFilled = false;
 				for (double _elevation = 90; _elevation >= (borders.maxElevation + extrapolationStep); _elevation -= extrapolationStep) {
-					double _elevationInRage = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);										
+					double _elevationInRage = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(_elevation);										
 					cont += FillAllAzimuths<T, U, Functor>(originalTable, table, orientationsList, _TFSize, extrapolationStep, f, _elevation);
 					gapMaxElevationFilled = true;
 				}
@@ -184,10 +184,10 @@ namespace BRTServices
 				double _maxElevationIn90Range = CInterpolationAuxiliarMethods::CalculateElevationIn90Range(borders.maxElevation);
 
 				for (double _elevation = _minElevationIn90Range; _elevation <= _maxElevationIn90Range; _elevation += extrapolationStep) {
-					double _elevationInRage = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
+					double _elevationInRage = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(_elevation);
 					for (double _azimuth = borders.maxAzimuth + extrapolationStep; _azimuth <= 180; _azimuth += extrapolationStep) {						
 						U newTF = f(originalTable, orientationsList, _TFSize, _azimuth, _elevationInRage);
-						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
+						table.emplace(TOrientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
 						cont++;
 					}
 				}
@@ -199,11 +199,11 @@ namespace BRTServices
 				double _maxElevationIn90Range = CInterpolationAuxiliarMethods::CalculateElevationIn90Range(borders.maxElevation);
 				
 				for (double _elevation = _minElevationIn90Range; _elevation <= _maxElevationIn90Range; _elevation += extrapolationStep) {
-					double _elevationInRage = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
+					double _elevationInRage = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(_elevation);
 										
 					for (double _azimuth = borders.minAzimuth - extrapolationStep; _azimuth >= 180; _azimuth -= extrapolationStep) {					
 						U newTF = f(originalTable, orientationsList, _TFSize, _azimuth, _elevationInRage);
-						table.emplace(orientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
+						table.emplace(TOrientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
 						cont++;
 					}
 				}
@@ -227,13 +227,13 @@ namespace BRTServices
 		 * @return Returns the number of elements inserted in the table.
 		*/
 		template <typename T, typename U, typename Functor>				
-		int FillAllAzimuths(T& originalTable, T& table, const std::vector<orientation>& orientationsList, int _TFSize, int extrapolationStep, Functor f, double _elevation) {
+		int FillAllAzimuths(T& originalTable, T& table, const std::vector<TOrientation>& orientationsList, int _TFSize, int extrapolationStep, Functor f, double _elevation) {
 			
 			int cont = 0;			
-			double _elevationInRage = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
+			double _elevationInRage = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(_elevation);
 			for (double _azimuth = 0; _azimuth < 360; _azimuth += extrapolationStep) {
 				U newTF = f(originalTable, orientationsList, _TFSize, _azimuth, _elevationInRage);
-				table.emplace(orientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
+				table.emplace(TOrientation(_azimuth, _elevationInRage), std::forward<U>(newTF));
 				cont++;
 			}
 			return cont;

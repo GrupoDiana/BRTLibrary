@@ -56,13 +56,13 @@ namespace BRTServices
 			U precalculatedTF_270, precalculatedTF_90;
 			bool found = false;
 			//Clasify every HRIR of the HRTF into the two hemispheres by their t_HRTF_DataBase_ListOfOrientations
-			std::vector<orientation> keys_southernHemisphere, keys_northenHemisphere;
+			std::vector<TOrientation> keys_southernHemisphere, keys_northenHemisphere;
 			int iAzimuthPoles = DEFAULT_MIN_AZIMUTH;
 			int iElevationNorthPole = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
 			int iElevationSouthPole = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
 
 			//	NORTHERN HEMOSPHERE POLES (90 degrees elevation ) ____________________________________________________________________________
-			auto it90 = _t_TF_DataBase.find(orientation(iAzimuthPoles, iElevationNorthPole));
+			auto it90 = _t_TF_DataBase.find(TOrientation(iAzimuthPoles, iElevationNorthPole));
 
 			if (it90 != _t_TF_DataBase.end())
 			{
@@ -77,7 +77,7 @@ namespace BRTServices
 					if (it.first.elevation < iElevationNorthPole) { keys_northenHemisphere.push_back(it.first); }
 				}
 				// sort using a custom function object
-				struct { bool operator()(orientation a, orientation b) const { return a.elevation > b.elevation; } } customLess;
+				struct { bool operator()(TOrientation a, TOrientation b) const { return a.elevation > b.elevation; } } customLess;
 				std::sort(keys_northenHemisphere.begin(), keys_northenHemisphere.end(), customLess);
 
 				precalculatedTF_90 = CalculateTF_InOneHemispherePole<T, U, Functor>(_t_TF_DataBase, _TFlength, keys_northenHemisphere, f);
@@ -86,7 +86,7 @@ namespace BRTServices
 			}
 
 			//	SOURTHERN HEMOSPHERE POLES (270 degrees elevation) ____________________________________________________________________________
-			auto it270 = _t_TF_DataBase.find(orientation(iAzimuthPoles, iElevationSouthPole));
+			auto it270 = _t_TF_DataBase.find(TOrientation(iAzimuthPoles, iElevationSouthPole));
 
 			if (it270 != _t_TF_DataBase.end())
 			{
@@ -101,7 +101,7 @@ namespace BRTServices
 				}
 				//Get a vector of iterators ordered from highest to lowest elevation.		
 				struct {
-					bool operator()(orientation a, orientation b) const { return a.elevation < b.elevation; }
+					bool operator()(TOrientation a, TOrientation b) const { return a.elevation < b.elevation; }
 				} customLess;
 				std::sort(keys_southernHemisphere.begin(), keys_southernHemisphere.end(), customLess);
 
@@ -113,9 +113,9 @@ namespace BRTServices
 			for (int az = DEFAULT_MIN_AZIMUTH; az <= DEFAULT_MAX_AZIMUTH; az = az + _resamplingStep)
 			{
 				//Elevation 90 degrees
-				_t_TF_DataBase.emplace(orientation(az, iElevationNorthPole), precalculatedTF_90);
+				_t_TF_DataBase.emplace(TOrientation(az, iElevationNorthPole), precalculatedTF_90);
 				//Elevation 270 degrees
-				_t_TF_DataBase.emplace(orientation(az, iElevationSouthPole), precalculatedTF_270);
+				_t_TF_DataBase.emplace(TOrientation(az, iElevationSouthPole), precalculatedTF_270);
 			}
 		}
 
@@ -131,10 +131,10 @@ namespace BRTServices
 		 * @return the calculated IR or TF for one of the hemispheres
 		*/
 		template<typename T, typename U, typename Functor>
-		U CalculateTF_InOneHemispherePole(T& _t_TF_DataBase, int _TFlength, std::vector<orientation> keys_hemisphere, Functor f)
+		U CalculateTF_InOneHemispherePole(T& _t_TF_DataBase, int _TFlength, std::vector<TOrientation> keys_hemisphere, Functor f)
 		{
 			U calculatedTF;
-			std::vector < std::vector <orientation>> hemisphereParts;
+			std::vector < std::vector <TOrientation>> hemisphereParts;
 			hemisphereParts.resize(NUMBER_OF_PARTS);
 			int border = std::ceil(SPHERE_BORDER / NUMBER_OF_PARTS);
 			auto currentElevation = keys_hemisphere.begin()->elevation;
@@ -201,9 +201,9 @@ namespace BRTServices
 		*/
 		template <typename T>
 		void GetAndEmplaceTF_inAzimuth360(T& _t_TF_DataBase, float _elevation) {
-			auto it = _t_TF_DataBase.find(orientation(DEFAULT_MIN_AZIMUTH, _elevation));
+			auto it = _t_TF_DataBase.find(TOrientation(DEFAULT_MIN_AZIMUTH, _elevation));
 			if (it != _t_TF_DataBase.end()) {
-				_t_TF_DataBase.emplace(orientation(DEFAULT_MAX_AZIMUTH, _elevation), it->second);
+				_t_TF_DataBase.emplace(TOrientation(DEFAULT_MAX_AZIMUTH, _elevation), it->second);
 			}
 		}
 
@@ -228,8 +228,8 @@ namespace BRTServices
 			int elev_Step = _resamplingStep;
 			int pole;
 			float elev_south, elev_north, distance;
-			std::vector<orientation> orientations, north_hemisphere, south_hemisphere;
-			orientation bufferOrientation;
+			std::vector<TOrientation> orientations, north_hemisphere, south_hemisphere;
+			TOrientation bufferOrientation;
 
 			// Create a vector with all the t_HRTF_DataBase_ListOfOrientations of the Database
 			orientations.reserve(_t_TF_DataBase.size());
@@ -239,11 +239,11 @@ namespace BRTServices
 			}
 
 			//  Sort t_HRTF_DataBase_ListOfOrientations of the DataBase with a lambda function in sort.
-			std::sort(orientations.begin(), orientations.end(), [](orientation a, orientation b) {return a.elevation < b.elevation; });
+			std::sort(orientations.begin(), orientations.end(), [](TOrientation a, TOrientation b) {return a.elevation < b.elevation; });
 
 			//	Separating t_HRTF_DataBase_ListOfOrientations of both hemispheres
-			std::copy_if(orientations.begin(), orientations.end(), back_inserter(south_hemisphere), [](orientation n) {return n.elevation > 180; }); //SOUTH
-			std::copy_if(orientations.begin(), orientations.end(), back_inserter(north_hemisphere), [](orientation n) {return n.elevation < 180; }); //NORTH
+			std::copy_if(orientations.begin(), orientations.end(), back_inserter(south_hemisphere), [](TOrientation n) {return n.elevation > 180; }); //SOUTH
+			std::copy_if(orientations.begin(), orientations.end(), back_inserter(north_hemisphere), [](TOrientation n) {return n.elevation < 180; }); //NORTH
 
 			reverse(north_hemisphere.begin(), north_hemisphere.end());
 
@@ -272,7 +272,7 @@ namespace BRTServices
 		 * @param [out] max_dist_elev maximum elevation distance between rings
 		 * @param [out] elevationLastRing elevation in degrees of the last ring
 		*/
-		void CalculateDistanceBetweenPoleandLastRing(std::vector<orientation>& _hemisphere, float& max_dist_elev, float& elevationLastRing)
+		void CalculateDistanceBetweenPoleandLastRing(std::vector<TOrientation>& _hemisphere, float& max_dist_elev, float& elevationLastRing)
 		{
 			for (int jj = 1; jj < _hemisphere.size(); jj++)
 			{
@@ -300,9 +300,9 @@ namespace BRTServices
 		 * @param f_CalculateHRIR_Offline function used to get the new IR or TF
 		*/
 		template <typename T, typename U, typename Functor>
-		void Calculate_and_EmplaceTF_InCaps(T& _t_Table,int _TFLength, int _pole, std::vector<orientation> _hemisphere, float _elevationLastRing, int _fillStep, Functor f_CalculateHRIR_Offline)
+		void Calculate_and_EmplaceTF_InCaps(T& _t_Table,int _TFLength, int _pole, std::vector<TOrientation> _hemisphere, float _elevationLastRing, int _fillStep, Functor f_CalculateHRIR_Offline)
 		{
-			std::vector<orientation> lastRingOrientationList;
+			std::vector<TOrientation> lastRingOrientationList;
 			std::vector<T_PairDistanceOrientation> sortedList;
 			int azimuth_Step = _fillStep;
 			U TF_interpolated;
@@ -323,7 +323,7 @@ namespace BRTServices
 					for (float azim = DEFAULT_MIN_AZIMUTH; azim < DEFAULT_MAX_AZIMUTH; azim = azim + azimuth_Step)
 					{
 						TF_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod<T,U, Functor>(_t_Table, f_CalculateHRIR_Offline, lastRingOrientationList, azim, elevat, _TFLength, _pole);
-						_t_Table.emplace(orientation(azim, elevat), TF_interpolated);
+						_t_Table.emplace(TOrientation(azim, elevat), TF_interpolated);
 					}
 				}
 			}	
@@ -335,7 +335,7 @@ namespace BRTServices
 					for (float azim = DEFAULT_MIN_AZIMUTH; azim < DEFAULT_MAX_AZIMUTH; azim = azim + azimuth_Step)
 					{
 						TF_interpolated = distanceBasedInterpolator.CalculateHRIR_offlineMethod<T, U, Functor>(_t_Table, f_CalculateHRIR_Offline, lastRingOrientationList, azim, elevat, _TFLength, _pole);
-						_t_Table.emplace(orientation(azim, elevat), TF_interpolated);
+						_t_Table.emplace(TOrientation(azim, elevat), TF_interpolated);
 					}
 				}
 			}
@@ -349,8 +349,8 @@ namespace BRTServices
 		 * @return vector with a list of orientations of the original table
 		*/
 		template <typename T>
-		std::vector<orientation> CalculateListOfOrientations(T& table) {
-			std::vector<orientation> table_ListOfOrientations;
+		std::vector<TOrientation> CalculateListOfOrientations(T& table) {
+			std::vector<TOrientation> table_ListOfOrientations;
 			table_ListOfOrientations.reserve(table.size());
 			for (auto& kv : table)
 			{
@@ -409,7 +409,7 @@ namespace BRTServices
 			W_TFStruct newTF;
 			bool bHRIRInterpolated = false;
 
-			auto it = table.find(orientation(_azimuth, _elevation));
+			auto it = table.find(TOrientation(_azimuth, _elevation));
 			if (it != table.end())
 			{
 				newTF = it->second;
@@ -422,7 +422,7 @@ namespace BRTServices
 			}
 			//Fill out HRTF partitioned table.IR in frequency domain
 			X_TFPartitionedStruct newTF_partitioned = f(newTF, _bufferSize, _TFPartitioned_NumberOfSubfilters);
-			resampledTable[orientation(_azimuth, _elevation)] = std::forward<X_TFPartitionedStruct>(newTF_partitioned);
+			resampledTable[TOrientation(_azimuth, _elevation)] = std::forward<X_TFPartitionedStruct>(newTF_partitioned);
 			return bHRIRInterpolated;
 		}
 

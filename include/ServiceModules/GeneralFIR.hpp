@@ -39,7 +39,7 @@
 #include <ServiceModules/OfflineInterpolation.hpp>
 #include <ServiceModules/OfflineInterpolationAuxiliarMethods.hpp>
 #include <ServiceModules/InterpolationAuxiliarMethods.hpp>
-#include <ServiceModules/KDTree.hpp>
+#include <ServiceModules/SphericalSearchKDTree.hpp>
 
 namespace BRTBase { class CListener; }
 
@@ -60,8 +60,8 @@ namespace BRTServices
 			, setupInProgress{ false }
 			, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }
 			, samplingRate{ -1 }
-			, IR_TFpartitioned_NumberOfSubfilters { 0 }
-			, IR_TFpartitioned_SubfilterLength { 0 }
+			, partitionedFRNumberOfSubfilters { 0 }
+			, partitionedFRSubfilterLength { 0 }
 			, numberOfEars { 0 }
 		{ 
 			serviceType = TServiceType::ir_database;
@@ -105,7 +105,7 @@ namespace BRTServices
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
-		bool BeginSetup(int32_t _IRLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) override {		
+		bool BeginSetup(const int32_t & _IRLength, const BRTServices::TEXTRAPOLATION_METHOD & _extrapolationMethod) override {		
 			std::lock_guard<std::mutex> l(mutex);
 			//Change class state
 			setupInProgress = true;
@@ -117,7 +117,7 @@ namespace BRTServices
 			//Update parameters			
 			IRLength = _IRLength;							
 			float partitions = (float)IRLength / (float)globalParameters.GetBufferSize();
-			IR_TFpartitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
+			partitionedFRNumberOfSubfilters = static_cast<int>(std::ceil(partitions));
 							
 			SET_RESULT(RESULT_OK, "General IR Setup started");
 			return true;
@@ -137,13 +137,13 @@ namespace BRTServices
 
 		void AddHRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRIR) override {			
 			if (setupInProgress) {				
-				_azimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
-				_elevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);						
-				auto returnValue = t_IR_DataBase.emplace(orientation(_azimuth, _elevation, _distance), std::forward<THRIRStruct>(newHRIR));
+				_azimuth = CInterpolationAuxiliarMethods::NormalizeAzimuth0_360(_azimuth);
+				_elevation = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(_elevation);						
+				auto returnValue = t_IR_DataBase.emplace(TOrientation(_azimuth, _elevation, _distance), std::forward<THRIRStruct>(newHRIR));
 				
 				if (!returnValue.second) {
 					// Error 
-					if (t_IR_DataBase.find(orientation(_azimuth, _elevation, _distance)) != t_IR_DataBase.end()) {
+					if (t_IR_DataBase.find(TOrientation(_azimuth, _elevation, _distance)) != t_IR_DataBase.end()) {
 						SET_RESULT(RESULT_WARNING, "Error emplacing IR in t_IR_DataBase map, already exists a HRIR in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]");
 					} else {
 						SET_RESULT(RESULT_WARNING, "Error emplacing IR in t_IR_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]");
@@ -174,7 +174,7 @@ namespace BRTServices
 					
 					//Setup parameters
 					auto it = t_IRTF_Partitioned.begin();
-					IR_TFpartitioned_SubfilterLength = it->second.leftHRIR_Partitioned[0].size();
+					partitionedFRSubfilterLength = it->second.leftHRIR_Partitioned[0].size();
 					setupInProgress = false;
 					FIRLoaded = true;
 
@@ -230,7 +230,7 @@ namespace BRTServices
 				return newHRIR;
 			}
 						
-			auto it = t_IR_DataBase.find(orientation(_azimuth, _elevation, _distance));
+			auto it = t_IR_DataBase.find(TOrientation(_azimuth, _elevation, _distance));
 			if (it != t_IR_DataBase.end()) {
 				if (_ear == Common::T_ear::LEFT) {
 					return it->second.leftHRIR;
@@ -328,7 +328,7 @@ namespace BRTServices
 			}
 
 			if (setupInProgress) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRTF Setup in progress return empty");
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: nonInterpolatedHRTF Setup in progress return empty");
 				return newHRIR;
 			}
 			if (!spatiallyOriented) {
@@ -337,7 +337,7 @@ namespace BRTServices
 			}
 			
 			THRIRPartitionedStruct foundData;
-			auto it = t_IRTF_Partitioned.find(orientation(_azimuth, _elevation));
+			auto it = t_IRTF_Partitioned.find(TOrientation(_azimuth, _elevation));
 			if (it != t_IRTF_Partitioned.end()) {	
 				// Exact match found
 				foundData = it->second;				
@@ -347,13 +347,13 @@ namespace BRTServices
 					return newHRIR;
 				}
 				// No exact match, find nearest
-				orientation nearest = searchTree.nearest(_azimuth, _elevation);
+				TOrientation nearest = searchTree.nearest(_azimuth, _elevation);
 				auto it = t_IRTF_Partitioned.find(nearest);
 				if (it != t_IRTF_Partitioned.end()) {
 					foundData = it->second;					
 				} else {
 					// ERROR: This should not happen
-					SET_RESULT(RESULT_ERROR_NOTALLOWED, "GetHRIR_partitioned: KD-Tree returned an orientation not present in FIR table");					
+					SET_RESULT(RESULT_ERROR_NOTALLOWED, "GetHRIR_partitioned: KD-Tree returned an TOrientation not present in FIR table");					
 				}								
 			}	
 			if (ear == Common::T_ear::LEFT) {
@@ -372,7 +372,7 @@ namespace BRTServices
 			rightEarIRTF = std::vector<CMonoBuffer<float>>();
 
 			if (setupInProgress) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRTF Setup in progress return empty");
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: nonInterpolatedHRTF Setup in progress return empty");
 				return;
 			}
 			if (!spatiallyOriented) {
@@ -381,7 +381,7 @@ namespace BRTServices
 			}
 
 			THRIRPartitionedStruct foundData;
-			auto it = t_IRTF_Partitioned.find(orientation(_azimuth, _elevation));
+			auto it = t_IRTF_Partitioned.find(TOrientation(_azimuth, _elevation));
 			if (it != t_IRTF_Partitioned.end()) {
 				// Exact match found
 				foundData = it->second;
@@ -391,13 +391,13 @@ namespace BRTServices
 					return;
 				}
 				// No exact match, find nearest
-				orientation nearest = searchTree.nearest(_azimuth, _elevation);
+				TOrientation nearest = searchTree.nearest(_azimuth, _elevation);
 				auto it = t_IRTF_Partitioned.find(nearest);
 				if (it != t_IRTF_Partitioned.end()) {
 					foundData = it->second;
 				} else {
 					// ERROR: This should not happen
-					SET_RESULT(RESULT_ERROR_NOTALLOWED, "GetHRIR_partitioned: KD-Tree returned an orientation not present in FIR table");
+					SET_RESULT(RESULT_ERROR_NOTALLOWED, "GetHRIR_partitioned: KD-Tree returned an TOrientation not present in FIR table");
 				}
 			}
 			leftEarIRTF = std::move(foundData.leftHRIR_Partitioned);
@@ -409,16 +409,16 @@ namespace BRTServices
 		*	\retval n Number of HRIR subfilters
 		*   \eh Nothing is reported to the error handler.
 		*/		
-		const int32_t GetIRTFNumberOfSubfilters() const {
-			return IR_TFpartitioned_NumberOfSubfilters;
+		const int32_t GetTFNumberOfSubfilters() const {
+			return partitionedFRNumberOfSubfilters;
 		}
 
 		/** \brief	Get the size of subfilters (blocks) in which the HRIR has been partitioned, every subfilter has the same size
 		*	\retval size Size of HRIR subfilters
 		*   \eh Nothing is reported to the error handler.
 		*/		
-		const int32_t GetIRTFSubfilterLength() const override {
-			return IR_TFpartitioned_SubfilterLength;
+		const int32_t GetTFSubfilterLength() const override {
+			return partitionedFRSubfilterLength;
 		}
 
 		/** \brief	Get if the HRTF has been loaded
@@ -443,7 +443,7 @@ namespace BRTServices
 		*   \return distance of the speakers structure to calculate the HRTF
 		*   \eh Nothing is reported to the error handler.
 		*/		
-		float GetHRTFDistanceOfMeasurement() override {
+		double GetDistanceOfMeasurement(const Common::CTransform & _referenceLocation, const double & _azimuth, const double & _elevation, const double & _distance) const override {
 			return distanceOfMeasurement;
 		}
 
@@ -580,12 +580,12 @@ namespace BRTServices
 				t_IRTF_Partitioned.emplace(it.first, THRIRPartitionedStruct());
 			}
 			// Get IR in frequency Domain (partitioned) for each position of the table
-			offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct>(t_IR_DataBase, t_IRTF_Partitioned, globalParameters.GetBufferSize(), IRLength, IR_TFpartitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
+			offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct>(t_IR_DataBase, t_IRTF_Partitioned, globalParameters.GetBufferSize(), IRLength, partitionedFRNumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
 		}
 		
 		void SetupSearchTree() {
 			//Fill KD-Tree with the orientations of the resampled HRTF table
-			std::vector<orientation> keys;
+			std::vector<TOrientation> keys;
 			keys.reserve(t_IRTF_Partitioned.size());
 			for (const auto & kv : t_IRTF_Partitioned) {
 				keys.push_back(kv.first);
@@ -671,8 +671,8 @@ namespace BRTServices
 		mutable std::mutex mutex;								// Thread management
 
 		int32_t IRLength;								// HRIR vector length	
-		int32_t IR_TFpartitioned_NumberOfSubfilters;	// Number of subfilters (blocks) for the UPC algorithm
-		int32_t IR_TFpartitioned_SubfilterLength;		// Size of one HRIR subfilter
+		int32_t partitionedFRNumberOfSubfilters;	// Number of subfilters (blocks) for the UPC algorithm
+		int32_t partitionedFRSubfilterLength;		// Size of one HRIR subfilter
 		float distanceOfMeasurement;					// Distance where the HRIR have been measurement		
 		Common::CCranialGeometry cranialGeometry;					// Cranial geometry of the listener
 		//Common::CCranialGeometry originalCranialGeometry;		// Cranial geometry of the listener
@@ -700,7 +700,7 @@ namespace BRTServices
 		// Tables							
 		T_HRTFTable				t_IR_DataBase;				// Store original data, normally read from SOFA file
 		T_HRTFPartitionedTable	t_IRTF_Partitioned;	// Data in our grid, interpolated 		
-		KDTree<orientation> searchTree; // KDTree for fast nearest neighbor search
+		CSphericalSearchKDTree<TOrientation> searchTree; // CSphericalSearchKDTree for fast nearest neighbor search
 
 		// Empty object to return in some methods
 		THRIRStruct						emptyHRIR;

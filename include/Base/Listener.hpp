@@ -273,8 +273,8 @@ namespace BRTBase {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) {
-			
+		//bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) {
+		bool SetHRTF(std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF) {	
 			bool control = false;
 			for (auto& _listenerModel : listenerModelsConnected) {
 
@@ -283,7 +283,7 @@ namespace BRTBase {
 					if (result) {
 						control = true;
 					} else {
-						SET_RESULT(RESULT_ERROR_NOTSET, "ERROR: Unknown error when trying to set the HRTF in the listener model with ID " + _listenerModel->GetModelID());
+						SET_RESULT(RESULT_ERROR_NOTSET, "ERROR: Unknown error when trying to set the nonInterpolatedHRTF in the listener model with ID " + _listenerModel->GetModelID());
 					}
 				}
 			}
@@ -294,13 +294,23 @@ namespace BRTBase {
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr < BRTServices::CHRTF> GetHRTF() const
+		
+		std::shared_ptr<BRTServices::CHRTF> GetHRTF() const		
 		{
 			for (auto& _listenerModel : listenerModelsConnected) {
 				if (_listenerModel->GetListenerModelCharacteristics().SupportHRTF()) {
 					return _listenerModel->GetHRTF();				
 				}
 			}			
+			return nullptr;
+		}
+		
+		std::shared_ptr<BRTServices::CServicesBase> GetHRTF2() const {
+			for (auto & _listenerModel : listenerModelsConnected) {
+				if (_listenerModel->GetListenerModelCharacteristics().SupportHRTF()) {
+					return _listenerModel->GetHRTF2();
+				}
+			}
 			return nullptr;
 		}
 

@@ -82,6 +82,7 @@ namespace BRTConnectivity {
     using CEntryPointCommand = CEntryPointBase<BRTConnectivity::CCommand>;
     using CEntryPointID = CEntryPointBase<std::string>;
 
+    using CEntryPointServicePtr = CEntryPointBase< std::weak_ptr<BRTServices::CServicesBase> >;
     using CEntryPointHRTFPtr = CEntryPointBase< std::weak_ptr<BRTServices::CHRTF> >;
     using CEntryPointHRBRIRPtr = CEntryPointBase< std::weak_ptr<BRTServices::CHRBRIR> >;    
     using CEntryPointILDPtr = CEntryPointBase< std::weak_ptr<BRTServices::CSOSCoefficients> >;

@@ -43,8 +43,9 @@ class CHRTFConvolverProcessor : public BRTConnectivity::CBRTConnectivity, public
 
             CreatePositionEntryPoint("sourcePosition");
 			CreatePositionEntryPoint("listenerPosition");           
-			CreateHRTFPtrEntryPoint("listenerHRTF");
+			//CreateHRTFPtrEntryPoint("listenerHRTF");
 			CreateHRBRIRPtrEntryPoint("listenerHRBRIR");
+			CreateServicePtrEntryPoint("listenerHRTF");
 
 			CreateIDEntryPoint("sourceID");
 			CreateIDEntryPoint("listenerID");
@@ -78,15 +79,16 @@ class CHRTFConvolverProcessor : public BRTConnectivity::CBRTConnectivity, public
 				outRightBuffer = buffer;				
 			}
 			else {
-				std::weak_ptr<BRTServices::CServicesBase> listenerHRTF = GetHRTFPtrEntryPoint("listenerHRTF")->GetData();
+				//std::weak_ptr<BRTServices::CServicesBase> listenerHRTF = GetHRTFPtrEntryPoint("listenerHRTF")->GetData();
 				std::weak_ptr<BRTServices::CServicesBase> listenerHRBRIR = GetHRBRIRPtrEntryPoint("listenerHRBRIR")->GetData();
+				std::weak_ptr<BRTServices::CServicesBase> listenerHRTF = GetServicePtrEntryPoint("listenerHRTF")->GetData();
 
 				if (listenerHRTF.lock() != nullptr) { 
 					Process(buffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerHRTF);
 				} else if (listenerHRBRIR.lock() != nullptr) {				
 					Process(buffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerHRBRIR);
 				} else {
-					SET_RESULT(RESULT_ERROR_NOTSET, "HRTF Convolver error: No HRTF or HRBRIR data available");
+					SET_RESULT(RESULT_ERROR_NOTSET, "nonInterpolatedHRTF Convolver error: No nonInterpolatedHRTF or HRBRIR data available");
 					return;
 				}
 			}	

@@ -267,8 +267,8 @@ namespace BRTProcessing {
 		/// Initialize convolvers and convolition buffers		
 		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CServicesBase>& _irTable) {
 
-			int numOfSubfilters = _irTable->GetIRTFNumberOfSubfilters();
-			int subfilterLength = _irTable->GetIRTFSubfilterLength();
+			int numOfSubfilters = _irTable->GetTFNumberOfSubfilters();
+			int subfilterLength = _irTable->GetTFSubfilterLength();
 
 			//Common::CGlobalParameters globalParameters;
 			//outputLeftUPConvolution.Setup(globalParameters.GetBufferSize(), subfilterLength, numOfSubfilters, true);

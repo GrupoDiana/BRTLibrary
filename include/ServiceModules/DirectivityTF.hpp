@@ -94,7 +94,7 @@ namespace BRTServices
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
-		bool BeginSetup(int32_t _directivityTFPartLength, TEXTRAPOLATION_METHOD _extrapolationMethod) override{
+		bool BeginSetup(const int32_t & _directivityTFPartLength, const BRTServices::TEXTRAPOLATION_METHOD & _extrapolationMethod) override {
 			//Update parameters			
 			elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
 			elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
@@ -120,7 +120,7 @@ namespace BRTServices
 			setupDirectivityTFInProgress = true;
 			directivityTFloaded = false;
 
-			SET_RESULT(RESULT_OK, "HRTF Setup started");
+			SET_RESULT(RESULT_OK, "nonInterpolatedHRTF Setup started");
 			return true;
 		}
 
@@ -198,9 +198,9 @@ namespace BRTServices
 		void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& directivityTF)
 		{
 			if (setupDirectivityTFInProgress) {
-				_azimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
-				_elevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);
-				auto returnValue = t_DirectivityTF_DataBase.emplace(orientation(_azimuth, _elevation), std::forward<TDirectivityTFStruct>(directivityTF));
+				_azimuth = CInterpolationAuxiliarMethods::NormalizeAzimuth0_360(_azimuth);
+				_elevation = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(_elevation);
+				auto returnValue = t_DirectivityTF_DataBase.emplace(TOrientation(_azimuth, _elevation), std::forward<TDirectivityTFStruct>(directivityTF));
 				//Error handler
 				if (!returnValue.second) { SET_RESULT(RESULT_WARNING, "Error emplacing DirectivityTF in t_DirectivityTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]"); }
 			}
@@ -211,12 +211,12 @@ namespace BRTServices
 		*	\retval unordered map with all the orientations of the resampled table 
 		*   \eh Warnings may be reported to the error handler.
 		*/
-		std::unordered_map<orientation, float> CalculateStep() const
+		std::unordered_map<TOrientation, float> CalculateStep() const
 		{
-			std::unordered_map<orientation, float> stepVector;
+			std::unordered_map<TOrientation, float> stepVector;
 			float elevation, aziStep, diff = 360, actual_ele = -1.0f;
 			int secondTime = 0;
-			std::vector<orientation> orientations;
+			std::vector<TOrientation> orientations;
 
 			// Create a vector with all the orientations of the Database
 			orientations.reserve(t_DirectivityTF_DataBase.size());
@@ -225,7 +225,7 @@ namespace BRTServices
 				orientations.push_back(itr.first);
 			}
 			//  Sort orientations of the DataBase with a lambda function in sort.
-			std::sort(orientations.begin(), orientations.end(), [](orientation a, orientation b) {return (a.elevation < b.elevation); });
+			std::sort(orientations.begin(), orientations.end(), [](TOrientation a, TOrientation b) {return (a.elevation < b.elevation); });
 
 
 			for (int ori = 0; ori< orientations.size(); ori++)
@@ -241,7 +241,7 @@ namespace BRTServices
 						if (orientations[ele].elevation != elevation || orientations[ele] == orientations.back())
 						{	
 							if (diff == 360) { diff = 0; }
-							stepVector.emplace(orientation(0, elevation), diff);
+							stepVector.emplace(TOrientation(0, elevation), diff);
 							diff = 360;
 							break;
 						}
@@ -294,7 +294,7 @@ namespace BRTServices
 			}
 
 			// We search if the point already exists
-			auto it = t_DirectivityTF_Resampled.find(orientation(_azimuth, _elevation));
+			auto it = t_DirectivityTF_Resampled.find(TOrientation(_azimuth, _elevation));
 			if (it != t_DirectivityTF_Resampled.end())
 			{
 				return it->second.data;
@@ -397,10 +397,10 @@ namespace BRTServices
 		TEXTRAPOLATION_METHOD extrapolationMethod;						// Methods that is going to be used to extrapolate
 		
 		T_DirectivityTFTable					t_DirectivityTF_DataBase;
-		std::vector<orientation>				t_DirectivityTF_DataBase_ListOfOrientations;
+		std::vector<TOrientation>				t_DirectivityTF_DataBase_ListOfOrientations;
 		T_DirectivityTFInterlacedDataTable		t_DirectivityTF_Resampled;
 		
-		std::unordered_map<orientation, float>  gridResamplingStepsVector;		// Store hrtf interpolated grids steps
+		std::unordered_map<TOrientation, float>  gridResamplingStepsVector;		// Store hrtf interpolated grids steps
 
 		Common::CGlobalParameters globalParameters;
 		

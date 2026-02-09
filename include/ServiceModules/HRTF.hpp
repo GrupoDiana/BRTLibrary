@@ -61,10 +61,23 @@ namespace BRTServices
 		*   \eh Nothing is reported to the error handler.
 		*/
 		CHRTF()
-			:enableWoodworthITD{ false }, gridSamplingStep{ DEFAULT_GRIDSAMPLING_STEP }, gapThreshold{ DEFAULT_GAP_THRESHOLD }, HRIRLength{ 0 },
-			HRTFLoaded{ false }, setupInProgress{ false }, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE },
-			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION }, sphereBorder{ SPHERE_BORDER },
-			epsilon_sewing{ EPSILON_SEWING }, samplingRate{ -1 }, elevationNorth{ 0 }, elevationSouth{ 0 }, extrapolationMethod{ TEXTRAPOLATION_METHOD::nearest_point }
+			:enableWoodworthITD{ false }
+			, gridSamplingStep{ DEFAULT_GRIDSAMPLING_STEP }
+			, gapThreshold{ DEFAULT_GAP_THRESHOLD }
+			, HRIRLength{ 0 }
+			, HRTFLoaded{ false }
+			, setupInProgress{ false }
+			, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }
+			, azimuthMin{ DEFAULT_MIN_AZIMUTH }
+			, azimuthMax{ DEFAULT_MAX_AZIMUTH }
+			, elevationMin{ DEFAULT_MIN_ELEVATION }
+			, elevationMax{ DEFAULT_MAX_ELEVATION }
+			, sphereBorder{ SPHERE_BORDER }
+			, epsilon_sewing{ EPSILON_SEWING }
+			//, samplingRate{ -1 }
+			, elevationNorth{ 0 }
+			, elevationSouth{ 0 }
+			, extrapolationMethod{ TEXTRAPOLATION_METHOD::nearest_point }
 		{ }
 
 		/** \brief Get size of each HRIR buffer
@@ -80,14 +93,14 @@ namespace BRTServices
 		 * @brief Set sampling step for HRIR resampling
 		 * @param _resamplingStep 
 		 */
-		void SetGridSamplingStep(int _samplingStep) {
+		void SetGridSamplingStep(int _samplingStep) override {
 			gridSamplingStep = _samplingStep;
 		}
 		/**
 		 * @brief Get sampling step defined for HRIR resampling
 		 * @return 
 		 */
-		int GetGridSamplingStep() {
+		int GetGridSamplingStep() const override {
 			return gridSamplingStep;
 		}
 
@@ -96,7 +109,7 @@ namespace BRTServices
 		*   \eh On success, RESULT_OK is reported to the error handler.
 		*       On error, an error code is reported to the error handler.
 		*/
-		bool BeginSetup(int32_t _HRIRLength, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) override {		
+		bool BeginSetup(const int32_t & _HRIRLength, const BRTServices::TEXTRAPOLATION_METHOD & _extrapolationMethod) override {		
 			std::lock_guard<std::mutex> l(mutex);
 			//Change class state
 			setupInProgress = true;
@@ -114,7 +127,7 @@ namespace BRTServices
 			elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
 			elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
 					
-			SET_RESULT(RESULT_OK, "HRTF Setup started");
+			SET_RESULT(RESULT_OK, "nonInterpolatedHRTF Setup started");
 			return true;
 		}
 
@@ -132,13 +145,13 @@ namespace BRTServices
 
 		void AddHRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRIR) override {			
 			if (setupInProgress) {				
-				_azimuth = CInterpolationAuxiliarMethods::CalculateAzimuthIn0_360Range(_azimuth);
-				_elevation = CInterpolationAuxiliarMethods::CalculateElevationIn0_90_270_360Range(_elevation);						
-				auto returnValue = t_HRTF_DataBase.emplace(orientation(_azimuth, _elevation, _distance), std::forward<THRIRStruct>(newHRIR));
+				_azimuth = CInterpolationAuxiliarMethods::NormalizeAzimuth0_360(_azimuth);
+				_elevation = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(_elevation);						
+				auto returnValue = t_HRTF_DataBase.emplace(TOrientation(_azimuth, _elevation, _distance), std::forward<THRIRStruct>(newHRIR));
 				//Error handler
 				if (!returnValue.second) {
 
-					if (t_HRTF_DataBase.find(orientation(_azimuth, _elevation, _distance)) != t_HRTF_DataBase.end()) {
+					if (t_HRTF_DataBase.find(TOrientation(_azimuth, _elevation, _distance)) != t_HRTF_DataBase.end()) {
 						SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map, already exists a HRIR in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]");
 					} else {
 						SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]");
@@ -161,7 +174,7 @@ namespace BRTServices
 					
 					// Preparation of table read from sofa file
 					RemoveCommonDelay_HRTFDataBaseTable();				// Delete the common delay of every HRIR functions of the DataBase Table					
-					std::vector<orientation> _orientationList = offlineInterpolation.CalculateListOfOrientations(t_HRTF_DataBase);
+					std::vector<TOrientation> _orientationList = offlineInterpolation.CalculateListOfOrientations(t_HRTF_DataBase);
 					CalculateExtrapolation(_orientationList);							// Make the extrapolation if it's needed
 					offlineInterpolation.CalculateTF_InPoles<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, HRIRLength, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts());
 					offlineInterpolation.CalculateTF_SphericalCaps<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, HRIRLength, gapThreshold, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
@@ -176,7 +189,7 @@ namespace BRTServices
 					setupInProgress = false;
 					HRTFLoaded = true;
 
-					SET_RESULT(RESULT_OK, "HRTF Matrix resample completed succesfully");
+					SET_RESULT(RESULT_OK, "nonInterpolatedHRTF Matrix resample completed succesfully");
 					return true;
 				}
 				else
@@ -226,7 +239,7 @@ namespace BRTServices
 			}
 
 			if (setupInProgress) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRTF Setup in progress return empty");
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: nonInterpolatedHRTF Setup in progress return empty");
 				return newHRIR;
 
 			}
@@ -252,7 +265,7 @@ namespace BRTServices
 			
 			if (setupInProgress)
 			{
-				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIRDelay: HRTF Setup in progress return empty");
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIRDelay: nonInterpolatedHRTF Setup in progress return empty");
 				return data;
 			}
 			
@@ -273,7 +286,7 @@ namespace BRTServices
 		*	\retval n Number of HRIR subfilters
 		*   \eh Nothing is reported to the error handler.
 		*/		
-		const int32_t GetHRIRNumberOfSubfilters() const {
+		const int32_t GetTFNumberOfSubfilters() const {
 			return HRIR_partitioned_NumberOfSubfilters;
 		}
 
@@ -281,7 +294,7 @@ namespace BRTServices
 		*	\retval size Size of HRIR subfilters
 		*   \eh Nothing is reported to the error handler.
 		*/		
-		const int32_t GetHRIRSubfilterLength() const override {
+		const int32_t GetTFSubfilterLength() const override {
 			return HRIR_partitioned_SubfilterLength;
 		}
 
@@ -307,7 +320,7 @@ namespace BRTServices
 		*   \return distance of the speakers structure to calculate the HRTF
 		*   \eh Nothing is reported to the error handler.
 		*/		
-		float GetHRTFDistanceOfMeasurement() override {
+		double GetDistanceOfMeasurement(const Common::CTransform & _referenceLocation, const double & _azimuth, const double & _elevation, const double & _distance) const override {
 			return distanceOfMeasurement;
 		}
 
@@ -364,11 +377,11 @@ namespace BRTServices
 				
 		}
 
-		/** \brief	Get the radius of the listener head
+		/** \brief	Get the radius of the listener head in meters, truncated and rounded to 4 decimals to avoid precision errors
 		*   \return listenerHeadRadius in meters
 		*   \eh Nothing is reported to the error handler.
 		*/
-		float GetHeadRadius() override {
+		float GetHeadRadius() override {			
 			return cranialGeometry.GetHeadRadius();
 		}
 
@@ -409,7 +422,7 @@ namespace BRTServices
 		*   \return  Ear local position in meters
 		*   \eh <<Error not allowed>> is reported to error handler
 		*/
-		Common::CVector3 GetEarLocalPosition(Common::T_ear _ear) {			
+		Common::CVector3 GetEarLocalPosition(Common::T_ear _ear) override {			
 			if (_ear == Common::T_ear::LEFT)		{ return cranialGeometry.GetLeftEarLocalPosition(); }
 			else if (_ear == Common::T_ear::RIGHT) { return cranialGeometry.GetRightEarLocalPosition(); }
 			else 
@@ -422,16 +435,16 @@ namespace BRTServices
 		/** \brief Set the sampling rate for the HRTF
 		*	\param [in] sampling rate
 		*/
-		void SetSamplingRate(int _samplingRate) {
-			samplingRate = _samplingRate;
-		}
+		//void SetSamplingRate(int _samplingRate) {
+		//	samplingRate = _samplingRate;
+		//}
 
-		/** \brief Ask for the sampling rate
-		*	\retval sampling step
-		*/
-		int GetSamplingRate() {
-			return samplingRate;
-		}
+		///** \brief Ask for the sampling rate
+		//*	\retval sampling step
+		//*/
+		//int GetSamplingRate() {
+		//	return samplingRate;
+		//}
 
 
 	private:				
@@ -469,12 +482,12 @@ namespace BRTServices
 		std::string databaseName;
 		std::string listenerShortName;
 		std::string fileName;*/
-		int samplingRate;
+		//int samplingRate;
 
 		// HRTF tables							
 		T_HRTFTable				t_HRTF_DataBase;				// Store original data, normally read from SOFA file
 		T_HRTFPartitionedTable	t_HRTF_Resampled_partitioned;	// Data in our grid, interpolated 
-		std::unordered_map<orientation, float> stepVector;		// Store hrtf interpolated grids steps
+		std::unordered_map<TOrientation, float> stepVector;		// Store hrtf interpolated grids steps
 
 		// Empty object to return in some methods
 		THRIRStruct						emptyHRIR;
@@ -534,14 +547,14 @@ namespace BRTServices
 		/**
 		 * @brief Call the extrapolation method
 		*/
-		void CalculateExtrapolation(std::vector<orientation>& _orientationList) {
+		void CalculateExtrapolation(std::vector<TOrientation>& _orientationList) {
 			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.			
 			if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::zero_insertion) {
-				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded HRTF sofa file, an extrapolation with zeros will be performed to fill it.");
+				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded nonInterpolatedHRTF sofa file, an extrapolation with zeros will be performed to fill it.");
 				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, _orientationList, HRIRLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetZerosHRIR());
 			}
 			else if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::nearest_point) {
-				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded HRTF sofa file, an extrapolation will be made to the nearest point to fill it.");
+				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded nonInterpolatedHRTF sofa file, an extrapolation will be made to the nearest point to fill it.");
 				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, _orientationList, HRIRLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetNearestPointHRIR());
 			}
 			else {

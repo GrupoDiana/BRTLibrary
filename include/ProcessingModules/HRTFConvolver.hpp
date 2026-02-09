@@ -186,7 +186,7 @@ namespace BRTProcessing {
 			//std::shared_ptr<BRTServices::CHRTF> _listenerHRTF = _listenerHRTFWeak.lock();
 			std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF = _listenerHRTFWeak.lock();
 			if (!_listenerHRTF) {
-				SET_RESULT(RESULT_ERROR_NULLPOINTER, "HRTF listener pointer is null when trying to use in HRTFConvolver");
+				SET_RESULT(RESULT_ERROR_NULLPOINTER, "nonInterpolatedHRTF listener pointer is null when trying to use in HRTFConvolver");
 				outLeftBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 				outRightBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 				return;
@@ -223,6 +223,13 @@ namespace BRTProcessing {
 			leftHRIR_partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::LEFT, leftAzimuth, leftElevation, enableInterpolation, listenerTransform);
 			rightHRIR_partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::RIGHT, rightAzimuth, rightElevation, enableInterpolation, listenerTransform);
 						
+			if (leftHRIR_partitioned.empty() || rightHRIR_partitioned.empty()) {
+				SET_RESULT(RESULT_ERROR_NULLPOINTER, "HRTF Convolver: No IR has been found in that position.");
+				outLeftBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
+				outRightBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
+				return;
+			}
+
 			// DO CONVOLUTION			
 			CMonoBuffer<float> leftChannel_withoutDelay;
 			CMonoBuffer<float> rightChannel_withoutDelay;
@@ -288,8 +295,8 @@ namespace BRTProcessing {
 		/// Initialize convolvers and convolition buffers		
 		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CServicesBase>& _listenerHRTF) {
 
-			int numOfSubfilters = _listenerHRTF->GetHRIRNumberOfSubfilters();
-			int subfilterLength = _listenerHRTF->GetHRIRSubfilterLength();
+			int numOfSubfilters = _listenerHRTF->GetTFNumberOfSubfilters();
+			int subfilterLength = _listenerHRTF->GetTFSubfilterLength();
 
 			//Common::CGlobalParameters globalParameters;
 			outputLeftUPConvolution.Setup(globalParameters.GetBufferSize(), subfilterLength, numOfSubfilters, true);

@@ -510,6 +510,19 @@ namespace BRTBase {
 			return true;
 		}
 
+		template <typename T, typename U>
+		bool ConnectModuleService(std::shared_ptr<T> module1, const std::string & exitPointID, std::shared_ptr<U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectServiceEntryTo(module1->GetServiceExitPoint(exitPointID), entryPointID);
+			return true;
+		}
+		template <typename T, typename U>
+		bool ConnectModuleService(T * module1, const std::string & exitPointID, std::shared_ptr<U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectServiceEntryTo(module1->GetServiceExitPoint(exitPointID), entryPointID);
+			return true;
+		}
+
 		/**
 		 * @brief Connects the HRTF ExitPoint of one module to the HRTF EntryPoint of another.
 		 * @tparam T Type of module 1
@@ -532,6 +545,18 @@ namespace BRTBase {
 			return true;
 		}
 
+		template <typename T, typename U>
+		bool ConnectModuleHRTF2(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectServiceEntryTo(module1->GetHRTFExitPoint2(), entryPointID);
+			return true;
+		}
+		template <typename T, typename U>
+		bool ConnectModuleHRTF2(T * module1, std::shared_ptr<U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectServiceEntryTo(module1->GetHRTFExitPoint2(), entryPointID);
+			return true;
+		}
 		/**
 		 * @brief Disconnects the HRTF ExitPoint of one module with the HRTF EntryPoint of another.
 		 * @tparam T Type of module 1

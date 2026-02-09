@@ -34,11 +34,14 @@ namespace BRTReaders {
 
 	public:
 
-		enum class TSofaConvention { SimpleFreeFieldHRIR,
+		enum class TSofaConvention { 
+			none, 
+			SimpleFreeFieldHRIR,
 			SimpleFreeFieldHRSOS,
 			FreeFieldDirectivityTF,
 			SingleRoomMIMOSRIR,
 			GeneralFIR };
+
 		const char* SofaConventioToString(TSofaConvention e) noexcept
 		{
 			switch (e)
@@ -49,7 +52,7 @@ namespace BRTReaders {
 			case TSofaConvention::SingleRoomMIMOSRIR:		return "SingleRoomMIMOSRIR";
 			case TSofaConvention::GeneralFIR:				return "GeneralFIR";
 			}
-		}
+		}		
 
 		CLibMySOFALoader(const std::string& sofaFile) : error{ -1 } {
 			int error = MySOFAInit(sofaFile);			
@@ -109,6 +112,16 @@ namespace BRTReaders {
 
 		std::string GetSofaConvention(){
 			return mysofa_getAttribute(hrtf->hrtf->attributes, "SOFAConventions");
+		}
+		
+		TSofaConvention GetSofaConventionType () {
+			std::string sofaConventions = mysofa_getAttribute(hrtf->hrtf->attributes, "SOFAConventions");
+			if (sofaConventions == "SimpleFreeFieldHRIR") return TSofaConvention::SimpleFreeFieldHRIR;
+			if (sofaConventions == "SimpleFreeFieldHRSOS") return TSofaConvention::SimpleFreeFieldHRSOS;
+			if (sofaConventions == "FreeFieldDirectivityTF") return TSofaConvention::FreeFieldDirectivityTF;
+			if (sofaConventions == "SingleRoomMIMOSRIR") return TSofaConvention::SingleRoomMIMOSRIR;
+			if (sofaConventions == "GeneralFIR") return TSofaConvention::GeneralFIR;
+			return TSofaConvention::none; 
 		}
 
 		bool CheckSofaConvention(TSofaConvention sofaConvention) {
@@ -253,7 +266,7 @@ namespace BRTReaders {
 			bool error = mysofa_check(hrtf->hrtf);
 			if (error != MYSOFA_OK) {
 				//mysofa_close(hrtf);
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Not a valid HRTF SOFA file");
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Not a valid nonInterpolatedHRTF SOFA file");
 				return false;
 			}
 			return true;
