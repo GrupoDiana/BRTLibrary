@@ -25,8 +25,8 @@
 #include <vector>
 #include <Common/CommonDefinitions.hpp>
 #include <Common/Buffer.hpp>
-#include <ServiceModules/SOSCoefficients.hpp>
-#include <ServiceModules/GeneralFIR.hpp>
+#include <ServiceModules/ServicesBase.hpp>
+#include <ServiceModules/SphericalSOSTable.hpp>
 
 #ifndef _FILTER_BASE_HPP
 #define _FILTER_BASE_HPP
@@ -63,7 +63,7 @@ namespace BRTFilters {
 		virtual bool Setup(int _numberOfChannels, int _numberOfBiquadSectionsPerChannel) { return false; }
 		virtual bool SetCommandGains(const std::vector<float> & gains) { return false; }
 		virtual bool SetCoefficients(const int & _channel, const std::vector<float> & _coefficients) { return false; }
-		virtual bool SetFIRTable(std::shared_ptr<BRTServices::CGeneralFIR> _firTable) { return false; }
+		virtual bool SetFIRTable(std::shared_ptr<BRTServices::CServicesBase> _firTable) { return false; }
 
 		virtual void Process(CMonoBuffer<float> & buffer) { }	
 		virtual void Process(const CMonoBuffer<float> & buffer, CMonoBuffer<float> & output) { } 

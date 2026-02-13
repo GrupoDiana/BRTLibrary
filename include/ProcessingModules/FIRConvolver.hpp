@@ -109,7 +109,7 @@ namespace BRTProcessing {
 		bool IsFindNearestIREnabled() { return enableFindNearestIR; }
 
 
-		void Process(const CMonoBuffer<float> & _inBuffer, CMonoBuffer<float> & _outBuffer, const int & channel, std::weak_ptr<BRTServices::CGeneralFIR> _irTableWeakPtr) {
+		void Process(const CMonoBuffer<float> & _inBuffer, CMonoBuffer<float> & _outBuffer, const int & channel, std::weak_ptr<BRTServices::CServicesBase> _irTableWeakPtr) {
 			_outBuffer = _inBuffer;
 			
 			std::lock_guard<std::mutex> l(mutex);
@@ -146,7 +146,7 @@ namespace BRTProcessing {
 			channelsConvolvers[channel].ProcessUPConvolutionWithMemory(_inBuffer, _IR_partitioned, _outBuffer);						
 		}
 
-		void Process(const CMonoBuffer<float> & _inLeftBuffer, CMonoBuffer<float> & _outLeftBuffer, const CMonoBuffer<float> & _inRightBuffer, CMonoBuffer<float> & _outRightBuffer, std::weak_ptr<BRTServices::CGeneralFIR> _irTableWeakPtr) {
+		void Process(const CMonoBuffer<float> & _inLeftBuffer, CMonoBuffer<float> & _outLeftBuffer, const CMonoBuffer<float> & _inRightBuffer, CMonoBuffer<float> & _outRightBuffer, std::weak_ptr<BRTServices::CServicesBase> _irTableWeakPtr) {
 			_outLeftBuffer = _inLeftBuffer;
 			_outRightBuffer = _inRightBuffer;
 
@@ -177,14 +177,16 @@ namespace BRTProcessing {
 				InitializedSourceConvolutionBuffers(_irTablePtr);
 			}
 
-			std::vector<CMonoBuffer<float>> _leftIRPartitioned;
-			std::vector<CMonoBuffer<float>> _rightIRPartitioned;
+			//std::vector<CMonoBuffer<float>> _leftIRPartitioned;
+			//std::vector<CMonoBuffer<float>> _rightIRPartitioned;
+			Common::CEarPair<BRTServices::TFRPartitions> earFRPartitions;
+			
 			if (_irTablePtr->IsSpatiallyOriented()) {
-				_irTablePtr->GetIRTFPartitionedSpatiallyOriented2Ears(_leftIRPartitioned, _rightIRPartitioned, 0.0f, 0.0f, enableFindNearestIR);
+				earFRPartitions = _irTablePtr->GetFR_SpatiallyOriented_2Ears(0.0f, 0.0f,0.0f, Common::CVector3(), enableFindNearestIR);
 			} else {
-				_irTablePtr->GetIRTFPartitioned2Ears(_leftIRPartitioned, _rightIRPartitioned);
+				earFRPartitions = _irTablePtr->GetFR_2Ears();
 			}
-			if (_leftIRPartitioned.size() == 0 || _rightIRPartitioned.size() == 0) {
+			if (earFRPartitions.left.size() == 0 || earFRPartitions.right.size() == 0) {
 				SET_RESULT(RESULT_ERROR_BADSIZE, "FIRConvolver::Process: No IR partitions found in FIR table for the requested ear", "");
 				_outLeftBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 				_outRightBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
@@ -192,11 +194,11 @@ namespace BRTProcessing {
 			}
 
 			// CONVOLUTION - UPC algorithm with memory
-			channelsConvolvers[0].ProcessUPConvolutionWithMemory(_inLeftBuffer, _leftIRPartitioned, _outLeftBuffer);
-			channelsConvolvers[1].ProcessUPConvolutionWithMemory(_inRightBuffer, _rightIRPartitioned, _outRightBuffer);			
+			channelsConvolvers[0].ProcessUPConvolutionWithMemory(_inLeftBuffer, earFRPartitions.left, _outLeftBuffer);
+			channelsConvolvers[1].ProcessUPConvolutionWithMemory(_inRightBuffer, earFRPartitions.right, _outRightBuffer);			
 		}
 									
-		void Process(const CMonoBuffer<float> & _inBuffer, CMonoBuffer<float> & _outBuffer, const int & _channel, const Common::CTransform & sourceTransform, const Common::CTransform & listenerTransform, std::weak_ptr<BRTServices::CGeneralFIR> _irTableWeakPtr) {
+		void Process(const CMonoBuffer<float> & _inBuffer, CMonoBuffer<float> & _outBuffer, const int & _channel, const Common::CTransform & sourceTransform, const Common::CTransform & listenerTransform, std::weak_ptr<BRTServices::CServicesBase> _irTableWeakPtr) {
 			
 			_outBuffer = _inBuffer;
 			

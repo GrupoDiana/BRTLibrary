@@ -57,7 +57,7 @@ namespace BRTServices
 		*/
 		CSphericalFIRTable()
 			: IRLength{ 0 }			
-			, FIRLoaded{ false }
+			//, dataReady{ false }
 			, setupInProgress{ false }
 			, customITD { false }
 			//, samplingRate{ -1 }
@@ -141,9 +141,9 @@ namespace BRTServices
 		*	\retval isLoadead bool var that is true if the HRTF has been loaded
 		*   \eh Nothing is reported to the error handler.
 		*/
-		bool IsLoaded() {
-			return FIRLoaded;
-		}
+		/*bool IsLoaded() {
+			return dataReady;
+		}*/
 
 		/** \brief Get raw HRTF table
 		*	\retval table raw HRTF table
@@ -237,20 +237,40 @@ namespace BRTServices
 			float distance = distanceBucket->table.begin()->second.orientation.distance; // All the IRs in the same distance bucket have the same distance, so we can take the distance of the first one.
 			return distance; 				
 		}
-		/** \brief Set the sampling rate for the HRTF
-		*	\param [in] sampling rate
-		*/
-		//void SetSamplingRate(int _samplingRate) {
-		//	samplingRate = _samplingRate;
-		//}
-
-		///** \brief Ask for the sampling rate
-		//*	\retval sampling step
-		//*/
-		//int GetSamplingRate() {
-		//	return samplingRate;
-		//}
 		
+		/**
+		 * @brief Set parameters for the windowing IR process
+		 * @param _windowThreshold The midpoint of the window in time (seconds), that is, where the window reaches 0.5.
+		 * @param _windowRiseTime time (secons) for the window to go from 0 to 1. A value of zero would represent the step window. 
+		 */
+		void SetWindowingParameters(float _fadeInBegin, float _riseTime, float _fadeOutCutoff, float _fallTime) override {
+			mutex.lock();
+			fadeInBegin = _fadeInBegin;
+			riseTime = _riseTime;
+			fadeOutCutoff = _fadeOutCutoff;
+			fallTime = _fallTime;
+
+			mutex.unlock();
+			if (dataReady) {
+				setupInProgress = true;
+				dataReady = false;				
+				partitionedFRDataBase.clear();
+				referencePositionSearchList.clear();
+				EndSetup();
+			}
+		}
+
+		/**
+		 * @brief Get parameters for the windowing IR process
+		 * @param [out] _windowThreshold 
+		 * @param [out] _windowRiseTime 
+		 */
+		void GetWindowingParameters(float & _fadeInWindowThreshold, float & _fadeInWindowRiseTime, float & _fadeOutWindowThreshold, float & _fadeOutWindowRiseTime) override {
+			_fadeInWindowThreshold = fadeInBegin;
+			_fadeInWindowRiseTime = riseTime;
+			_fadeOutWindowThreshold = fadeOutCutoff;
+			_fadeOutWindowRiseTime = fallTime;
+		}
 
 
 		/** \brief Start a new HRTF configuration
@@ -264,7 +284,7 @@ namespace BRTServices
 			
 			//Change class state			
 			setupInProgress = true;
-			FIRLoaded = false;
+			dataReady = false;
 			spatiallyOriented = false;
 
 			// Clear every table						
@@ -343,7 +363,7 @@ namespace BRTServices
 							if (it->second.distances.begin()->table.begin()->second.IR.left.size() != 0) {								
 								partitionedFRSubfilterLength = it->second.distances.begin()->table.begin()->second.IR.left[0].size();								
 								setupInProgress = false;
-								FIRLoaded = true;
+								dataReady = true;
 								SET_RESULT(RESULT_OK, "The processing of the IR matrix has been successfully completed.");
 								return true;
 							}
@@ -354,76 +374,7 @@ namespace BRTServices
 			SET_RESULT(RESULT_ERROR_NOTSET, "EndSetup:: Processing of the FIR table has failed.");			
 			return false;
 		}
-		
-		
-
-		/**
-		 * @brief Get partitioned IR buffer for one ear for a non-spatially oriented FIR table
-		 * @param ear for which we want to get the IR
-		 * @return IR partitioned for the specified ear
-		 */
-		//const std::vector<CMonoBuffer<float>> GetIRTFPartitioned(const Common::T_ear & _ear) const override {
-		//	std::lock_guard<std::mutex> l(mutex);
-		//	std::vector<CMonoBuffer<float>> newHRIR;
-		//
-		//	if (_ear == Common::T_ear::BOTH || _ear == Common::T_ear::NONE) {
-		//		SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get IR for a wrong ear (BOTH or NONE)");
-		//		return newHRIR;
-		//	}
-
-		//	if (setupInProgress) {
-		//		SET_RESULT(RESULT_ERROR_NOTSET, "GetIRPartitioned: FIR Setup in progress return empty");
-		//		return newHRIR;
-		//	}
-
-		//	if (spatiallyOriented) {
-		//		SET_RESULT(RESULT_ERROR_NOTALLOWED, "GetIRPartitioned: The FIR table is spatially oriented.");
-		//		return newHRIR;
-		//	}
-		//
-		//	auto it = t_IRTF_Partitioned.begin();
-		//	//auto it = t_IRTF_Partitioned.find(orientation(0, 0));
-		//	if (it != t_IRTF_Partitioned.end()) {
-		//		if (_ear == Common::T_ear::LEFT) {
-		//			newHRIR = it->second.leftHRIR_Partitioned;
-		//		} else if (_ear == Common::T_ear::RIGHT) {
-		//			newHRIR = it->second.rightHRIR_Partitioned;
-		//		} else {
-		//			SET_RESULT(RESULT_ERROR_NOTALLOWED, "GetIRPartitioned: Attempt to get IR for a wrong ear");
-		//		}
-		//	} else {
-		//		SET_RESULT(RESULT_ERROR_OUTOFRANGE, "GetIRPartitioned: Requested azimuth and elevation not found in FIR table");
-		//	}
-		//	return newHRIR;
-		//};
-
-		//void GetIRTFPartitioned2Ears(std::vector<CMonoBuffer<float>> & leftEarIRTF, std::vector<CMonoBuffer<float>> & rightEarIRTF) const override {
-		//	std::lock_guard<std::mutex> l(mutex);
-		//
-		//	leftEarIRTF = std::vector<CMonoBuffer<float>>();
-		//	rightEarIRTF = std::vector<CMonoBuffer<float>>();
-		//
-		//	if (setupInProgress) {
-		//		SET_RESULT(RESULT_ERROR_NOTSET, "GetIRPartitioned: FIR Setup in progress return empty");
-		//		return;
-		//	}
-
-		//	if (spatiallyOriented) {
-		//		SET_RESULT(RESULT_ERROR_NOTALLOWED, "GetIRPartitioned: The FIR table is spatially oriented.");
-		//		return;
-		//	}
-
-		//	auto it = t_IRTF_Partitioned.begin();
-		//	//auto it = t_IRTF_Partitioned.find(orientation(0, 0));
-		//	if (it != t_IRTF_Partitioned.end()) {
-		//		leftEarIRTF = it->second.leftHRIR_Partitioned;
-		//		rightEarIRTF = it->second.rightHRIR_Partitioned;
-		//	} else {
-		//		SET_RESULT(RESULT_ERROR_OUTOFRANGE, "GetIRPartitioned: Requested azimuth and elevation not found in FIR table");
-		//	}
-		//};
-
-
+					
 		/**
 		 * @brief 
 		 * @param _ear 
@@ -434,11 +385,11 @@ namespace BRTServices
 		 * @return 
 		 */
 		// TODO delete this method and use GetFR_PartitionedSpatiallyOriented instead
-		const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear _ear, float _azimuth, float _elevation, bool _runTimeInterpolation, const Common::CTransform& _referenceLocation) const override {
+		const TFRPartitions GetHRIRPartitioned(Common::T_ear _ear, float _azimuth, float _elevation, bool _runTimeInterpolation, const Common::CTransform & _referenceLocation) const override {
 
-			return GetFRPartitioned_SpatiallyOriented(_azimuth, _elevation, 0, _referenceLocation, _ear, _runTimeInterpolation);
+			return GetFR_SpatiallyOriented(_azimuth, _elevation, 0, _referenceLocation, _ear, _runTimeInterpolation);
 		}
-		
+				
 		/**
 		 * @brief 
 		 * @param _azimuth 
@@ -448,7 +399,7 @@ namespace BRTServices
 		 * @param _findNearest 
 		 * @return 
 		 */
-		const TFRPartitions GetFRPartitioned_SpatiallyOriented(const float & _azimuth, const float & _elevation, const float & _distance, const Common::CTransform & _referenceLocation, const Common::T_ear & ear, bool _findNearest) const override		
+		const TFRPartitions GetFR_SpatiallyOriented(const float & _azimuth, const float & _elevation, const float & _distance, const Common::CTransform & _referenceLocation, const Common::T_ear & ear, bool _findNearest) const override		
 		{
 			//std::lock_guard<std::mutex> l(mutex);
 			std::vector<CMonoBuffer<float>> _IR;
@@ -457,7 +408,7 @@ namespace BRTServices
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get IR for a wrong ear (BOTH or NONE)");
 				return _IR;
 			}
-			Common::CEarPair<TFRPartitions> foundData = GetFRPartitioned_SpatiallyOriented_2Ears(_azimuth, _elevation, _distance, _referenceLocation, _findNearest);
+			Common::CEarPair<TFRPartitions> foundData = GetFR_SpatiallyOriented_2Ears(_azimuth, _elevation, _distance, _referenceLocation, _findNearest);
 
 			if (ear == Common::T_ear::LEFT) {
 				return foundData.left;
@@ -474,7 +425,7 @@ namespace BRTServices
 		 * @param _findNearest 
 		 * @return 
 		 */
-		const Common::CEarPair<TFRPartitions> GetFRPartitioned_SpatiallyOriented_2Ears(const float & _azimuth, const float & _elevation, const float & _distance, const Common::CTransform & _referenceLocation, bool _findNearest) const override {		
+		const Common::CEarPair<TFRPartitions> GetFR_SpatiallyOriented_2Ears(const float & _azimuth, const float & _elevation, const float & _distance, const Common::CTransform & _referenceLocation, bool _findNearest) const override {		
 			std::lock_guard<std::mutex> l(mutex);
 			
 			Common::CEarPair<TFRPartitions> foundData;			
@@ -504,6 +455,41 @@ namespace BRTServices
 		}
 
 		
+		const Common::CEarPair<TFRPartitions> GetFR_2Ears() const override {
+
+			std::lock_guard<std::mutex> l(mutex);
+			Common::CEarPair<TFRPartitions> foundData;
+
+			if (setupInProgress) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetFR_Partitioned_2Ears: Service setup in progress");				
+				return foundData;
+			}
+			if (spatiallyOriented) {
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "GetFR_Partitioned_2Ears: The FIR table is not spatially oriented.");
+				return foundData;
+			}
+			
+			Common::CVector3 _referenceLocation = Common::CVector3();
+			float _azimuth = 0;
+			float _elevation = 0;
+			float _distance = 0;
+			bool _findNearest = true;
+
+			// Find Table to use if exists
+			const TDistanceBucket * distanceBucket = FindDistanceBucket(_referenceLocation, _distance);
+			if (!distanceBucket) {
+				SET_RESULT(RESULT_ERROR_UNKNOWN, "GetFRPartitioned_SpatiallyOriented_2Ears: Distance Bucket find error");
+				return foundData;
+			}
+
+			// Find data in selected table
+			TFRPartitionedStruct aux = GetDataFromPartitionedSpatiallyOriented(distanceBucket, _azimuth, _elevation, _findNearest);
+
+			foundData.left = std::move(aux.IR.left);
+			foundData.right = std::move(aux.IR.right);
+			return foundData;
+		}
+
 
 		////////////////
 
@@ -557,6 +543,13 @@ namespace BRTServices
 		}		
 
 
+		std::vector<Common::CVector3> GetReferencePositions() const override { 
+			std::vector<Common::CVector3> aux;
+			for (const auto & refPair : partitionedFRDataBase) {
+				aux.push_back(refPair.second.referencePos);
+			}
+			return aux;
+		}
 	private:	
 
 		////////////////////
@@ -713,13 +706,13 @@ namespace BRTServices
 			newTF_partitioned = f1(_inData, _bufferSize, _numberOfSubfilters);	
 		}*/
 
-		template <typename Functor>
+		/*template <typename Functor>
 		void FillPartitionedTable(const TSphericalFIRTable & originalTable, TSphericalFIRTablePartitioned & partitionedTable, int _bufferSize, int _numberOfSubfilters, Functor f1) {			
 			for (auto & it : originalTable) {				
 				THRIRPartitionedStruct newTF_partitioned = f1(it.second, _bufferSize, _numberOfSubfilters);				
 				partitionedTable.emplace(it.first, std::forward<THRIRPartitionedStruct>(newTF_partitioned));				
 			}			
-		}
+		}*/
 
 		/**
 		 * @brief Prepare search tree table
@@ -1090,7 +1083,7 @@ namespace BRTServices
 					it->data.IR.right = std::move(Common::CIRWindowing::Proccess(it->data.IR.right, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate()));
 				}
 
-				// Update HRIRLength and the number of subfilters
+				// Update impulseResponseLength and the number of subfilters
 				IRLength = _outTable.begin()->data.IR.left.size();
 				partitionedFRNumberOfSubfilters = CalculateNumberOPartitions(IRLength);
 			}
@@ -1118,7 +1111,7 @@ namespace BRTServices
 		//			it->second.IR.right = std::move(Common::CIRWindowing::Proccess(it->second.IR.right, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate()));
 		//		}
 
-		//		// Update HRIRLength and the number of subfilters
+		//		// Update impulseResponseLength and the number of subfilters
 		//		IRLength = _outTable.begin()->second.IR.left.size();				
 		//		IR_TFpartitioned_NumberOfSubfilters = CalculateNumberOPartitions(IRLength);
 		//	}
@@ -1127,8 +1120,9 @@ namespace BRTServices
 		///////////////
 		// ATTRIBUTES
 		///////////////		
-
 		mutable std::mutex mutex;								// Thread management
+		
+		Common::CGlobalParameters globalParameters; // Global parameters of the service
 
 		int32_t IRLength;								// HRIR vector length	
 		int32_t partitionedFRNumberOfSubfilters;	// Number of subfilters (blocks) for the UPC algorithm
@@ -1144,7 +1138,7 @@ namespace BRTServices
 		//float azimuthMin, azimuthMax, elevationMin, elevationMax, elevationNorth, elevationSouth;	// Variables that define limits of work area
 
 		bool setupInProgress;						// Variable that indicates the HRTF add and resample algorithm are in process
-		bool FIRLoaded;							// Variable that indicates if the HRTF has been loaded correctly
+		//bool dataReady;							// Variable that indicates if the HRTF has been loaded correctly
 		//bool bInterpolatedResampleTable;			// If true: calculate the HRTF resample matrix with interpolation
 		//int gridSamplingStep; 						// HRTF Resample table step (azimuth and elevation)
 		bool customITD;					// Indicate the use of a customized delay
@@ -1159,18 +1153,9 @@ namespace BRTServices
 		float fallTime;								// Variable to be used in the windowing IR process 
 
 		// Tables									
-		TRawSofaData sofaIRDataBase;				// Time domain database - orginal data from SOFA file		
-		TReferenceBucketMap partitionedFRDataBase; // Frequency domain partitioned database
-		TReferenceEntryList referencePositionSearchList;		
-
-
-		// Empty object to return in some methods
-		THRIRStruct						emptyHRIR;
-		THRIRPartitionedStruct			emptyHRIR_partitioned;		
-		Common::CGlobalParameters globalParameters;
-
-		// Processors		
-		COfflineInterpolation offlineInterpolation;		
+		TRawSofaData sofaIRDataBase;					// Time domain database - orginal data from SOFA file		
+		TReferenceBucketMap partitionedFRDataBase;		// Frequency domain partitioned database
+		TReferenceEntryList referencePositionSearchList; // List of reference positions for nearest search (built from the map keys)					
 	};
 }
 #endif

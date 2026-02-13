@@ -64,7 +64,7 @@ namespace BRTServices
 			:enableWoodworthITD{ false }
 			, gridSamplingStep{ DEFAULT_GRIDSAMPLING_STEP }
 			, gapThreshold{ DEFAULT_GAP_THRESHOLD }
-			, HRIRLength{ 0 }
+			//, impulseResponseLength{ 0 }
 			, HRTFLoaded{ false }
 			, setupInProgress{ false }
 			, distanceOfMeasurement{ DEFAULT_HRTF_MEASURED_DISTANCE }
@@ -84,10 +84,10 @@ namespace BRTServices
 		*	\retval size number of samples of each HRIR buffer for one ear
 		*   \eh Nothing is reported to the error handler.
 		*/
-		int32_t GetHRIRLength() const
+		/*int32_t GetIRLength() const
 		{
-			return HRIRLength;
-		}
+			return impulseResponseLength;
+		}*/
 
 		/**
 		 * @brief Set sampling step for HRIR resampling
@@ -115,14 +115,14 @@ namespace BRTServices
 			setupInProgress = true;
 			HRTFLoaded = false;
 			//Clear every table			
-			t_HRTF_DataBase.clear();
+			sofaIRDataBase.clear();
 			t_HRTF_Resampled_partitioned.clear();
 			stepVector.clear();
 
 			//Update parameters			
-			HRIRLength = _HRIRLength;				
+			impulseResponseLength = _HRIRLength;				
 			extrapolationMethod = _extrapolationMethod;
-			float partitions = (float)HRIRLength / (float)globalParameters.GetBufferSize();
+			float partitions = (float)impulseResponseLength / (float)globalParameters.GetBufferSize();
 			HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
 			elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
 			elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
@@ -138,7 +138,7 @@ namespace BRTServices
 		void AddHRTFTable(T_HRTFTable&& newTable)
 		{
 			if (setupInProgress) {
-				t_HRTF_DataBase = newTable;
+				sofaIRDataBase = newTable;
 			}
 		}
 		
@@ -147,14 +147,14 @@ namespace BRTServices
 			if (setupInProgress) {				
 				_azimuth = CInterpolationAuxiliarMethods::NormalizeAzimuth0_360(_azimuth);
 				_elevation = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(_elevation);						
-				auto returnValue = t_HRTF_DataBase.emplace(TOrientation(_azimuth, _elevation, _distance), std::forward<THRIRStruct>(newHRIR));
+				auto returnValue = sofaIRDataBase.emplace(TOrientation(_azimuth, _elevation, _distance), std::forward<THRIRStruct>(newHRIR));
 				//Error handler
 				if (!returnValue.second) {
 
-					if (t_HRTF_DataBase.find(TOrientation(_azimuth, _elevation, _distance)) != t_HRTF_DataBase.end()) {
-						SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map, already exists a HRIR in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]");
+					if (sofaIRDataBase.find(TOrientation(_azimuth, _elevation, _distance)) != sofaIRDataBase.end()) {
+						SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in sofaIRDataBase map, already exists a HRIR in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]");
 					} else {
-						SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in t_HRTF_DataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]");
+						SET_RESULT(RESULT_WARNING, "Error emplacing HRIR in sofaIRDataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]");
 					}
 				}
 			}
@@ -168,20 +168,19 @@ namespace BRTServices
 		bool EndSetup() override {
 			std::lock_guard<std::mutex> l(mutex);
 			if (setupInProgress) {
-				if (!t_HRTF_DataBase.empty())
+				if (!sofaIRDataBase.empty())
 				{					
-					distanceOfMeasurement = t_HRTF_DataBase.begin()->first.distance;	// Get first Distance as the distance of measurement //TODO Change
+					distanceOfMeasurement = sofaIRDataBase.begin()->first.distance;	// Get first Distance as the distance of measurement //TODO Change
 					
 					// Preparation of table read from sofa file
 					RemoveCommonDelay_HRTFDataBaseTable();				// Delete the common delay of every HRIR functions of the DataBase Table					
-					std::vector<TOrientation> _orientationList = offlineInterpolation.CalculateListOfOrientations(t_HRTF_DataBase);
+					std::vector<TOrientation> _orientationList = offlineInterpolation.CalculateListOfOrientations(sofaIRDataBase);
 					CalculateExtrapolation(_orientationList);							// Make the extrapolation if it's needed
-					offlineInterpolation.CalculateTF_InPoles<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, HRIRLength, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts());
-					offlineInterpolation.CalculateTF_SphericalCaps<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, HRIRLength, gapThreshold, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
+					offlineInterpolation.CalculateTF_InPoles<T_HRTFTable, BRTServices::THRIRStruct>(sofaIRDataBase, impulseResponseLength, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts());
+					offlineInterpolation.CalculateTF_SphericalCaps<T_HRTFTable, BRTServices::THRIRStruct>(sofaIRDataBase, impulseResponseLength, gapThreshold, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
 					//Creation and filling of resampling HRTF table
-					//_orientationList = offlineInterpolation.CalculateListOfOrientations(t_HRTF_DataBase);
-					CQuasiUniformSphereDistribution::CreateGrid<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, gridSamplingStep);
-					offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct> (t_HRTF_DataBase, t_HRTF_Resampled_partitioned, globalParameters.GetBufferSize(), HRIRLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());					
+					CQuasiUniformSphereDistribution::CreateGrid<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, gridSamplingStep);					
+					offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct> (sofaIRDataBase, t_HRTF_Resampled_partitioned, globalParameters.GetBufferSize(), impulseResponseLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());					
 
 					//Setup values
 					auto it = t_HRTF_Resampled_partitioned.begin();
@@ -195,7 +194,7 @@ namespace BRTServices
 				else
 				{
 					// TO DO: Should be ASSERT?
-					SET_RESULT(RESULT_ERROR_NOTSET, "The t_HRTF_DataBase map has not been set");
+					SET_RESULT(RESULT_ERROR_NOTSET, "The sofaIRDataBase map has not been set");
 				}
 			}
 			return false;
@@ -313,7 +312,7 @@ namespace BRTServices
 		*/		
 		const T_HRTFTable& GetRawHRTFTable() const
 		{
-			return t_HRTF_DataBase;
+			return sofaIRDataBase;
 		}
 
 		/** \brief	Get the distance where the HRTF has been measured
@@ -448,59 +447,7 @@ namespace BRTServices
 
 
 	private:				
-		///////////////
-		// ATTRIBUTES
-		///////////////		
-
-		mutable std::mutex mutex;								// Thread management
-
-		int32_t HRIRLength;								// HRIR vector length
-		//int32_t bufferSize;								// Input signal buffer size		
-		int32_t HRIR_partitioned_NumberOfSubfilters;	// Number of subfilters (blocks) for the UPC algorithm
-		int32_t HRIR_partitioned_SubfilterLength;		// Size of one HRIR subfilter
-		float distanceOfMeasurement;					// Distance where the HRIR have been measurement		
-		Common::CCranialGeometry cranialGeometry;				// Cranial geometry of the listener
-		Common::CCranialGeometry originalCranialGeometry;		// Cranial geometry of the listener
-		TEXTRAPOLATION_METHOD extrapolationMethod;		// Methods that is going to be used to extrapolate
-
-
-		float sphereBorder;								// Define spheere "sewing"
-		float epsilon_sewing;
-
-		float azimuthMin, azimuthMax, elevationMin, elevationMax, elevationNorth, elevationSouth;	// Variables that define limits of work area
-
-		bool setupInProgress;						// Variable that indicates the HRTF add and resample algorithm are in process
-		bool HRTFLoaded;							// Variable that indicates if the HRTF has been loaded correctly
-		//bool bInterpolatedResampleTable;			// If true: calculate the HRTF resample matrix with interpolation
-		int gridSamplingStep; 						// HRTF Resample table step (azimuth and elevation)
-		bool enableWoodworthITD;					// Indicate the use of a customized delay
-		int gapThreshold;							// Max distance between pole and next elevation to be consider as a gap
-
 		
-
-		/*std::string title;
-		std::string databaseName;
-		std::string listenerShortName;
-		std::string fileName;*/
-		//int samplingRate;
-
-		// HRTF tables							
-		T_HRTFTable				t_HRTF_DataBase;				// Store original data, normally read from SOFA file
-		T_HRTFPartitionedTable	t_HRTF_Resampled_partitioned;	// Data in our grid, interpolated 
-		std::unordered_map<TOrientation, float> stepVector;		// Store hrtf interpolated grids steps
-
-		// Empty object to return in some methods
-		THRIRStruct						emptyHRIR;
-		THRIRPartitionedStruct			emptyHRIR_partitioned;
-		CMonoBuffer<float>				emptyMonoBuffer;		
-		Common::CGlobalParameters globalParameters;
-
-		// Processors
-		//CQuasiUniformSphereDistribution quasiUniformSphereDistribution;		
-		COfflineInterpolation offlineInterpolation;
-		CExtrapolation extrapolation;		
-
-		friend class CHRTFTester;
 				
 		
 		/////////////
@@ -511,13 +458,13 @@ namespace BRTServices
 		void RemoveCommonDelay_HRTFDataBaseTable()
 		{
 			//1. Init the minumun value with the fist value of the table
-			auto it0 = t_HRTF_DataBase.begin();
+			auto it0 = sofaIRDataBase.begin();
 			unsigned long minimumDelayLeft = it0->second.leftDelay;		//Vrbl to store the minumun delay value for left ear
 			unsigned long minimumDelayRight = it0->second.rightDelay;	//Vrbl to store the minumun delay value for right ear
 
 			//2. Find the common delay
 			//Scan the whole table looking for the minimum delay for left and right ears
-			for (auto it = t_HRTF_DataBase.begin(); it != t_HRTF_DataBase.end(); it++) {
+			for (auto it = sofaIRDataBase.begin(); it != sofaIRDataBase.end(); it++) {
 				//Left ear
 				if (it->second.leftDelay < minimumDelayLeft) {
 					minimumDelayLeft = it->second.leftDelay;
@@ -533,7 +480,7 @@ namespace BRTServices
 			//The common delay of each canal have been calculated and subtracted separately in order to correct the asymmetry of the measurement
 			if (minimumDelayRight != 0 || minimumDelayLeft != 0)
 			{
-				for (auto it = t_HRTF_DataBase.begin(); it != t_HRTF_DataBase.end(); it++)
+				for (auto it = sofaIRDataBase.begin(); it != sofaIRDataBase.end(); it++)
 				{
 					it->second.leftDelay = it->second.leftDelay - minimumDelayLeft;		//Left ear
 					it->second.rightDelay = it->second.rightDelay - minimumDelayRight;	//Right ear
@@ -551,11 +498,11 @@ namespace BRTServices
 			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.			
 			if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::zero_insertion) {
 				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded nonInterpolatedHRTF sofa file, an extrapolation with zeros will be performed to fill it.");
-				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, _orientationList, HRIRLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetZerosHRIR());
+				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(sofaIRDataBase, _orientationList, impulseResponseLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetZerosHRIR());
 			}
 			else if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::nearest_point) {
 				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded nonInterpolatedHRTF sofa file, an extrapolation will be made to the nearest point to fill it.");
-				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(t_HRTF_DataBase, _orientationList, HRIRLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetNearestPointHRIR());
+				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(sofaIRDataBase, _orientationList, impulseResponseLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetNearestPointHRIR());
 			}
 			else {
 				SET_RESULT(RESULT_ERROR_NOTSET, "Extrapolation Method not set up.");
@@ -571,13 +518,65 @@ namespace BRTServices
 			HRTFLoaded = false;
 
 			//Clear every table			
-			t_HRTF_DataBase.clear();			
+			sofaIRDataBase.clear();			
 			t_HRTF_Resampled_partitioned.clear();
 
 			//Update parameters			
-			HRIRLength = 0;			
+			impulseResponseLength = 0;			
 			gridSamplingStep = DEFAULT_GRIDSAMPLING_STEP;
-		}			
+		}	
+
+		///////////////
+		// ATTRIBUTES
+		///////////////
+
+		mutable std::mutex mutex; // Thread management
+
+		//int32_t impulseResponseLength; // HRIR vector length
+		//int32_t bufferSize;								// Input signal buffer size
+		int32_t HRIR_partitioned_NumberOfSubfilters; // Number of subfilters (blocks) for the UPC algorithm
+		int32_t HRIR_partitioned_SubfilterLength; // Size of one HRIR subfilter
+		float distanceOfMeasurement; // Distance where the HRIR have been measurement
+		Common::CCranialGeometry cranialGeometry; // Cranial geometry of the listener
+		Common::CCranialGeometry originalCranialGeometry; // Cranial geometry of the listener
+		TEXTRAPOLATION_METHOD extrapolationMethod; // Methods that is going to be used to extrapolate
+
+		float sphereBorder; // Define spheere "sewing"
+		float epsilon_sewing;
+
+		float azimuthMin, azimuthMax, elevationMin, elevationMax, elevationNorth, elevationSouth; // Variables that define limits of work area
+
+		bool setupInProgress; // Variable that indicates the HRTF add and resample algorithm are in process
+		bool HRTFLoaded; // Variable that indicates if the HRTF has been loaded correctly
+		//bool bInterpolatedResampleTable;			// If true: calculate the HRTF resample matrix with interpolation
+		int gridSamplingStep; // HRTF Resample table step (azimuth and elevation)
+		bool enableWoodworthITD; // Indicate the use of a customized delay
+		int gapThreshold; // Max distance between pole and next elevation to be consider as a gap
+
+		/*std::string title;
+		std::string databaseName;
+		std::string listenerShortName;
+		std::string fileName;*/
+		//int samplingRate;
+
+		// HRTF tables
+		TRawSofaTable sofaIRDataBase; // Store original data, normally read from SOFA file
+		T_HRTFPartitionedTable t_HRTF_Resampled_partitioned; // Data in our grid, interpolated
+		//TSphericalFIRTablePartitioned t_HRTF_Resampled_partitioned;
+		std::unordered_map<TOrientation, float> stepVector; // Store hrtf interpolated grids steps
+
+		// Empty object to return in some methods
+		THRIRStruct emptyHRIR;
+		THRIRPartitionedStruct emptyHRIR_partitioned;
+		CMonoBuffer<float> emptyMonoBuffer;
+		Common::CGlobalParameters globalParameters;
+
+		// Processors
+		//CQuasiUniformSphereDistribution quasiUniformSphereDistribution;
+		COfflineInterpolation offlineInterpolation;
+		CExtrapolation extrapolation;
+
+		friend class CHRTFTester;
 	};
 }
 #endif

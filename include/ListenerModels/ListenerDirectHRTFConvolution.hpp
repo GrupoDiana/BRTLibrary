@@ -26,8 +26,9 @@
 #include <memory>
 #include <ListenerModels/ListenerModelBase.hpp>
 #include <EnvironmentModels/EnvironmentModelBase.hpp>
+#include <ServiceModules/ServicesBase.hpp>
 #include <ServiceModules/HRTF.hpp>
-#include <ServiceModules/HRBRIR.hpp>
+//#include <ServiceModules/HRBRIR.hpp>
 #include <ServiceModules/SphericalFIRTable.hpp>
 #include <ProcessingModules/HRTFConvolverProcessor.hpp>
 #include <ProcessingModules/NearFieldEffectProcessor.hpp>
@@ -124,24 +125,23 @@ namespace BRTListenerModel {
 			
 						
 			listenerHRTF = nullptr;
-			CreateHRTFExitPoint2();
-			CreateHRTFExitPoint();
+			CreateHRTFExitPoint();			
 			CreateHRBRIRExitPoint();
-			CreateILDExitPoint();									
+			CreateSOSFilterExitPoint();									
 		}
 
-		bool SetListenerHeadIRModel(std::shared_ptr<BRTServices::CSphericalFIRTable> _listenerHeadIRModel) override {
+		/*bool SetListenerHeadIRModel(std::shared_ptr<BRTServices::CSphericalFIRTable> _listenerHeadIRModel) override {
 			
 			if (_listenerHeadIRModel->GetSamplingRate() != globalParameters.GetSampleRate()) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "This nonInterpolatedHRTF has not been assigned to the listener. The sample rate of the nonInterpolatedHRTF does not match the one set in the library Global Parameters.");
 				return false;
 			}
 			listenerHeadIRModel = _listenerHeadIRModel;			
-			GetHRTFExitPoint2()->sendDataPtr(listenerHeadIRModel);
+			GetHRTFExitPoint()->sendDataPtr(listenerHeadIRModel);
 			ResetProcessorBuffers();
 
 			return true;
-		}
+		}*/
 		
 		/** \brief SET HRTF to this listener model
 		*	\param[in] pointer to HRTF to be stored
@@ -168,7 +168,7 @@ namespace BRTListenerModel {
 			}
 			listenerHRTF = _listenerHRTF;
 			//GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
-			GetHRTFExitPoint2()->sendDataPtr(listenerHRTF);
+			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
 			ResetProcessorBuffers();
 
 			return true;
@@ -178,7 +178,7 @@ namespace BRTListenerModel {
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/		
-		std::shared_ptr<BRTServices::CServicesBase> GetHRTF2() const override
+		std::shared_ptr<BRTServices::CServicesBase> GetHRTF() const override
 		{
 			return listenerHRTF;
 		}
@@ -195,9 +195,9 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetNearFieldCompensationFilters(std::shared_ptr<BRTServices::CSOSCoefficients> _listenerILD) override {
+		bool SetNearFieldCompensationFilters(std::shared_ptr<BRTServices::CSphericalSOSTable> _listenerILD) override {
 			listenerNFCFilters = _listenerILD;
-			GetILDExitPoint()->sendDataPtr(listenerNFCFilters);				
+			GetSOSFilterExitPoint()->sendDataPtr(listenerNFCFilters);				
 			return true;
 		}
 
@@ -205,7 +205,7 @@ namespace BRTListenerModel {
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr<BRTServices::CSOSCoefficients> GetNearFieldCompensationFilters() const override
+		std::shared_ptr<BRTServices::CSphericalSOSTable> GetNearFieldCompensationFilters() const override
 		{
 			return listenerNFCFilters;
 		}
@@ -582,9 +582,8 @@ namespace BRTListenerModel {
 			}
 
 			control = control && brtManager->ConnectModuleTransform(_listener, _newSourceProcessors.binauralConvolverProcessor, "listenerPosition");
-			control = control && brtManager->ConnectModuleTransform(_listener, _newSourceProcessors.nearFieldEffectProcessor, "listenerPosition");
-			//control = control && brtManager->ConnectModuleHRTF(this, _newSourceProcessors.binauralConvolverProcessor, "listenerHRTF");
-			control = control && brtManager->ConnectModuleHRTF2(this, _newSourceProcessors.binauralConvolverProcessor, "listenerHRTF");
+			control = control && brtManager->ConnectModuleTransform(_listener, _newSourceProcessors.nearFieldEffectProcessor, "listenerPosition");			
+			control = control && brtManager->ConnectModuleHRTF(this, _newSourceProcessors.binauralConvolverProcessor, "listenerHRTF");
 			control = control && brtManager->ConnectModuleILD(this, _newSourceProcessors.nearFieldEffectProcessor, "listenerILD");
 			control = control && brtManager->ConnectModuleID(_listener, _newSourceProcessors.binauralConvolverProcessor, "listenerID"); // this or listener??
 
@@ -627,7 +626,7 @@ namespace BRTListenerModel {
 
 				control = control && brtManager->DisconnectModuleID(_listener, it->binauralConvolverProcessor, "listenerID"); // this or listener??
 				control = control && brtManager->DisconnectModuleILD(this, it->nearFieldEffectProcessor, "listenerILD");
-				control = control && brtManager->DisconnectModuleHRTF(this, it->binauralConvolverProcessor, "listenerHRTF");
+				control = control && brtManager->DisconnectModuleHRTF2(this, it->binauralConvolverProcessor, "listenerHRTF");
 				control = control && brtManager->DisconnectModuleTransform(_listener, it->nearFieldEffectProcessor, "listenerPosition");
 				control = control && brtManager->DisconnectModuleTransform(_listener, it->binauralConvolverProcessor, "listenerPosition");
 
@@ -654,7 +653,7 @@ namespace BRTListenerModel {
 		std::shared_ptr<BRTServices::CSphericalFIRTable> listenerHeadIRModel;	// Head model of listener
 		//std::shared_ptr<BRTServices::CHRTF>		listenerHRTF;					// HRTF of listener
 		std::shared_ptr<BRTServices::CServicesBase> listenerHRTF;				// HRTF of listener
-		std::shared_ptr<BRTServices::CSOSCoefficients> listenerNFCFilters;		// SOS Filter of listener						
+		std::shared_ptr<BRTServices::CSphericalSOSTable> listenerNFCFilters;		// SOS Filter of listener						
 		std::vector< CSourceProcessors> sourcesConnectedProcessors;
 		BRTBase::CBRTManager* brtManager;
 		Common::CGlobalParameters globalParameters;

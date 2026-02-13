@@ -104,10 +104,8 @@ namespace BRTServices {
 	 * @brief Type definition for the HRBRIR table, this is the one our grid has and is the one used for rendering.
 	 */
 	typedef std::unordered_map<TVector3, T_HRTFPartitionedTable> T_HRBRIRPartitionedTable;
-						
-
-	// Spherical FIR Table definitions
-	using TSphericalFIRTable = std::unordered_map<TOrientation_key, BRTServices::TIRStruct>;	// Base
+		
+		
 			
 	////////////////////////////////////////////////////
 	// SOFA Table definitions
@@ -117,7 +115,11 @@ namespace BRTServices {
 		BRTServices::TIRStruct data;
 	};	
 	using TRawSofaData = std::vector<TSofaDataBucket>;
+	
+	using TRawSofaTable = std::unordered_map<TOrientation, BRTServices::THRIRStruct>; // To be used in Spherical Interpolated FIR Table class
 
+	// Spherical FIR Table definitions
+	using TSphericalFIRTable = std::unordered_map<TOrientation_key, BRTServices::TIRStruct>;	// Base
 	///////////////////////////////////////////////////
 	//// Spherical Partitioned FIR Table definitions
 	////////////////////////////////////////////////////

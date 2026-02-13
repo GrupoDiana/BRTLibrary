@@ -43,11 +43,11 @@
 #include "ProcessingModules/DirectivityTFConvolver.hpp"
 
 #include "ServiceModules/HRTF.hpp"
-#include "ServiceModules/HRBRIR.hpp"
-#include "ServiceModules/SOSCoefficients.hpp"
+//#include "ServiceModules/HRBRIR.hpp"
+#include "ServiceModules/SphericalSOSTable.hpp"
 #include "ServiceModules/DirectivityTF.hpp"
 #include "ServiceModules/Room.hpp"
-#include "ServiceModules/GeneralFIR.hpp"
+//#include "ServiceModules/GeneralFIR.hpp"
 #include "ServiceModules/SphericalFIRTable.hpp"
 
 #include "EnvironmentModels/SDNEnvironmentModel.hpp"

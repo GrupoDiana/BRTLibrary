@@ -30,7 +30,7 @@
 #include <Common/Buffer.hpp>
 #include <Common/GlobalParameters.hpp>
 #include <Common/SourceListenerRelativePositionCalculation.hpp>
-#include <ServiceModules/GeneralFIR.hpp>
+#include <ServiceModules/ServicesBase.hpp>
 #include <Filters/FilterBase.hpp>
 #include <ProcessingModules/FIRConvolver.hpp>
 
@@ -41,11 +41,7 @@ namespace BRTFilters {
 	public:
 		CFIRFilter()
 			: CFilterBase { TFilterType::FIR }
-			, firTable { nullptr }
-			/*, initialized { false }
-			, numberOfChannels { 0 }
-			, numberOfBiquadSectionsPerChannel { 0 }
-			, numberOfCoefficientsPerChannel { 0 }*/
+			, firTable { nullptr }			
 		{
 					
 		}
@@ -73,7 +69,7 @@ namespace BRTFilters {
 		 * @param _firTable fir table pointer
 		 * @return 
 		 */
-		bool SetFIRTable(std::shared_ptr<BRTServices::CGeneralFIR> _firTable) override {
+		bool SetFIRTable(std::shared_ptr<BRTServices::CServicesBase> _firTable) override {
 
 			if (_firTable->GetSamplingRate() != globalParameters.GetSampleRate()) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "This FIR has not been assigned. The sample rate of the FIR does not match the one set in the library Global Parameters.");
@@ -92,7 +88,7 @@ namespace BRTFilters {
 			return true;
 		}
 
-		std::shared_ptr<BRTServices::CGeneralFIR> GetFIRTable() const {
+		std::shared_ptr<BRTServices::CServicesBase> GetFIRTable() const {
 			return firTable;
 		}
 
@@ -167,7 +163,7 @@ namespace BRTFilters {
 		///////////////////////		
 		Common::CGlobalParameters globalParameters;
 		
-		std::shared_ptr<BRTServices::CGeneralFIR> firTable; // Table of FIRs		
+		std::shared_ptr<BRTServices::CServicesBase> firTable; // Table of FIRs		
 	};
 }
 #endif

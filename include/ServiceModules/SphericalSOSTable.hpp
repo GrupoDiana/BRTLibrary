@@ -1,7 +1,7 @@
 /**
-* \class CSOSCoefficients
+* \class CSphericalSOSTable
 *
-* \brief Declaration of CSOSCoefficients class
+* \brief Declaration of CSphericalSOSTable class
 * \date	June 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
@@ -74,7 +74,7 @@ namespace BRTServices {
 
 	/** \details This class models the effect of frequency-dependent Interaural Level Differences when the sound source is close to the listener
 	*/
-	class CSOSCoefficients : public CServicesBase
+	class CSphericalSOSTable : public CServicesBase
 	{
 
 	public:
@@ -86,7 +86,7 @@ namespace BRTServices {
 		*	\details Leaves SOS Filter Table empty. Use SetSOSFilterTable to load.
 		*   \eh Nothing is reported to the error handler.
 		*/
-		CSOSCoefficients() 
+		CSphericalSOSTable() 
 			: setupInProgress{ false }
 			, SOSCoefficientsLoaded{ false }			
 			, numberOfEars{ -1 }

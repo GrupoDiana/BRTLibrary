@@ -29,7 +29,7 @@
 #include <Common/Buffer.hpp>
 #include <Common/GlobalParameters.hpp>
 #include <Common/SourceListenerRelativePositionCalculation.hpp>
-#include <ServiceModules/SOSCoefficients.hpp>
+#include <ServiceModules/SphericalSOSTable.hpp>
 #include <Filters/FilterBase.hpp>
 #include <ProcessingModules/MultichannelBiquadFilterChain.hpp>
 

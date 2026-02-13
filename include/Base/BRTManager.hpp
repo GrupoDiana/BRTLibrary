@@ -532,7 +532,7 @@ namespace BRTBase {
 		 * @param entryPointID ID of entry point in module 2
 		 * @return Returns true if it was possible to make the connection. False in all other cases.
 		*/
-		template <typename T, typename U>
+		/*template <typename T, typename U>
 		bool ConnectModuleHRTF(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->connectHRTFEntryTo(module1->GetHRTFExitPoint(), entryPointID);
@@ -543,18 +543,18 @@ namespace BRTBase {
 			if (!setupModeActivated) return false;
 			module2->connectHRTFEntryTo(module1->GetHRTFExitPoint(), entryPointID);
 			return true;
-		}
+		}*/
 
 		template <typename T, typename U>
-		bool ConnectModuleHRTF2(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
+		bool ConnectModuleHRTF(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
-			module2->connectServiceEntryTo(module1->GetHRTFExitPoint2(), entryPointID);
+			module2->connectServiceEntryTo(module1->GetHRTFExitPoint(), entryPointID);
 			return true;
 		}
 		template <typename T, typename U>
-		bool ConnectModuleHRTF2(T * module1, std::shared_ptr<U> module2, std::string entryPointID) {
+		bool ConnectModuleHRTF(T * module1, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
-			module2->connectServiceEntryTo(module1->GetHRTFExitPoint2(), entryPointID);
+			module2->connectServiceEntryTo(module1->GetHRTFExitPoint(), entryPointID);
 			return true;
 		}
 		/**
@@ -566,7 +566,7 @@ namespace BRTBase {
 		 * @param entryPointID ID of entry point in module 2
 		 * @return Returns true if it was possible to make the disconnection. False in all other cases.
 		*/
-		template <typename T, typename U>
+		/*template <typename T, typename U>
 		bool DisconnectModuleHRTF(std::shared_ptr<T> module1, std::shared_ptr <U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->disconnectHRTFEntryTo(module1->GetHRTFExitPoint(), entryPointID);
@@ -577,10 +577,22 @@ namespace BRTBase {
 			if (!setupModeActivated) return false;
 			module2->disconnectHRTFEntryTo(module1->GetHRTFExitPoint(), entryPointID);
 			return true;
+		}*/
+
+		template <typename T, typename U>
+		bool DisconnectModuleHRTF2(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectServiceEntryTo(module1->GetHRTFExitPoint2(), entryPointID);
+			return true;
 		}
-		
+		template <typename T, typename U>
+		bool DisconnectModuleHRTF2(T * module1, std::shared_ptr<U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->disconnectServiceEntryTo(module1->GetHRTFExitPoint(), entryPointID);
+			return true;
+		}
 		/**
-		 * @brief Connects the HRTF ExitPoint of one module to the HRTF EntryPoint of another.
+		 * @brief Connects the BRIR ExitPoint of one module to the BRIR EntryPoint of another.
 		 * @tparam T Type of module 1
 		 * @tparam U Type of module 2
 		 * @param module1 Pointer to module having HRTF exitpoint
@@ -590,14 +602,14 @@ namespace BRTBase {
 		*/
 		template <typename T, typename U>
 		bool ConnectModuleHRBRIR(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
-			if (!setupModeActivated) return false;
-			module2->connectHRBRIREntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
+			if (!setupModeActivated) return false;			
+			module2->connectServiceEntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
 			return true;
 		}
 		template <typename T, typename U>
 		bool ConnectModuleHRBRIR(T* module1, std::shared_ptr <U> module2, std::string entryPointID) {
-			if (!setupModeActivated) return false;
-			module2->connectHRBRIREntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
+			if (!setupModeActivated) return false;			
+			module2->connectServiceEntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
 			return true;
 		}
 
@@ -613,13 +625,15 @@ namespace BRTBase {
 		template <typename T, typename U>
 		bool DisconnectModuleHRBRIR(std::shared_ptr<T> module1, std::shared_ptr <U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
-			module2->disconnectHRBRIREntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
+			//module2->disconnectHRBRIREntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
+			module2->disconnectServiceEntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
 			return true;
 		}
 		template <typename T, typename U>
 		bool DisconnectModuleHRBRIR(T* module1, std::shared_ptr <U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
-			module2->disconnectHRBRIREntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
+			//module2->disconnectHRBRIREntryTo(module1->GetHRBRIRExitPoint2(), entryPointID);
+			module2->disconnectServiceEntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
 			return true;
 		}
 		
@@ -650,13 +664,15 @@ namespace BRTBase {
 		template <typename T, typename U>
 		bool ConnectModuleILD(std::shared_ptr<T>& module1, std::shared_ptr <U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
-			module2->connectILDEntryTo(module1->GetILDExitPoint(), entryPointID);
+			//module2->connectILDEntryTo(module1->GetILDExitPoint(), entryPointID);
+			module2->connectServiceEntryTo(module1->GetSOSFilterExitPoint(), entryPointID);
 			return true;
 		}
 		template <typename T, typename U>
 		bool ConnectModuleILD(T* module1, std::shared_ptr <U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
-			module2->connectILDEntryTo(module1->GetILDExitPoint(), entryPointID);
+			//module2->connectILDEntryTo(module1->GetILDExitPoint(), entryPointID);
+			module2->connectServiceEntryTo(module1->GetSOSFilterExitPoint(), entryPointID);
 			return true;
 		}
 		/**
@@ -671,13 +687,15 @@ namespace BRTBase {
 		template <typename T, typename U>
 		bool DisconnectModuleILD(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
-			module2->disconnectILDEntryTo(module1->GetILDExitPoint(), entryPointID);
+			//module2->disconnectILDEntryTo(module1->GetILDExitPoint(), entryPointID);
+			module2->disconnectServiceEntryTo(module1->GetSOSFilterExitPoint(), entryPointID);
 			return true;
 		}		
 		template <typename T, typename U>
 		bool DisconnectModuleILD(T* module1, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
-			module2->disconnectILDEntryTo(module1->GetILDExitPoint(), entryPointID);
+			//module2->disconnectILDEntryTo(module1->GetILDExitPoint(), entryPointID);
+			module2->disconnectServiceEntryTo(module1->GetSOSFilterExitPoint(), entryPointID);
 			return true;
 		}
 

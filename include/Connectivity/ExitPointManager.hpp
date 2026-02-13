@@ -30,7 +30,10 @@ namespace BRTConnectivity {
     class CExitPointManager {
     public:
 		const std::string HRTF_EXIT_POINT_ID = "moduleHRTF";
-
+		const std::string HRBRIR_EXIT_POINT_ID = "moduleHRBRIR";
+        const std::string SOS_COEFFICIENTS_EXIT_POINT_ID = "moduleSOSCoefficients";
+        const std::string ABIR_EXIT_POINT_ID = "moduleABIR";		
+        
 
         /////////////////////
         // Transform
@@ -140,20 +143,13 @@ namespace BRTConnectivity {
         /////////////////////
         // HRTFs 
         /////////////////////
-        void CreateHRTFExitPoint2() {			
+        void CreateHRTFExitPoint() {			
 			CreateServiceExitPoint(HRTF_EXIT_POINT_ID);
         }
-		std::shared_ptr<CExitPointServicePtr> GetHRTFExitPoint2() {
+		std::shared_ptr<CExitPointServicePtr> GetHRTFExitPoint() {
 			return GetServiceExitPoint(HRTF_EXIT_POINT_ID);
 		}
-
-        void CreateHRTFExitPoint() {
-			hrtfExitPoint = std::make_shared<CExitPointHRTFPtr>(HRTF_EXIT_POINT_ID);
-        }
-
-        std::shared_ptr<CExitPointHRTFPtr> GetHRTFExitPoint() {
-            return hrtfExitPoint;
-        }
+       
 
         /////////////////////
         // AmbisonicBIRs 
@@ -169,24 +165,25 @@ namespace BRTConnectivity {
         /////////////////////
        // ILDs 
        /////////////////////
-        void CreateILDExitPoint() {
-            ildExitPoint = std::make_shared<CExitPointILDPtr>("listenerILD");
+        void CreateSOSFilterExitPoint() {
+            //ildExitPoint = std::make_shared<CExitPointILDPtr>("listenerILD");			
+			CreateServiceExitPoint(SOS_COEFFICIENTS_EXIT_POINT_ID);
         }
 
-        std::shared_ptr<CExitPointILDPtr> GetILDExitPoint() {
-            return ildExitPoint;
+        std::shared_ptr<CExitPointServicePtr> GetSOSFilterExitPoint() {
+            //return ildExitPoint;
+			return GetServiceExitPoint(SOS_COEFFICIENTS_EXIT_POINT_ID);
         }
 
       /////////////////////
       // HRBRIRs 
-      /////////////////////
+      /////////////////////        
         void CreateHRBRIRExitPoint() {
-            hrbrirExitPoint = std::make_shared<CExitPointHRBRIRPtr>("moduleHRBRIR");
-        }
-
-        std::shared_ptr<CExitPointHRBRIRPtr> GetHRBRIRExitPoint() {
-            return hrbrirExitPoint;
-        }
+			CreateServiceExitPoint(HRBRIR_EXIT_POINT_ID);
+		}
+		std::shared_ptr<CExitPointServicePtr> GetHRBRIRExitPoint() {
+			return GetServiceExitPoint(HRBRIR_EXIT_POINT_ID);
+		}
     
     private:
         std::shared_ptr<CExitPointTransform> transformExitPoint;
@@ -195,10 +192,9 @@ namespace BRTConnectivity {
         std::shared_ptr<CExitPointID> moduleIDExitPoint;
         
         std::vector<std::shared_ptr<CExitPointServicePtr>> serviceExitPointList;
-        std::shared_ptr<CExitPointHRTFPtr>  hrtfExitPoint;
-        std::shared_ptr<CExitPointILDPtr>   ildExitPoint;
-        std::shared_ptr< CExitPointABIRPtr> abirExitPoint;
-        std::shared_ptr<CExitPointHRBRIRPtr>  hrbrirExitPoint;
+        //std::shared_ptr<CExitPointHRTFPtr>  hrtfExitPoint;
+        //std::shared_ptr<CExitPointILDPtr>   ildExitPoint;
+        std::shared_ptr< CExitPointABIRPtr> abirExitPoint;        
     };
 }
 #endif

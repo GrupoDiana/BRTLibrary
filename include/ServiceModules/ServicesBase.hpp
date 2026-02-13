@@ -361,8 +361,10 @@ namespace BRTServices {
 		
 	public:
 		CServicesBase()
-			: spatiallyOriented { false }
-			, serviceType { TServiceType::none }
+			: serviceType { TServiceType::none }
+			, dataReady { false }
+			, spatiallyOriented { false }						
+			, impulseResponseLength { 0 }
 			, title { "" }
 			, fileName { "" }
 			, databaseName { "" }
@@ -408,7 +410,7 @@ namespace BRTServices {
 		virtual void AddImpulseResponse(int channel, const THRIRStruct&& newIR) {}		
 		virtual void AddImpulseResponse(int channel, const THRIRPartitionedStruct&& newPartitionedIR) {}
 		
-		virtual int32_t GetHRIRLength() const { return 0; }
+		virtual int32_t GetIRLength() const { return impulseResponseLength; }
 		//virtual const int32_t GetHRIRNumberOfSubfilters() const { return 0; } // To be removed
 		//virtual const int32_t GetHRIRSubfilterLength() const { return 0; } // To be removed
 		
@@ -421,7 +423,7 @@ namespace BRTServices {
 		//virtual double GetDistanceOfMeasurement() const { return 0; }
 		virtual double GetDistanceOfMeasurement(const Common::CTransform & _referenceLocation, const double & _azimuth, const double & _elevation, const double & _distance) const { return 0; }
 		
-		virtual std::vector<Common::CVector3> GetListenerPositions() {
+		virtual std::vector<Common::CVector3> GetListenerPositions() const {
 			return std::vector<Common::CVector3> { Common::CVector3() };
 		}
 
@@ -451,15 +453,21 @@ namespace BRTServices {
 		// NEW
 		virtual void AddIR(const Common::CVector3 & referencePosition, const double & _azimuth, const double & _elevation, const double & _distance, THRIRStruct && newHRBRIR) { }
 		
-		virtual const std::vector<CMonoBuffer<float>> GetFRPartitioned_SpatiallyOriented(const float & _azimuth, const float & _elevation, const float & _distance, const Common::CTransform & _referenceLocation, const Common::T_ear & ear, bool _findNearest) const { return std::vector<CMonoBuffer<float>>(); }
-		virtual const Common::CEarPair<TFRPartitions> GetFRPartitioned_SpatiallyOriented_2Ears(const float & _azimuth, const float & _elevation, const float & _distance, const Common::CTransform & _referenceLocation, bool _findNearest) const { return Common::CEarPair<TFRPartitions>(); }
+		virtual const TFRPartitions GetFR_SpatiallyOriented(const float & _azimuth, const float & _elevation, const float & _distance, const Common::CTransform & _referenceLocation, const Common::T_ear & ear, bool _findNearest) const { return TFRPartitions(); }
+		virtual const Common::CEarPair<TFRPartitions> GetFR_SpatiallyOriented_2Ears(const float & _azimuth, const float & _elevation, const float & _distance, const Common::CTransform & _referenceLocation, bool _findNearest) const { return Common::CEarPair<TFRPartitions>(); }
+		virtual const Common::CEarPair<TFRPartitions> GetFR_2Ears() const { return Common::CEarPair<TFRPartitions>(); }
+
 		virtual const Common::CEarPair<uint64_t> GetFR_Delay(const float & _azimuthCenter, const float & _elevationCenter, const float & _distance, const Common::CTransform & _referenceLocation, bool _findNearest) const { return Common::CEarPair<uint64_t> { 0, 0 }; }
 		
+		virtual std::vector<Common::CVector3> GetReferencePositions() const {	return std::vector<Common::CVector3> { Common::CVector3() };}
+
 		//////////////////////
 		// Public Methods
 		//////////////////////
 		void SetID(const std::string & _ID) { ID = _ID; }
 		std::string GetID() { return ID; }
+		
+		bool IsDataReady() { return dataReady; }
 
 		bool IsSpatiallyOriented() const { return spatiallyOriented; }
 		
@@ -518,11 +526,12 @@ namespace BRTServices {
 			return samplingRate;
 		}
 
-	protected:
-
-		bool spatiallyOriented;
+	protected:		
 		TServiceType serviceType;
-		int samplingRate;			// Sampling rate of the IR
+		int samplingRate;				// Sampling rate of the IR
+		bool dataReady;					// Variable that indicates if the HRTF has been loaded correctly
+		int32_t impulseResponseLength;	// IR vector length
+		bool spatiallyOriented;			// Variable that indicates if the IRs are spatially oriented, if the are IR for different azimuths and elevations or not. 
 
 	private:
 		std::string ID;

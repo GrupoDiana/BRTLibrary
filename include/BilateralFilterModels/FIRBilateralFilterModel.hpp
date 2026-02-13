@@ -64,7 +64,7 @@ namespace BRTBilateralFilter {
 		/** \brief SET SOS filters of the Binaural Filter
 		*	\param[in] pointer to SOS filter to be stored		
 		*/
-		bool SetFIRTable(std::shared_ptr<BRTServices::CGeneralFIR> _firTable) override {			
+		bool SetFIRTable(std::shared_ptr<BRTServices::CServicesBase> _firTable) override {			
 			bool result = firFilter.SetFIRTable(_firTable);
 			if (result) {				
 				UpdatedEnabledDisabledFIRFilter();			
@@ -72,7 +72,7 @@ namespace BRTBilateralFilter {
 			return result;		
 		}
 
-		std::shared_ptr<BRTServices::CGeneralFIR> GetFIRTable() const override { 
+		std::shared_ptr<BRTServices::CServicesBase> GetFIRTable() const override { 
 			return firFilter.GetFIRTable(); 
 		}
 		

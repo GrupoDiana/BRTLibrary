@@ -182,7 +182,7 @@ namespace BRTReaders {
 		*	\param [out] listener affected by the hrtf
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		bool ReadSOSFiltersFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CSOSCoefficients>& listenerNFCFilters)
+		bool ReadSOSFiltersFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CSphericalSOSTable>& listenerNFCFilters)
 		{
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerNFCFilters;
 			
@@ -248,9 +248,37 @@ namespace BRTReaders {
 		*	\param [out] listener affected by the hrtf
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		bool ReadBRIRFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CHRBRIR> listenerHRTF, int _spatialResolution, 
-			BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, 
-			float _fadeInBegin, float _riseTime, float _fadeOutCutoff, float _fallTime) {
+		//bool ReadBRIRFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CHRBRIR> listenerHRTF, int _spatialResolution, 
+		//	BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, 
+		//	float _fadeInBegin, float _riseTime, float _fadeOutCutoff, float _fallTime) {
+
+		//	std::shared_ptr<BRTServices::CServicesBase> data = listenerHRTF;
+		//	// Open file
+		//	BRTReaders::CLibMySOFALoader loader(sofafile);
+		//	bool error = loader.getError();
+		//	if (error) {
+		//		errorDescription = "Error reading SOFA file - " + loader.GetErrorName(error);
+		//		return false;
+		//	}
+
+		//	// Discover the file type
+		//	std::string dataType = loader.GetDataType();
+		//	//std::string sofaConvention = loader.GetSofaConvention();
+
+		//	// Load Data
+		//	if (dataType == "FIR" || dataType == "FIR-E") {
+		//		ResetError();
+		//		data->SetServiceType(BRTServices::TServiceType::brir_database);
+		//		return ReadFromSofaFIRDataType(loader, sofafile, data, _spatialResolution, _extrapolationMethod, _fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);			
+		//	} else {
+		//		errorDescription = "The data type contained in the sofa file is not valid for loading BRIRs - " + dataType;
+		//		SET_RESULT(RESULT_ERROR_INVALID_PARAM, errorDescription);
+		//		return false;
+		//	}													
+		//}
+		
+		bool ReadBRIRFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CSphericalFIRTable> listenerHRTF
+			, float _fadeInBegin, float _riseTime, float _fadeOutCutoff, float _fallTime) {
 
 			std::shared_ptr<BRTServices::CServicesBase> data = listenerHRTF;
 			// Open file
@@ -269,15 +297,43 @@ namespace BRTReaders {
 			if (dataType == "FIR" || dataType == "FIR-E") {
 				ResetError();
 				data->SetServiceType(BRTServices::TServiceType::brir_database);
-				return ReadFromSofaFIRDataType(loader, sofafile, data, _spatialResolution, _extrapolationMethod, _fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);			
+				return ReadFromSofaFIRDataType(loader, sofafile, data, 0, BRTServices::TEXTRAPOLATION_METHOD::none, _fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);
 			} else {
 				errorDescription = "The data type contained in the sofa file is not valid for loading BRIRs - " + dataType;
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, errorDescription);
 				return false;
-			}													
+			}
 		}
 		
-		bool ReadIRFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CGeneralFIR> filterIr) {
+		//bool ReadIRFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CGeneralFIR> filterIr) {
+
+		//	std::shared_ptr<BRTServices::CServicesBase> data = filterIr;
+
+		//	// Open file
+		//	BRTReaders::CLibMySOFALoader loader(sofafile);
+		//	bool error = loader.getError();
+		//	if (error) {
+		//		errorDescription = "Error reading SOFA file - " + loader.GetErrorName(error);
+		//		return false;
+		//	}
+
+		//	// Discover the file type
+		//	std::string dataType = loader.GetDataType();
+		//	//std::string sofaConvention = loader.GetSofaConvention();
+
+		//	// Load Data
+		//	if (dataType == "FIR" || dataType == "FIR-E") {
+		//		ResetError();
+		//		data->SetServiceType(BRTServices::TServiceType::ir_database);
+		//		return ReadFromSofaFIRDataType(loader, sofafile, data, 0, BRTServices::TEXTRAPOLATION_METHOD::none, 0.0f, 0.0f, 0.0f, 0.0f);		
+		//	} else {
+		//		errorDescription = "The data type contained in the sofa file is not valid for loading HRTFs - " + dataType;
+		//		SET_RESULT(RESULT_ERROR_INVALID_PARAM, errorDescription);
+		//		return false;
+		//	}
+		//}
+
+		bool ReadIRFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CSphericalFIRTable> filterIr) {
 
 			std::shared_ptr<BRTServices::CServicesBase> data = filterIr;
 
@@ -297,14 +353,13 @@ namespace BRTReaders {
 			if (dataType == "FIR" || dataType == "FIR-E") {
 				ResetError();
 				data->SetServiceType(BRTServices::TServiceType::ir_database);
-				return ReadFromSofaFIRDataType(loader, sofafile, data, 0, BRTServices::TEXTRAPOLATION_METHOD::none, 0.0f, 0.0f, 0.0f, 0.0f);		
+				return ReadFromSofaFIRDataType(loader, sofafile, data, 0, BRTServices::TEXTRAPOLATION_METHOD::none, 0.0f, 0.0f, 0.0f, 0.0f);
 			} else {
 				errorDescription = "The data type contained in the sofa file is not valid for loading HRTFs - " + dataType;
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, errorDescription);
 				return false;
 			}
 		}
-
 
 	private:
 				
@@ -1100,15 +1155,30 @@ namespace BRTReaders {
 		 * @param numberOfReceivers Total number of receivers (ears) (R)
 		 * @param numberOfSamples Total number of samples per measure(IR) (N)
 		 * @param numberOfEmmiters Total number of emiters (E)
-		 * @param measure Measure to be extracted
+		 * @param measure Measure to be extracted 
 		 * @param receiver Ear to be extracted
 		 * @param emmiter Emittter to be extracted
 		 * 
 		 * @example M=2, R=2, N= 6, E=2
 		 *  <-------------------------------------------Measure 0 --------------------------------------->
 		 *  <---------------------Left ear--------------->  <-------------------- Right ear -------------> 
-		 *  E0  E1  E0  E1  E0  E1  E0  E1  E0  E1  E0  E1  E0  E1  E0  E1  E0  E1  E0  E1  E0  E1  E0  E1 
+		 *  N0  N0  N1  N1  N2  N2  N3  N3  N4  N4  N5  N5  N0  N0  N1  N1  N2  N2  N3  N3  N4  N4  N5  N5
+		 *  E0  E1  E0  E1  E0  E1  E0  E1  E0  E1  E0  E1  E0  E1  E0  E1  E0  E1  E0  E1  E0  E1  E0  E1 		 
 		 * [01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
+		 * 
+		 * @example M=4, R=2, N= 6, E=1
+		 *  <------Measure 0 -----------------> <------Measure 1 ----------------->
+		 *  <---Left ear-----><-- Right ear --> <---Left ear-----><-- Right ear -->
+		 *  N0 N1 N2 N3 N4 N5 N0 N1 N2 N3 N4 N5 N0 N1 N2 N3 N4 N5 N0 N1 N2 N3 N4 N5
+		 *  E0 E0 E0 E0 E0 E0 E0 E0 E0 E0 E0 E0 E0 E0 E0 E0 E0 E0 E0 E0 E0 E0 E0 E0
+		 *  01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
+		 * 
+		 * @example M=1, R=2, N= 6, E=4
+		 *  <------Measure 0 ----------------------------------------------------->
+		 *  <-Left ear------------------------------------------------------------>
+		 *  N0 N0 N0 N0 N1 N1 N1 N1 N2 N2 N2 N2 N3 N3 N3 N3 N4 N4 N4 N4 N5 N5 N5 N5
+		 *	E0 E1 E2 E3 E0 E1 E2 E3 E0 E1 E2 E3 E0 E1 E2 E3 E0 E1 E2 E3 E0 E1 E2 E3
+		 *	01 02 03 04	05 06 07 08	09 10 11 12	13 14 15 16	17 18 19 20	21 22 23 24
 		 */		 
 		void Get4DMatrixData(const std::vector<double>& dataIR, std::vector<float>& outIR, int numberOfReceivers, int numberOfSamples, int numberOfEmmiters, int measure, int receiver, int emmiter) {
 			std::vector<float> IR(numberOfSamples, 0);

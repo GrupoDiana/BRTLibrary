@@ -25,7 +25,7 @@
 
 #include <Base/BRTManager.hpp>
 #include <Base/Listener.hpp>
-#include <ServiceModules/SOSCoefficients.hpp>
+#include <ServiceModules/SphericalSOSTable.hpp>
 #include <BilateralFilterModels/BilateralFilterModelBase.hpp>
 #include <Filters/FilterBase.hpp>
 #include <Filters/SOSFilter.hpp>
@@ -68,7 +68,7 @@ namespace BRTBilateralFilter {
 		/** \brief SET SOS filters of the Binaural Filter
 		*	\param[in] pointer to SOS filter to be stored		
 		*/
-		bool SetSOSFilterCoefficients(std::shared_ptr<BRTServices::CSOSCoefficients> _SOSFilterCoefficientsTable) override {
+		bool SetSOSFilterCoefficients(std::shared_ptr<BRTServices::CSphericalSOSTable> _SOSFilterCoefficientsTable) override {
 			SOSFilterCoefficientsTable = _SOSFilterCoefficientsTable;			
 			FiltersSetup();						
 			return true;
@@ -77,7 +77,7 @@ namespace BRTBilateralFilter {
 		/** \brief Get the SOS filter of the Binaural Filter
 		*	\retval SOS filter of the listener
 		*/
-		std::shared_ptr<BRTServices::CSOSCoefficients> GetSOSFilter() const override {
+		std::shared_ptr<BRTServices::CSphericalSOSTable> GetSOSFilter() const override {
 			return SOSFilterCoefficientsTable;
 		}
 
@@ -258,7 +258,7 @@ namespace BRTBilateralFilter {
 		/////////////////
 		mutable std::mutex mutex;												// To avoid access collisions
 		BRTBase::CBRTManager * brtManager;										// Pointer to the BRT Manager
-		std::shared_ptr<BRTServices::CSOSCoefficients> SOSFilterCoefficientsTable; // SOS Filter of listener
+		std::shared_ptr<BRTServices::CSphericalSOSTable> SOSFilterCoefficientsTable; // SOS Filter of listener
 		
 		BRTFilters::CSOSFilter sosFilter; // Biquad chain table
 	};

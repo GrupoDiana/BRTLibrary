@@ -26,7 +26,8 @@
 #include <memory>
 #include <ListenerModels/ListenerModelBase.hpp>
 #include <ServiceModules/HRTFDefinitions.hpp>
-#include <ServiceModules/HRBRIR.hpp>
+#include <ServiceModules/ServicesBase.hpp>
+//#include <ServiceModules/HRBRIR.hpp>
 #include <ServiceModules/AmbisonicBIR.hpp>
 #include <ProcessingModules/BilateralAmbisonicEncoderProcessor.hpp>
 #include <ProcessingModules/AmbisonicDomainConvolverProcessor.hpp>
@@ -133,8 +134,9 @@ namespace BRTListenerModel {
 			listenerHRBRIR = nullptr;												// Create a empty HRTF	class
 			listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicBIR>();	// Create a empty AmbisonicIR class //TODO CHANGE TO NULLPTR						
 
+			//CreateHRBRIRExitPoint();
 			CreateHRBRIRExitPoint();
-			CreateILDExitPoint();
+			CreateSOSFilterExitPoint();
 			CreateABIRExitPoint();
 
 			leftAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>(Common::T_ear::LEFT);			
@@ -174,9 +176,9 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRBRIR to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetHRBRIR(std::shared_ptr<BRTServices::CHRBRIR> _listenerHRBRIR) override {
+		bool SetHRBRIR(std::shared_ptr<BRTServices::CServicesBase> _listenerHRBRIR) override {
 			
-			if (!_listenerHRBRIR->IsHRBRIRLoaded()) {
+			if (!_listenerHRBRIR->IsDataReady()) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "The HRBRIR has not been assigned becaused it is empty.");
 				return false;
 			}	
@@ -202,7 +204,7 @@ namespace BRTListenerModel {
 		*	\retval HRBRIR pointer to current listener HRBRIR
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr<BRTServices::CHRBRIR> GetHRBRIR() const override {
+		std::shared_ptr<BRTServices::CServicesBase> GetHRBRIR() const override {
 			return listenerHRBRIR;
 		}
 
@@ -227,7 +229,10 @@ namespace BRTListenerModel {
 			EnableAmbisonicDomainConvolvers(false); // Stop the convolvers
 								
 			ambisonicOrder = _ambisonicOrder;
-			if (listenerHRBRIR->IsHRBRIRLoaded()) { InitListenerAmbisonicIR(); }						
+			/*if (listenerHRBRIR->IsHRBRIRLoaded()) {
+				InitListenerAmbisonicIR();
+			}*/
+			InitListenerAmbisonicIR();
 			SetConfigurationInALLSourcesProcessors();
 			leftAmbisonicDomainConvolverProcessor->SetAmbisonicOrder(_ambisonicOrder);
 			rightAmbisonicDomainConvolverProcessor->SetAmbisonicOrder(_ambisonicOrder);
@@ -255,7 +260,7 @@ namespace BRTListenerModel {
 			EnableAmbisonicDomainConvolvers(false); // Stop the convolvers
 			
 			ambisonicNormalization = _ambisonicNormalization;
-			if (listenerHRBRIR->IsHRBRIRLoaded()) {	InitListenerAmbisonicIR();	}
+			InitListenerAmbisonicIR();
 			SetConfigurationInALLSourcesProcessors();
 			
 			EnableAmbisonicDomainConvolvers(true); // Start again
@@ -458,7 +463,9 @@ namespace BRTListenerModel {
 		 * @brief Initialize the ambisonic IR of the listener
 		 */
 		void InitListenerAmbisonicIR() {
-			
+			if (!listenerHRBRIR->IsDataReady()) {
+				return;
+			}
 			std::lock_guard<std::mutex> l(mutex);												
 			
 			listenerAmbisonicIR->BeginSetup(ambisonicOrder, ambisonicNormalization);			
@@ -524,8 +531,7 @@ namespace BRTListenerModel {
 			control = control && brtManager->ConnectModuleTransform(_source, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "sourcePosition");
 			control = control && brtManager->ConnectModuleID(_listener, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerID");
 			control = control && brtManager->ConnectModuleTransform(_listener, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerPosition");			
-			control = control && brtManager->ConnectModuleHRBRIR(this, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerHRBRIR");
-			
+			control = control && brtManager->ConnectModuleHRBRIR(this, _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "listenerHRBRIR");			
 			
 			control = control && brtManager->ConnectModulesSamples(_source, "samples", _newSourceProcessors.distanceAttenuatorProcessor, "inputSamples");
 			control = control && brtManager->ConnectModulesSamples(_newSourceProcessors.distanceAttenuatorProcessor, "outputSamples", _newSourceProcessors.bilateralAmbisonicEncoderProcessor, "inputSamples");
@@ -614,7 +620,8 @@ namespace BRTListenerModel {
 		/////////////////		
 		mutable std::mutex mutex;													// To avoid access collisions
 		std::string listenerID;														// Store unique listener ID
-		std::shared_ptr<BRTServices::CHRBRIR>	listenerHRBRIR;						// RBRIR of listener				
+		//std::shared_ptr<BRTServices::CHRBRIR>	listenerHRBRIR;						// RBRIR of listener				
+		std::shared_ptr<BRTServices::CServicesBase> listenerHRBRIR;					// RBRIR of listener				
 		std::shared_ptr<BRTServices::CAmbisonicBIR> listenerAmbisonicIR;			// AmbisonicIR related to the listener				
 
 		int ambisonicOrder;															// Store the Ambisonic order

@@ -25,7 +25,7 @@
 
 #include <memory>
 #include <ListenerModels/ListenerModelBase.hpp>
-#include <ServiceModules/HRBRIR.hpp>
+//#include <ServiceModules/HRBRIR.hpp>
 #include <ProcessingModules/HRTFConvolverProcessor.hpp>
 #include <ProcessingModules/NearFieldEffectProcessor.hpp>
 #include <ProcessingModules/DistanceAttenuatorProcessor.hpp>
@@ -199,7 +199,7 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRBRIR to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetHRBRIR(std::shared_ptr<BRTServices::CHRBRIR> _listenerBRIR) override {			    
+		bool SetHRBRIR(std::shared_ptr<BRTServices::CServicesBase> _listenerBRIR) override {			    
 			if (_listenerBRIR->GetSamplingRate() != globalParameters.GetSampleRate()) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "This nonInterpolatedHRTF has not been assigned to the listener. The sample rate of the nonInterpolatedHRTF does not match the one set in the library Global Parameters.");
 				return false;
@@ -215,7 +215,7 @@ namespace BRTListenerModel {
 		*	\retval HRBRIR pointer to current listener HRBRIR
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr<BRTServices::CHRBRIR> GetHRBRIR() const override
+		std::shared_ptr<BRTServices::CServicesBase> GetHRBRIR() const override
 		{
 			return listenerHRBRIR;
 		}
@@ -477,7 +477,7 @@ namespace BRTListenerModel {
 		/////////////////
 		mutable std::mutex mutex;									// To avoid access collisions
 		std::string listenerID;										// Store unique listener ID		
-		std::shared_ptr<BRTServices::CHRBRIR>	listenerHRBRIR;		// RBRIR of listener		
+		std::shared_ptr<BRTServices::CServicesBase>	listenerHRBRIR;	// RBRIR of listener		
 		std::vector< CSourceProcessors> sourcesConnectedProcessors;	// Store the sources connected to this listener		
 
 		bool enableSpatialization;			// Flags for independent control of processes

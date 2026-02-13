@@ -26,8 +26,8 @@
 #include <Base/ModelBase.hpp>
 #include <Common/Buffer.hpp>
 #include <Common/AudioMixer.hpp>
-#include <ServiceModules/SOSCoefficients.hpp>
-#include <ServiceModules/GeneralFIR.hpp>
+#include <ServiceModules/ServicesBase.hpp>
+#include <ServiceModules/SphericalSOSTable.hpp>
 
 namespace BRTBilateralFilter {
 	enum T_BilateralFilterType {
@@ -38,12 +38,12 @@ namespace BRTBilateralFilter {
 
 	class CBilateralFilterModelBase : public BRTBase::CModelBase {
 	public:		
-		virtual bool SetSOSFilterCoefficients(std::shared_ptr<BRTServices::CSOSCoefficients> _listenerILD) { return false; };
-		virtual std::shared_ptr<BRTServices::CSOSCoefficients> GetSOSFilter() const { return nullptr; }
+		virtual bool SetSOSFilterCoefficients(std::shared_ptr<BRTServices::CSphericalSOSTable> _listenerILD) { return false; };
+		virtual std::shared_ptr<BRTServices::CSphericalSOSTable> GetSOSFilter() const { return nullptr; }
 		virtual void RemoveSOSFilter() {};
 		
-		virtual bool SetFIRTable(std::shared_ptr<BRTServices::CGeneralFIR> _firTable) { return false; };
-		virtual std::shared_ptr<BRTServices::CGeneralFIR> GetFIRTable() const { return nullptr; }
+		virtual bool SetFIRTable(std::shared_ptr<BRTServices::CServicesBase> _firTable) { return false; };
+		virtual std::shared_ptr<BRTServices::CServicesBase> GetFIRTable() const { return nullptr; }
 		virtual void RemoveFIRTable() { };
 
 		virtual bool ConnectListenerModel(const std::string & _listenerModelID, Common::T_ear _ear = Common::T_ear::BOTH) { return false; };

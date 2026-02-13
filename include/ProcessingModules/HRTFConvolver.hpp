@@ -162,7 +162,7 @@ namespace BRTProcessing {
 		*   \eh The error handler is informed if the size of the input buffer differs from that stored in the global
 		*       parameters and if the HRTF of the listener is null.		   
 		*/		
-		void Process(CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CServicesBase>& _listenerHRTFWeak) {
+		void Process(CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outLeftBuffer, CMonoBuffer<float>& outRightBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::weak_ptr<BRTServices::CServicesBase>& _listenerSphericalIRTable_weak) {
 			std::lock_guard<std::mutex> l(mutex);
 
 			ASSERT(_inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");
@@ -184,8 +184,8 @@ namespace BRTProcessing {
 
 			// Check listener HRTF
 			//std::shared_ptr<BRTServices::CHRTF> _listenerHRTF = _listenerHRTFWeak.lock();
-			std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF = _listenerHRTFWeak.lock();
-			if (!_listenerHRTF) {
+			std::shared_ptr<BRTServices::CServicesBase> _listenerSphericalIRTable = _listenerSphericalIRTable_weak.lock();
+			if (!_listenerSphericalIRTable) {
 				SET_RESULT(RESULT_ERROR_NULLPOINTER, "nonInterpolatedHRTF listener pointer is null when trying to use in HRTFConvolver");
 				outLeftBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 				outRightBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
@@ -194,7 +194,7 @@ namespace BRTProcessing {
 			
 			//Check if the source is in the same position as the listener head. If yes, do not apply spatialization
 			float distanceToListener = Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerDistance(sourceTransform, listenerTransform);
-			if (distanceToListener <= _listenerHRTF->GetHeadRadius())
+			if (distanceToListener <= _listenerSphericalIRTable->GetHeadRadius())
 			{
 				SET_RESULT(RESULT_WARNING, "The source is inside the listener's head.");
 				outLeftBuffer = _inBuffer;
@@ -203,7 +203,7 @@ namespace BRTProcessing {
 			}
 
 			// First time - Initialize convolution buffers
-			if (!convolutionBuffersInitialized) { InitializedSourceConvolutionBuffers(_listenerHRTF); }
+			if (!convolutionBuffersInitialized) { InitializedSourceConvolutionBuffers(_listenerSphericalIRTable); }
 
 			// Calculate Source coordinates taking into account Source and Listener transforms
 			float leftAzimuth;
@@ -214,14 +214,14 @@ namespace BRTProcessing {
 			float centerElevation;
 			float interauralAzimuth;
 
-			Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerRelativePositions(sourceTransform, listenerTransform, _listenerHRTF, enableParallaxCorrection,leftElevation, leftAzimuth, rightElevation, rightAzimuth, centerElevation, centerAzimuth, interauralAzimuth);
+			Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerRelativePositions(sourceTransform, listenerTransform, _listenerSphericalIRTable, enableParallaxCorrection,leftElevation, leftAzimuth, rightElevation, rightAzimuth, centerElevation, centerAzimuth, interauralAzimuth);
 
 			// GET HRTF
 			std::vector<CMonoBuffer<float>>  leftHRIR_partitioned;
 			std::vector<CMonoBuffer<float>>  rightHRIR_partitioned;
 
-			leftHRIR_partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::LEFT, leftAzimuth, leftElevation, enableInterpolation, listenerTransform);
-			rightHRIR_partitioned = _listenerHRTF->GetHRIRPartitioned(Common::T_ear::RIGHT, rightAzimuth, rightElevation, enableInterpolation, listenerTransform);
+			leftHRIR_partitioned = _listenerSphericalIRTable->GetHRIRPartitioned(Common::T_ear::LEFT, leftAzimuth, leftElevation, enableInterpolation, listenerTransform);
+			rightHRIR_partitioned = _listenerSphericalIRTable->GetHRIRPartitioned(Common::T_ear::RIGHT, rightAzimuth, rightElevation, enableInterpolation, listenerTransform);
 						
 			if (leftHRIR_partitioned.empty() || rightHRIR_partitioned.empty()) {
 				SET_RESULT(RESULT_ERROR_NULLPOINTER, "HRTF Convolver: No IR has been found in that position.");
@@ -242,7 +242,7 @@ namespace BRTProcessing {
 			uint64_t rightDelay;				///< Delay, in number of samples
 
 			if (enableITDSimulation){
-				BRTServices::THRIRPartitionedStruct delays = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, centerAzimuth, centerElevation, enableInterpolation, listenerTransform);
+				BRTServices::THRIRPartitionedStruct delays = _listenerSphericalIRTable->GetHRIRDelay(Common::T_ear::BOTH, centerAzimuth, centerElevation, enableInterpolation, listenerTransform);
 				leftDelay = delays.leftDelay;
 				rightDelay = delays.rightDelay;
 			}

@@ -42,10 +42,12 @@ class CBilateralAmbisonicEncoderProcessor : public BRTConnectivity::CBRTConnecti
             CreateSamplesEntryPoint("inputSamples");
 
             CreatePositionEntryPoint("sourcePosition");
-			CreatePositionEntryPoint("listenerPosition");           
-			CreateHRTFPtrEntryPoint("listenerHRTF");
-			CreateHRBRIRPtrEntryPoint("listenerHRBRIR");
-			CreateILDPtrEntryPoint("listenerILD");
+			CreatePositionEntryPoint("listenerPosition");           			
+			CreateServicePtrEntryPoint("listenerHRTF");
+			CreateServicePtrEntryPoint("listenerHRBRIR");
+			//CreateHRTFPtrEntryPoint("listenerHRTF");
+			//CreateHRBRIRPtrEntryPoint("listenerHRBRIR");			
+			CreateServicePtrEntryPoint("listenerILD");
 
 			CreateIDEntryPoint("sourceID");
 			CreateIDEntryPoint("listenerID");
@@ -70,9 +72,9 @@ class CBilateralAmbisonicEncoderProcessor : public BRTConnectivity::CBRTConnecti
 
 			Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
 			Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();												
-			std::weak_ptr<BRTServices::CServicesBase> listenerHRTF = GetHRTFPtrEntryPoint("listenerHRTF")->GetData();
-			std::weak_ptr<BRTServices::CServicesBase> listenerHRBRIR = GetHRBRIRPtrEntryPoint("listenerHRBRIR")->GetData();
-			std::weak_ptr<BRTServices::CServicesBase> listenerNFCFilters = GetILDPtrEntryPoint("listenerILD")->GetData();
+			std::weak_ptr<BRTServices::CServicesBase> listenerHRTF = GetServicePtrEntryPoint("listenerHRTF")->GetData();
+			std::weak_ptr<BRTServices::CServicesBase> listenerHRBRIR = GetServicePtrEntryPoint("listenerHRBRIR")->GetData();
+			std::weak_ptr<BRTServices::CServicesBase> listenerNFCFilters = GetServicePtrEntryPoint("listenerILD")->GetData();
 			
 			if (listenerHRTF.lock() != nullptr) {
 				Process(buffer, leftAmbisonicChannelsBuffers, rightAmbisonicChannelsBuffers, sourcePosition, listenerPosition, listenerHRTF, listenerNFCFilters);

@@ -295,7 +295,7 @@ namespace BRTBase {
 		*   \eh On error, an error code is reported to the error handler.
 		*/
 		
-		std::shared_ptr<BRTServices::CHRTF> GetHRTF() const		
+		/*std::shared_ptr<BRTServices::CHRTF> GetHRTF() const		
 		{
 			for (auto& _listenerModel : listenerModelsConnected) {
 				if (_listenerModel->GetListenerModelCharacteristics().SupportHRTF()) {
@@ -303,12 +303,12 @@ namespace BRTBase {
 				}
 			}			
 			return nullptr;
-		}
+		}*/
 		
-		std::shared_ptr<BRTServices::CServicesBase> GetHRTF2() const {
+		std::shared_ptr<BRTServices::CServicesBase> GetHRTF() const {
 			for (auto & _listenerModel : listenerModelsConnected) {
 				if (_listenerModel->GetListenerModelCharacteristics().SupportHRTF()) {
-					return _listenerModel->GetHRTF2();
+					return _listenerModel->GetHRTF();
 				}
 			}
 			return nullptr;
@@ -331,7 +331,8 @@ namespace BRTBase {
 		*	\param[in] pointer to HRBRIR to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetHRBRIR(std::shared_ptr< BRTServices::CHRBRIR > _listenerBRIR) {			
+		//bool SetHRBRIR(std::shared_ptr<BRTServices::CHRBRIR> _listenerBRIR) { 
+		bool SetHRBRIR(std::shared_ptr< BRTServices::CServicesBase > _listenerBRIR) {			
 			
 			bool control = false;
 			for (auto& _listenerModel : listenerModelsConnected) {
@@ -351,10 +352,9 @@ namespace BRTBase {
 		/** \brief Get HRBRIR of listener
 		*	\retval HRBRIR pointer to current listener HRBRIR
 		*   \eh On error, an error code is reported to the error handler.
-		*/
-		std::shared_ptr < BRTServices::CHRBRIR> GetHRBRIR() const
-		{
-			for (auto& _listenerModel : listenerModelsConnected) {
+		*/		
+		std::shared_ptr<BRTServices::CServicesBase> GetHRBRIR() const {
+			for (auto & _listenerModel : listenerModelsConnected) {
 				if (_listenerModel->GetListenerModelCharacteristics().SupportBRIR()) {
 					return _listenerModel->GetHRBRIR();
 				}
@@ -379,7 +379,7 @@ namespace BRTBase {
 		*	\param[in] pointer to NFCFilters to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetBinauralSOSFilter(std::shared_ptr<BRTServices::CSOSCoefficients> _SOSFilter) {
+		bool SetBinauralSOSFilter(std::shared_ptr<BRTServices::CSphericalSOSTable> _SOSFilter) {
 
 			for (auto & _binauralFilter : binauralFiltersConnected) {				
 				return _binauralFilter->SetSOSFilterCoefficients(_SOSFilter);				
@@ -387,7 +387,7 @@ namespace BRTBase {
 			return false;
 		}
 
-		bool SetBinauralFIRTable(std::shared_ptr<BRTServices::CGeneralFIR> _FIRTable) {
+		bool SetBinauralFIRTable(std::shared_ptr<BRTServices::CServicesBase> _FIRTable) {
 			for (auto& _binauralFilter : binauralFiltersConnected) {				
 				return _binauralFilter->SetFIRTable(_FIRTable);				
 			}
@@ -398,7 +398,7 @@ namespace BRTBase {
 		*	\param[in] pointer to NFCFilters to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CSOSCoefficients > _listenerNFC) {
+		bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CSphericalSOSTable > _listenerNFC) {
 			
 			for (auto& _listenerModel : listenerModelsConnected) {
 				if (_listenerModel->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {
@@ -412,7 +412,7 @@ namespace BRTBase {
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr <BRTServices::CSOSCoefficients> GetNearFieldCompensationFilters() const
+		std::shared_ptr <BRTServices::CSphericalSOSTable> GetNearFieldCompensationFilters() const
 		{
 			for (auto& _listenerModel : listenerModelsConnected) {
 				if (_listenerModel->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {

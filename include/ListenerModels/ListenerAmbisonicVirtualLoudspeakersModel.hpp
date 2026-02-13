@@ -27,6 +27,7 @@
 #include <Common/ErrorHandler.hpp>
 #include <ListenerModels/ListenerModelBase.hpp>
 #include <ServiceModules/HRTFDefinitions.hpp>
+#include <ServiceModules/ServicesBase.hpp>
 #include <ServiceModules/HRTF.hpp>
 #include <ServiceModules/AmbisonicBIR.hpp>
 #include <ProcessingModules/BilateralAmbisonicEncoderProcessor.hpp>
@@ -116,7 +117,7 @@ namespace BRTListenerModel {
 			listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicBIR>();	// Create a empty AmbisonicIR class
 			
 			CreateHRTFExitPoint();
-			CreateILDExitPoint();
+			CreateSOSFilterExitPoint();
 			CreateABIRExitPoint();
 
 			leftAmbisonicDomainConvolverProcessor = brtManager->CreateProcessor <BRTProcessing::CAmbisonicDomainConvolverProcessor>(Common::T_ear::LEFT);			
@@ -130,7 +131,8 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetHRTF(std::shared_ptr<BRTServices::CHRTF> _listenerHRTF) override {
+		//bool SetHRTF(std::shared_ptr<BRTServices::CHRTF> _listenerHRTF) override {
+		bool SetHRTF(std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF) override {
 
 			if (_listenerHRTF->GetSamplingRate() != globalParameters.GetSampleRate()) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "This nonInterpolatedHRTF has not been assigned to the listener. The sample rate of the nonInterpolatedHRTF does not match the one set in the library Global Parameters.");
@@ -141,7 +143,8 @@ namespace BRTListenerModel {
 
 			listenerHRTF = _listenerHRTF;									
 			InitListenerAmbisonicIR();
-			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
+			//GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
+			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);			
 			GetABIRExitPoint()->sendDataPtr(listenerAmbisonicIR);						
 			ResetProcessorBuffers();
 
@@ -153,7 +156,8 @@ namespace BRTListenerModel {
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr<BRTServices::CHRTF> GetHRTF() const override
+		//std::shared_ptr<BRTServices::CHRTF> GetHRTF() const override
+		std::shared_ptr<BRTServices::CServicesBase> GetHRTF() const override
 		{
 			return listenerHRTF;
 		}
@@ -171,9 +175,9 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CSOSCoefficients > _listenerILD) override {
+		bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CSphericalSOSTable > _listenerILD) override {
 			listenerNFCFilters = _listenerILD;
-			GetILDExitPoint()->sendDataPtr(listenerNFCFilters);
+			GetSOSFilterExitPoint()->sendDataPtr(listenerNFCFilters);
 			return true;
 		}
 
@@ -181,7 +185,7 @@ namespace BRTListenerModel {
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		std::shared_ptr <BRTServices::CSOSCoefficients> GetNearFieldCompensationFilters() const override
+		std::shared_ptr <BRTServices::CSphericalSOSTable> GetNearFieldCompensationFilters() const override
 		{
 			return listenerNFCFilters;
 		}
@@ -190,7 +194,7 @@ namespace BRTListenerModel {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void RemoveNearFierldCompensationFilters() override {
-			listenerNFCFilters = std::make_shared<BRTServices::CSOSCoefficients>();	// empty HRTF			
+			listenerNFCFilters = std::make_shared<BRTServices::CSphericalSOSTable>();	// empty HRTF			
 		}
 
 		/**
@@ -206,7 +210,7 @@ namespace BRTListenerModel {
 			EnableAmbisonicDomainConvolvers(false); // Stop the convolvers
 								
 			ambisonicOrder = _ambisonicOrder;
-			if (listenerHRTF->IsHRTFLoaded()) {	InitListenerAmbisonicIR();		}						
+			if (listenerHRTF->IsDataReady()) {	InitListenerAmbisonicIR();		}						
 			SetConfigurationInALLSourcesProcessors();
 			leftAmbisonicDomainConvolverProcessor->SetAmbisonicOrder(_ambisonicOrder);
 			rightAmbisonicDomainConvolverProcessor->SetAmbisonicOrder(_ambisonicOrder);
@@ -234,7 +238,7 @@ namespace BRTListenerModel {
 			EnableAmbisonicDomainConvolvers(false); // Stop the convolvers
 			
 			ambisonicNormalization = _ambisonicNormalization;
-			if (listenerHRTF->IsHRTFLoaded()) {	InitListenerAmbisonicIR();	}			
+			if (listenerHRTF->IsDataReady()) {	InitListenerAmbisonicIR();	}			
 			SetConfigurationInALLSourcesProcessors();
 
 			EnableAmbisonicDomainConvolvers(true); // Start again
@@ -625,7 +629,7 @@ namespace BRTListenerModel {
 				control = control && brtManager->DisconnectModulesSamples(_source, "samples", it->bilateralAmbisonicEncoderProcessor, "inputSamples");
 				control = control && brtManager->DisconnectModuleID(this, it->bilateralAmbisonicEncoderProcessor, "listenerID");
 				control = control && brtManager->DisconnectModuleILD(this, it->bilateralAmbisonicEncoderProcessor, "listenerILD");
-				control = control && brtManager->DisconnectModuleHRTF(this, it->bilateralAmbisonicEncoderProcessor, "listenerHRTF");
+				control = control && brtManager->DisconnectModuleHRTF2(this, it->bilateralAmbisonicEncoderProcessor, "listenerHRTF");
 				control = control && brtManager->DisconnectModuleTransform(_listener, it->bilateralAmbisonicEncoderProcessor, "listenerPosition");
 
 				if (_source->GetSourceType() == BRTSourceModel::Directivity) {
@@ -661,8 +665,9 @@ namespace BRTListenerModel {
 		/////////////////		
 		mutable std::mutex mutex;													// To avoid access collisions
 		std::string listenerID;														// Store unique listener ID
-		std::shared_ptr<BRTServices::CHRTF> listenerHRTF;							// HRTF of listener														
-		std::shared_ptr<BRTServices::CSOSCoefficients> listenerNFCFilters;								// ILD of listener				
+		std::shared_ptr<BRTServices::CServicesBase> listenerHRTF;					// HRTF of listener	
+		//std::shared_ptr<BRTServices::CHRTF> listenerHRTF; // HRTF of listener														
+		std::shared_ptr<BRTServices::CSphericalSOSTable> listenerNFCFilters;			// Near Field effect filters coefficients of listener				
 		std::shared_ptr<BRTServices::CAmbisonicBIR> listenerAmbisonicIR;			// AmbisonicIR related to the listener				
 
 		int ambisonicOrder;															// Store the Ambisonic order

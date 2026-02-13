@@ -50,7 +50,8 @@ namespace BRTServices
 		CHRBRIR() : setupInProgress{ false }
 			, HRBRIRLoaded{ false }
 			//, samplingRate{0}
-			, HRIRLength{-1}, gridSamplingStep{DEFAULT_GRIDSAMPLING_STEP},
+			//, impulseResponseLength{-1}
+			, gridSamplingStep{DEFAULT_GRIDSAMPLING_STEP},
 			gapThreshold {DEFAULT_GAP_THRESHOLD}, sphereBorder{ SPHERE_BORDER }, epsilon_sewing{ EPSILON_SEWING }, extrapolationMethod{ TEXTRAPOLATION_METHOD::zero_insertion },
 			azimuthMin{ DEFAULT_MIN_AZIMUTH }, azimuthMax{ DEFAULT_MAX_AZIMUTH }, elevationMin{ DEFAULT_MIN_ELEVATION }, elevationMax{ DEFAULT_MAX_ELEVATION },
 			HRIR_partitioned_NumberOfSubfilters{ 0 }, HRIR_partitioned_SubfilterLength{ 0 },
@@ -79,7 +80,7 @@ namespace BRTServices
 			stepVector.clear();
 
 			////Update parameters			
-			HRIRLength = _HRIRLength;								
+			impulseResponseLength = _HRIRLength;								
 			extrapolationMethod = _extrapolationMethod;
 
 			CalculateNumberOfSubfilters();
@@ -148,8 +149,8 @@ namespace BRTServices
 						//RemoveCommonDelay_HRTFDataBaseTable();				// Delete the common delay of every HRIR functions of the DataBase Table											
 						std::vector<TOrientation> orientationsList = offlineInterpolation.CalculateListOfOrientations(it->second);
 						CalculateExtrapolation(it->second, orientationsList);	// Make the extrapolation if it's needed
-						offlineInterpolation.CalculateTF_InPoles<T_HRTFTable, BRTServices::THRIRStruct>(it->second, HRIRLength, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts());
-						offlineInterpolation.CalculateTF_SphericalCaps<T_HRTFTable, BRTServices::THRIRStruct>(it->second, HRIRLength, gapThreshold, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
+						offlineInterpolation.CalculateTF_InPoles<T_HRTFTable, BRTServices::THRIRStruct>(it->second, impulseResponseLength, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts());
+						offlineInterpolation.CalculateTF_SphericalCaps<T_HRTFTable, BRTServices::THRIRStruct>(it->second, impulseResponseLength, gapThreshold, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
 						//Creation and filling of resampling HRTF table						
 						T_HRTFPartitionedTable tempPartitionedTable;
 						CQuasiUniformSphereDistribution::CreateGrid<T_HRTFPartitionedTable, THRIRPartitionedStruct>(tempPartitionedTable, stepVector, gridSamplingStep);
@@ -159,10 +160,10 @@ namespace BRTServices
 							// Windowing the IRs
 							T_HRTFTable windowingTable;
 							CalculateWindowingIRTable(it->second, windowingTable);
-							offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct>(windowingTable, tempPartitionedTable, globalParameters.GetBufferSize(), HRIRLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());							
+							offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct>(windowingTable, tempPartitionedTable, globalParameters.GetBufferSize(), impulseResponseLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());							
 						}
 						else {
-							offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct>(it->second, tempPartitionedTable, globalParameters.GetBufferSize(), HRIRLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
+							offlineInterpolation.FillResampledTable<T_HRTFTable, T_HRTFPartitionedTable, BRTServices::THRIRStruct, BRTServices::THRIRPartitionedStruct>(it->second, tempPartitionedTable, globalParameters.GetBufferSize(), impulseResponseLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
 						}
 																						
 						t_HRBRIR_Resampled_partitioned.emplace(it->first, std::forward<T_HRTFPartitionedTable>(tempPartitionedTable));
@@ -205,9 +206,9 @@ namespace BRTServices
 		*	\retval size number of samples of each HRIR buffer for one ear
 		*   \eh Nothing is reported to the error handler.
 		*/
-		int32_t GetHRIRLength() const
+		int32_t GetIRLength() const
 		{
-			return HRIRLength;
+			return impulseResponseLength;
 		}
 
 		/** \brief	Get if the HRBRIR has been loaded
@@ -494,7 +495,7 @@ namespace BRTServices
 		 * @brief Calculate the number of subfilters needed to partition the HRIR
 		 */
 		void CalculateNumberOfSubfilters() {
-			float partitions = (float)HRIRLength / (float)globalParameters.GetBufferSize();
+			float partitions = (float)impulseResponseLength / (float)globalParameters.GetBufferSize();
 			HRIR_partitioned_NumberOfSubfilters = static_cast<int>(std::ceil(partitions));
 		}
 
@@ -505,11 +506,11 @@ namespace BRTServices
 			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.			
 			if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::zero_insertion) {
 				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded nonInterpolatedHRTF sofa file, an extrapolation with zeros will be performed to fill it.");
-				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(_table, _orientationList, HRIRLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetZerosHRIR());
+				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(_table, _orientationList, impulseResponseLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetZerosHRIR());
 			}
 			else if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::nearest_point) {
 				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded nonInterpolatedHRTF sofa file, an extrapolation will be made to the nearest point to fill it.");
-				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(_table, _orientationList, HRIRLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetNearestPointHRIR());
+				extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(_table, _orientationList, impulseResponseLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetNearestPointHRIR());
 			}
 			else {
 				SET_RESULT(RESULT_ERROR_NOTSET, "Extrapolation Method not set up.");
@@ -608,8 +609,8 @@ namespace BRTServices
 					it->second.rightHRIR	= std::move(Common::CIRWindowing::Proccess(it->second.rightHRIR, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate()));
 				}
 				
-				// Update HRIRLength and the number of subfilters
-				HRIRLength = _outTable.begin()->second.leftHRIR.size();
+				// Update impulseResponseLength and the number of subfilters
+				impulseResponseLength = _outTable.begin()->second.leftHRIR.size();
 				CalculateNumberOfSubfilters();
 			}
 
@@ -692,7 +693,7 @@ namespace BRTServices
 		
 		//int samplingRate;
 
-		int32_t HRIRLength;									// HRIR vector length
+		//int32_t impulseResponseLength;									// HRIR vector length
 		//int32_t bufferSize;								// Input signal buffer size		
 		int32_t HRIR_partitioned_NumberOfSubfilters;		// Number of subfilters (blocks) for the UPC algorithm
 		int32_t HRIR_partitioned_SubfilterLength;			// Size of one HRIR subfilter

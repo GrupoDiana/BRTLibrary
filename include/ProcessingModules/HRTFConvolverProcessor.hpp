@@ -30,7 +30,7 @@
 #include <ProcessingModules/UniformPartitionedConvolution.hpp>
 #include <Common/Buffer.hpp>
 #include <ServiceModules/ServicesBase.hpp>
-#include <ServiceModules/HRBRIR.hpp>
+//#include <ServiceModules/HRBRIR.hpp>
 #include <ProcessingModules/HRTFConvolver.hpp>
 
 
@@ -44,9 +44,10 @@ class CHRTFConvolverProcessor : public BRTConnectivity::CBRTConnectivity, public
             CreatePositionEntryPoint("sourcePosition");
 			CreatePositionEntryPoint("listenerPosition");           
 			//CreateHRTFPtrEntryPoint("listenerHRTF");
-			CreateHRBRIRPtrEntryPoint("listenerHRBRIR");
 			CreateServicePtrEntryPoint("listenerHRTF");
-
+			//CreateHRBRIRPtrEntryPoint("listenerHRBRIR");
+			CreateServicePtrEntryPoint("listenerHRBRIR");
+			
 			CreateIDEntryPoint("sourceID");
 			CreateIDEntryPoint("listenerID");
 
@@ -80,8 +81,9 @@ class CHRTFConvolverProcessor : public BRTConnectivity::CBRTConnectivity, public
 			}
 			else {
 				//std::weak_ptr<BRTServices::CServicesBase> listenerHRTF = GetHRTFPtrEntryPoint("listenerHRTF")->GetData();
-				std::weak_ptr<BRTServices::CServicesBase> listenerHRBRIR = GetHRBRIRPtrEntryPoint("listenerHRBRIR")->GetData();
+				//std::weak_ptr<BRTServices::CServicesBase> listenerHRBRIR = GetHRBRIRPtrEntryPoint("listenerHRBRIR")->GetData();
 				std::weak_ptr<BRTServices::CServicesBase> listenerHRTF = GetServicePtrEntryPoint("listenerHRTF")->GetData();
+				std::weak_ptr<BRTServices::CServicesBase> listenerHRBRIR = GetServicePtrEntryPoint("listenerHRBRIR")->GetData();
 
 				if (listenerHRTF.lock() != nullptr) { 
 					Process(buffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerHRTF);
