@@ -22,11 +22,10 @@
 * \b Licence: This program is free software, you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 */
 
-#ifndef _CSOS_COEFFICIENTS_HPP_
-#define _CSOS_COEFFICIENTS_HPP_
+#ifndef _C_SPHERICAL_SOS_TABLE_HPP_
+#define _C_SPHERICAL_SOS_TABLE_HPP_
 
 #include <unordered_map>
-//#include <Common/FiltersChain.hpp>
 #include <Common/Buffer.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/ServicesBase.hpp>

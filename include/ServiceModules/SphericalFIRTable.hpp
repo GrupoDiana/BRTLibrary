@@ -668,27 +668,7 @@ namespace BRTServices
 			}
 		}
 
-		/**
-		 * @brief Prepare and fill partitioned table
-		 */
-		//void SetupPartitionedTableOLD() {
-		//	for (auto it = timeDomainIRDataBase.begin(); it != timeDomainIRDataBase.end(); it++) {
-		//						
-		//		TSphericalFIRTable workingTable;
-		//		if (IsFadeInWindowingConfigured() || IsFadeOutWindowingConfigured()) {					
-		//			CalculateWindowingIRTable(it->second, workingTable);	// Windowing the IRs
-		//		} else {
-		//			workingTable = it->second;
-		//		}
-		//		if (serviceType == TServiceType::hrir_database) {
-		//			RemoveCommonDelayFromTable(workingTable);
-		//		}				
-		//		
-		//		TDistanceBucket tempData;				
-		//		FillPartitionedTable(workingTable, tempData.table, globalParameters.GetBufferSize(), IR_TFpartitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_FRData());				
-		//		frequencyDomainPartitionedDataBase.emplace(it->first, std::forward<TSphericalFIRTablePartitionedData>(tempData));
-		//	}
-		//}
+		
 		template <typename Functor>
 		void CalculatePartitionedIR(const TIRStruct & _inData, TFRPartitionedStruct & newTF_partitioned, int _bufferSize, int _numberOfSubfilters, Functor f1) {
 
