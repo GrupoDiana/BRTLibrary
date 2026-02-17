@@ -402,13 +402,13 @@ namespace BRTServices {
 		virtual void GetWindowingParameters(float & _fadeInBegin, float & _riseTime, float & _fadeOutCutoff, float & _fallTime) {};
 
 		virtual void AddHRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRIR) {};		
-		virtual void AddCoefficients(float azimuth, float distance, TSOSFilterStruct&& newCoefs) {}
+		
 		virtual void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF) {}
 
 		//virtual void AddIR(const double & _azimuth, const double & _elevation, const double& _distance, const Common::CVector3& referencePosition, THRIRStruct && newHRIR) { };		
 
-		virtual void AddImpulseResponse(int channel, const THRIRStruct&& newIR) {}		
-		virtual void AddImpulseResponse(int channel, const THRIRPartitionedStruct&& newPartitionedIR) {}
+		//virtual void AddImpulseResponse(int channel, const THRIRStruct&& newIR) {}		
+		//virtual void AddImpulseResponse(int channel, const THRIRPartitionedStruct&& newPartitionedIR) {}
 		
 		virtual int32_t GetIRLength() const { return impulseResponseLength; }
 		//virtual const int32_t GetHRIRNumberOfSubfilters() const { return 0; } // To be removed
@@ -452,7 +452,8 @@ namespace BRTServices {
 
 		// NEW
 		virtual void AddIR(const Common::CVector3 & referencePosition, const double & _azimuth, const double & _elevation, const double & _distance, THRIRStruct && newHRBRIR) { }
-		
+		virtual void AddCoefficients(float azimuth, float distance, TSOSFilterStruct && newCoefs) { }
+
 		virtual const TFRPartitions GetFR_SpatiallyOriented(const float & _azimuth, const float & _elevation, const float & _distance, const Common::CTransform & _referenceLocation, const Common::T_ear & ear, bool _findNearest) const { return TFRPartitions(); }
 		virtual const Common::CEarPair<TFRPartitions> GetFR_SpatiallyOriented_2Ears(const float & _azimuth, const float & _elevation, const float & _distance, const Common::CTransform & _referenceLocation, bool _findNearest) const { return Common::CEarPair<TFRPartitions>(); }
 		virtual const Common::CEarPair<TFRPartitions> GetFR_2Ears() const { return Common::CEarPair<TFRPartitions>(); }

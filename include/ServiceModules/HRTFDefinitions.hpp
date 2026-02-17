@@ -56,56 +56,7 @@ namespace BRTServices {
 #define DEFAULT_EXTRAPOLATION_STEP 10
 #endif
 
-	///** \brief Type definition for a left-right pair of impulse response subfilter set with the ITD removed and stored in a specific struct field
-	//*/
-	//struct THRIRPartitionedStruct {
-	//	uint64_t leftDelay;				///< Left delay, in number of samples
-	//	uint64_t rightDelay;			///< Right delay, in number of samples
-	//	std::vector<CMonoBuffer<float>> leftHRIR_Partitioned;	///< Left partitioned impulse response data
-	//	std::vector<CMonoBuffer<float>> rightHRIR_Partitioned;	///< Right partitioned impulse response data
-
-	//	THRIRPartitionedStruct() : leftDelay{ 0 }, rightDelay{ 0 } {}
-	//};
-
-	/** \brief Type definition for an impulse response with the ITD removed and stored in a specific struct field
-	*/
-	struct TOneEarHRIR_struct {
-		uint64_t delay;				///< Delay, in number of samples
-		CMonoBuffer<float> HRIR;	///< Impulse response data
-	};
-
-	/** \brief Type definition for an impulse response subfilter set with the ITD removed and stored in a specific struct field
-	*/
-	//struct TOneEarHRIRPartitionedStruct {
-	//	std::vector<CMonoBuffer<float>> HRIR_Partitioned;	///< Partitioned impulse response data
-	//	uint64_t delay;										///< Delay, in number of samples
-	//	
-	//	TOneEarHRIRPartitionedStruct() {
-	//		delay = 0;
-	//	}
-	//};
-
 	
-	
-	/** \brief Type definition for table HRTF, this is the one read from the SOFA file.
-	*/
-	typedef std::unordered_map<TOrientation, BRTServices::THRIRStruct> T_HRTFTable;
-
-	/** \brief Type definition for the HRTF table, this is the one our grid has and is the one used for rendering.
-	*/
-	typedef std::unordered_map<TOrientation, THRIRPartitionedStruct> T_HRTFPartitionedTable;
-
-	/**
-	 * @brief Type definition for table HRBRIR, this is the one read from the SOFA file.
-	 */
-	typedef std::unordered_map<TVector3, T_HRTFTable> T_HRBRIRTable;
-
-	/**
-	 * @brief Type definition for the HRBRIR table, this is the one our grid has and is the one used for rendering.
-	 */
-	typedef std::unordered_map<TVector3, T_HRTFPartitionedTable> T_HRBRIRPartitionedTable;
-		
-		
 			
 	////////////////////////////////////////////////////
 	// SOFA Table definitions
@@ -116,13 +67,14 @@ namespace BRTServices {
 	};	
 	using TRawSofaData = std::vector<TSofaDataBucket>;
 	
-	using TRawSofaTable = std::unordered_map<TOrientation, BRTServices::THRIRStruct>; // To be used in Spherical Interpolated FIR Table class
-
 	// Spherical FIR Table definitions
-	using TSphericalFIRTable = std::unordered_map<TOrientation_key, BRTServices::TIRStruct>;	// Base
+	//using TSphericalFIRTable = std::unordered_map<TOrientation_key, BRTServices::TIRStruct>;	// Base
+	
 	///////////////////////////////////////////////////
 	//// Spherical Partitioned FIR Table definitions
 	////////////////////////////////////////////////////
+	// 
+	// 
 	// IR Table ordered by orientation
 	using TSphericalFIRTablePartitioned = std::unordered_map<TOrientation_key, BRTServices::TFRPartitionedStruct>;
 	
@@ -140,9 +92,15 @@ namespace BRTServices {
 		std::vector<TDistanceBucket> distances;
 	};
 
-	// Fast lookup by exact reference key
-	using TReferenceBucketMap  = std::unordered_map<TVector3_key, TReferenceBucket>;
 	
+	// Spherical FIR Table Map - Reference position bucket map
+	using TReferenceBucketMap  = std::unordered_map<TVector3_key, TReferenceBucket>;
+
+	
+	////////////////////////////////////////
+	// Fast lookup by exact reference key
+	/////////////////////////////////////////
+
 	// Small list to do nearest-reference search
 	struct TReferenceEntry
 	{
@@ -160,6 +118,29 @@ namespace BRTServices {
 	};
 	using TReferenceEntryList = std::vector<TReferenceEntry>;
 
-			
+
+	///////////////////////////////////////////////////
+	/// Spherical Interpolated FIR Table definitions
+	//////////////////////////////////////////////////
+	
+	//using TRawSofaTable = std::unordered_map<TOrientation, BRTServices::THRIRStruct>;
+	using TRawSofaTable = std::unordered_map<TOrientation, BRTServices::TIRStruct>;
+
+
+	/** \brief Type definition for table HRTF, this is the one read from the SOFA file.
+	*/
+	//typedef std::unordered_map<TOrientation, BRTServices::THRIRStruct> T_HRTFTable;
+
+	/** \brief Type definition for the HRTF table, this is the one our grid has and is the one used for rendering.
+	*/
+	//typedef std::unordered_map<TOrientation, THRIRPartitionedStruct> T_HRTFPartitionedTable;
+	using T_HRTFPartitionedTable = std::unordered_map<TOrientation, THRIRPartitionedStruct>;
+
+	struct TDistanceBucket_NoSearchTree {
+		int32_t distance_mm = 0;		
+		T_HRTFPartitionedTable table;
+	};
+
+	using TDistanceTable = std::vector<TDistanceBucket_NoSearchTree>;	
 }
 #endif
