@@ -172,33 +172,34 @@ namespace BRTServices
 		bool EndSetup() override {
 			std::lock_guard<std::mutex> l(mutex);
 			if (setupInProgress) {
-				if (!sofaIRDataBase.empty())
-				{					
-					distanceOfMeasurement = sofaIRDataBase.begin()->first.distance;	// Get first Distance as the distance of measurement //TODO Change
-					
-					// Preparation of table read from sofa file
-					RemoveCommonDelay_HRTFDataBaseTable();				// Delete the common delay of every HRIR functions of the DataBase Table					
-					std::vector<TOrientation> _orientationList = offlineInterpolation.CalculateListOfOrientations(sofaIRDataBase);
-					CalculateExtrapolation(_orientationList);							// Make the extrapolation if it's needed
-					offlineInterpolation.CalculateTF_InPoles<TRawSofaTable, BRTServices::TIRStruct>(sofaIRDataBase, impulseResponseLength, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts());
-					offlineInterpolation.CalculateTF_SphericalCaps<TRawSofaTable, BRTServices::TIRStruct>(sofaIRDataBase, impulseResponseLength, gapThreshold, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
-					//Creation and filling of resampling HRTF table
-					CQuasiUniformSphereDistribution::CreateGrid<T_HRTFPartitionedTable, THRIRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, gridSamplingStep);					
-					offlineInterpolation.FillResampledTable<TRawSofaTable, T_HRTFPartitionedTable, BRTServices::TIRStruct, BRTServices::THRIRPartitionedStruct>(sofaIRDataBase, t_HRTF_Resampled_partitioned, globalParameters.GetBufferSize(), impulseResponseLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());					
 
-					//Setup values
-					auto it = t_HRTF_Resampled_partitioned.begin();
-					HRIR_partitioned_SubfilterLength = it->second.leftHRIR_Partitioned[0].size();
-					setupInProgress = false;
-					HRTFLoaded = true;
-
-					SET_RESULT(RESULT_OK, "nonInterpolatedHRTF Matrix resample completed succesfully");
-					return true;
+				if (sofaIRDataBase.empty()) {
+					SET_RESULT(RESULT_ERROR_NOTSET, "EndSetup: The sofaIRDataBase map has not been set");
+					return false;
 				}
-				else
-				{
-					// TO DO: Should be ASSERT?
-					SET_RESULT(RESULT_ERROR_NOTSET, "The sofaIRDataBase map has not been set");
+				distanceOfMeasurement = sofaIRDataBase.begin()->first.distance;	// Get first Distance as the distance of measurement //TODO Change
+					
+				// Preparation of table read from sofa file
+				RemoveCommonDelay_HRTFDataBaseTable();				// Delete the common delay of every HRIR functions of the DataBase Table					
+				std::vector<TOrientation> _orientationList = offlineInterpolation.CalculateListOfOrientations(sofaIRDataBase);
+				CalculateExtrapolation(sofaIRDataBase, _orientationList); // Make the extrapolation if it's needed
+				offlineInterpolation.CalculateTF_InPoles<TRawSofaTable, BRTServices::TIRStruct>(sofaIRDataBase, impulseResponseLength, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts());
+				offlineInterpolation.CalculateTF_SphericalCaps<TRawSofaTable, BRTServices::TIRStruct>(sofaIRDataBase, impulseResponseLength, gapThreshold, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
+				//Creation and filling of resampling HRTF table
+				CQuasiUniformSphereDistribution::CreateGrid<T_HRTFPartitionedTable, TFRPartitionedStruct>(t_HRTF_Resampled_partitioned, stepVector, gridSamplingStep);					
+				offlineInterpolation.FillResampledTable<TRawSofaTable, T_HRTFPartitionedTable, BRTServices::TIRStruct, BRTServices::TFRPartitionedStruct>(sofaIRDataBase, t_HRTF_Resampled_partitioned, globalParameters.GetBufferSize(), impulseResponseLength, HRIR_partitioned_NumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());					
+
+				//Setup values
+				if (!t_HRTF_Resampled_partitioned.empty()) { 
+					auto it = t_HRTF_Resampled_partitioned.begin();
+					if (!it->second.IR.left.empty()) {
+						HRIR_partitioned_SubfilterLength = it->second.IR.left[0].size();
+						setupInProgress = false;
+						HRTFLoaded = true;
+
+						SET_RESULT(RESULT_OK, "nonInterpolatedHRTF Matrix resample completed succesfully");
+						return true;
+					}
 				}
 			}
 			return false;
@@ -261,7 +262,7 @@ namespace BRTServices
 		*   \eh On error, an error code is reported to the error handler.
 		*       Warnings may be reported to the error handler.
 		*/
-		THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation,	Common::CTransform& _listenerLocation)
+		THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation, Common::CTransform & _listenerLocation)
 		{			
 			std::lock_guard<std::mutex> l(mutex);
 			THRIRPartitionedStruct data;
@@ -279,9 +280,13 @@ namespace BRTServices
 				data.rightDelay = CHRTFAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::RIGHT);
 				return data;
 			}
+			
+			TFRPartitionedStruct aux = CHRTFAuxiliarMethods::GetHRIRDelayFromPartitioned(t_HRTF_Resampled_partitioned, ear, _azimuthCenter, _elevationCenter, runTimeInterpolation,
+				HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, stepVector);
 
-			return CHRTFAuxiliarMethods::GetHRIRDelayFromPartitioned(t_HRTF_Resampled_partitioned, ear, _azimuthCenter, _elevationCenter, runTimeInterpolation,
-				HRIR_partitioned_NumberOfSubfilters, HRIR_partitioned_SubfilterLength, stepVector);													
+			data.leftDelay = aux.delay.left;
+			data.rightDelay = aux.delay.right;
+			return data;
 		}
 		
 
@@ -493,20 +498,18 @@ namespace BRTServices
 			//SET_RESULT(RESULT_OK, "Common delay deleted from HRTF table succesfully");
 		}
 												
-
-		//}
 		/**
 		 * @brief Call the extrapolation method
 		*/
-		void CalculateExtrapolation(std::vector<TOrientation>& _orientationList) {
+		void CalculateExtrapolation(TRawSofaTable & _table, std::vector<TOrientation> & _orientationList) {
 			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.			
 			if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::zero_insertion) {
 				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded nonInterpolatedHRTF sofa file, an extrapolation with zeros will be performed to fill it.");
-				extrapolation.Process<TRawSofaTable, BRTServices::TIRStruct>(sofaIRDataBase, _orientationList, impulseResponseLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetZerosHRIR());
+				extrapolation.Process<TRawSofaTable, BRTServices::TIRStruct>(_table, _orientationList, impulseResponseLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetZerosHRIR());
 			}
 			else if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::nearest_point) {
 				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded nonInterpolatedHRTF sofa file, an extrapolation will be made to the nearest point to fill it.");
-				extrapolation.Process<TRawSofaTable, BRTServices::TIRStruct>(sofaIRDataBase, _orientationList, impulseResponseLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetNearestPointHRIR());
+				extrapolation.Process<TRawSofaTable, BRTServices::TIRStruct>(_table, _orientationList, impulseResponseLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetNearestPointHRIR());
 			}
 			else {
 				SET_RESULT(RESULT_ERROR_NOTSET, "Extrapolation Method not set up.");
@@ -571,7 +574,7 @@ namespace BRTServices
 
 		// Empty object to return in some methods
 		THRIRStruct emptyHRIR;
-		THRIRPartitionedStruct emptyHRIR_partitioned;
+		TFRPartitionedStruct emptyHRIR_partitioned;
 		CMonoBuffer<float> emptyMonoBuffer;
 		Common::CGlobalParameters globalParameters;
 

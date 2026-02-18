@@ -78,10 +78,10 @@ namespace BRTServices {
 						
 
 			if (!runTimeInterpolation) {
-				THRIRPartitionedStruct temp = CQuasiUniformSphereDistribution::FindNearest<T_HRTFPartitionedTable, THRIRPartitionedStruct>(table, stepVector, _azimuth, _elevation);
+				TFRPartitionedStruct temp = CQuasiUniformSphereDistribution::FindNearest<T_HRTFPartitionedTable, TFRPartitionedStruct>(table, stepVector, _azimuth, _elevation);
 
-				if (ear == Common::T_ear::LEFT) { newHRIR = temp.leftHRIR_Partitioned; }
-				else if (ear == Common::T_ear::RIGHT) { newHRIR = temp.rightHRIR_Partitioned; }
+				if (ear == Common::T_ear::LEFT) { newHRIR = temp.IR.left; }
+				else if (ear == Common::T_ear::RIGHT) { newHRIR = temp.IR.right; }
 				else { SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get HRIR for a wrong ear (BOTH or NONE)"); }
 
 				return newHRIR;
@@ -106,24 +106,24 @@ namespace BRTServices {
 			{
 				if (ear == Common::T_ear::LEFT)
 				{
-					newHRIR = it->second.leftHRIR_Partitioned;
+					newHRIR = it->second.IR.left;
 				}
 				else
 				{
-					newHRIR = it->second.rightHRIR_Partitioned;
+					newHRIR = it->second.IR.right;
 				}
 				return newHRIR;
 			}
 
 			// ONLINE Interpolation 	
 			if (ear == Common::T_ear::LEFT) {
-				const THRIRPartitionedStruct data = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<T_HRTFPartitionedTable, THRIRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_LeftEar());
-				return data.leftHRIR_Partitioned;
+				const TFRPartitionedStruct data = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<T_HRTFPartitionedTable, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_LeftEar());
+				return data.IR.left;
 			}
 			else
 			{
-				const THRIRPartitionedStruct data = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<T_HRTFPartitionedTable, THRIRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_RightEar());
-				return data.rightHRIR_Partitioned;
+				const TFRPartitionedStruct data = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<T_HRTFPartitionedTable, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_RightEar());
+				return data.IR.right;
 			}
 		}
 
@@ -141,11 +141,11 @@ namespace BRTServices {
 			{
 				if (ear == Common::T_ear::LEFT)
 				{
-					newHRIR = it->second.leftHRIR_Partitioned;
+					newHRIR = it->second.IR.left;
 				}
 				else
 				{
-					newHRIR = it->second.rightHRIR_Partitioned;
+					newHRIR = it->second.IR.right;
 				}
 			}
 			else
@@ -155,7 +155,7 @@ namespace BRTServices {
 		}
 
 
-		static THRIRPartitionedStruct GetHRIRDelayFromPartitioned(const T_HRTFPartitionedTable& table, Common::T_ear ear, float _azimuthCenter, float _elevationCenter,
+		static TFRPartitionedStruct GetHRIRDelayFromPartitioned(const T_HRTFPartitionedTable& table, Common::T_ear ear, float _azimuthCenter, float _elevationCenter,
 			bool runTimeInterpolation, int32_t _numberOfSubfilters, int32_t _subfilterLength, std::unordered_map<TOrientation, float> stepVector)
 		{
 			float sphereBorder = SPHERE_BORDER;
@@ -166,12 +166,12 @@ namespace BRTServices {
 			float elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
 
 
-			THRIRPartitionedStruct data;
+			TFRPartitionedStruct data;
 
 
 			if (!runTimeInterpolation)
 			{
-				data = CQuasiUniformSphereDistribution::FindNearest<T_HRTFPartitionedTable, THRIRPartitionedStruct>(table, stepVector, _azimuthCenter, _elevationCenter);
+				data = CQuasiUniformSphereDistribution::FindNearest<T_HRTFPartitionedTable, TFRPartitionedStruct>(table, stepVector, _azimuthCenter, _elevationCenter);
 				return data;
 			}
 
@@ -189,8 +189,8 @@ namespace BRTServices {
 				float rightDelay;
 				GetPoleDelayFromHRIRPartitionedTable(table, leftDelay, Common::T_ear::LEFT, ielevation, azimuthMin);
 				GetPoleDelayFromHRIRPartitionedTable(table, rightDelay, Common::T_ear::RIGHT, ielevation, azimuthMin);
-				data.leftDelay = static_cast<uint64_t>(leftDelay);
-				data.rightDelay = static_cast<uint64_t>(rightDelay);
+				data.delay.left = static_cast<uint64_t>(leftDelay);
+				data.delay.right = static_cast<uint64_t>(rightDelay);
 				return data;
 			}
 
@@ -198,13 +198,13 @@ namespace BRTServices {
 			auto it = table.find(TOrientation(_azimuthCenter, _elevationCenter));
 			if (it != table.end())
 			{
-				THRIRPartitionedStruct temp;
-				temp.leftDelay = it->second.leftDelay;;
-				temp.rightDelay = it->second.rightDelay;
+				TFRPartitionedStruct temp;
+				temp.delay.left = it->second.delay.left;;
+				temp.delay.right = it->second.delay.right;
 				return temp;
 			}
 
-			const THRIRPartitionedStruct temp = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<T_HRTFPartitionedTable, THRIRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuthCenter, _elevationCenter, stepVector, CHRTFAuxiliarMethods::CalculateDelay_FromBarycentricCoordinates());
+			const TFRPartitionedStruct temp = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<T_HRTFPartitionedTable, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuthCenter, _elevationCenter, stepVector, CHRTFAuxiliarMethods::CalculateDelay_FromBarycentricCoordinates());
 			return temp;
 		}
 
@@ -217,11 +217,11 @@ namespace BRTServices {
 			{
 				if (ear == Common::T_ear::LEFT)
 				{
-					HRIR_delay = it->second.leftDelay;
+					HRIR_delay = it->second.delay.left;
 				}
 				else
 				{
-					HRIR_delay = it->second.rightDelay;
+					HRIR_delay = it->second.delay.right;
 				}
 			}
 			else
@@ -277,9 +277,9 @@ namespace BRTServices {
 		 * @return
 		*/
 		struct CalculatePartitionedHRIR_FromBarycentricCoordinates_LeftEar{
-		const THRIRPartitionedStruct operator()(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, TBarycentricCoordinatesStruct barycentricCoordinates, TOrientation orientation_pto1, TOrientation orientation_pto2, TOrientation orientation_pto3)
+		const TFRPartitionedStruct operator()(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, TBarycentricCoordinatesStruct barycentricCoordinates, TOrientation orientation_pto1, TOrientation orientation_pto2, TOrientation orientation_pto3)
 		{
-			THRIRPartitionedStruct data;
+			TFRPartitionedStruct data;
 			
 			// Find the HRIR for the given t_HRTF_DataBase_ListOfOrientations
 			auto it1 = t_HRTF_Resampled_partitioned.find(TOrientation(orientation_pto1.azimuth, orientation_pto1.elevation));
@@ -289,14 +289,14 @@ namespace BRTServices {
 			if (it1 != t_HRTF_Resampled_partitioned.end() && it2 != t_HRTF_Resampled_partitioned.end() && it3 != t_HRTF_Resampled_partitioned.end())
 			{
 				int subfilterLength = HRIR_partitioned_SubfilterLength;
-				data.leftHRIR_Partitioned.resize(HRIR_partitioned_NumberOfSubfilters);
+				data.IR.left.resize(HRIR_partitioned_NumberOfSubfilters);
 
 				for (int subfilterID = 0; subfilterID < HRIR_partitioned_NumberOfSubfilters; subfilterID++)
 				{
-					data.leftHRIR_Partitioned[subfilterID].resize(subfilterLength);
+					data.IR.left[subfilterID].resize(subfilterLength);
 					for (int i = 0; i < subfilterLength; i++)
 					{
-						data.leftHRIR_Partitioned[subfilterID][i] = barycentricCoordinates.alpha * it1->second.leftHRIR_Partitioned[subfilterID][i] + barycentricCoordinates.beta * it2->second.leftHRIR_Partitioned[subfilterID][i] + barycentricCoordinates.gamma * it3->second.leftHRIR_Partitioned[subfilterID][i];
+						data.IR.left[subfilterID][i] = barycentricCoordinates.alpha * it1->second.IR.left[subfilterID][i] + barycentricCoordinates.beta * it2->second.IR.left[subfilterID][i] + barycentricCoordinates.gamma * it3->second.IR.left[subfilterID][i];
 					}
 				}
 			}
@@ -318,9 +318,9 @@ namespace BRTServices {
 		 * @return
 		*/
 		struct CalculatePartitionedHRIR_FromBarycentricCoordinates_RightEar {
-			const THRIRPartitionedStruct operator()(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, TBarycentricCoordinatesStruct barycentricCoordinates, TOrientation orientation_pto1, TOrientation orientation_pto2, TOrientation orientation_pto3)
+			const TFRPartitionedStruct operator()(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, TBarycentricCoordinatesStruct barycentricCoordinates, TOrientation orientation_pto1, TOrientation orientation_pto2, TOrientation orientation_pto3)
 			{
-				THRIRPartitionedStruct data;
+				TFRPartitionedStruct data;
 
 				// Find the HRIR for the given t_HRTF_DataBase_ListOfOrientations
 				auto it1 = t_HRTF_Resampled_partitioned.find(TOrientation(orientation_pto1.azimuth, orientation_pto1.elevation));
@@ -331,13 +331,13 @@ namespace BRTServices {
 				{
 					int subfilterLength = HRIR_partitioned_SubfilterLength;
 
-					data.rightHRIR_Partitioned.resize(HRIR_partitioned_NumberOfSubfilters);
+					data.IR.right.resize(HRIR_partitioned_NumberOfSubfilters);
 					for (int subfilterID = 0; subfilterID < HRIR_partitioned_NumberOfSubfilters; subfilterID++)
 					{
-						data.rightHRIR_Partitioned[subfilterID].resize(subfilterLength, 0.0f);
+						data.IR.right[subfilterID].resize(subfilterLength, 0.0f);
 						for (int i = 0; i < subfilterLength; i++)
 						{
-							data.rightHRIR_Partitioned[subfilterID][i] = barycentricCoordinates.alpha * it1->second.rightHRIR_Partitioned[subfilterID][i] + barycentricCoordinates.beta * it2->second.rightHRIR_Partitioned[subfilterID][i] + barycentricCoordinates.gamma * it3->second.rightHRIR_Partitioned[subfilterID][i];
+							data.IR.right[subfilterID][i] = barycentricCoordinates.alpha * it1->second.IR.right[subfilterID][i] + barycentricCoordinates.beta * it2->second.IR.right[subfilterID][i] + barycentricCoordinates.gamma * it3->second.IR.right[subfilterID][i];
 						}
 					}
 				}
@@ -359,9 +359,9 @@ namespace BRTServices {
 		*/
 		struct CalculateDelay_FromBarycentricCoordinates{
 		
-			const THRIRPartitionedStruct operator()	(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, TBarycentricCoordinatesStruct barycentricCoordinates, TOrientation orientation_pto1, TOrientation orientation_pto2, TOrientation orientation_pto3)
+			const TFRPartitionedStruct operator()	(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, TBarycentricCoordinatesStruct barycentricCoordinates, TOrientation orientation_pto1, TOrientation orientation_pto2, TOrientation orientation_pto3)
 			{
-				THRIRPartitionedStruct data;
+				TFRPartitionedStruct data;
 
 				// Find the HRIR for the given t_HRTF_DataBase_ListOfOrientations
 				auto it1 = t_HRTF_Resampled_partitioned.find(TOrientation(orientation_pto1.azimuth, orientation_pto1.elevation));
@@ -370,8 +370,8 @@ namespace BRTServices {
 
 				if (it1 != t_HRTF_Resampled_partitioned.end() && it2 != t_HRTF_Resampled_partitioned.end() && it3 != t_HRTF_Resampled_partitioned.end())
 				{
-					data.leftDelay = static_cast <unsigned long> (round(barycentricCoordinates.alpha * it1->second.leftDelay + barycentricCoordinates.beta * it2->second.leftDelay + barycentricCoordinates.gamma * it3->second.leftDelay));
-					data.rightDelay = static_cast <unsigned long> (round(barycentricCoordinates.alpha * it1->second.rightDelay + barycentricCoordinates.beta * it2->second.rightDelay + barycentricCoordinates.gamma * it3->second.rightDelay));
+					data.delay.left = static_cast <unsigned long> (round(barycentricCoordinates.alpha * it1->second.delay.left + barycentricCoordinates.beta * it2->second.delay.left + barycentricCoordinates.gamma * it3->second.delay.left));
+					data.delay.right = static_cast <unsigned long> (round(barycentricCoordinates.alpha * it1->second.delay.right + barycentricCoordinates.beta * it2->second.delay.right + barycentricCoordinates.gamma * it3->second.delay.right));
 					//SET_RESULT(RESULT_OK, "CalculateHRIRFromBarycentricCoordinates completed succesfully");
 				}
 				else {
@@ -582,15 +582,15 @@ namespace BRTServices {
 
 		struct SplitAndGetFFT_HRTFData{
 
-			THRIRPartitionedStruct operator()(const TIRStruct& newData_time, int _bufferSize, int _HRIRPartitioned_NumberOfSubfilters)
+			TFRPartitionedStruct operator()(const TIRStruct& newData_time, int _bufferSize, int _HRIRPartitioned_NumberOfSubfilters)
 			{
 				int blockSize = _bufferSize;
 				int numberOfBlocks = _HRIRPartitioned_NumberOfSubfilters;
 				int data_time_size = newData_time.IR.left.size();
 
-				THRIRPartitionedStruct new_DataFFT_Partitioned;
-				new_DataFFT_Partitioned.leftHRIR_Partitioned.reserve(numberOfBlocks);
-				new_DataFFT_Partitioned.rightHRIR_Partitioned.reserve(numberOfBlocks);
+				TFRPartitionedStruct new_DataFFT_Partitioned;
+				new_DataFFT_Partitioned.IR.left.reserve(numberOfBlocks);
+				new_DataFFT_Partitioned.IR.right.reserve(numberOfBlocks);
 				//Index to go throught the AIR values in time domain
 				int index;
 				for (int i = 0; i < data_time_size; i = i + blockSize)
@@ -612,12 +612,12 @@ namespace BRTServices {
 					Common::CFFTCalculator::CalculateFFT(left_data_FFT_doubleSize, left_data_FFT);
 					Common::CFFTCalculator::CalculateFFT(right_data_FFT_doubleSize, right_data_FFT);
 					//Prepare struct to return the value
-					new_DataFFT_Partitioned.leftHRIR_Partitioned.push_back(left_data_FFT);
-					new_DataFFT_Partitioned.rightHRIR_Partitioned.push_back(right_data_FFT);
+					new_DataFFT_Partitioned.IR.left.push_back(left_data_FFT);
+					new_DataFFT_Partitioned.IR.right.push_back(right_data_FFT);
 				}
 				//Store the delays
-				new_DataFFT_Partitioned.leftDelay = newData_time.delay.left;
-				new_DataFFT_Partitioned.rightDelay = newData_time.delay.right;
+				new_DataFFT_Partitioned.delay.left = newData_time.delay.left;
+				new_DataFFT_Partitioned.delay.right = newData_time.delay.right;
 
 				return new_DataFFT_Partitioned;
 			}
@@ -625,14 +625,14 @@ namespace BRTServices {
 
 		struct SplitAndGetFFT_FRData {
 
-			THRIRPartitionedStruct operator()(const TIRStruct & newData_time, int _bufferSize, int _HRIRPartitioned_NumberOfSubfilters) {
+			TFRPartitionedStruct operator()(const TIRStruct & newData_time, int _bufferSize, int _HRIRPartitioned_NumberOfSubfilters) {
 				int blockSize = _bufferSize;
 				int numberOfBlocks = _HRIRPartitioned_NumberOfSubfilters;
 				int data_time_size = newData_time.IR.left.size();
 
-				THRIRPartitionedStruct new_DataFFT_Partitioned;
-				new_DataFFT_Partitioned.leftHRIR_Partitioned.reserve(numberOfBlocks);
-				new_DataFFT_Partitioned.rightHRIR_Partitioned.reserve(numberOfBlocks);
+				TFRPartitionedStruct new_DataFFT_Partitioned;
+				new_DataFFT_Partitioned.IR.left.reserve(numberOfBlocks);
+				new_DataFFT_Partitioned.IR.right.reserve(numberOfBlocks);
 				new_DataFFT_Partitioned.orientation = newData_time.orientation;
 				//Index to go throught the AIR values in time domain
 				int index;
@@ -654,12 +654,12 @@ namespace BRTServices {
 					Common::CFFTCalculator::CalculateFFT(left_data_FFT_doubleSize, left_data_FFT);
 					Common::CFFTCalculator::CalculateFFT(right_data_FFT_doubleSize, right_data_FFT);
 					//Prepare struct to return the value
-					new_DataFFT_Partitioned.leftHRIR_Partitioned.push_back(left_data_FFT);
-					new_DataFFT_Partitioned.rightHRIR_Partitioned.push_back(right_data_FFT);
+					new_DataFFT_Partitioned.IR.left.push_back(left_data_FFT);
+					new_DataFFT_Partitioned.IR.right.push_back(right_data_FFT);
 				}
 				//Store the delays
-				new_DataFFT_Partitioned.leftDelay = newData_time.delay.left;
-				new_DataFFT_Partitioned.rightDelay = newData_time.delay.right;
+				new_DataFFT_Partitioned.delay.left = newData_time.delay.left;
+				new_DataFFT_Partitioned.delay.right = newData_time.delay.right;
 
 				return new_DataFFT_Partitioned;
 			}

@@ -672,12 +672,12 @@ namespace BRTServices
 		template <typename Functor>
 		void CalculatePartitionedIR(const TIRStruct & _inData, TFRPartitionedStruct & newTF_partitioned, int _bufferSize, int _numberOfSubfilters, Functor f1) {
 
-			THRIRPartitionedStruct partitionedData;
-			partitionedData = f1(_inData, _bufferSize, _numberOfSubfilters);
-			newTF_partitioned.delay.left = partitionedData.leftDelay;
+			TFRPartitionedStruct partitionedData;
+			newTF_partitioned = f1(_inData, _bufferSize, _numberOfSubfilters);
+			/*newTF_partitioned.delay.left = partitionedData.leftDelay;
 			newTF_partitioned.delay.right = partitionedData.rightDelay;
 			newTF_partitioned.IR.left = std::move(partitionedData.leftHRIR_Partitioned);
-			newTF_partitioned.IR.right = std::move(partitionedData.rightHRIR_Partitioned);
+			newTF_partitioned.IR.right = std::move(partitionedData.rightHRIR_Partitioned);*/
 			newTF_partitioned.orientation = _inData.orientation;
 		}
 

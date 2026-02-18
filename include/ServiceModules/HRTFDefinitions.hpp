@@ -132,9 +132,9 @@ namespace BRTServices {
 	//typedef std::unordered_map<TOrientation, BRTServices::THRIRStruct> T_HRTFTable;
 
 	/** \brief Type definition for the HRTF table, this is the one our grid has and is the one used for rendering.
-	*/
-	//typedef std::unordered_map<TOrientation, THRIRPartitionedStruct> T_HRTFPartitionedTable;
-	using T_HRTFPartitionedTable = std::unordered_map<TOrientation, THRIRPartitionedStruct>;
+	*/	
+	//using T_HRTFPartitionedTable = std::unordered_map<TOrientation, THRIRPartitionedStruct>;
+	using T_HRTFPartitionedTable = std::unordered_map<TOrientation, TFRPartitionedStruct>;
 
 	struct TDistanceBucket_NoSearchTree {
 		int32_t distance_mm = 0;		
