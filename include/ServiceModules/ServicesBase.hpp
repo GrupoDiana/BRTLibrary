@@ -401,7 +401,7 @@ namespace BRTServices {
 		virtual void SetWindowingParameters(float _fadeInBegin, float _riseTime, float _fadeOutCutoff, float _fallTime) {};
 		virtual void GetWindowingParameters(float & _fadeInBegin, float & _riseTime, float & _fadeOutCutoff, float & _fallTime) {};
 
-		virtual void AddHRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRIR) {};		
+		//virtual void AddHRIR(double _azimuth, double _elevation, double _distance, Common::CVector3 listenerPosition, THRIRStruct&& newHRIR) {};		
 		
 		virtual void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF) {}
 
@@ -410,12 +410,12 @@ namespace BRTServices {
 		//virtual void AddImpulseResponse(int channel, const THRIRStruct&& newIR) {}		
 		//virtual void AddImpulseResponse(int channel, const THRIRPartitionedStruct&& newPartitionedIR) {}
 		
-		virtual int32_t GetIRLength() const { return impulseResponseLength; }
+		//virtual int32_t GetIRLength() const { return impulseResponseLength; }
 		//virtual const int32_t GetHRIRNumberOfSubfilters() const { return 0; } // To be removed
 		//virtual const int32_t GetHRIRSubfilterLength() const { return 0; } // To be removed
 		
-		virtual const int32_t GetTFNumberOfSubfilters() const { return 0; }
-		virtual const int32_t GetTFSubfilterLength() const { return 0; }
+		virtual const int32_t GetNumberOfSubfiltersFR() const { return 0; }
+		virtual const int32_t GetSubfilterLengthFR() const { return 0; }
 
 		
 		
@@ -423,29 +423,31 @@ namespace BRTServices {
 		//virtual double GetDistanceOfMeasurement() const { return 0; }
 		virtual double GetDistanceOfMeasurement(const Common::CTransform & _referenceLocation, const double & _azimuth, const double & _elevation, const double & _distance) const { return 0; }
 		
-		virtual std::vector<Common::CVector3> GetListenerPositions() const {
+		/*virtual std::vector<Common::CVector3> GetListenerPositions() const {
 			return std::vector<Common::CVector3> { Common::CVector3() };
-		}
+		}*/
 
 		virtual std::vector<float> GetSOSFilterCoefficients(Common::T_ear ear, float distance_m, float azimuth) { 
 			return std::vector<float>();
 		}
 
-		virtual const CMonoBuffer<float> GetIRTimeDomain(const float & _azimuth, const float & _elevation, const float & _distance, const Common::T_ear & ear) const {
+		/*virtual const CMonoBuffer<float> GetIRTimeDomain(const float & _azimuth, const float & _elevation, const float & _distance, const Common::T_ear & ear) const {
 			return CMonoBuffer<float>();
-		}
+		}*/
 
-		virtual const std::vector<CMonoBuffer<float>> GetIRTFPartitioned(const Common::T_ear & ear) const {	return std::vector<CMonoBuffer<float>>();}
-		virtual const std::vector<CMonoBuffer<float>> GetIRTFPartitionedSpatiallyOriented(const float & _azimuth, const float & _elevation, const Common::T_ear & ear, bool _findNearest) const	{ return std::vector<CMonoBuffer<float>>();	}
+		//virtual const std::vector<CMonoBuffer<float>> GetIRTFPartitioned(const Common::T_ear & ear) const {	return std::vector<CMonoBuffer<float>>();}
+		//virtual const std::vector<CMonoBuffer<float>> GetIRTFPartitionedSpatiallyOriented(const float & _azimuth, const float & _elevation, const Common::T_ear & ear, bool _findNearest) const	{ return std::vector<CMonoBuffer<float>>();	}
 						
-		virtual void GetIRTFPartitioned2Ears(std::vector<CMonoBuffer<float>> & leftEarIRTF, std::vector<CMonoBuffer<float>> & rightEarIRTF) const { }
-		virtual void GetIRTFPartitionedSpatiallyOriented2Ears(std::vector<CMonoBuffer<float>> & leftEarIRTF, std::vector<CMonoBuffer<float>> & rightEarIRTF, const float & _azimuth, const float & _elevation, bool _findNearest) const { }
+		//virtual void GetIRTFPartitioned2Ears(std::vector<CMonoBuffer<float>> & leftEarIRTF, std::vector<CMonoBuffer<float>> & rightEarIRTF) const { }
+		//virtual void GetIRTFPartitionedSpatiallyOriented2Ears(std::vector<CMonoBuffer<float>> & leftEarIRTF, std::vector<CMonoBuffer<float>> & rightEarIRTF, const float & _azimuth, const float & _elevation, bool _findNearest) const { }
 
+		// TO BE REMOVED
 		virtual const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear ear, float _azimuth, float _elevation, bool runTimeInterpolation, const Common::CTransform& _listenerLocation) const
 		{
 			return std::vector < CMonoBuffer<float>>();
 		};
 		
+		// TO BE REMOVED
 		virtual THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation,	Common::CTransform& _listenerLocation) {
 			return THRIRPartitionedStruct();
 		};	
@@ -468,12 +470,14 @@ namespace BRTServices {
 		void SetID(const std::string & _ID) { ID = _ID; }
 		std::string GetID() { return ID; }
 		
+		void SetServiceType(const TServiceType & _serviceType) { serviceType = _serviceType; }
+		TServiceType GetServiceType() const { return serviceType; }
+
 		bool IsDataReady() { return dataReady; }
 
 		bool IsSpatiallyOriented() const { return spatiallyOriented; }
 		
-		void SetServiceType(const TServiceType & _serviceType) { serviceType = _serviceType; }
-		TServiceType GetServiceType() const { return serviceType; }
+		
 
 		void SetTitle(const std::string & _title) {	title = _title;	}		
 		std::string GetTitle() {return title;	}
@@ -527,11 +531,18 @@ namespace BRTServices {
 			return samplingRate;
 		}
 
+		/**
+		 * @brief Gets the length of the impulse response.
+		 * @return The impulse response length as a 32-bit integer.
+		 */
+		int32_t GetIRLength() const { return impulseResponseLength; }
+
 	protected:		
 		TServiceType serviceType;
-		int samplingRate;				// Sampling rate of the IR
-		bool dataReady;					// Variable that indicates if the HRTF has been loaded correctly
+		int samplingRate;				// Sampling rate of the IR		
 		int32_t impulseResponseLength;	// IR vector length
+
+		bool dataReady;					// Variable indicating whether the data has been loaded correctly.
 		bool spatiallyOriented;			// Variable that indicates if the IRs are spatially oriented, if the are IR for different azimuths and elevations or not. 
 
 	private:

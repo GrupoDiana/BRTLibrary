@@ -133,9 +133,17 @@ namespace BRTProcessing {
 
 			std::vector<CMonoBuffer<float>> _IR_partitioned;			
 			if (_irTablePtr->IsSpatiallyOriented()) {
-				_IR_partitioned = _irTablePtr->GetIRTFPartitionedSpatiallyOriented(0.0f, 0.0f, Common::T_ear(channel), enableFindNearestIR);
+				_IR_partitioned = _irTablePtr->GetFR_SpatiallyOriented(0.0f, 0.0f, 0.0f, Common::CVector3(), Common::T_ear(channel), enableFindNearestIR);
 			} else {
-				_IR_partitioned = _irTablePtr->GetIRTFPartitioned(Common::T_ear(channel));
+				Common::CEarPair<BRTServices::TFRPartitions> earFRPartitions;
+				earFRPartitions = _irTablePtr->GetFR_2Ears();
+				if (channel == Common::T_ear::LEFT) {
+					_IR_partitioned = earFRPartitions.left;
+				} else if (channel == Common::T_ear::RIGHT) {
+					_IR_partitioned = earFRPartitions.right;
+				} else {
+					// nothing
+				}				
 			}
 			if (_IR_partitioned.size() == 0) {
 				SET_RESULT(RESULT_ERROR_BADSIZE, "FIRConvolver::Process: No IR partitions found in FIR table for the requested ear", "");
@@ -236,7 +244,7 @@ namespace BRTProcessing {
 			// GET IR						
 			std::vector<CMonoBuffer<float>> _IR_partitioned;			
 			enableFindNearestIR = false;
-			_IR_partitioned = _irTablePtr->GetIRTFPartitionedSpatiallyOriented(leftAzimuth, leftElevation, Common::T_ear(_channel), enableFindNearestIR);			
+			_IR_partitioned = _irTablePtr->GetFR_SpatiallyOriented(leftAzimuth, leftElevation, 0.0f, Common::CTransform(), Common::T_ear(_channel), enableFindNearestIR);			
 						
 			if (_IR_partitioned.size() == 0) {
 				SET_RESULT(RESULT_ERROR_BADSIZE, "FIRConvolver::Process: No IR partitions found in FIR table for the requested ear", "");
@@ -269,8 +277,8 @@ namespace BRTProcessing {
 		/// Initialize convolvers and convolition buffers		
 		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CServicesBase>& _irTable) {
 
-			int numOfSubfilters = _irTable->GetTFNumberOfSubfilters();
-			int subfilterLength = _irTable->GetTFSubfilterLength();
+			int numOfSubfilters = _irTable->GetNumberOfSubfiltersFR();
+			int subfilterLength = _irTable->GetSubfilterLengthFR();
 
 			//Common::CGlobalParameters globalParameters;
 			//outputLeftUPConvolution.Setup(globalParameters.GetBufferSize(), subfilterLength, numOfSubfilters, true);

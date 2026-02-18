@@ -220,9 +220,11 @@ namespace BRTProcessing {
 			std::vector<CMonoBuffer<float>>  leftHRIR_partitioned;
 			std::vector<CMonoBuffer<float>>  rightHRIR_partitioned;
 
-			leftHRIR_partitioned = _listenerSphericalIRTable->GetHRIRPartitioned(Common::T_ear::LEFT, leftAzimuth, leftElevation, enableInterpolation, listenerTransform);
-			rightHRIR_partitioned = _listenerSphericalIRTable->GetHRIRPartitioned(Common::T_ear::RIGHT, rightAzimuth, rightElevation, enableInterpolation, listenerTransform);
-						
+			//leftHRIR_partitioned = _listenerSphericalIRTable->GetHRIRPartitioned(Common::T_ear::LEFT, leftAzimuth, leftElevation, enableInterpolation, listenerTransform);
+			//rightHRIR_partitioned = _listenerSphericalIRTable->GetHRIRPartitioned(Common::T_ear::RIGHT, rightAzimuth, rightElevation, enableInterpolation, listenerTransform);			
+			leftHRIR_partitioned = _listenerSphericalIRTable->GetFR_SpatiallyOriented(leftAzimuth, leftElevation, distanceToListener, listenerTransform, Common::T_ear::LEFT, enableInterpolation);
+			rightHRIR_partitioned = _listenerSphericalIRTable->GetFR_SpatiallyOriented(rightAzimuth, rightElevation, distanceToListener, listenerTransform, Common::T_ear::RIGHT, enableInterpolation);
+
 			if (leftHRIR_partitioned.empty() || rightHRIR_partitioned.empty()) {
 				SET_RESULT(RESULT_ERROR_NULLPOINTER, "HRTF Convolver: No IR has been found in that position.");
 				outLeftBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
@@ -238,21 +240,23 @@ namespace BRTProcessing {
 			outputRightUPConvolution.ProcessUPConvolutionWithMemory(_inBuffer, rightHRIR_partitioned, rightChannel_withoutDelay);
 
 			// GET DELAY
-			uint64_t leftDelay; 				///< Delay, in number of samples
-			uint64_t rightDelay;				///< Delay, in number of samples
+			//uint64_t leftDelay; 				///< Delay, in number of samples
+			//uint64_t rightDelay;				///< Delay, in number of samples
+			Common::CEarPair<uint64_t> delays({0,0});	///< Delay, in number of samples
 
 			if (enableITDSimulation){
-				BRTServices::THRIRPartitionedStruct delays = _listenerSphericalIRTable->GetHRIRDelay(Common::T_ear::BOTH, centerAzimuth, centerElevation, enableInterpolation, listenerTransform);
-				leftDelay = delays.leftDelay;
-				rightDelay = delays.rightDelay;
+				//BRTServices::THRIRPartitionedStruct delays = _listenerSphericalIRTable->GetHRIRDelay(Common::T_ear::BOTH, centerAzimuth, centerElevation, enableInterpolation, listenerTransform);
+				delays = _listenerSphericalIRTable->GetFR_Delay(centerAzimuth, centerElevation, distanceToListener, listenerTransform, enableInterpolation);				
+				/*leftDelay = delays.leftDelay;
+				rightDelay = delays.rightDelay;*/
 			}
-			else {
+			/*else {
 				leftDelay = 0;
 				rightDelay = 0;
-			}
+			}*/
 			// ADD Delay
-			Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(leftChannel_withoutDelay, outLeftBuffer, leftChannelDelayBuffer, leftDelay);
-			Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(rightChannel_withoutDelay, outRightBuffer, rightChannelDelayBuffer, rightDelay);			
+			Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(leftChannel_withoutDelay, outLeftBuffer, leftChannelDelayBuffer, delays.left);
+			Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(rightChannel_withoutDelay, outRightBuffer, rightChannelDelayBuffer, delays.right);			
 		}
 
 		/// Reset convolvers and convolution buffers
@@ -295,8 +299,8 @@ namespace BRTProcessing {
 		/// Initialize convolvers and convolition buffers		
 		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CServicesBase>& _listenerHRTF) {
 
-			int numOfSubfilters = _listenerHRTF->GetTFNumberOfSubfilters();
-			int subfilterLength = _listenerHRTF->GetTFSubfilterLength();
+			int numOfSubfilters = _listenerHRTF->GetNumberOfSubfiltersFR();
+			int subfilterLength = _listenerHRTF->GetSubfilterLengthFR();
 
 			//Common::CGlobalParameters globalParameters;
 			outputLeftUPConvolution.Setup(globalParameters.GetBufferSize(), subfilterLength, numOfSubfilters, true);

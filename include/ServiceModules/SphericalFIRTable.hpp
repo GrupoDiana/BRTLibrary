@@ -56,11 +56,8 @@ namespace BRTServices
 		*   \eh Nothing is reported to the error handler.
 		*/
 		CSphericalFIRTable()
-			: IRLength{ 0 }			
-			//, dataReady{ false }
-			, setupInProgress{ false }
-			, customITD { false }
-			//, samplingRate{ -1 }
+			: setupInProgress{ false }
+			, customITD { false }			
 			, partitionedFRNumberOfSubfilters { 0 }
 			, partitionedFRSubfilterLength { 0 }
 			, numberOfEars { 0 }			
@@ -72,15 +69,7 @@ namespace BRTServices
 			, fallTime { 0 }			
 		{ 			
 		}
-
-		/** \brief Get size of each HRIR buffer
-		*	\retval size number of samples of each HRIR buffer for one ear
-		*   \eh Nothing is reported to the error handler.
-		*/
-		int32_t GetIRLength() const
-		{
-			return IRLength;
-		}
+		
 
 		/**
 		 * @brief Set the number of ears
@@ -125,7 +114,7 @@ namespace BRTServices
 		*	\retval n Number of HRIR subfilters
 		*   \eh Nothing is reported to the error handler.
 		*/
-		const int32_t GetTFNumberOfSubfilters() const {
+		const int32_t GetNumberOfSubfiltersFR() const override {
 			return partitionedFRNumberOfSubfilters;
 		}
 
@@ -133,35 +122,10 @@ namespace BRTServices
 		*	\retval size Size of HRIR subfilters
 		*   \eh Nothing is reported to the error handler.
 		*/
-		const int32_t GetTFSubfilterLength() const override {
+		const int32_t GetSubfilterLengthFR() const override {
 			return partitionedFRSubfilterLength;
 		}
-
-		/** \brief	Get if the HRTF has been loaded
-		*	\retval isLoadead bool var that is true if the HRTF has been loaded
-		*   \eh Nothing is reported to the error handler.
-		*/
-		/*bool IsLoaded() {
-			return dataReady;
-		}*/
-
-		/** \brief Get raw HRTF table
-		*	\retval table raw HRTF table
-		*   \eh Nothing is reported to the error handler.
-		*/
-		/*const T_HRTFTable& GetIRTimeDomainTable() const
-		{
-			return t_IR_DataBase;
-		}*/
-
-		/** \brief	Get the distance where the HRTF has been measured
-		*   \return distance of the speakers structure to calculate the HRTF
-		*   \eh Nothing is reported to the error handler.
-		*/
-		/*float GetHRTFDistanceOfMeasurement() override {
-			return distanceOfMeasurement;
-		}*/
-
+		
 		/** \brief	Set the radius of the listener head
 		*   \eh Nothing is reported to the error handler.
 		*/
@@ -272,7 +236,6 @@ namespace BRTServices
 			_fadeOutWindowRiseTime = fallTime;
 		}
 
-
 		/** \brief Start a new HRTF configuration
 		*	\param [in] _IRLength buffer size of the HRIR to be added
 		*   \eh On success, RESULT_OK is reported to the error handler.
@@ -293,8 +256,8 @@ namespace BRTServices
 			referencePositionSearchList.clear();
 
 			// Init parameters						
-			IRLength = _IRLength;				
-			partitionedFRNumberOfSubfilters = CalculateNumberOPartitions(IRLength);			
+			impulseResponseLength = _IRLength;				
+			partitionedFRNumberOfSubfilters = CalculateNumberOPartitions(impulseResponseLength);			
 							
 			SET_RESULT(RESULT_OK, "Spherical FIR Table - Setup started");
 			return true;
@@ -341,38 +304,37 @@ namespace BRTServices
 				return false;
 			}
 			
-			if (!sofaIRDataBase.empty())
-			{										
-				if (sofaIRDataBase.size() > 1) spatiallyOriented = true;					
+			if (sofaIRDataBase.empty()) { 
+				SET_RESULT(RESULT_ERROR_NOTSET, "ERROR SphericalFIRTable::EndSetup - No data to be processed");
+				return false;
+			}							
+			if (sofaIRDataBase.size() > 1) spatiallyOriented = true;					
 					
-				TRawSofaData windowingIRTable;
-				CalculateWindowingIRTable(sofaIRDataBase, windowingIRTable);
-				if (serviceType == TServiceType::hrir_database) {
-					RemoveCommonDelayFromTable(windowingIRTable); 
-				}					
-				SetupPartitionedTable(windowingIRTable);	// Prepare and fill all the partitioned table					
-				SortFRTableByDistance();					// Sort frequency domain table by distance from listener
-				BuildSearchTrees();							// Prepare all Search Trees
-				BuildReferenceListFromMap();				// Prepare reference position search list					
+			TRawSofaData windowingIRTable;
+			CalculateWindowingIRTable(sofaIRDataBase, windowingIRTable);
+			if (serviceType == TServiceType::hrir_database) {
+				RemoveCommonDelayFromTable(windowingIRTable); 
+			}					
+			SetupPartitionedTable(windowingIRTable);	// Prepare and fill all the partitioned table					
+			SortFRTableByDistance();					// Sort frequency domain table by distance from listener
+			BuildSearchTrees();							// Prepare all Search Trees
+			BuildReferenceListFromMap();				// Prepare reference position search list					
 
-				//Setup parameters
-				if (partitionedFRDataBase.size() != 0) {
-					auto it = partitionedFRDataBase.begin();
-					if (it->second.distances.size() != 0) { 
-						if (it->second.distances.begin()->table.size() != 0) {
-							if (it->second.distances.begin()->table.begin()->second.IR.left.size() != 0) {								
-								partitionedFRSubfilterLength = it->second.distances.begin()->table.begin()->second.IR.left[0].size();								
-								setupInProgress = false;
-								dataReady = true;
-								SET_RESULT(RESULT_OK, "The processing of the IR matrix has been successfully completed.");
-								return true;
-							}
-						}											
-					}					
-				}																
-			}						
-			SET_RESULT(RESULT_ERROR_NOTSET, "EndSetup:: Processing of the FIR table has failed.");			
-			return false;
+			//Setup parameters
+			if (partitionedFRDataBase.size() != 0) {
+				auto it = partitionedFRDataBase.begin();
+				if (it->second.distances.size() != 0) { 
+					if (it->second.distances.begin()->table.size() != 0) {
+						if (it->second.distances.begin()->table.begin()->second.IR.left.size() != 0) {								
+							partitionedFRSubfilterLength = it->second.distances.begin()->table.begin()->second.IR.left[0].size();								
+							setupInProgress = false;
+							dataReady = true;
+							SET_RESULT(RESULT_OK, "The processing of the IR matrix has been successfully completed.");
+							return true;
+						}
+					}											
+				}					
+			}																									
 		}
 					
 		/**
@@ -673,55 +635,9 @@ namespace BRTServices
 		void CalculatePartitionedIR(const TIRStruct & _inData, TFRPartitionedStruct & newTF_partitioned, int _bufferSize, int _numberOfSubfilters, Functor f1) {
 
 			TFRPartitionedStruct partitionedData;
-			newTF_partitioned = f1(_inData, _bufferSize, _numberOfSubfilters);
-			/*newTF_partitioned.delay.left = partitionedData.leftDelay;
-			newTF_partitioned.delay.right = partitionedData.rightDelay;
-			newTF_partitioned.IR.left = std::move(partitionedData.leftHRIR_Partitioned);
-			newTF_partitioned.IR.right = std::move(partitionedData.rightHRIR_Partitioned);*/
+			newTF_partitioned = f1(_inData, _bufferSize, _numberOfSubfilters);			
 			newTF_partitioned.orientation = _inData.orientation;
 		}
-
-		/*template <typename Functor>
-		void CalculatePartitionedIR(const TIRStruct & _inData, THRIRPartitionedStruct & newTF_partitioned, int _bufferSize, int _numberOfSubfilters, Functor f1) {									
-			newTF_partitioned = f1(_inData, _bufferSize, _numberOfSubfilters);	
-		}*/
-
-		/*template <typename Functor>
-		void FillPartitionedTable(const TSphericalFIRTable & originalTable, TSphericalFIRTablePartitioned & partitionedTable, int _bufferSize, int _numberOfSubfilters, Functor f1) {			
-			for (auto & it : originalTable) {				
-				THRIRPartitionedStruct newTF_partitioned = f1(it.second, _bufferSize, _numberOfSubfilters);				
-				partitionedTable.emplace(it.first, std::forward<THRIRPartitionedStruct>(newTF_partitioned));				
-			}			
-		}*/
-
-		/**
-		 * @brief Prepare search tree table
-		 */
-		void SetupSearchsTree() {
-			/*for (auto & kv : frequencyDomainPartitionedDataBase) {				
-				std::vector<orientation> keys;
-				keys.reserve(kv.second.table.size());
-				for (const auto & kv2 : kv.second.table) {
-					keys.push_back(kv2.second.originalOrientation);
-				}
-				kv.second.searchTree.build(std::move(keys));
-			}*/
-		}
-
-		//void GetSpheresRadius() {			
-		//	for (auto & kv : frequencyDomainPartitionedDataBase) {				
-		//		for (const auto & kv2 : kv.second.table) {					
-		//			auto it = std::find_if(kv.second.spheresRadius.begin(), kv.second.spheresRadius.end(),
-		//				[&](double x) { return Common::AreSameDouble(x, kv2.second.originalOrientation.distance, DISTANCE_RESOLUTION_INV); });
-		//			if (it == kv.second.spheresRadius.end()) {
-		//				// TODO truncate distances to certain decimal places?
-		//				kv.second.spheresRadius.push_back(kv2.second.originalOrientation.distance);
-		//			}
-		//		}				
-		//		std::sort(kv.second.spheresRadius.begin(), kv.second.spheresRadius.end());
-		//	}			
-		//}
-
 
 		//////////////////////////////////
 		// FIND METHODS
@@ -785,65 +701,6 @@ namespace BRTServices
 
 			return (dLo <= dHi) ? &lo : &hi; // tie: pick any (lo)
 		}
-
-		/**
-		 * @brief Add a new reference position to the data table
-		 * @param _position new reference position
-		 */
-		//void AddReferencePosition(const Common::CVector3 & _position) {
-		//	//Check if the listenerPosition is already in the table
-		//	auto it = std::find(referencePositionList.begin(), referencePositionList.end(), _position);
-		//	if (it == referencePositionList.end()) {
-		//		referencePositionList.push_back(_position);
-		//	}
-		//}
-
-		/**
-		 * @brief Find the nearest position of the listener stored in the data table.
-		 * @param _listenerPosition listener position to compare
-		 * @return Closest listener position
-		 */
-		/*Common::CVector3 FindNearestReferencePosition(const Common::CVector3 & _referencePosition) const {
-
-			Common::CTransform _referenceLocation(_referencePosition);
-			Common::CTransform nearestListenerLocation(referencePositionList[0]);
-			float minDistance = _referenceLocation.GetVectorTo(nearestListenerLocation).GetSqrDistance();
-
-			for (auto it = referencePositionList.begin() + 1; it != referencePositionList.end(); it++) {
-
-				float distance = _referenceLocation.GetVectorTo(Common::CTransform(*it)).GetSqrDistance();
-				if (distance < minDistance) {
-					minDistance = distance;
-					nearestListenerLocation = *it;
-				}
-			}
-			return nearestListenerLocation.GetPosition();
-		}*/
-
-		///////////////////////
-		// SEARCH TREE METHODS
-		///////////////////////
-				
-		//bool FindNearestOrientationInSearchTree(const CSphericalSearchKDTree<orientation>& searchTree, orientation & _orientation, const Common::CVector3 & _referencePosition, const float & _azimuth, const float & _elevation) const {
-		//	
-		//	_orientation = searchTree.nearest(_azimuth, _elevation);
-		//	
-		//	
-		//	auto it = searchTreeTable.find(TVector3(_referencePosition));
-		//	if (it != searchTreeTable.end()) {				
-		//		_orientation = it->second.nearest(_azimuth, _elevation);
-		//		return true;
-		//	} else {
-		//		// ERROR: This should not happen
-		//		SET_RESULT(RESULT_ERROR_NOTALLOWED, "FindNearestOrientationInSearchTree: No search tree found for the given reference position");
-		//		_orientation = orientation();
-		//		return false;
-		//	}
-		//}
-
-		////////////////////////
-		// Get AUX METHODS
-		////////////////////////
 		
 
 		/**
@@ -901,82 +758,11 @@ namespace BRTServices
 			}			
 			return foundData;
 		}
-
-		//const std::vector<CMonoBuffer<float>> GetFR_PartitionedSpatiallyOriented(const TSphericalFIRTablePartitioned & _table, const float & _azimuth, const float & _elevation, const Common::CTransform & _referenceLocation, const Common::T_ear & ear, bool _findNearest) const {
-
-		//	std::vector<CMonoBuffer<float>> foundFR;
-
-		//	THRIRPartitionedStruct foundData;
-		//	auto it = _table.find(orientation(_azimuth, _elevation));
-		//	if (it != _table.end()) {
-		//		// Exact match found
-		//		foundData = it->second;
-		//	} else {
-		//		// No exact match
-		//		if (!_findNearest) {
-		//			SET_RESULT(RESULT_ERROR_OUTOFRANGE, "GetIRPartitionedSpatiallyOriented: Requested azimuth and elevation not found in FIR table");
-		//			return foundFR;
-		//		}
-		//		// Find nearest
-		//		orientation nearest;
-		//		bool result = FindNearestOrientationInSearchTree(nearest, _referenceLocation.GetPosition(), _azimuth, _elevation);
-		//		if (!result) {
-		//			SET_RESULT(RESULT_ERROR_NOTALLOWED, "GetIRPartitionedSpatiallyOriented: Error finding nearest orientation in search tree");
-		//			return foundFR;
-		//		}
-		//		auto it = _table.find(nearest);
-		//		if (it != _table.end()) {
-		//			foundData = it->second;
-		//		} else {
-		//			// ERROR: This should not happen
-		//			SET_RESULT(RESULT_ERROR_NOTALLOWED, "GetHRIR_partitioned: KD-Tree returned an orientation not present in FIR table");
-		//		}
-		//	}
-		//	if (ear == Common::T_ear::LEFT) {
-		//		return foundData.leftHRIR_Partitioned;
-		//	} else if (ear == Common::T_ear::RIGHT) {
-		//		return foundData.rightHRIR_Partitioned;
-		//	}
-		//	return foundFR;
-		//}
-
-		//const THRIRPartitionedStruct GetFR_Delay(const TSphericalFIRTablePartitioned & _table, const float& _azimuthCenter, const float & _elevationCenter, const Common::CTransform & _referenceLocation, bool _findNearest)
-		//{
-		//	THRIRPartitionedStruct delay;
-		//	
-		//	auto it = _table.find(orientation(_azimuthCenter, _elevationCenter));
-		//	if (it != _table.end()) {
-		//		// Exact match found				
-		//		delay = it->second;
-		//	} else {
-		//		// No exact match
-		//		if (!_findNearest) {
-		//			SET_RESULT(RESULT_ERROR_OUTOFRANGE, "GetIRPartitionedSpatiallyOriented: Requested azimuth and elevation not found in FIR table");
-		//			return delay;
-		//		}
-		//		// Find nearest
-		//		orientation nearest;
-		//		bool result = FindNearestOrientationInSearchTree(nearest, _referenceLocation.GetPosition(), _azimuth, _elevation);
-		//		if (!result) {
-		//			SET_RESULT(RESULT_ERROR_NOTALLOWED, "GetIRPartitionedSpatiallyOriented: Error finding nearest orientation in search tree");
-		//			return delay;
-		//		}
-		//		auto it = _table.find(nearest);
-		//		if (it != _table.end()) {					
-		//			delay.leftDelay = it->second.leftDelay;
-		//			delay.rightDelay = it->second.rightDelay;
-		//		} else {
-		//			// ERROR: This should not happen
-		//			SET_RESULT(RESULT_ERROR_NOTALLOWED, "GetHRIR_partitioned: KD-Tree returned an orientation not present in FIR table");
-		//		}
-		//	}			
-		//	return delay;
-		//}
+		
 
 		///////////////////
 		// Common Delay
-		///////////////////
-		// 		
+		///////////////////		
 		/**
 		 * @brief Calculate and remove the common delay of every IR functions of the DataBase Table. 
 		 */
@@ -1010,26 +796,9 @@ namespace BRTServices
 			SET_RESULT(RESULT_OK, "Common delay deleted (" + std::to_string(minimumDelayLeft) + "," + std::to_string(minimumDelayRight) + ") from nonInterpolatedHRTF table succesfully");
 		}
 
-		//}
-		/**
-		 * @brief Call the extrapolation method
-		*/
-		//void CalculateExtrapolation(std::vector<orientation>& _orientationList) {
-		//	// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.
-		//	if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::zero_insertion) {
-		//		SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded HRTF sofa file, an extrapolation with zeros will be performed to fill it.");
-		//		extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(t_IR_DataBase, _orientationList, IRLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetZerosHRIR());
-		//	}
-		//	else if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::nearest_point) {
-		//		SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded HRTF sofa file, an extrapolation will be made to the nearest point to fill it.");
-		//		extrapolation.Process<T_HRTFTable, BRTServices::THRIRStruct>(t_IR_DataBase, _orientationList, IRLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetNearestPointHRIR());
-		//	}
-		//	else {
-		//		SET_RESULT(RESULT_ERROR_NOTSET, "Extrapolation Method not set up.");
-		//		// Do nothing
-		//	}
-		//}
-		
+		///////////////////
+		// Truncate IRs
+		///////////////////
 
 		/**
 		 * @brief Check if the windowing process is configured
@@ -1053,63 +822,36 @@ namespace BRTServices
 			
 			if (IsFadeInWindowingConfigured()) {
 				for (auto it = _outTable.begin(); it != _outTable.end(); it++) {					
-					it->data.IR.left = std::move(Common::CIRWindowing::Proccess(it->data.IR.left, Common::CIRWindowing::fadein, fadeInBegin, riseTime, globalParameters.GetSampleRate()));
-					it->data.IR.right = std::move(Common::CIRWindowing::Proccess(it->data.IR.right, Common::CIRWindowing::fadein, fadeInBegin, riseTime, globalParameters.GetSampleRate()));					
+					it->data.IR.left = std::move(Common::CIRWindowing::Process(it->data.IR.left, Common::CIRWindowing::fadein, fadeInBegin, riseTime, globalParameters.GetSampleRate()));
+					it->data.IR.right = std::move(Common::CIRWindowing::Process(it->data.IR.right, Common::CIRWindowing::fadein, fadeInBegin, riseTime, globalParameters.GetSampleRate()));					
 				}
 			}
 			if (IsFadeOutWindowingConfigured()) {
 				for (auto it = _outTable.begin(); it != _outTable.end(); it++) {
-					it->data.IR.left = std::move(Common::CIRWindowing::Proccess(it->data.IR.left, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate()));
-					it->data.IR.right = std::move(Common::CIRWindowing::Proccess(it->data.IR.right, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate()));
+					it->data.IR.left = std::move(Common::CIRWindowing::Process(it->data.IR.left, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate()));
+					it->data.IR.right = std::move(Common::CIRWindowing::Process(it->data.IR.right, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate()));
 				}
 
 				// Update impulseResponseLength and the number of subfilters
-				IRLength = _outTable.begin()->data.IR.left.size();
-				partitionedFRNumberOfSubfilters = CalculateNumberOPartitions(IRLength);
+				impulseResponseLength = _outTable.begin()->data.IR.left.size();
+				partitionedFRNumberOfSubfilters = CalculateNumberOPartitions(impulseResponseLength);
 			}
 		}
-
-		/**
-		 * @brief Create a new table with the same data as the input table but with the IRs windowed
-		 * @param _inTable 
-		 * @param _outTable 
-		 */
-		//void CalculateWindowingIRTable(const TSphericalFIRTable & _inTable, TSphericalFIRTable & _outTable) {
-		//	_outTable.clear();
-		//	_outTable = _inTable;
-
-		//	if (IsFadeInWindowingConfigured()) {
-		//		for (auto it = _outTable.begin(); it != _outTable.end(); it++) {					
-		//			it->second.IR.left = std::move(Common::CIRWindowing::Proccess(it->second.IR.left, Common::CIRWindowing::fadein, fadeInBegin, riseTime, globalParameters.GetSampleRate()));
-		//			it->second.IR.right = std::move(Common::CIRWindowing::Proccess(it->second.IR.right, Common::CIRWindowing::fadein, fadeInBegin, riseTime, globalParameters.GetSampleRate()));
-		//		}
-		//	}
-
-		//	if (IsFadeOutWindowingConfigured()) {
-		//		for (auto it = _outTable.begin(); it != _outTable.end(); it++) {
-		//			it->second.IR.left = std::move(Common::CIRWindowing::Proccess(it->second.IR.left, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate()));
-		//			it->second.IR.right = std::move(Common::CIRWindowing::Proccess(it->second.IR.right, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate()));
-		//		}
-
-		//		// Update impulseResponseLength and the number of subfilters
-		//		IRLength = _outTable.begin()->second.IR.left.size();				
-		//		IR_TFpartitioned_NumberOfSubfilters = CalculateNumberOPartitions(IRLength);
-		//	}
-		//}
+		
 
 		///////////////
 		// ATTRIBUTES
 		///////////////		
-		mutable std::mutex mutex;								// Thread management
+		mutable std::mutex mutex;							// Thread management
 		
-		Common::CGlobalParameters globalParameters; // Global parameters of the service
+		Common::CGlobalParameters globalParameters;			// Global parameters of the service
 
-		int32_t IRLength;								// HRIR vector length	
-		int32_t partitionedFRNumberOfSubfilters;	// Number of subfilters (blocks) for the UPC algorithm
-		int32_t partitionedFRSubfilterLength;		// Size of one HRIR subfilter
-		//float distanceOfMeasurement;					// Distance where the HRIR have been measurement		
-		Common::CCranialGeometry cranialGeometry;					// Cranial geometry of the listener
-		Common::CCranialGeometry originalCranialGeometry;		// Cranial geometry of the listener
+		//int32_t IRLength;									// HRIR vector length	
+		int32_t partitionedFRNumberOfSubfilters;			// Number of subfilters (blocks) for the UPC algorithm
+		int32_t partitionedFRSubfilterLength;				// Size of one HRIR subfilter
+		//float distanceOfMeasurement;						// Distance where the HRIR have been measurement		
+		Common::CCranialGeometry cranialGeometry;			// Cranial geometry of the listener
+		Common::CCranialGeometry originalCranialGeometry;	// Cranial geometry of the listener
 		//TEXTRAPOLATION_METHOD extrapolationMethod;		// Methods that is going to be used to extrapolate
 
 		//float sphereBorder;								// Define spheere "sewing"

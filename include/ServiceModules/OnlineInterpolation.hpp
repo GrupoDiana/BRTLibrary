@@ -40,8 +40,8 @@ namespace BRTServices
 		/**
 		 * @brief  Calculate from resample table DELAY using a barycentric interpolation of the three nearest orientation.
 		 * @param t_HRTF_Resampled_partitioned 
-		 * @param HRIR_partitioned_NumberOfSubfilters 
-		 * @param HRIR_partitioned_SubfilterLength 
+		 * @param partitionedFRNumberOfSubfilters 
+		 * @param partitionedFRSubfilterLength 
 		 * @param ear 
 		 * @param _azimuth 
 		 * @param _elevation 
@@ -102,8 +102,8 @@ namespace BRTServices
 		/**
 		 * @brief  Calculate from resample table HRIR using a barycentric interpolation of the three nearest orientation.
 		 * @param t_HRTF_Resampled_partitioned 
-		 * @param HRIR_partitioned_NumberOfSubfilters 
-		 * @param HRIR_partitioned_SubfilterLength 
+		 * @param partitionedFRNumberOfSubfilters 
+		 * @param partitionedFRSubfilterLength 
 		 * @param ear 
 		 * @param _azimuth 
 		 * @param _elevation 
@@ -293,8 +293,8 @@ namespace BRTServices
 		/**
 		 * @brief  Calculate from resample table HRIR using a barycentric interpolation of the three nearest orientation.
 		 * @param t_HRTF_Resampled_partitioned 
-		 * @param HRIR_partitioned_NumberOfSubfilters 
-		 * @param HRIR_partitioned_SubfilterLength 
+		 * @param partitionedFRNumberOfSubfilters 
+		 * @param partitionedFRSubfilterLength 
 		 * @param ear 
 		 * @param _azimuth 
 		 * @param _elevation 

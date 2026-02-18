@@ -63,7 +63,7 @@ namespace BRTServices {
 		 *   \eh On error, an error code is reported to the error handler.
 		 *       Warnings may be reported to the error handler.
 		 */
-		static const std::vector<CMonoBuffer<float>> GetHRIRFromPartitionedTable(const T_HRTFPartitionedTable& table, Common::T_ear ear, float _azimuth, float _elevation,
+		static const std::vector<CMonoBuffer<float>> GetHRIRFromPartitionedTable(const TSphericalFIRTablePartitioned& table, Common::T_ear ear, float _azimuth, float _elevation,
 			bool runTimeInterpolation, int32_t _numberOfSubfilters, int32_t _subfilterLength, std::unordered_map<TOrientation, float> stepVector)
 		{
 
@@ -78,7 +78,7 @@ namespace BRTServices {
 						
 
 			if (!runTimeInterpolation) {
-				TFRPartitionedStruct temp = CQuasiUniformSphereDistribution::FindNearest<T_HRTFPartitionedTable, TFRPartitionedStruct>(table, stepVector, _azimuth, _elevation);
+				TFRPartitionedStruct temp = CQuasiUniformSphereDistribution::FindNearest<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, stepVector, _azimuth, _elevation);
 
 				if (ear == Common::T_ear::LEFT) { newHRIR = temp.IR.left; }
 				else if (ear == Common::T_ear::RIGHT) { newHRIR = temp.IR.right; }
@@ -117,12 +117,12 @@ namespace BRTServices {
 
 			// ONLINE Interpolation 	
 			if (ear == Common::T_ear::LEFT) {
-				const TFRPartitionedStruct data = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<T_HRTFPartitionedTable, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_LeftEar());
+				const TFRPartitionedStruct data = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_LeftEar());
 				return data.IR.left;
 			}
 			else
 			{
-				const TFRPartitionedStruct data = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<T_HRTFPartitionedTable, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_RightEar());
+				const TFRPartitionedStruct data = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_RightEar());
 				return data.IR.right;
 			}
 		}
@@ -135,7 +135,7 @@ namespace BRTServices {
 		 * @param ielevation
 		 * @param azimuthMin
 		 */
-		static void GetPoleHRIRFromPartitionedTable(const T_HRTFPartitionedTable& table, std::vector<CMonoBuffer<float>>& newHRIR, Common::T_ear ear, int ielevation, float azimuthMin) {
+		static void GetPoleHRIRFromPartitionedTable(const TSphericalFIRTablePartitioned& table, std::vector<CMonoBuffer<float>>& newHRIR, Common::T_ear ear, int ielevation, float azimuthMin) {
 			auto it = table.find(TOrientation(azimuthMin, ielevation));
 			if (it != table.end())
 			{
@@ -155,9 +155,84 @@ namespace BRTServices {
 		}
 
 
-		static TFRPartitionedStruct GetHRIRDelayFromPartitioned(const T_HRTFPartitionedTable& table, Common::T_ear ear, float _azimuthCenter, float _elevationCenter,
-			bool runTimeInterpolation, int32_t _numberOfSubfilters, int32_t _subfilterLength, std::unordered_map<TOrientation, float> stepVector)
-		{
+		//static TFRPartitionedStruct GetHRIRDelayFromPartitioned(const TSphericalFIRTablePartitioned& table, Common::T_ear ear, float _azimuthCenter, float _elevationCenter,
+		//	bool runTimeInterpolation, int32_t _numberOfSubfilters, int32_t _subfilterLength, std::unordered_map<TOrientation, float> stepVector)
+		//{
+		//	float sphereBorder = SPHERE_BORDER;
+		//	float epsilon_sewing = EPSILON_SEWING;
+		//	float azimuthMin = DEFAULT_MIN_AZIMUTH;
+		//	float elevationMin = DEFAULT_MIN_ELEVATION;
+		//	float elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
+		//	float elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
+
+
+		//	TFRPartitionedStruct data;
+
+
+		//	if (!runTimeInterpolation)
+		//	{
+		//		data = CQuasiUniformSphereDistribution::FindNearest<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, stepVector, _azimuthCenter, _elevationCenter);
+		//		return data;
+		//	}
+
+		//	// Calculate Delay using ONLINE Interpolation 			
+
+		//	// Check if we are close to 360 azimuth or elevation and change to 0
+		//	if (Common::AreSame(_azimuthCenter, sphereBorder, epsilon_sewing)) { _azimuthCenter = 0.0f; }
+		//	if (Common::AreSame(_elevationCenter, sphereBorder, epsilon_sewing)) { _elevationCenter = 0.0f; }
+
+		//	// Check if we are at a pole
+		//	int ielevation = static_cast<int>(round(_elevationCenter));
+		//	if ((ielevation == elevationNorth) || (ielevation == elevationSouth))
+		//	{
+		//		float leftDelay;
+		//		float rightDelay;
+		//		GetPoleDelayFromHRIRPartitionedTable(table, leftDelay, Common::T_ear::LEFT, ielevation, azimuthMin);
+		//		GetPoleDelayFromHRIRPartitionedTable(table, rightDelay, Common::T_ear::RIGHT, ielevation, azimuthMin);
+		//		data.delay.left = static_cast<uint64_t>(leftDelay);
+		//		data.delay.right = static_cast<uint64_t>(rightDelay);
+		//		return data;
+		//	}
+
+		//	// We search if the point already exists
+		//	auto it = table.find(TOrientation(_azimuthCenter, _elevationCenter));
+		//	if (it != table.end())
+		//	{
+		//		TFRPartitionedStruct temp;
+		//		temp.delay.left = it->second.delay.left;;
+		//		temp.delay.right = it->second.delay.right;
+		//		return temp;
+		//	}
+
+		//	const TFRPartitionedStruct temp = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuthCenter, _elevationCenter, stepVector, CHRTFAuxiliarMethods::CalculateDelay_FromBarycentricCoordinates());
+		//	return temp;
+		//}
+		//
+		//static void GetPoleDelayFromHRIRPartitionedTable(const TSphericalFIRTablePartitioned& table, float& HRIR_delay, Common::T_ear ear, int ielevation, float azimuthMin)
+		//{
+		//	//In the sphere poles the azimuth is always 0 degrees
+		//	auto it = table.find(TOrientation(azimuthMin, ielevation));
+		//	if (it != table.end())
+		//	{
+		//		if (ear == Common::T_ear::LEFT)
+		//		{
+		//			HRIR_delay = it->second.delay.left;
+		//		}
+		//		else
+		//		{
+		//			HRIR_delay = it->second.delay.right;
+		//		}
+		//	}
+		//	else
+		//	{
+		//		SET_RESULT(RESULT_WARNING, "Orientations in GetHRIRDelay() not found");
+		//	}
+
+		//}
+
+		static const Common::CEarPair<uint64_t> GetHRIRDelayFromPartitioned_2Ears(const TSphericalFIRTablePartitioned & table, float _azimuthCenter, float _elevationCenter,
+			bool runTimeInterpolation, int32_t _numberOfSubfilters, int32_t _subfilterLength, std::unordered_map<TOrientation, float> stepVector) {
+
 			float sphereBorder = SPHERE_BORDER;
 			float epsilon_sewing = EPSILON_SEWING;
 			float azimuthMin = DEFAULT_MIN_AZIMUTH;
@@ -165,72 +240,64 @@ namespace BRTServices {
 			float elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
 			float elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
 
+			Common::CEarPair<uint64_t> foundData;
 
-			TFRPartitionedStruct data;
-
-
-			if (!runTimeInterpolation)
-			{
-				data = CQuasiUniformSphereDistribution::FindNearest<T_HRTFPartitionedTable, TFRPartitionedStruct>(table, stepVector, _azimuthCenter, _elevationCenter);
-				return data;
+			if (!runTimeInterpolation) {
+				TFRPartitionedStruct aux = CQuasiUniformSphereDistribution::FindNearest<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, stepVector, _azimuthCenter, _elevationCenter);
+				foundData.left = aux.delay.left;
+				foundData.right = aux.delay.right;
+				return foundData;
 			}
 
-			// Calculate Delay using ONLINE Interpolation 			
+			// Calculate Delay using ONLINE Interpolation
 
 			// Check if we are close to 360 azimuth or elevation and change to 0
-			if (Common::AreSame(_azimuthCenter, sphereBorder, epsilon_sewing)) { _azimuthCenter = 0.0f; }
-			if (Common::AreSame(_elevationCenter, sphereBorder, epsilon_sewing)) { _elevationCenter = 0.0f; }
+			if (Common::AreSame(_azimuthCenter, sphereBorder, epsilon_sewing)) {
+				_azimuthCenter = 0.0f;
+			}
+			if (Common::AreSame(_elevationCenter, sphereBorder, epsilon_sewing)) {
+				_elevationCenter = 0.0f;
+			}
 
 			// Check if we are at a pole
 			int ielevation = static_cast<int>(round(_elevationCenter));
-			if ((ielevation == elevationNorth) || (ielevation == elevationSouth))
-			{
-				float leftDelay;
+			if ((ielevation == elevationNorth) || (ielevation == elevationSouth)) {
+				/*float leftDelay;
 				float rightDelay;
 				GetPoleDelayFromHRIRPartitionedTable(table, leftDelay, Common::T_ear::LEFT, ielevation, azimuthMin);
 				GetPoleDelayFromHRIRPartitionedTable(table, rightDelay, Common::T_ear::RIGHT, ielevation, azimuthMin);
 				data.delay.left = static_cast<uint64_t>(leftDelay);
-				data.delay.right = static_cast<uint64_t>(rightDelay);
-				return data;
+				data.delay.right = static_cast<uint64_t>(rightDelay);*/
+				return GetPoleDelayFromHRIRPartitionedTable_2Ears(table, ielevation, azimuthMin);				
 			}
 
 			// We search if the point already exists
 			auto it = table.find(TOrientation(_azimuthCenter, _elevationCenter));
-			if (it != table.end())
-			{
-				TFRPartitionedStruct temp;
-				temp.delay.left = it->second.delay.left;;
-				temp.delay.right = it->second.delay.right;
-				return temp;
+			if (it != table.end()) {
+				/*TFRPartitionedStruct temp;
+				temp.delay.left = it->second.delay.left;
+				temp.delay.right = it->second.delay.right;*/
+				foundData = it->second.delay;
+				return foundData;
 			}
 
-			const TFRPartitionedStruct temp = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<T_HRTFPartitionedTable, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuthCenter, _elevationCenter, stepVector, CHRTFAuxiliarMethods::CalculateDelay_FromBarycentricCoordinates());
-			return temp;
+			const TFRPartitionedStruct temp = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuthCenter, _elevationCenter, stepVector, CHRTFAuxiliarMethods::CalculateDelay_FromBarycentricCoordinates());			
+			return temp.delay;
 		}
 
-
-		static void GetPoleDelayFromHRIRPartitionedTable(const T_HRTFPartitionedTable& table, float& HRIR_delay, Common::T_ear ear, int ielevation, float azimuthMin)
-		{
+		static const Common::CEarPair<uint64_t> GetPoleDelayFromHRIRPartitionedTable_2Ears(const TSphericalFIRTablePartitioned & table, int ielevation, float azimuthMin) {
+			
+			Common::CEarPair<uint64_t> data;
 			//In the sphere poles the azimuth is always 0 degrees
 			auto it = table.find(TOrientation(azimuthMin, ielevation));
-			if (it != table.end())
-			{
-				if (ear == Common::T_ear::LEFT)
-				{
-					HRIR_delay = it->second.delay.left;
-				}
-				else
-				{
-					HRIR_delay = it->second.delay.right;
-				}
-			}
-			else
-			{
+			if (it != table.end()) {
+				data.left = it->second.delay.left;
+				data.right = it->second.delay.right;				
+			} else {
 				SET_RESULT(RESULT_WARNING, "Orientations in GetHRIRDelay() not found");
 			}
-
+			return data;
 		}
-
 
 		/** \brief	Calculate the ITD value for a specific source
 		*   \param [in]	_azimuth		source azimuth in degrees
@@ -277,7 +344,7 @@ namespace BRTServices {
 		 * @return
 		*/
 		struct CalculatePartitionedHRIR_FromBarycentricCoordinates_LeftEar{
-		const TFRPartitionedStruct operator()(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, TBarycentricCoordinatesStruct barycentricCoordinates, TOrientation orientation_pto1, TOrientation orientation_pto2, TOrientation orientation_pto3)
+		const TFRPartitionedStruct operator()(const TSphericalFIRTablePartitioned& t_HRTF_Resampled_partitioned, int32_t partitionedFRNumberOfSubfilters, int32_t partitionedFRSubfilterLength, TBarycentricCoordinatesStruct barycentricCoordinates, TOrientation orientation_pto1, TOrientation orientation_pto2, TOrientation orientation_pto3)
 		{
 			TFRPartitionedStruct data;
 			
@@ -288,10 +355,10 @@ namespace BRTServices {
 
 			if (it1 != t_HRTF_Resampled_partitioned.end() && it2 != t_HRTF_Resampled_partitioned.end() && it3 != t_HRTF_Resampled_partitioned.end())
 			{
-				int subfilterLength = HRIR_partitioned_SubfilterLength;
-				data.IR.left.resize(HRIR_partitioned_NumberOfSubfilters);
+				int subfilterLength = partitionedFRSubfilterLength;
+				data.IR.left.resize(partitionedFRNumberOfSubfilters);
 
-				for (int subfilterID = 0; subfilterID < HRIR_partitioned_NumberOfSubfilters; subfilterID++)
+				for (int subfilterID = 0; subfilterID < partitionedFRNumberOfSubfilters; subfilterID++)
 				{
 					data.IR.left[subfilterID].resize(subfilterLength);
 					for (int i = 0; i < subfilterLength; i++)
@@ -318,7 +385,7 @@ namespace BRTServices {
 		 * @return
 		*/
 		struct CalculatePartitionedHRIR_FromBarycentricCoordinates_RightEar {
-			const TFRPartitionedStruct operator()(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, TBarycentricCoordinatesStruct barycentricCoordinates, TOrientation orientation_pto1, TOrientation orientation_pto2, TOrientation orientation_pto3)
+			const TFRPartitionedStruct operator()(const TSphericalFIRTablePartitioned& t_HRTF_Resampled_partitioned, int32_t partitionedFRNumberOfSubfilters, int32_t partitionedFRSubfilterLength, TBarycentricCoordinatesStruct barycentricCoordinates, TOrientation orientation_pto1, TOrientation orientation_pto2, TOrientation orientation_pto3)
 			{
 				TFRPartitionedStruct data;
 
@@ -329,10 +396,10 @@ namespace BRTServices {
 
 				if (it1 != t_HRTF_Resampled_partitioned.end() && it2 != t_HRTF_Resampled_partitioned.end() && it3 != t_HRTF_Resampled_partitioned.end())
 				{
-					int subfilterLength = HRIR_partitioned_SubfilterLength;
+					int subfilterLength = partitionedFRSubfilterLength;
 
-					data.IR.right.resize(HRIR_partitioned_NumberOfSubfilters);
-					for (int subfilterID = 0; subfilterID < HRIR_partitioned_NumberOfSubfilters; subfilterID++)
+					data.IR.right.resize(partitionedFRNumberOfSubfilters);
+					for (int subfilterID = 0; subfilterID < partitionedFRNumberOfSubfilters; subfilterID++)
 					{
 						data.IR.right[subfilterID].resize(subfilterLength, 0.0f);
 						for (int i = 0; i < subfilterLength; i++)
@@ -359,7 +426,7 @@ namespace BRTServices {
 		*/
 		struct CalculateDelay_FromBarycentricCoordinates{
 		
-			const TFRPartitionedStruct operator()	(const T_HRTFPartitionedTable& t_HRTF_Resampled_partitioned, int32_t HRIR_partitioned_NumberOfSubfilters, int32_t HRIR_partitioned_SubfilterLength, TBarycentricCoordinatesStruct barycentricCoordinates, TOrientation orientation_pto1, TOrientation orientation_pto2, TOrientation orientation_pto3)
+			const TFRPartitionedStruct operator()	(const TSphericalFIRTablePartitioned& t_HRTF_Resampled_partitioned, int32_t partitionedFRNumberOfSubfilters, int32_t partitionedFRSubfilterLength, TBarycentricCoordinatesStruct barycentricCoordinates, TOrientation orientation_pto1, TOrientation orientation_pto2, TOrientation orientation_pto3)
 			{
 				TFRPartitionedStruct data;
 

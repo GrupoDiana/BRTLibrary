@@ -36,9 +36,9 @@ namespace BRTServices
 
 	/*class CGridManagerInterface {
 	public:
-		virtual void CreateGrid(T_HRTFPartitionedTable& table, std::unordered_map<orientation, float>& stepVector, int _resamplingStep) = 0;
-		virtual void FindNearestHRIR(const T_HRTFPartitionedTable& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<orientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int resamplingStep)const = 0;
-		virtual void FindNearestDelay(const T_HRTFPartitionedTable& table, float& HRIR_delay, const std::unordered_map<orientation, float >& stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int resamplingStep)const = 0;
+		virtual void CreateGrid(TSphericalFIRTablePartitioned& table, std::unordered_map<orientation, float>& stepVector, int _resamplingStep) = 0;
+		virtual void FindNearestHRIR(const TSphericalFIRTablePartitioned& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<orientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int resamplingStep)const = 0;
+		virtual void FindNearestDelay(const TSphericalFIRTablePartitioned& table, float& HRIR_delay, const std::unordered_map<orientation, float >& stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int resamplingStep)const = 0;
 		friend class CHRTFTester;
 	};*/
 
@@ -47,9 +47,9 @@ namespace BRTServices
 	template <typename T>
 	class CAngularBasedDistribution  {
 	public:
-		void CreateGrid(T_HRTFPartitionedTable& table, std::unordered_map<TOrientation, float>& stepVector, int _resamplingStep) {}
+		void CreateGrid(TSphericalFIRTablePartitioned& table, std::unordered_map<TOrientation, float>& stepVector, int _resamplingStep) {}
 
-		void FindNearestHRIR(const T_HRTFPartitionedTable& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<TOrientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int resamplingStep)const
+		void FindNearestHRIR(const TSphericalFIRTablePartitioned& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<TOrientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int resamplingStep)const
 		{
 			int nearestAzimuth = static_cast<int>(round(_azimuth / resamplingStep) * resamplingStep);
 			int nearestElevation = static_cast<int>(round(_elevation / resamplingStep) * resamplingStep);
@@ -76,7 +76,7 @@ namespace BRTServices
 			}
 		}
 
-		void FindNearestDelay(const T_HRTFPartitionedTable& table, float& HRIR_delay, const std::unordered_map<TOrientation, float >& stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int resamplingStep)const
+		void FindNearestDelay(const TSphericalFIRTablePartitioned& table, float& HRIR_delay, const std::unordered_map<TOrientation, float >& stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int resamplingStep)const
 		{
 
 			int nearestAzimuth = static_cast<int>(round(_azimuthCenter / resamplingStep) * resamplingStep);
@@ -114,13 +114,13 @@ namespace BRTServices
 	class CQuasiUniformSphereDistribution {
 	public:
 		template <typename T, typename U>
-		static void CreateGrid(T& table, std::unordered_map<TOrientation, float>& stepVector, int _resamplingStep) {
+		static void CreateGrid(T& table, std::unordered_map<TOrientation, float>& stepVector, int _resamplingStep, double _distance) {
 			int n_divisions_by_elev;
 
 			double elevationInRange;
 			double actual_Azi_Step;
 			
-			U emptyData;
+			//U emptyData;
 
 			int n_divisions = std::ceil(360.0f / _resamplingStep);
 			int n_rings_hemisphere = std::ceil(90.0f / _resamplingStep);
@@ -155,7 +155,9 @@ namespace BRTServices
 				// Ceil to avoid error with the sum of decimal digits and not emplace 360 azimuth
 				for (double newAzimuth = DEFAULT_MIN_AZIMUTH; std::ceil(newAzimuth) < DEFAULT_MAX_AZIMUTH; newAzimuth = newAzimuth + actual_Azi_Step)
 				{
-					table.emplace(TOrientation(newAzimuth, elevationInRange), emptyData);
+					U emptyData;
+					emptyData.orientation = TOrientation(newAzimuth, elevationInRange, _distance);
+					table.emplace(TOrientation(newAzimuth, elevationInRange, _distance), emptyData);
 				}
 			}					
 		}

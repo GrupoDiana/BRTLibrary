@@ -126,6 +126,12 @@ namespace BRTServices {
 	//using TRawSofaTable = std::unordered_map<TOrientation, BRTServices::THRIRStruct>;
 	using TRawSofaTable = std::unordered_map<TOrientation, BRTServices::TIRStruct>;
 
+	struct TDistanceBucketRawSofa {	
+		double distance = 0.0;
+		int32_t distance_mm = 0;
+		TRawSofaTable table;
+	};
+	using TRawSofaTableByDistances = std::vector<TDistanceBucketRawSofa>;
 
 	/** \brief Type definition for table HRTF, this is the one read from the SOFA file.
 	*/
@@ -134,13 +140,9 @@ namespace BRTServices {
 	/** \brief Type definition for the HRTF table, this is the one our grid has and is the one used for rendering.
 	*/	
 	//using T_HRTFPartitionedTable = std::unordered_map<TOrientation, THRIRPartitionedStruct>;
-	using T_HRTFPartitionedTable = std::unordered_map<TOrientation, TFRPartitionedStruct>;
-
-	struct TDistanceBucket_NoSearchTree {
-		int32_t distance_mm = 0;		
-		T_HRTFPartitionedTable table;
-	};
-
-	using TDistanceTable = std::vector<TDistanceBucket_NoSearchTree>;	
+	//using T_HRTFPartitionedTable = std::unordered_map<TOrientation, BRTServices::TFRPartitionedStruct>;
+	//using T_HRTFPartitionedTable = std::unordered_map<TOrientation_key, BRTServices::TFRPartitionedStruct>;
+	
+	using TDistanceTable = std::vector<TDistanceBucket>;	
 }
 #endif

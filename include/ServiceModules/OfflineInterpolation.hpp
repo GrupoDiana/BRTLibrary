@@ -367,8 +367,8 @@ namespace BRTServices
 		 * @tparam X_TFPartitionedStruct 
 		 * @tparam Functor 
 		 * @tparam Functor2 
-		 * @param table_dataBase 
-		 * @param t_HRTF_Resampled_partitioned 
+		 * @param _inputTable 
+		 * @param _outputTable 
 		 * @param _bufferSize 
 		 * @param _HRIRLength 
 		 * @param _HRIRPartitioned_NumberOfSubfilters 
@@ -376,11 +376,13 @@ namespace BRTServices
 		 * @param f2 
 		*/
 		template <typename T, typename U, typename W_TFStruct, typename X_TFPartitionedStruct, typename Functor, typename Functor2>
-		void FillResampledTable(T& table_dataBase, U& t_HRTF_Resampled_partitioned, int _bufferSize, int _HRIRLength, int _HRIRPartitioned_NumberOfSubfilters, Functor f, Functor2 f2) {
+		void FillResampledTable(T& _inputTable, U& _outputTable, int _bufferSize, int _HRIRLength, int _HRIRPartitioned_NumberOfSubfilters, Functor f, Functor2 f2) {
 			int numOfInterpolatedHRIRs = 0;
-			for (auto& it : t_HRTF_Resampled_partitioned)
-			{
-				if (CalculateAndEmplace_NewPartitionedTF<T,U, W_TFStruct, X_TFPartitionedStruct, Functor, Functor2>(table_dataBase, t_HRTF_Resampled_partitioned, it.first.azimuth, it.first.elevation, _bufferSize, _HRIRLength, _HRIRPartitioned_NumberOfSubfilters, f, f2)) { numOfInterpolatedHRIRs++; }
+			for (auto& it : _outputTable)
+			{				
+				if (CalculateAndEmplace_NewPartitionedTF<T, U, W_TFStruct, X_TFPartitionedStruct, Functor, Functor2>(_inputTable, _outputTable, it.second.orientation, _bufferSize, _HRIRLength, _HRIRPartitioned_NumberOfSubfilters, f, f2)) {
+					numOfInterpolatedHRIRs++;
+				}
 			}
 			SET_RESULT(RESULT_WARNING, "Number of interpolated HRIRs: " + std::to_string(numOfInterpolatedHRIRs));
 		}
@@ -405,9 +407,12 @@ namespace BRTServices
 		 * @return 
 		*/
 		template <typename T, typename U, typename W_TFStruct, typename X_TFPartitionedStruct, typename Functor, typename Functor2>
-		bool CalculateAndEmplace_NewPartitionedTF(T& table, U& resampledTable, double _azimuth, double _elevation, int _bufferSize, int _TFLength, int _TFPartitioned_NumberOfSubfilters, Functor f, Functor2 f2) {
+		bool CalculateAndEmplace_NewPartitionedTF(T & table, U & resampledTable, TOrientation _orientation /* double _azimuth, double _elevation,*/, int _bufferSize, int _TFLength, int _TFPartitioned_NumberOfSubfilters, Functor f, Functor2 f2) {
 			W_TFStruct newTF;
 			bool bHRIRInterpolated = false;
+			double _azimuth = _orientation.azimuth;
+			double _elevation = _orientation.elevation;
+			double _distance = _orientation.distance;
 
 			auto it = table.find(TOrientation(_azimuth, _elevation));
 			if (it != table.end())
@@ -422,7 +427,8 @@ namespace BRTServices
 			}
 			//Fill out HRTF partitioned table.IR in frequency domain
 			X_TFPartitionedStruct newTF_partitioned = f(newTF, _bufferSize, _TFPartitioned_NumberOfSubfilters);
-			resampledTable[TOrientation(_azimuth, _elevation)] = std::forward<X_TFPartitionedStruct>(newTF_partitioned);
+			newTF_partitioned.orientation = TOrientation(_azimuth, _elevation, _distance);
+			resampledTable[TOrientation(_azimuth, _elevation, _distance)] = std::forward<X_TFPartitionedStruct>(newTF_partitioned);
 			return bHRIRInterpolated;
 		}
 

@@ -134,26 +134,26 @@ namespace BRTServices
 				if (!t_DirectivityTF_DataBase.empty())
 				{
 					// Preparation of table read from sofa file
-					t_DirectivityTF_DataBase_ListOfOrientations = offlineInterpolation.CalculateListOfOrientations(t_DirectivityTF_DataBase);
-					CalculateExtrapolation();							// Make the extrapolation if it's needed
-					offlineInterpolation.CalculateTF_InPoles<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, directivityTFPart_length, resamplingStep, CDirectivityTFAuxiliarMethods::CalculateDirectivityTFFromHemisphereParts());
-					offlineInterpolation.CalculateTF_SphericalCaps<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, directivityTFPart_length, DEFAULT_GAP_THRESHOLD, resamplingStep, CDirectivityTFAuxiliarMethods::CalculateDirectivityTF_FromBarycentrics_OfflineInterpolation());
-					//Creation and filling of resampling HRTF table
-					t_DirectivityTF_DataBase_ListOfOrientations = offlineInterpolation.CalculateListOfOrientations(t_DirectivityTF_DataBase);
-					quasiUniformSphereDistribution.CreateGrid<T_DirectivityTFInterlacedDataTable, TDirectivityInterlacedTFStruct>(t_DirectivityTF_Resampled, gridResamplingStepsVector, resamplingStep);
-					offlineInterpolation.FillResampledTable<T_DirectivityTFTable, T_DirectivityTFInterlacedDataTable, BRTServices::TDirectivityTFStruct, BRTServices::TDirectivityInterlacedTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_Resampled, bufferSize, directivityTFPart_length, directivityTF_numberOfSubfilters, CalculateInterlacedTFTo2PI(), CDirectivityTFAuxiliarMethods::CalculateDirectivityTF_FromBarycentrics_OfflineInterpolation());		
-					//FOR TESTING:
-					for (auto it = t_DirectivityTF_Resampled.begin(); it != t_DirectivityTF_Resampled.end(); it++) {
-						if (it->second.data.size() == 0) {
-							SET_RESULT(RESULT_ERROR_NOTSET, "The t_DirectivityTF_Resampled table has an empty DirectivityTF in position [" + std::to_string(it->first.azimuth) + ", " + std::to_string(it->first.elevation) + "]");
-						}
-					}
-					//Setup values
-					setupDirectivityTFInProgress = false;
-					directivityTFloaded = true;
+					//t_DirectivityTF_DataBase_ListOfOrientations = offlineInterpolation.CalculateListOfOrientations(t_DirectivityTF_DataBase);
+					//CalculateExtrapolation();							// Make the extrapolation if it's needed
+					//offlineInterpolation.CalculateTF_InPoles<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, directivityTFPart_length, resamplingStep, CDirectivityTFAuxiliarMethods::CalculateDirectivityTFFromHemisphereParts());
+					//offlineInterpolation.CalculateTF_SphericalCaps<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, directivityTFPart_length, DEFAULT_GAP_THRESHOLD, resamplingStep, CDirectivityTFAuxiliarMethods::CalculateDirectivityTF_FromBarycentrics_OfflineInterpolation());
+					////Creation and filling of resampling HRTF table
+					//t_DirectivityTF_DataBase_ListOfOrientations = offlineInterpolation.CalculateListOfOrientations(t_DirectivityTF_DataBase);
+					//quasiUniformSphereDistribution.CreateGrid<T_DirectivityTFInterlacedDataTable, TDirectivityInterlacedTFStruct>(t_DirectivityTF_Resampled, gridResamplingStepsVector, resamplingStep);
+					//offlineInterpolation.FillResampledTable<T_DirectivityTFTable, T_DirectivityTFInterlacedDataTable, BRTServices::TDirectivityTFStruct, BRTServices::TDirectivityInterlacedTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_Resampled, bufferSize, directivityTFPart_length, directivityTF_numberOfSubfilters, CalculateInterlacedTFTo2PI(), CDirectivityTFAuxiliarMethods::CalculateDirectivityTF_FromBarycentrics_OfflineInterpolation());		
+					////FOR TESTING:
+					//for (auto it = t_DirectivityTF_Resampled.begin(); it != t_DirectivityTF_Resampled.end(); it++) {
+					//	if (it->second.data.size() == 0) {
+					//		SET_RESULT(RESULT_ERROR_NOTSET, "The t_DirectivityTF_Resampled table has an empty DirectivityTF in position [" + std::to_string(it->first.azimuth) + ", " + std::to_string(it->first.elevation) + "]");
+					//	}
+					//}
+					////Setup values
+					//setupDirectivityTFInProgress = false;
+					//directivityTFloaded = true;
 
-					SET_RESULT(RESULT_OK, "DirectivityTF Table completed succesfully");
-					return true;
+					//SET_RESULT(RESULT_OK, "DirectivityTF Table completed succesfully");
+					//return true;
 				}
 				else
 				{
@@ -268,44 +268,45 @@ namespace BRTServices
 		*/
 		const std::vector<CMonoBuffer<float>> GetDirectivityTF(float _azimuth, float _elevation, bool runTimeInterpolation) const
 		{
-			std::vector<CMonoBuffer<float>> newDirectivityTF;
-						
-			if (setupDirectivityTFInProgress) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "GetDirectivityTF: Directivity setup in progress, return empty");
-				return newDirectivityTF;
+			//std::vector<CMonoBuffer<float>> newDirectivityTF;
+			//			
+			//if (setupDirectivityTFInProgress) {
+			//	SET_RESULT(RESULT_ERROR_NOTSET, "GetDirectivityTF: Directivity setup in progress, return empty");
+			//	return newDirectivityTF;
 
-			}
-			if (!runTimeInterpolation) {
-				TDirectivityInterlacedTFStruct temp = quasiUniformSphereDistribution.FindNearest<T_DirectivityTFInterlacedDataTable, TDirectivityInterlacedTFStruct>(t_DirectivityTF_Resampled, gridResamplingStepsVector, _azimuth, _elevation);
-				return temp.data;
-				
-			}
+			//}
+			//if (!runTimeInterpolation) {
+			//	TDirectivityInterlacedTFStruct temp = quasiUniformSphereDistribution.FindNearest<T_DirectivityTFInterlacedDataTable, TDirectivityInterlacedTFStruct>(t_DirectivityTF_Resampled, gridResamplingStepsVector, _azimuth, _elevation);
+			//	return temp.data;
+			//	
+			//}
 
-			//  We have to do the run time interpolation -- (runTimeInterpolation = true)
-			// Check if we are close to 360 azimuth or elevation and change to 0
-			if (Common::AreSame(_azimuth, SPHERE_BORDER, EPSILON_SEWING)) { _azimuth = DEFAULT_MIN_AZIMUTH; }
-			if (Common::AreSame(_elevation, SPHERE_BORDER, EPSILON_SEWING)) { _elevation = DEFAULT_MIN_ELEVATION; }
+			////  We have to do the run time interpolation -- (runTimeInterpolation = true)
+			//// Check if we are close to 360 azimuth or elevation and change to 0
+			//if (Common::AreSame(_azimuth, SPHERE_BORDER, EPSILON_SEWING)) { _azimuth = DEFAULT_MIN_AZIMUTH; }
+			//if (Common::AreSame(_elevation, SPHERE_BORDER, EPSILON_SEWING)) { _elevation = DEFAULT_MIN_ELEVATION; }
 
-			// Check if we are at a pole
-			int ielevation = static_cast<int>(round(_elevation));
-			if ((ielevation == elevationNorth) || (ielevation == elevationSouth)) {
-				_elevation = ielevation;
-				_azimuth = DEFAULT_MIN_AZIMUTH;
-			}
+			//// Check if we are at a pole
+			//int ielevation = static_cast<int>(round(_elevation));
+			//if ((ielevation == elevationNorth) || (ielevation == elevationSouth)) {
+			//	_elevation = ielevation;
+			//	_azimuth = DEFAULT_MIN_AZIMUTH;
+			//}
 
-			// We search if the point already exists
-			auto it = t_DirectivityTF_Resampled.find(TOrientation(_azimuth, _elevation));
-			if (it != t_DirectivityTF_Resampled.end())
-			{
-				return it->second.data;
-			}
-			else
-			{
-				// ONLINE Interpolation 
-				const  BRTServices::TDirectivityInterlacedTFStruct temp = slopesMethodOnlineInterpolator2.CalculateTF_OnlineMethod<T_DirectivityTFInterlacedDataTable, BRTServices::TDirectivityInterlacedTFStruct>
-					(t_DirectivityTF_Resampled, directivityTF_numberOfSubfilters, directivityTF_length, _azimuth, _elevation, gridResamplingStepsVector, CDirectivityTFAuxiliarMethods::CalculateDirectivityTF_FromBarycentric_OnlineInterpolation());
-				return temp.data;
-			}
+			//// We search if the point already exists
+			//auto it = t_DirectivityTF_Resampled.find(TOrientation(_azimuth, _elevation));
+			//if (it != t_DirectivityTF_Resampled.end())
+			//{
+			//	return it->second.data;
+			//}
+			//else
+			//{
+			//	// ONLINE Interpolation 
+			//	const  BRTServices::TDirectivityInterlacedTFStruct temp = slopesMethodOnlineInterpolator2.CalculateTF_OnlineMethod<T_DirectivityTFInterlacedDataTable, BRTServices::TDirectivityInterlacedTFStruct>
+			//		(t_DirectivityTF_Resampled, directivityTF_numberOfSubfilters, directivityTF_length, _azimuth, _elevation, gridResamplingStepsVector, CDirectivityTFAuxiliarMethods::CalculateDirectivityTF_FromBarycentric_OnlineInterpolation());
+			//	return temp.data;
+			//}
+			return std::vector<CMonoBuffer<float>>();
 		}
 	
 
@@ -476,18 +477,18 @@ namespace BRTServices
 		void CalculateExtrapolation() {
 			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.
 
-			if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::zero_insertion) {
-				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded DirectivityTF sofa file, an extrapolation with zeros will be performed to fill it.");
-				extrapolation.Process<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_DataBase_ListOfOrientations, directivityTFPart_length, DEFAULT_EXTRAPOLATION_STEP, CDirectivityTFAuxiliarMethods::GetZerosDirectivityTF());			
-			}
-			else if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::nearest_point) {
-				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded DirectivityTF sofa file, an extrapolation will be made to the nearest point to fill it.");
-				extrapolation.Process<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_DataBase_ListOfOrientations, directivityTFPart_length, DEFAULT_EXTRAPOLATION_STEP, CDirectivityTFAuxiliarMethods::GetNearestPointDirectivityTF());
-			}
-			else {
-				SET_RESULT(RESULT_ERROR_NOTSET, "Extrapolation Method not set up.");
-				// Do nothing
-			}
+			//if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::zero_insertion) {
+			//	SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded DirectivityTF sofa file, an extrapolation with zeros will be performed to fill it.");
+			//	extrapolation.Process<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_DataBase_ListOfOrientations, directivityTFPart_length, DEFAULT_EXTRAPOLATION_STEP, CDirectivityTFAuxiliarMethods::GetZerosDirectivityTF());			
+			//}
+			//else if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::nearest_point) {
+			//	SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded DirectivityTF sofa file, an extrapolation will be made to the nearest point to fill it.");
+			//	extrapolation.Process<T_DirectivityTFTable, BRTServices::TDirectivityTFStruct>(t_DirectivityTF_DataBase, t_DirectivityTF_DataBase_ListOfOrientations, directivityTFPart_length, DEFAULT_EXTRAPOLATION_STEP, CDirectivityTFAuxiliarMethods::GetNearestPointDirectivityTF());
+			//}
+			//else {
+			//	SET_RESULT(RESULT_ERROR_NOTSET, "Extrapolation Method not set up.");
+			//	// Do nothing
+			//}
 		}
 	};
 }

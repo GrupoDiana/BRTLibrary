@@ -197,13 +197,13 @@ namespace BRTServices
 			std::lock_guard<std::mutex> l(mutex);
 
 			impulseResponseLength = _listenerIRData->GetIRLength();	// TODO Do we need this?
-			IRSubfilterLength = _listenerIRData->GetTFSubfilterLength();
-			IRNumberOfSubFilters = _listenerIRData->GetTFNumberOfSubfilters();
+			IRSubfilterLength = _listenerIRData->GetSubfilterLengthFR();
+			IRNumberOfSubFilters = _listenerIRData->GetNumberOfSubfiltersFR();
 
 			std::vector<std::vector< CMonoBuffer<float>>> ambisonicChannelsLeft;
 			std::vector<std::vector< CMonoBuffer<float>>> ambisonicChannelsRight;
-			ambisonicChannelsLeft.resize(ambisonicEncoder.GetTotalChannels(), std::vector<CMonoBuffer<float>>(_listenerIRData->GetTFNumberOfSubfilters(), CMonoBuffer<float>(_listenerIRData->GetTFSubfilterLength(), 0)));
-			ambisonicChannelsRight.resize(ambisonicEncoder.GetTotalChannels(), std::vector<CMonoBuffer<float>>(_listenerIRData->GetTFNumberOfSubfilters(), CMonoBuffer<float>(_listenerIRData->GetTFSubfilterLength(), 0)));
+			ambisonicChannelsLeft.resize(ambisonicEncoder.GetTotalChannels(), std::vector<CMonoBuffer<float>>(_listenerIRData->GetNumberOfSubfiltersFR(), CMonoBuffer<float>(_listenerIRData->GetSubfilterLengthFR(), 0)));
+			ambisonicChannelsRight.resize(ambisonicEncoder.GetTotalChannels(), std::vector<CMonoBuffer<float>>(_listenerIRData->GetNumberOfSubfiltersFR(), CMonoBuffer<float>(_listenerIRData->GetSubfilterLengthFR(), 0)));
 
 			std::vector<TOrientation> virtualSpeakerPositions = virtualSpeakers.GetVirtualSpeakersPositions();
 
@@ -219,7 +219,7 @@ namespace BRTServices
 					oneVirtualSpeakersData.leftHRIR_Partitioned = _listenerIRData->GetHRIRPartitioned(Common::T_ear::LEFT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true, Common::CTransform(_listenerPosition));
 					oneVirtualSpeakersData.rightHRIR_Partitioned = _listenerIRData->GetHRIRPartitioned(Common::T_ear::RIGHT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true, Common::CTransform(_listenerPosition));
 
-					if ((oneVirtualSpeakersData.leftHRIR_Partitioned.size() != _listenerIRData->GetTFNumberOfSubfilters()) || (oneVirtualSpeakersData.rightHRIR_Partitioned.size() != _listenerIRData->GetTFNumberOfSubfilters())) {
+					if ((oneVirtualSpeakersData.leftHRIR_Partitioned.size() != _listenerIRData->GetNumberOfSubfiltersFR()) || (oneVirtualSpeakersData.rightHRIR_Partitioned.size() != _listenerIRData->GetNumberOfSubfiltersFR())) {
 						SET_RESULT(RESULT_ERROR_BADSIZE, "The HRIR of a virtual speaker does not have an appropriate value.");
 						return false;
 					}

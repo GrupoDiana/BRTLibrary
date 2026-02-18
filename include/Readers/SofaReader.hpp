@@ -628,7 +628,7 @@ namespace BRTReaders {
 					listenerPositionBRTConvention.SetAxis(RIGHT_AXIS, listenerPosition.y);
 					listenerPositionBRTConvention.SetAxis(UP_AXIS, listenerPosition.z);
 					// Set data to HRBIR struct
-					data->AddHRIR(_relativeAzimuthListenerEmitter, _relativeElevationListenerEmitter, _relativeDistanceListenerEmitter, listenerPosition, std::move(hrir_value));
+					//data->AddHRIR(_relativeAzimuthListenerEmitter, _relativeElevationListenerEmitter, _relativeDistanceListenerEmitter, listenerPosition, std::move(hrir_value));
 					data->AddIR(listenerPosition, _relativeAzimuthListenerEmitter, _relativeElevationListenerEmitter, _relativeDistanceListenerEmitter, std::move(hrir_value));
 				}
 			}

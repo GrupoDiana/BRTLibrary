@@ -35,7 +35,7 @@ namespace Common {
 		 * @param _inputIR 
 		 * @return 
 		 */
-		/*CMonoBuffer<float> Proccess(const CMonoBuffer<float> & _inputIR, TWindowType _windowType, float _windowThreshold, float _windowRiseTime, float SampleRate) { 
+		/*CMonoBuffer<float> Process(const CMonoBuffer<float> & _inputIR, TWindowType _windowType, float _windowThreshold, float _windowRiseTime, float SampleRate) { 
 			if (windowType == TWindowType::fadein) {
 				return CalculateFadeInWindowingIR(_inputIR);
 			}
@@ -44,7 +44,7 @@ namespace Common {
 			}		
 		}*/
 		
-		static CMonoBuffer<float> Proccess(const CMonoBuffer<float> & _inputIR, TWindowType _windowType, float _windowThreshold, float _windowRiseTime, float _sampleRate) {
+		static CMonoBuffer<float> Process(const CMonoBuffer<float> & _inputIR, TWindowType _windowType, float _windowThreshold, float _windowRiseTime, float _sampleRate) {
 			if (_windowType == TWindowType::fadein) {
 				return CalculateFadeInWindowingIR(_inputIR, _windowThreshold, _windowRiseTime, _sampleRate);
 			} else {
