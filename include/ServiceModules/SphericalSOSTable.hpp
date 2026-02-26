@@ -87,8 +87,8 @@ namespace BRTServices {
 		*/
 		CSphericalSOSTable() 
 			: setupInProgress{ false }
-			, SOSCoefficientsLoaded{ false }			
-			, numberOfEars{ -1 }
+			//, SOSCoefficientsLoaded{ false }			
+			//, numberOfEars{ -1 }
 			, azimuthStep{-1}
 			, distanceStep{-1}
 			, fileTitle{""}
@@ -100,7 +100,8 @@ namespace BRTServices {
 
 		bool BeginSetup() override {
 			setupInProgress = true;			
-			SOSCoefficientsLoaded = false;			
+			//SOSCoefficientsLoaded = false;	
+			dataReady = false;
 			Clear();
 			SET_RESULT(RESULT_OK, "SOS Coefficients Setup started");
 			return true;
@@ -115,7 +116,8 @@ namespace BRTServices {
 				distanceStep = CalculateTableDistanceStep();
 
 				if (numberOfEars != -1 && azimuthStep != -1 && distanceStep != -1) {															
-					SOSCoefficientsLoaded = true;
+					//SOSCoefficientsLoaded = true;
+					dataReady = true;
 					SET_RESULT(RESULT_OK, "SOS Filter Setup finished");
 					azimuthList.clear();
 					distanceList.clear();
@@ -188,17 +190,17 @@ namespace BRTServices {
 		 * @brief Set the number of ears
 		 * @param _numberOfEars number of ears
 		 */
-		void SetNumberOfEars(int& _numberOfEars) override {
-			numberOfEars = _numberOfEars;
-		}
+		//void SetNumberOfEars(int& _numberOfEars) override {
+		//	numberOfEars = _numberOfEars;
+		//}
 
-		/**
-		 * @brief get the number of ears
-		 * @return number of ears
-		 */
-		int GetNumberOfEars() override {
-			return numberOfEars;
-		}
+		///**
+		// * @brief get the number of ears
+		// * @return number of ears
+		// */
+		//int GetNumberOfEars() override {
+		//	return numberOfEars;
+		//}
 	
 		/** \brief	Set the relative position of one ear (to the listener head center)
 		* 	\param [in]	_ear			ear type
@@ -277,7 +279,7 @@ namespace BRTServices {
 		*/				
 		std::vector<float> GetSOSFilterCoefficients(Common::T_ear ear, float distance_m, float azimuth) override
 		{
-			if (!SOSCoefficientsLoaded) {
+			if (!dataReady) {
 				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "SOS Filter table was not initialized in BRTServices::CILD::GetSOSFilterCoefficients()");
 				return std::vector<float>();
 			}
@@ -397,7 +399,7 @@ namespace BRTServices {
 		///////////////	
 
 		bool setupInProgress;						// Variable that indicates the SOS Filter load is in process
-		bool SOSCoefficientsLoaded;						// Variable that indicates if the SOS Filter has been loaded correctly
+		//bool SOSCoefficientsLoaded;				// Variable that indicates if the SOS Filter has been loaded correctly
 
 		T_SOSCoefficients_HashTable t_SOSFilter;
 		int azimuthStep;							// In degress
@@ -413,7 +415,7 @@ namespace BRTServices {
 		std::string databaseName;
 		std::string listenerShortName;
 				
-		int numberOfEars;
+		//int numberOfEars;
 	};
 }
 #endif

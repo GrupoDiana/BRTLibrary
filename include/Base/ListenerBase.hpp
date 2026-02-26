@@ -31,7 +31,7 @@
 #include <Common/Buffer.hpp>
 
 namespace BRTServices {
-	class CHRTF;
+	class CSphericalInterpolatedFIRTable;
 }
 
 namespace BRTBase {

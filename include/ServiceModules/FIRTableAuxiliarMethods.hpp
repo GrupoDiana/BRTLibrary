@@ -1,7 +1,7 @@
 /**
-* \class CHRTFAuxiliarMethods
+* \class CFIRTableAuxiliarMethods
 *
-* \brief Declaration of CHRTFAuxiliarMethods class interface
+* \brief Declaration of CFIRTableAuxiliarMethods class interface
 * \date	July 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
@@ -23,8 +23,8 @@
 */
 
 
-#ifndef _CHRTF_AUXILIARMETHODS_HPP
-#define _CHRTF_AUXILIARMETHODS_HPP
+#ifndef _CFIR_TABLE_AUXILIAR_METHODS_HPP
+#define _CFIR_TABLE_AUXILIAR_METHODS_HPP
 
 #include <unordered_map>
 #include <vector>
@@ -36,7 +36,7 @@
 #include <Common/CommonDefinitions.hpp>
 #include <Common/GlobalParameters.hpp>
 #include <ServiceModules/ServicesBase.hpp>
-#include <ServiceModules/HRTFDefinitions.hpp>
+#include <ServiceModules/SphericalFIRTableDefinitions.hpp>
 #include <ServiceModules/InterpolationAuxiliarMethods.hpp>
 #include <ServiceModules/GridsManager.hpp>
 #include <ServiceModules/OnlineInterpolation.hpp>
@@ -46,8 +46,78 @@ namespace BRTServices {
 
 	/** \brief Auxiliary methods used in different classes working with HRTFs
 	*/
-	class CHRTFAuxiliarMethods {
+	class CFIRTableAuxiliarMethods {
 	public:		
+
+
+		/**
+		 * @brief Calculate the windowing of the IR functions of the DataBase Table. 
+		 * @param _inTable Input table with the IR data
+		 * @param _outTable Output table with the windowed IR data
+		 */
+		static bool CalculateWindowingIRTable(const BRTServices::TRawSofaData & _inTable, BRTServices::TRawSofaData & _outTable,
+			float fadeInBegin, float riseTime, float fadeOutCutoff, float fallTime, int _sampleRate) {
+
+			_outTable.clear();
+			_outTable = _inTable;
+
+			bool anyActionDone = false;
+			bool fadeInEnabled = (fadeInBegin != 0 || riseTime != 0);
+			bool fadeOutEnabled = (fadeOutCutoff != 0 || fallTime != 0);
+
+			if (fadeInEnabled) {
+				for (auto it = _outTable.begin(); it != _outTable.end(); it++) {
+					it->data.IR.left = Common::CIRWindowing::Process(it->data.IR.left, Common::CIRWindowing::fadein, fadeInBegin, riseTime, _sampleRate);
+					it->data.IR.right = Common::CIRWindowing::Process(it->data.IR.right, Common::CIRWindowing::fadein, fadeInBegin, riseTime, _sampleRate);
+				}
+			}
+			if (fadeOutEnabled) {
+				for (auto it = _outTable.begin(); it != _outTable.end(); it++) {
+					it->data.IR.left = Common::CIRWindowing::Process(it->data.IR.left, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, _sampleRate);
+					it->data.IR.right = Common::CIRWindowing::Process(it->data.IR.right, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, _sampleRate);
+				}
+				anyActionDone = true;
+			}
+			// Update impulseResponseLength and the number of subfilters
+			//impulseResponseLength = _outTable.begin()->data.IR.left.size();
+			//partitionedFRNumberOfSubfilters = CalculateNumberOPartitions(impulseResponseLength);
+			return anyActionDone;
+		}
+
+		/**
+		 * @brief Calculate and remove the common delay of every IR functions of the DataBase Table. 
+		 */
+		static void RemoveCommonDelayFromTable(TRawSofaData & table) {
+			//1. Init the minumun value with the fist value of the table
+			auto it0 = table.begin();
+			uint64_t minimumDelayLeft = it0->data.delay.left; //Vrbl to store the minumun delay value for left ear
+			uint64_t minimumDelayRight = it0->data.delay.right; //Vrbl to store the minumun delay value for right ear
+
+			//2. Find the common delay
+			//Scan the whole table looking for the minimum delay for left and right ears
+			for (auto it = table.begin(); it != table.end(); it++) {
+				//Left ear
+				if (it->data.delay.left < minimumDelayLeft) {
+					minimumDelayLeft = it->data.delay.left;
+				}
+				//Right ear
+				if (it->data.delay.right < minimumDelayRight) {
+					minimumDelayRight = it->data.delay.right;
+				}
+			}
+			//3. Delete the common delay
+			//Scan the whole table substracting the common delay to every delays for both ears separately
+			//The common delay of each canal have been calculated and subtracted separately in order to correct the asymmetry of the measurement
+			if (minimumDelayRight != 0 || minimumDelayLeft != 0) {
+				for (auto it = table.begin(); it != table.end(); it++) {
+					it->data.delay.left -= minimumDelayLeft; //Left ear
+					it->data.delay.right -= minimumDelayRight; //Right ear
+				}
+			}
+			SET_RESULT(RESULT_OK, "Common delay deleted (" + std::to_string(minimumDelayLeft) + "," + std::to_string(minimumDelayRight) + ") from nonInterpolatedHRTF table succesfully");
+		}
+
+		
 
 		/**
 		 * @brief Get interpolated and partitioned HRIR buffer for one ear, without delay
@@ -63,7 +133,7 @@ namespace BRTServices {
 		 *   \eh On error, an error code is reported to the error handler.
 		 *       Warnings may be reported to the error handler.
 		 */
-		static const std::vector<CMonoBuffer<float>> GetHRIRFromPartitionedTable(const TSphericalFIRTablePartitioned& table, Common::T_ear ear, float _azimuth, float _elevation,
+		static const TFRPartitions GetHRIRFromPartitionedTable(const TSphericalFIRTablePartitioned & table, Common::T_ear ear, float _azimuth, float _elevation,
 			bool runTimeInterpolation, int32_t _numberOfSubfilters, int32_t _subfilterLength, std::unordered_map<TOrientation, float> stepVector)
 		{
 
@@ -74,7 +144,7 @@ namespace BRTServices {
 			float elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
 			float elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
 
-			std::vector<CMonoBuffer<float>> newHRIR;
+			TFRPartitions newHRIR;
 						
 
 			if (!runTimeInterpolation) {
@@ -96,8 +166,14 @@ namespace BRTServices {
 			// Check if we are at a pole
 			int ielevation = static_cast<int>(round(_elevation));
 			if ((ielevation == elevationNorth) || (ielevation == elevationSouth)) {
-				GetPoleHRIRFromPartitionedTable(table, newHRIR, ear, ielevation, azimuthMin);
-				return newHRIR;
+				Common::CEarPair<TFRPartitions> data;
+				GetPoleHRIRFromPartitionedTable(table, data, ielevation, azimuthMin);
+				if (ear == Common::T_ear::LEFT) {
+					return data.left;
+				}
+				else {
+					return data.right;
+				}				
 			}
 
 			// We search if the point already exists
@@ -117,16 +193,85 @@ namespace BRTServices {
 
 			// ONLINE Interpolation 	
 			if (ear == Common::T_ear::LEFT) {
-				const TFRPartitionedStruct data = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_LeftEar());
+				const TFRPartitionedStruct data = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuth, _elevation, stepVector, CFIRTableAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_LeftEar());
 				return data.IR.left;
 			}
 			else
 			{
-				const TFRPartitionedStruct data = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuth, _elevation, stepVector, CHRTFAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_RightEar());
+				const TFRPartitionedStruct data = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuth, _elevation, stepVector, CFIRTableAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_RightEar());
 				return data.IR.right;
 			}
 		}
 
+		static const Common::CEarPair<TFRPartitions> GetHRIRFromPartitionedTable_2Ears(const TSphericalFIRTablePartitioned & table, float _azimuth, float _elevation,
+								bool runTimeInterpolation, int32_t _numberOfSubfilters, int32_t _subfilterLength, std::unordered_map<TOrientation, float> stepVector) {
+
+			float sphereBorder = SPHERE_BORDER;
+			float epsilon_sewing = EPSILON_SEWING;
+			float azimuthMin = DEFAULT_MIN_AZIMUTH;
+			float elevationMin = DEFAULT_MIN_ELEVATION;
+			float elevationNorth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north);
+			float elevationSouth = CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south);
+
+			//std::vector<CMonoBuffer<float>> newHRIR;
+			Common::CEarPair<TFRPartitions> data;
+
+			if (!runTimeInterpolation) {								
+				TFRPartitionedStruct temp = CQuasiUniformSphereDistribution::FindNearest<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, stepVector, _azimuth, _elevation);
+				data = std::move(temp.IR);
+				/*if (ear == Common::T_ear::LEFT) {
+					newHRIR = temp.IR.left;
+				} else if (ear == Common::T_ear::RIGHT) {
+					newHRIR = temp.IR.right;
+				} else {
+					SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get HRIR for a wrong ear (BOTH or NONE)");
+				}*/
+
+				return data;
+			}
+
+			//  We have to do the run time interpolation -- (runTimeInterpolation = true)
+
+			// Check if we are close to 360 azimuth or elevation and change to 0
+			if (Common::AreSame(_azimuth, sphereBorder, epsilon_sewing)) {
+				_azimuth = azimuthMin;
+			}
+			if (Common::AreSame(_elevation, sphereBorder, epsilon_sewing)) {
+				_elevation = elevationMin;
+			}
+
+			// Check if we are at a pole
+			int ielevation = static_cast<int>(round(_elevation));
+			if ((ielevation == elevationNorth) || (ielevation == elevationSouth)) {
+				GetPoleHRIRFromPartitionedTable(table, data, ielevation, azimuthMin);
+				return data;
+			}
+
+			// We search if the point already exists
+			auto it = table.find(TOrientation(_azimuth, _elevation));
+			if (it != table.end()) {
+				data = it->second.IR;
+				/*if (ear == Common::T_ear::LEFT) {
+					newHRIR = it->second.IR.left;
+				} else {
+					newHRIR = it->second.IR.right;
+				}*/
+				return data;
+			}
+
+			// ONLINE Interpolation
+			//if (ear == Common::T_ear::LEFT) {
+				//const TFRPartitionedStruct data = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuth, _elevation, stepVector, CFIRTableAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_LeftEar());
+			//	return data.IR.left;
+			//} else {
+				//const TFRPartitionedStruct data = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuth, _elevation, stepVector, CFIRTableAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_RightEar());
+				//return data.IR.right;
+			//}
+			TFRPartitionedStruct auxLeft = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuth, _elevation, stepVector, CFIRTableAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_LeftEar());
+			TFRPartitionedStruct auxRight = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuth, _elevation, stepVector, CFIRTableAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_RightEar());
+			data.left = std::move(auxLeft.IR.left);
+			data.right =std::move(auxRight.IR.right);
+		}
 		/**
 		 * @brief Get HRIR from a pole
 		 * @param table Table with the HRIR data
@@ -135,18 +280,19 @@ namespace BRTServices {
 		 * @param ielevation
 		 * @param azimuthMin
 		 */
-		static void GetPoleHRIRFromPartitionedTable(const TSphericalFIRTablePartitioned& table, std::vector<CMonoBuffer<float>>& newHRIR, Common::T_ear ear, int ielevation, float azimuthMin) {
+		static void GetPoleHRIRFromPartitionedTable(const TSphericalFIRTablePartitioned & table, Common::CEarPair<TFRPartitions> & newHRIR, int ielevation, float azimuthMin) {
 			auto it = table.find(TOrientation(azimuthMin, ielevation));
 			if (it != table.end())
 			{
-				if (ear == Common::T_ear::LEFT)
+				newHRIR = it->second.IR;
+				/*if (ear == Common::T_ear::LEFT)
 				{
 					newHRIR = it->second.IR.left;
 				}
 				else
 				{
 					newHRIR = it->second.IR.right;
-				}
+				}*/
 			}
 			else
 			{
@@ -204,7 +350,7 @@ namespace BRTServices {
 		//		return temp;
 		//	}
 
-		//	const TFRPartitionedStruct temp = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuthCenter, _elevationCenter, stepVector, CHRTFAuxiliarMethods::CalculateDelay_FromBarycentricCoordinates());
+		//	const TFRPartitionedStruct temp = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuthCenter, _elevationCenter, stepVector, CFIRTableAuxiliarMethods::CalculateDelay_FromBarycentricCoordinates());
 		//	return temp;
 		//}
 		//
@@ -281,7 +427,7 @@ namespace BRTServices {
 				return foundData;
 			}
 
-			const TFRPartitionedStruct temp = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuthCenter, _elevationCenter, stepVector, CHRTFAuxiliarMethods::CalculateDelay_FromBarycentricCoordinates());			
+			const TFRPartitionedStruct temp = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuthCenter, _elevationCenter, stepVector, CFIRTableAuxiliarMethods::CalculateDelay_FromBarycentricCoordinates());			
 			return temp.delay;
 		}
 

@@ -30,8 +30,7 @@
 #include <ProcessingModules/AmbisonicEncoder.hpp>
 #include <Common/AddDelayExpansionMethod.hpp>
 #include <Common/SourceListenerRelativePositionCalculation.hpp>
-//#include <ProcessingModules/BinauralFilter.hpp>
-#include <ServiceModules/HRTF.hpp>
+#include <ServiceModules/SphericalInterpolatedFIRTable.hpp>
 
 #include <memory>
 #include <vector>
@@ -166,22 +165,24 @@ namespace BRTProcessing {
 			Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerRelativePositions(sourceTransform, listenerTransform, _listenerHRTF, enableParallaxCorrection, leftElevation, leftAzimuth, rightElevation, rightAzimuth, centerElevation, centerAzimuth, interauralAzimuth);
 			
 			// GET DELAY
-			uint64_t leftDelay; 				///< Delay, in number of samples
-			uint64_t rightDelay;				///< Delay, in number of samples
+			//uint64_t leftDelay; 				///< Delay, in number of samples
+			//uint64_t rightDelay;				///< Delay, in number of samples
+			Common::CEarPair<uint64_t> delays({0,0}); ///< Delay, in number of samples
 			if (enableITDSimulation) {
-				BRTServices::THRIRPartitionedStruct delays = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, centerAzimuth, centerElevation, enableInterpolation, listenerTransform);
-				leftDelay = delays.leftDelay;
-				rightDelay = delays.rightDelay;
+				//BRTServices::THRIRPartitionedStruct delays = _listenerHRTF->GetHRIRDelay(Common::T_ear::BOTH, centerAzimuth, centerElevation, enableInterpolation, listenerTransform);
+				//leftDelay = delays.leftDelay;
+				//rightDelay = delays.rightDelay;
+				delays = _listenerHRTF->GetFR_Delay(centerAzimuth, centerElevation, distanceToListener, listenerTransform, enableInterpolation);
 			}
-			else {
+			/*else {
 				leftDelay = 0;
 				rightDelay = 0;
-			}
+			}*/
 			// ADD Delay
 			CMonoBuffer<float> delayedLeftEarBuffer;
 			CMonoBuffer<float> delayedRightEarBuffer;			
-			Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(_inBuffer, delayedLeftEarBuffer, leftChannelDelayBuffer, leftDelay);
-			Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(_inBuffer, delayedRightEarBuffer, rightChannelDelayBuffer, rightDelay);
+			Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(_inBuffer, delayedLeftEarBuffer, leftChannelDelayBuffer, delays.left);
+			Common::CAddDelayExpansionMethod::ProcessAddDelay_ExpansionMethod(_inBuffer, delayedRightEarBuffer, rightChannelDelayBuffer, delays.right);
 			
 			// Near Field Proccess
 			CMonoBuffer<float> nearFilteredLeftEarBuffer;
@@ -225,7 +226,7 @@ namespace BRTProcessing {
 		
 		/// PRIVATE Methods        				
 		/// Initialize convolvers and convolition buffers		
-		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CHRTF>& _listenerHRTF) {		
+		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable>& _listenerHRTF) {		
 			leftChannelDelayBuffer.clear();
 			rightChannelDelayBuffer.clear();
 		}		

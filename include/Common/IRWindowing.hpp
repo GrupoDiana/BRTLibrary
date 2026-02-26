@@ -18,31 +18,7 @@ namespace Common {
 			
 		};
 		
-		/**
-		 * @brief 
-		 * @param _windowType 
-		 * @param _windowThreshold 
-		 * @param _windowRiseTime 
-		 */
-		/*void Setup(TWindowType _windowType, float _windowThreshold, float _windowRiseTime) { 
-			windowType = _windowType;
-			windowThreshold = _windowThreshold;
-			windowRiseTime = _windowRiseTime;
-		}*/
 		
-		/**
-		 * @brief 
-		 * @param _inputIR 
-		 * @return 
-		 */
-		/*CMonoBuffer<float> Process(const CMonoBuffer<float> & _inputIR, TWindowType _windowType, float _windowThreshold, float _windowRiseTime, float SampleRate) { 
-			if (windowType == TWindowType::fadein) {
-				return CalculateFadeInWindowingIR(_inputIR);
-			}
-			else {
-				return CalculateFadeOutWindowingIR(_inputIR);
-			}		
-		}*/
 		
 		static CMonoBuffer<float> Process(const CMonoBuffer<float> & _inputIR, TWindowType _windowType, float _windowThreshold, float _windowRiseTime, float _sampleRate) {
 			if (_windowType == TWindowType::fadein) {

@@ -40,7 +40,9 @@ namespace BRTReaders {
 			SimpleFreeFieldHRSOS,
 			FreeFieldDirectivityTF,
 			SingleRoomMIMOSRIR,
-			GeneralFIR };
+			GeneralFIR,
+			SourceDirectivityFIR
+		};
 
 		const char* SofaConventioToString(TSofaConvention e) noexcept
 		{

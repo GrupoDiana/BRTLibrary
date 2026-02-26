@@ -26,13 +26,13 @@
 #include <memory>
 #include <Base/ModelBase.hpp>
 #include <Common/CommonDefinitions.hpp>
-#include <ServiceModules/HRTF.hpp>
+#include <ServiceModules/SphericalInterpolatedFIRTable.hpp>
 #include <ServiceModules/SphericalSOSTable.hpp>
 #include <ServiceModules/SphericalFIRTable.hpp>
 #include <Common/AudioMixer.hpp>
 
 namespace BRTServices {
-	class CHRTF;
+	class CSphericalInterpolatedFIRTable;
 }
 
 namespace BRTListenerModel {	

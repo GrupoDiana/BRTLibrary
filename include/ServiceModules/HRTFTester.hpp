@@ -37,7 +37,7 @@ namespace BRTServices
 		 * @brief Print to .csv file all orientations of the Grid resampled.
 		 * @param _hrtf 
 		*/
-		void TestGrid(std::shared_ptr<BRTServices::CHRTF> _hrtf) {
+		void TestGrid(std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable> _hrtf) {
 
 			// QuasiUniformSphereDistibution object thanks to friend class
 			BRTServices::CQuasiUniformSphereDistribution  _gridQuasiUniform;
@@ -80,7 +80,7 @@ namespace BRTServices
 		 * @brief Prints to console the number of HRIRs interpolated to check if a SOFA already interpolated needs to be interpolate
 		 * @param _hrtf 
 		*/
-		void TestGridInterpolation(std::shared_ptr<BRTServices::CHRTF> _hrtf)
+		void TestGridInterpolation(std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable> _hrtf)
 		{
 			// QuasiUniformSphereDistibution object thanks to friend class
 			BRTServices::CQuasiUniformSphereDistribution  _gridQuasiUniform;

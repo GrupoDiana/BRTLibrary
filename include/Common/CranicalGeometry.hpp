@@ -35,9 +35,9 @@ namespace Common {
 		CCranialGeometry(float _headRadius) : headRadius{ _headRadius }, leftEarLocalPosition{ Common::CVector3() }, rightEarLocalPosition{ Common::CVector3() } { }
 		CCranialGeometry(float _headRadius, Common::CVector3 _leftEarLocalPosition, Common::CVector3 _rightEarLocalPosition) : headRadius{ _headRadius }, leftEarLocalPosition{ _leftEarLocalPosition }, rightEarLocalPosition{ _rightEarLocalPosition } { }
 
-		float GetHeadRadius() { return headRadius; }
-		Common::CVector3 GetLeftEarLocalPosition() { return leftEarLocalPosition; }
-		Common::CVector3 GetRightEarLocalPosition() { return rightEarLocalPosition; }
+		float GetHeadRadius() const { return headRadius; }
+		Common::CVector3 GetLeftEarLocalPosition() const { return leftEarLocalPosition; }
+		Common::CVector3 GetRightEarLocalPosition() const { return rightEarLocalPosition; }
 
 		/**
 		 * @brief Set the radius of the listener head. A new ear position is calculated

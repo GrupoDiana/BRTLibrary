@@ -27,7 +27,7 @@
 
 #include <ProcessingModules/UniformPartitionedConvolution.hpp>
 #include <Common/Buffer.hpp>
-#include <ServiceModules/HRTF.hpp>
+#include <ServiceModules/SphericalInterpolatedFIRTable.hpp>
 #include <ServiceModules/AmbisonicBIR.hpp>
 
 #include <memory>

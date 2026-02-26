@@ -26,9 +26,9 @@
 #include <memory>
 #include <Common/ErrorHandler.hpp>
 #include <ListenerModels/ListenerModelBase.hpp>
-#include <ServiceModules/HRTFDefinitions.hpp>
+#include <ServiceModules/SphericalFIRTableDefinitions.hpp>
 #include <ServiceModules/ServicesBase.hpp>
-#include <ServiceModules/HRTF.hpp>
+#include <ServiceModules/SphericalInterpolatedFIRTable.hpp>
 #include <ServiceModules/AmbisonicBIR.hpp>
 #include <ProcessingModules/BilateralAmbisonicEncoderProcessor.hpp>
 #include <ProcessingModules/AmbisonicDomainConvolverProcessor.hpp>
@@ -37,7 +37,7 @@
 #include <third_party_libraries/nlohmann/json.hpp>
 
 namespace BRTServices {
-	class CHRTF;
+	class CSphericalInterpolatedFIRTable;
 }
 
 namespace BRTListenerModel {
@@ -113,7 +113,7 @@ namespace BRTListenerModel {
 			, enableITDSimulation{ true } {
 			
 			// TODO Change to nullptr
-			listenerHRTF = std::make_shared<BRTServices::CHRTF>();					// Create a empty HRTF	class 
+			listenerHRTF = std::make_shared<BRTServices::CSphericalInterpolatedFIRTable>();					// Create a empty HRTF	class 
 			listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicBIR>();	// Create a empty AmbisonicIR class
 			
 			CreateHRTFExitPoint();
@@ -131,7 +131,7 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		//bool SetHRTF(std::shared_ptr<BRTServices::CHRTF> _listenerHRTF) override {
+		//bool SetHRTF(std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable> _listenerHRTF) override {
 		bool SetHRTF(std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF) override {
 
 			if (_listenerHRTF->GetSamplingRate() != globalParameters.GetSampleRate()) {
@@ -156,7 +156,7 @@ namespace BRTListenerModel {
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		//std::shared_ptr<BRTServices::CHRTF> GetHRTF() const override
+		//std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable> GetHRTF() const override
 		std::shared_ptr<BRTServices::CServicesBase> GetHRTF() const override
 		{
 			return listenerHRTF;
@@ -166,7 +166,7 @@ namespace BRTListenerModel {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void RemoveHRTF() override {
-			listenerHRTF = std::make_shared<BRTServices::CHRTF>();	// Empty HRTF			
+			listenerHRTF = std::make_shared<BRTServices::CSphericalInterpolatedFIRTable>();	// Empty HRTF			
 			listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicBIR>();	// Empty AmbisonicIR class
 		}
 
@@ -666,7 +666,7 @@ namespace BRTListenerModel {
 		mutable std::mutex mutex;													// To avoid access collisions
 		std::string listenerID;														// Store unique listener ID
 		std::shared_ptr<BRTServices::CServicesBase> listenerHRTF;					// HRTF of listener	
-		//std::shared_ptr<BRTServices::CHRTF> listenerHRTF; // HRTF of listener														
+		//std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable> listenerHRTF; // HRTF of listener														
 		std::shared_ptr<BRTServices::CSphericalSOSTable> listenerNFCFilters;			// Near Field effect filters coefficients of listener				
 		std::shared_ptr<BRTServices::CAmbisonicBIR> listenerAmbisonicIR;			// AmbisonicIR related to the listener				
 

@@ -35,8 +35,8 @@
 #include <Common/CranicalGeometry.hpp>
 #include <Common/IRWindowing.hpp>
 #include <ServiceModules/ServicesBase.hpp>
-#include <ServiceModules/HRTFDefinitions.hpp>
-#include <ServiceModules/HRTFAuxiliarMethods.hpp>
+#include <ServiceModules/SphericalFIRTableDefinitions.hpp>
+#include <ServiceModules/FIRTableAuxiliarMethods.hpp>
 #include <ServiceModules/OfflineInterpolation.hpp>
 #include <ServiceModules/OfflineInterpolationAuxiliarMethods.hpp>
 #include <ServiceModules/InterpolationAuxiliarMethods.hpp>
@@ -60,7 +60,7 @@ namespace BRTServices
 			, customITD { false }			
 			, partitionedFRNumberOfSubfilters { 0 }
 			, partitionedFRSubfilterLength { 0 }
-			, numberOfEars { 0 }			
+			//, numberOfEars { 0 }			
 			, cranialGeometry { Common::CCranialGeometry() }
 			, originalCranialGeometry { Common::CCranialGeometry() }
 			, fadeInBegin { 0 }
@@ -69,62 +69,35 @@ namespace BRTServices
 			, fallTime { 0 }			
 		{ 			
 		}
-		
-
-		/**
-		 * @brief Set the number of ears
-		 * @param _numberOfEars number of ears
-		 */
-		void SetNumberOfEars(int & _numberOfEars) override {
-			numberOfEars = _numberOfEars;
-		}
-
-		/**
-		 * @brief get the number of ears
-		 * @return number of ears
-		 */
-		int GetNumberOfEars() override {
-			return numberOfEars;
-		}
-		
-		/**
-		 * @brief Set current cranial geometry as default
-		 */
-		void SetCranialGeometryAsDefault() override {
-			originalCranialGeometry = cranialGeometry;
-		}
+								
 
 		/** \brief Switch on ITD customization in accordance with the listener head radius
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableWoodworthITD() { customITD = true; }
+		void EnableWoodworthITD() override { customITD = true; }
 
 		/** \brief Switch off ITD customization in accordance with the listener head radius
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void DisableWoodworthITD() { customITD = false; }
+		void DisableWoodworthITD() override { customITD = false; }
 
 		/** \brief Get the flag for HRTF cutomized ITD process
 		*	\retval HRTFCustomizedITD if true, the HRTF ITD customization process based on the head circumference is enabled
 		*   \eh Nothing is reported to the error handler.
 		*/
-		bool IsWoodworthITDEnabled() { return customITD; }
+		bool IsWoodworthITDEnabled() const override { return customITD; }
 
 		/** \brief	Get the number of subfilters (blocks) in which the HRIR has been partitioned
 		*	\retval n Number of HRIR subfilters
 		*   \eh Nothing is reported to the error handler.
 		*/
-		const int32_t GetNumberOfSubfiltersFR() const override {
-			return partitionedFRNumberOfSubfilters;
-		}
+		const int32_t GetNumberOfSubfiltersFR() const override { return partitionedFRNumberOfSubfilters; }
 
 		/** \brief	Get the size of subfilters (blocks) in which the HRIR has been partitioned, every subfilter has the same size
 		*	\retval size Size of HRIR subfilters
 		*   \eh Nothing is reported to the error handler.
 		*/
-		const int32_t GetSubfilterLengthFR() const override {
-			return partitionedFRSubfilterLength;
-		}
+		const int32_t GetSubfilterLengthFR() const override { return partitionedFRSubfilterLength;	}
 		
 		/** \brief	Set the radius of the listener head
 		*   \eh Nothing is reported to the error handler.
@@ -146,7 +119,7 @@ namespace BRTServices
 		*   \return listenerHeadRadius in meters
 		*   \eh Nothing is reported to the error handler.
 		*/
-		float GetHeadRadius() override {
+		float GetHeadRadius() const override {
 			return cranialGeometry.GetHeadRadius();
 		}
 
@@ -178,7 +151,7 @@ namespace BRTServices
 		*   \return  Ear local position in meters
 		*   \eh <<Error not allowed>> is reported to error handler
 		*/
-		Common::CVector3 GetEarLocalPosition(Common::T_ear _ear) override {
+		Common::CVector3 GetEarLocalPosition(Common::T_ear _ear) const override {
 			if (_ear == Common::T_ear::LEFT) {
 				return cranialGeometry.GetLeftEarLocalPosition();
 			} else if (_ear == Common::T_ear::RIGHT) {
@@ -189,7 +162,16 @@ namespace BRTServices
 			}
 		}
 
-		
+		/**
+		 * @brief Set current cranial geometry as default
+		 */
+		void SetCranialGeometryAsDefault() override {
+			originalCranialGeometry = cranialGeometry;
+		}
+
+		/** 
+		* @brief Get the closest distance at which IR has been measured from a current reference location, azimuth, and elevation. 
+		*/
 		double GetDistanceOfMeasurement(const Common::CTransform & _referenceLocation, const double & _azimuth, const double & _elevation, const double & _distance) const override {
 			
 			// Find Table to use if exists
@@ -229,7 +211,7 @@ namespace BRTServices
 		 * @param [out] _windowThreshold 
 		 * @param [out] _windowRiseTime 
 		 */
-		void GetWindowingParameters(float & _fadeInWindowThreshold, float & _fadeInWindowRiseTime, float & _fadeOutWindowThreshold, float & _fadeOutWindowRiseTime) override {
+		void GetWindowingParameters(float & _fadeInWindowThreshold, float & _fadeInWindowRiseTime, float & _fadeOutWindowThreshold, float & _fadeOutWindowRiseTime) const override {
 			_fadeInWindowThreshold = fadeInBegin;
 			_fadeInWindowRiseTime = riseTime;
 			_fadeOutWindowThreshold = fadeOutCutoff;
@@ -271,7 +253,7 @@ namespace BRTServices
 		 * @param _distance 
 		 * @param _newIR 
 		 */
-		void AddIR(const Common::CVector3 & _referencePosition, const double & _azimuth, const double & _elevation, const double & _distance, THRIRStruct && _newIR) override { 
+		void AddIR(const Common::CVector3 & _referencePosition, const double & _azimuth, const double & _elevation, const double & _distance, TIRStruct && _newIR) override { 
 			//bool error = false;
 			if (!setupInProgress) {
 				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "Cannot add IR - Setup not in progress");
@@ -281,11 +263,12 @@ namespace BRTServices
 			const double _azimuthInRage = CInterpolationAuxiliarMethods::NormalizeAzimuth0_360(_azimuth);
 			const double _elevationInRange = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(_elevation);
 
-			TIRStruct newIRData(TOrientation(_azimuthInRage, _elevationInRange, _distance), std::forward<THRIRStruct>(_newIR));
-
+			//TIRStruct newIRData(TOrientation(_azimuthInRage, _elevationInRange, _distance), std::forward<THRIRStruct>(_newIR));			
+			TIRStruct newIRData(TOrientation(_azimuthInRage, _elevationInRange, _distance), std::forward <TIRStruct>(_newIR));
+			
 			TSofaDataBucket newData;
 			newData.referencePosition = _referencePosition;
-			newData.data = std::forward<TIRStruct>(newIRData);
+			newData.data = std::forward<TIRStruct>(newIRData);			
 			sofaIRDataBase.push_back(std::forward<TSofaDataBucket>(newData));				
 		}
 
@@ -313,7 +296,7 @@ namespace BRTServices
 			TRawSofaData windowingIRTable;
 			CalculateWindowingIRTable(sofaIRDataBase, windowingIRTable);
 			if (serviceType == TServiceType::hrir_database) {
-				RemoveCommonDelayFromTable(windowingIRTable); 
+				CFIRTableAuxiliarMethods::RemoveCommonDelayFromTable(windowingIRTable); 
 			}					
 			SetupPartitionedTable(windowingIRTable);	// Prepare and fill all the partitioned table					
 			SortFRTableByDistance();					// Sort frequency domain table by distance from listener
@@ -346,11 +329,11 @@ namespace BRTServices
 		 * @param _referenceLocation 
 		 * @return 
 		 */
-		// TODO delete this method and use GetFR_PartitionedSpatiallyOriented instead
-		const TFRPartitions GetHRIRPartitioned(Common::T_ear _ear, float _azimuth, float _elevation, bool _runTimeInterpolation, const Common::CTransform & _referenceLocation) const override {
+		//// TODO delete this method and use GetFR_PartitionedSpatiallyOriented instead
+		//const TFRPartitions GetHRIRPartitioned(Common::T_ear _ear, float _azimuth, float _elevation, bool _runTimeInterpolation, const Common::CTransform & _referenceLocation) const override {
 
-			return GetFR_SpatiallyOriented(_azimuth, _elevation, 0, _referenceLocation, _ear, _runTimeInterpolation);
-		}
+		//	return GetFR_SpatiallyOriented(_azimuth, _elevation, 0, _referenceLocation, _ear, _runTimeInterpolation);
+		//}
 				
 		/**
 		 * @brief 
@@ -455,14 +438,14 @@ namespace BRTServices
 
 		////////////////
 
-		// TODO delete this method and use GetFR_Delay instead
-		THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool _findNearest, Common::CTransform & _referenceLocation) override { 
-			Common::CEarPair<uint64_t> data = GetFR_Delay(_azimuthCenter, _elevationCenter, 0, _referenceLocation, _findNearest);
-			THRIRPartitionedStruct result;
-			result.leftDelay = data.left;
-			result.rightDelay = data.right;
-			return result;
-		}
+		//// TODO delete this method and use GetFR_Delay instead
+		//THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool _findNearest, Common::CTransform & _referenceLocation) override { 
+		//	Common::CEarPair<uint64_t> data = GetFR_Delay(_azimuthCenter, _elevationCenter, 0, _referenceLocation, _findNearest);
+		//	THRIRPartitionedStruct result;
+		//	result.leftDelay = data.left;
+		//	result.rightDelay = data.right;
+		//	return result;
+		//}
 
 		/**
 		 * @brief 
@@ -486,8 +469,8 @@ namespace BRTServices
 			//Modify delay if customized delay is activate
 			if (customITD)
 			{
-				data.left = CHRTFAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::LEFT);
-				data.right = CHRTFAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::RIGHT);
+				data.left = CFIRTableAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::LEFT);
+				data.right = CFIRTableAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::RIGHT);
 				return data;
 			}
 			// Find Table to use if exists
@@ -576,7 +559,7 @@ namespace BRTServices
 				const double _elevationInRange = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(_elevation);
 
 				TFRPartitionedStruct newPartitionedIRData;
-				CalculatePartitionedIR(itRawData->data, newPartitionedIRData, globalParameters.GetBufferSize(), partitionedFRNumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_FRData());
+				CalculatePartitionedIR(itRawData->data, newPartitionedIRData, globalParameters.GetBufferSize(), partitionedFRNumberOfSubfilters, CFIRTableAuxiliarMethods::SplitAndGetFFT_FRData());
 				//Emplace new IR into orientation table
 				auto emplaced = distanceBucket->table.emplace(TOrientation_key(_azimuthInRage, _elevationInRange, _distance), std::move(newPartitionedIRData));
 				if (!emplaced.second) {
@@ -766,35 +749,35 @@ namespace BRTServices
 		/**
 		 * @brief Calculate and remove the common delay of every IR functions of the DataBase Table. 
 		 */
-		void RemoveCommonDelayFromTable(TRawSofaData & table) {									
-			//1. Init the minumun value with the fist value of the table
-			auto it0 = table.begin();
-			uint64_t minimumDelayLeft = it0->data.delay.left; //Vrbl to store the minumun delay value for left ear
-			uint64_t minimumDelayRight = it0->data.delay.right; //Vrbl to store the minumun delay value for right ear
+		//void RemoveCommonDelayFromTable(TRawSofaData & table) {									
+		//	//1. Init the minumun value with the fist value of the table
+		//	auto it0 = table.begin();
+		//	uint64_t minimumDelayLeft = it0->data.delay.left; //Vrbl to store the minumun delay value for left ear
+		//	uint64_t minimumDelayRight = it0->data.delay.right; //Vrbl to store the minumun delay value for right ear
 
-			//2. Find the common delay
-			//Scan the whole table looking for the minimum delay for left and right ears
-			for (auto it = table.begin(); it != table.end(); it++) {
-				//Left ear
-				if (it->data.delay.left < minimumDelayLeft) {
-					minimumDelayLeft = it->data.delay.left;
-				}
-				//Right ear
-				if (it->data.delay.right < minimumDelayRight) {
-					minimumDelayRight = it->data.delay.right;
-				}
-			}			
-			//3. Delete the common delay
-			//Scan the whole table substracting the common delay to every delays for both ears separately
-			//The common delay of each canal have been calculated and subtracted separately in order to correct the asymmetry of the measurement
-			if (minimumDelayRight != 0 || minimumDelayLeft != 0) {
-				for (auto it = table.begin(); it != table.end(); it++) {
-					it->data.delay.left -= minimumDelayLeft; //Left ear
-					it->data.delay.right -= minimumDelayRight; //Right ear					
-				}
-			}
-			SET_RESULT(RESULT_OK, "Common delay deleted (" + std::to_string(minimumDelayLeft) + "," + std::to_string(minimumDelayRight) + ") from nonInterpolatedHRTF table succesfully");
-		}
+		//	//2. Find the common delay
+		//	//Scan the whole table looking for the minimum delay for left and right ears
+		//	for (auto it = table.begin(); it != table.end(); it++) {
+		//		//Left ear
+		//		if (it->data.delay.left < minimumDelayLeft) {
+		//			minimumDelayLeft = it->data.delay.left;
+		//		}
+		//		//Right ear
+		//		if (it->data.delay.right < minimumDelayRight) {
+		//			minimumDelayRight = it->data.delay.right;
+		//		}
+		//	}			
+		//	//3. Delete the common delay
+		//	//Scan the whole table substracting the common delay to every delays for both ears separately
+		//	//The common delay of each canal have been calculated and subtracted separately in order to correct the asymmetry of the measurement
+		//	if (minimumDelayRight != 0 || minimumDelayLeft != 0) {
+		//		for (auto it = table.begin(); it != table.end(); it++) {
+		//			it->data.delay.left -= minimumDelayLeft; //Left ear
+		//			it->data.delay.right -= minimumDelayRight; //Right ear					
+		//		}
+		//	}
+		//	SET_RESULT(RESULT_OK, "Common delay deleted (" + std::to_string(minimumDelayLeft) + "," + std::to_string(minimumDelayRight) + ") from nonInterpolatedHRTF table succesfully");
+		//}
 
 		///////////////////
 		// Truncate IRs
@@ -804,38 +787,46 @@ namespace BRTServices
 		 * @brief Check if the windowing process is configured
 		 * @return 
 		 */
-		bool IsFadeInWindowingConfigured() {
-			return fadeInBegin != 0 || riseTime != 0;
-		}
-		/**
-		 * @brief Check if the windowing process is configured
-		 * @return 
-		 */
-		bool IsFadeOutWindowingConfigured() {
-			return fadeOutCutoff != 0 || fallTime != 0;
-		}
+		//bool IsFadeInWindowingConfigured() {
+		//	return fadeInBegin != 0 || riseTime != 0;
+		//}
+		///**
+		// * @brief Check if the windowing process is configured
+		// * @return 
+		// */
+		//bool IsFadeOutWindowingConfigured() {
+		//	return fadeOutCutoff != 0 || fallTime != 0;
+		//}
 
 
 		void CalculateWindowingIRTable(const TRawSofaData & _inTable, TRawSofaData & _outTable) {
-			_outTable.clear();
-			_outTable = _inTable;
 			
-			if (IsFadeInWindowingConfigured()) {
-				for (auto it = _outTable.begin(); it != _outTable.end(); it++) {					
-					it->data.IR.left = std::move(Common::CIRWindowing::Process(it->data.IR.left, Common::CIRWindowing::fadein, fadeInBegin, riseTime, globalParameters.GetSampleRate()));
-					it->data.IR.right = std::move(Common::CIRWindowing::Process(it->data.IR.right, Common::CIRWindowing::fadein, fadeInBegin, riseTime, globalParameters.GetSampleRate()));					
-				}
-			}
-			if (IsFadeOutWindowingConfigured()) {
-				for (auto it = _outTable.begin(); it != _outTable.end(); it++) {
-					it->data.IR.left = std::move(Common::CIRWindowing::Process(it->data.IR.left, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate()));
-					it->data.IR.right = std::move(Common::CIRWindowing::Process(it->data.IR.right, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate()));
-				}
-
+			bool result = CFIRTableAuxiliarMethods::CalculateWindowingIRTable(_inTable, _outTable, fadeInBegin, riseTime, fadeOutCutoff, fallTime, globalParameters.GetSampleRate());
+			if (result) {
 				// Update impulseResponseLength and the number of subfilters
 				impulseResponseLength = _outTable.begin()->data.IR.left.size();
 				partitionedFRNumberOfSubfilters = CalculateNumberOPartitions(impulseResponseLength);
 			}
+
+			//_outTable.clear();
+			//_outTable = _inTable;
+			//
+			//if (IsFadeInWindowingConfigured()) {
+			//	for (auto it = _outTable.begin(); it != _outTable.end(); it++) {					
+			//		it->data.IR.left = std::move(Common::CIRWindowing::Process(it->data.IR.left, Common::CIRWindowing::fadein, fadeInBegin, riseTime, globalParameters.GetSampleRate()));
+			//		it->data.IR.right = std::move(Common::CIRWindowing::Process(it->data.IR.right, Common::CIRWindowing::fadein, fadeInBegin, riseTime, globalParameters.GetSampleRate()));					
+			//	}
+			//}
+			//if (IsFadeOutWindowingConfigured()) {
+			//	for (auto it = _outTable.begin(); it != _outTable.end(); it++) {
+			//		it->data.IR.left = std::move(Common::CIRWindowing::Process(it->data.IR.left, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate()));
+			//		it->data.IR.right = std::move(Common::CIRWindowing::Process(it->data.IR.right, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate()));
+			//	}
+
+			//	// Update impulseResponseLength and the number of subfilters
+			//	impulseResponseLength = _outTable.begin()->data.IR.left.size();
+			//	partitionedFRNumberOfSubfilters = CalculateNumberOPartitions(impulseResponseLength);
+			//}
 		}
 		
 
@@ -868,7 +859,7 @@ namespace BRTServices
 		
 		
 		//int samplingRate;							// Sampling rate of the IR
-		int numberOfEars;							// Number of ears
+		//int numberOfEars;							// Number of ears
 		float fadeInBegin;							// Variable to be used in the windowing IR process
 		float riseTime;								// Variable to be used in the windowing IR process
 		float fadeOutCutoff;						// Variable to be used in the windowing IR process

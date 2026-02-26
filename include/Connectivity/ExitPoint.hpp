@@ -31,7 +31,7 @@
 #include <Connectivity/Command.hpp>
 #include <ServiceModules/AmbisonicBIR.hpp>
 
-namespace BRTServices { class CHRTF; class CSphericalSOSTable; class CDirectivityTF; class CHRBRIR; }
+namespace BRTServices { class CSphericalInterpolatedFIRTable; class CSphericalSOSTable; class CDirectivityTF; class CHRBRIR; }
 
 namespace BRTConnectivity {          
     template <class T>
@@ -66,7 +66,7 @@ namespace BRTConnectivity {
     using CExitPointID = CExitPointBase<std::string>;
 
     using CExitPointServicePtr = CExitPointBase< std::weak_ptr<BRTServices::CServicesBase> >;
-    //using CExitPointHRTFPtr = CExitPointBase< std::weak_ptr<BRTServices::CHRTF> >;
+    //using CExitPointHRTFPtr = CExitPointBase< std::weak_ptr<BRTServices::CSphericalInterpolatedFIRTable> >;
     //using CExitPointHRBRIRPtr = CExitPointBase< std::weak_ptr<BRTServices::CHRBRIR> >;
     //using CExitPointILDPtr = CExitPointBase< std::weak_ptr<BRTServices::CSOSCoefficients> >;
     using CExitPointDirectivityTFPtr = CExitPointBase< std::weak_ptr<BRTServices::CDirectivityTF> >;

@@ -34,19 +34,18 @@
 #include <ProcessingModules/AmbisonicEncoder.hpp>
 #include <Common/GlobalParameters.hpp>
 #include <ServiceModules/ServicesBase.hpp>
-#include <ServiceModules/HRTF.hpp>
+#include <ServiceModules/SphericalInterpolatedFIRTable.hpp>
 #include <ServiceModules/VirtualSpeakers.hpp>
-//#include <ServiceModules/HRBRIR.hpp>
 
 namespace BRTServices
 {		
 	class CAmbisonicBIR : public CServicesBase
 	{			
 		/** \brief Type definition for the AmbisonicIR table	*/
-		typedef std::unordered_map<int, BRTServices::THRIRStruct> TAmbisonicIRTable;
+		//typedef std::unordered_map<int, BRTServices::TIRStruct> TAmbisonicIRTable;
 
 		/** \brief Type definition for the AmbisonicIR partitioned table */
-		typedef std::unordered_map<int, THRIRPartitionedStruct> TAmbisonicIRPartitionedTable;
+		typedef std::unordered_map<int, BRTServices::TFRPartitionedStruct> TAmbisonicIRPartitionedTable;
 		
 		/**
 		* @brief Type definition for the AmbisonicIR table ordered by listener posision
@@ -109,7 +108,7 @@ namespace BRTServices
 		*	\param [in] newData impulse response data to be added
 		*   \eh On error, an error code is reported to the error handler.
 		*/				
-		void AddImpulseResponse(int channel, THRIRPartitionedStruct && newPartitionedIR, const Common::CVector3 & _listenerPosition) {									
+		void AddImpulseResponse(int channel, TFRPartitionedStruct && newPartitionedIR, const Common::CVector3 & _listenerPosition) {									
 			std::lock_guard<std::mutex> l(mutex);			
 			AddImpulseResponse_Private(channel, std::move(newPartitionedIR), _listenerPosition);												
 		}
@@ -141,10 +140,10 @@ namespace BRTServices
 			if (it != selectedTable->second.end())
 			{				
 				if (_ear == Common::T_ear::LEFT) {					
-					return it->second.leftHRIR_Partitioned;
+					return it->second.IR.left;
 				}
 				else if (_ear == Common::T_ear::RIGHT) {					
-					return it->second.rightHRIR_Partitioned;
+					return it->second.IR.right;
 				}
 			}
 			SET_RESULT(RESULT_ERROR_OUTOFRANGE, "Error trying to get Ambisonic IR data from a ambisonicIRPartitioned Table. Either the channel is not found or the requested ear did not have a valid parameter.");			
@@ -213,25 +212,31 @@ namespace BRTServices
 			for (Common::CVector3 _listenerPosition : listenerPositions) {
 				//1. Get BRIR values for each channel
 				for (int i = 0; i < virtualSpeakerPositions.size(); i++) {
-					THRIRPartitionedStruct oneVirtualSpeakersData;
+					//THRIRPartitionedStruct oneVirtualSpeakersData;
+					
+					//oneVirtualSpeakersData.leftHRIR_Partitioned = _listenerIRData->GetHRIRPartitioned(Common::T_ear::LEFT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true, Common::CTransform(_listenerPosition));
+					//oneVirtualSpeakersData.rightHRIR_Partitioned = _listenerIRData->GetHRIRPartitioned(Common::T_ear::RIGHT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true, Common::CTransform(_listenerPosition));
+					//oneVirtualSpeakersData.leftHRIR_Partitioned = _listenerIRData->GetFR_SpatiallyOriented(virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, 0, Common::CTransform(_listenerPosition), Common::T_ear::LEFT, true);
+					//oneVirtualSpeakersData.rightHRIR_Partitioned = _listenerIRData->GetFR_SpatiallyOriented(virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, 0, Common::CTransform(_listenerPosition), Common::T_ear::RIGHT, true);
 
-					//oneVirtualSpeakersData = _listenerIRData->GetHRIRDelay(Common::T_ear::BOTH, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true);
-					oneVirtualSpeakersData.leftHRIR_Partitioned = _listenerIRData->GetHRIRPartitioned(Common::T_ear::LEFT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true, Common::CTransform(_listenerPosition));
-					oneVirtualSpeakersData.rightHRIR_Partitioned = _listenerIRData->GetHRIRPartitioned(Common::T_ear::RIGHT, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, true, Common::CTransform(_listenerPosition));
+					Common::CEarPair<TFRPartitions> oneVirtualSpeakersData = _listenerIRData->GetFR_SpatiallyOriented_2Ears(virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation, 0, Common::CTransform(_listenerPosition), true);
 
-					if ((oneVirtualSpeakersData.leftHRIR_Partitioned.size() != _listenerIRData->GetNumberOfSubfiltersFR()) || (oneVirtualSpeakersData.rightHRIR_Partitioned.size() != _listenerIRData->GetNumberOfSubfiltersFR())) {
+					if ((oneVirtualSpeakersData.left.size() != _listenerIRData->GetNumberOfSubfiltersFR()) || (oneVirtualSpeakersData.right.size() != _listenerIRData->GetNumberOfSubfiltersFR())) {
 						SET_RESULT(RESULT_ERROR_BADSIZE, "The HRIR of a virtual speaker does not have an appropriate value.");
 						return false;
 					}
 
-					ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.leftHRIR_Partitioned, ambisonicChannelsLeft, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);
-					ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.rightHRIR_Partitioned, ambisonicChannelsRight, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);
+					ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.left, ambisonicChannelsLeft, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);
+					ambisonicEncoder.EncodedPartitionedIR(oneVirtualSpeakersData.right, ambisonicChannelsRight, virtualSpeakerPositions[i].azimuth, virtualSpeakerPositions[i].elevation);
 				}
 
 				for (int i = 0; i < ambisonicEncoder.GetTotalChannels(); i++) {
-					THRIRPartitionedStruct oneAmbisonicChannel;
+					/*THRIRPartitionedStruct oneAmbisonicChannel;
 					oneAmbisonicChannel.leftHRIR_Partitioned = ambisonicChannelsLeft[i];
-					oneAmbisonicChannel.rightHRIR_Partitioned = ambisonicChannelsRight[i];
+					oneAmbisonicChannel.rightHRIR_Partitioned = ambisonicChannelsRight[i];*/
+					TFRPartitionedStruct oneAmbisonicChannel;
+					oneAmbisonicChannel.IR.left = ambisonicChannelsLeft[i];
+					oneAmbisonicChannel.IR.right = ambisonicChannelsRight[i];
 					AddImpulseResponse_Private(i, std::move(oneAmbisonicChannel), _listenerPosition);
 				}
 			}
@@ -252,7 +257,7 @@ namespace BRTServices
 		*	\param [in] newData impulse response data to be added
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		void AddImpulseResponse_Private(int channel, THRIRPartitionedStruct && newPartitionedIR, const Common::CVector3 & _listenerPosition) {
+		void AddImpulseResponse_Private(int channel, TFRPartitionedStruct && newPartitionedIR, const Common::CVector3 & _listenerPosition) {
 			
 			if (!setupInProgress) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "Error trying to ADD a IR to the Ambisonic IR data. The necessary setup of the class has not been carried out.");
@@ -272,7 +277,7 @@ namespace BRTServices
 				}
 			} else {
 				TAmbisonicIRPartitionedTable irChannelTable;
-				auto returnValue = irChannelTable.emplace(channel, std::forward<THRIRPartitionedStruct>(newPartitionedIR));
+				auto returnValue = irChannelTable.emplace(channel, std::forward<TFRPartitionedStruct>(newPartitionedIR));
 				if (returnValue.second) {
 					auto returnValue2 = ambisonicIRPartitionedTable.emplace(TVector3(_listenerPosition), std::forward<TAmbisonicIRPartitionedTable>(irChannelTable));
 					if (returnValue2.second) {
@@ -334,7 +339,7 @@ namespace BRTServices
 			IRSubfilterLength = 0;
 			IRNumberOfSubFilters = 0;
 
-			ambisonicIRTable.clear();
+			//ambisonicIRTable.clear();
 			ambisonicIRPartitionedTable.clear();
 			ambisonicIRPartitionedTable_ListenerPositions.clear();
 
@@ -357,7 +362,7 @@ namespace BRTServices
 		int IRNumberOfSubFilters;		// Number of blocks of the partitioned IR 
 		
 			
-		TAmbisonicIRTable ambisonicIRTable;								// IR data (usally in time domain)
+		//TAmbisonicIRTable ambisonicIRTable;								// IR data (usally in time domain)
 		//TAmbisonicIRPartitionedTable ambisonicIRPartitionedTable;		// IR data partitioned and transformed (FFT)
 		TAmbisonicIRPartitionedTableByPosition ambisonicIRPartitionedTable;		// IR data partitioned and transformed (FFT) ordered by listener position
 

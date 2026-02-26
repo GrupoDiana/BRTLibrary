@@ -35,7 +35,7 @@
 #include <Common/CommonDefinitions.hpp>
 
 namespace BRTServices {
-	class CHRTF;
+	class CSphericalInterpolatedFIRTable;
 }
 
 namespace BRTBase {
@@ -273,7 +273,7 @@ namespace BRTBase {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		//bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) {
+		//bool SetHRTF(std::shared_ptr< BRTServices::CSphericalInterpolatedFIRTable > _listenerHRTF) {
 		bool SetHRTF(std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF) {	
 			bool control = false;
 			for (auto& _listenerModel : listenerModelsConnected) {
@@ -295,7 +295,7 @@ namespace BRTBase {
 		*   \eh On error, an error code is reported to the error handler.
 		*/
 		
-		/*std::shared_ptr<BRTServices::CHRTF> GetHRTF() const		
+		/*std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable> GetHRTF() const		
 		{
 			for (auto& _listenerModel : listenerModelsConnected) {
 				if (_listenerModel->GetListenerModelCharacteristics().SupportHRTF()) {

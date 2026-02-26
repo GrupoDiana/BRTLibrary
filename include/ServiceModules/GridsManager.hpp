@@ -29,7 +29,7 @@
 #include <unordered_map>
 #include <vector>
 #include <ServiceModules/InterpolationAuxiliarMethods.hpp>
-#include <ServiceModules/HRTFDefinitions.hpp>
+#include <ServiceModules/SphericalFIRTableDefinitions.hpp>
 
 namespace BRTServices
 {
@@ -37,8 +37,8 @@ namespace BRTServices
 	/*class CGridManagerInterface {
 	public:
 		virtual void CreateGrid(TSphericalFIRTablePartitioned& table, std::unordered_map<orientation, float>& stepVector, int _resamplingStep) = 0;
-		virtual void FindNearestHRIR(const TSphericalFIRTablePartitioned& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<orientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int resamplingStep)const = 0;
-		virtual void FindNearestDelay(const TSphericalFIRTablePartitioned& table, float& HRIR_delay, const std::unordered_map<orientation, float >& stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int resamplingStep)const = 0;
+		virtual void FindNearestHRIR(const TSphericalFIRTablePartitioned& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<orientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int spatialResolution)const = 0;
+		virtual void FindNearestDelay(const TSphericalFIRTablePartitioned& table, float& HRIR_delay, const std::unordered_map<orientation, float >& stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int spatialResolution)const = 0;
 		friend class CHRTFTester;
 	};*/
 
@@ -49,10 +49,10 @@ namespace BRTServices
 	public:
 		void CreateGrid(TSphericalFIRTablePartitioned& table, std::unordered_map<TOrientation, float>& stepVector, int _resamplingStep) {}
 
-		void FindNearestHRIR(const TSphericalFIRTablePartitioned& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<TOrientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int resamplingStep)const
+		void FindNearestHRIR(const TSphericalFIRTablePartitioned& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<TOrientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int spatialResolution)const
 		{
-			int nearestAzimuth = static_cast<int>(round(_azimuth / resamplingStep) * resamplingStep);
-			int nearestElevation = static_cast<int>(round(_elevation / resamplingStep) * resamplingStep);
+			int nearestAzimuth = static_cast<int>(round(_azimuth / spatialResolution) * spatialResolution);
+			int nearestElevation = static_cast<int>(round(_elevation / spatialResolution) * spatialResolution);
 			// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
 			if (nearestAzimuth == DEFAULT_MAX_AZIMUTH) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
 			if (nearestElevation == DEFAULT_MAX_ELEVATION) { nearestElevation = DEFAULT_MIN_ELEVATION; }
@@ -76,11 +76,11 @@ namespace BRTServices
 			}
 		}
 
-		void FindNearestDelay(const TSphericalFIRTablePartitioned& table, float& HRIR_delay, const std::unordered_map<TOrientation, float >& stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int resamplingStep)const
+		void FindNearestDelay(const TSphericalFIRTablePartitioned& table, float& HRIR_delay, const std::unordered_map<TOrientation, float >& stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int spatialResolution)const
 		{
 
-			int nearestAzimuth = static_cast<int>(round(_azimuthCenter / resamplingStep) * resamplingStep);
-			int nearestElevation = static_cast<int>(round(_elevationCenter / resamplingStep) * resamplingStep);
+			int nearestAzimuth = static_cast<int>(round(_azimuthCenter / spatialResolution) * spatialResolution);
+			int nearestElevation = static_cast<int>(round(_elevationCenter / spatialResolution) * spatialResolution);
 
 			// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
 			if (nearestAzimuth == DEFAULT_MAX_AZIMUTH) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
@@ -201,13 +201,13 @@ namespace BRTServices
 		}
 
 		//template <typename T>
-		//void FindNearestDelay(const T& table, float& HRIR_delay, const std::unordered_map<orientation, float>& stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int resamplingStep = 0) const
+		//void FindNearestDelay(const T& table, float& HRIR_delay, const std::unordered_map<orientation, float>& stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int spatialResolution = 0) const
 		//{
 		//	float eleStep = stepMap.find(orientation(-1, -1))->second;
 
 		//	float nearestElevation = (round(_elevationCenter / eleStep) * eleStep);
 
-		//	nearestElevation = CHRTFAuxiliarMethods::CalculateElevationIn0_90_270_360Range(nearestElevation);
+		//	nearestElevation = CFIRTableAuxiliarMethods::CalculateElevationIn0_90_270_360Range(nearestElevation);
 
 		//	float aziStep = stepMap.find(orientation(0, nearestElevation))->second;
 
@@ -217,7 +217,7 @@ namespace BRTServices
 		//	if (nearestAzimuth == DEFAULT_MAX_AZIMUTH) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
 		//	if (nearestElevation == DEFAULT_MAX_ELEVATION) { nearestElevation = DEFAULT_MIN_ELEVATION; }
 		//	// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
-		//	if ((nearestElevation == CHRTFAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CHRTFAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
+		//	if ((nearestElevation == CFIRTableAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CFIRTableAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
 
 		//	auto it = table.find(orientation(nearestAzimuth, nearestElevation));
 		//	if (it != table.end())

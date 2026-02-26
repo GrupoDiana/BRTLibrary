@@ -1,7 +1,7 @@
 /**
-* \class CHRTF
+* \class CSphericalInterpolatedFIRTable
 *
-* \brief Declaration of CHRTF class interface
+* \brief Declaration of CSphericalInterpolatedFIRTable class interface
 * \date	June 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
@@ -23,8 +23,8 @@
 */
 
 
-#ifndef _CHRTF_H_
-#define _CHRTF_H_
+#ifndef _CSPHERICAL_INTERPOLATED_FIR_TABLE_H_
+#define _CSPHERICAL_INTERPOLATED_FIR_TABLE_H_
 
 #include <unordered_map>
 #include <vector>
@@ -39,8 +39,8 @@
 #include <Common/CranicalGeometry.hpp>
 #include <Common/IRWindowing.hpp>
 #include <ServiceModules/ServicesBase.hpp>
-#include <ServiceModules/HRTFDefinitions.hpp>
-#include <ServiceModules/HRTFAuxiliarMethods.hpp>
+#include <ServiceModules/SphericalFIRTableDefinitions.hpp>
+#include <ServiceModules/FIRTableAuxiliarMethods.hpp>
 #include <ServiceModules/OnlineInterpolation.hpp>
 #include <ServiceModules/GridsManager.hpp>
 #include <ServiceModules/Extrapolation.hpp>
@@ -54,18 +54,17 @@ namespace BRTServices
 {	
 	/** \details This class gets impulse response data to compose HRTFs and implements different algorithms to interpolate the HRIR functions.
 	*/
-	class CHRTF : public CServicesBase
+	class CSphericalInterpolatedFIRTable : public CServicesBase
 	{		
 	public:
 		/** \brief Default Constructor
 		*	\details By default, customized ITD is switched off, resampling step is set to 5 degrees and listener is a null pointer
 		*   \eh Nothing is reported to the error handler.
 		*/
-		CHRTF()
-			:enableWoodworthITD{ false }
+		CSphericalInterpolatedFIRTable()
+			: customITD{ false }
 			, gridSamplingStep{ DEFAULT_GRIDSAMPLING_STEP }
-			, gapThreshold{ DEFAULT_GAP_THRESHOLD }			
-			, HRTFLoaded{ false }
+			, gapThreshold{ DEFAULT_GAP_THRESHOLD }				
 			, setupInProgress{ false }			
 			, azimuthMin{ DEFAULT_MIN_AZIMUTH }
 			, azimuthMax{ DEFAULT_MAX_AZIMUTH }
@@ -79,93 +78,39 @@ namespace BRTServices
 			, riseTime { 0 }
 			, fadeOutCutoff { 0 }
 			, fallTime { 0 }
+			, partitionedFRNumberOfSubfilters { 0 }
+			, partitionedFRSubfilterLength { 0 }			
 			, extrapolationMethod{ TEXTRAPOLATION_METHOD::nearest_point }
 		{ }
-
-		/** \brief Get size of each HRIR buffer
-		*	\retval size number of samples of each HRIR buffer for one ear
-		*   \eh Nothing is reported to the error handler.
-		*/
-		/*int32_t GetIRLength() const
-		{
-			return impulseResponseLength;
-		}*/
-
-		/**
-		 * @brief Set sampling step for HRIR resampling
-		 * @param _resamplingStep 
-		 */
-		void SetGridSamplingStep(int _samplingStep) override {
-			gridSamplingStep = _samplingStep;
-		}
-		/**
-		 * @brief Get sampling step defined for HRIR resampling
-		 * @return 
-		 */
-		int GetGridSamplingStep() const override {
-			return gridSamplingStep;
-		}
 		
-
 		/** \brief Switch on ITD customization in accordance with the listener head radius
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableWoodworthITD() {	enableWoodworthITD = true;	}
+		void EnableWoodworthITD() override { customITD = true; }
 
 		/** \brief Switch off ITD customization in accordance with the listener head radius
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void DisableWoodworthITD() { enableWoodworthITD = false; }
+		void DisableWoodworthITD() override { customITD = false; }
 
 		/** \brief Get the flag for HRTF cutomized ITD process
 		*	\retval HRTFCustomizedITD if true, the HRTF ITD customization process based on the head circumference is enabled
 		*   \eh Nothing is reported to the error handler.
 		*/
-		bool IsWoodworthITDEnabled() {	return enableWoodworthITD;	}
+		bool IsWoodworthITDEnabled() const override { return customITD; }
 				
 		/** \brief	Get the number of subfilters (blocks) in which the HRIR has been partitioned
 		*	\retval n Number of HRIR subfilters
 		*   \eh Nothing is reported to the error handler.
 		*/		
-		const int32_t GetNumberOfSubfiltersFR() const override {
-			return partitionedFRNumberOfSubfilters;
-		}
+		const int32_t GetNumberOfSubfiltersFR() const override { return partitionedFRNumberOfSubfilters;	}
 
 		/** \brief	Get the size of subfilters (blocks) in which the HRIR has been partitioned, every subfilter has the same size
 		*	\retval size Size of HRIR subfilters
 		*   \eh Nothing is reported to the error handler.
 		*/		
-		const int32_t GetSubfilterLengthFR() const override {
-			return partitionedFRSubfilterLength;
-		}
-
-
-		/** \brief	Get the distance where the HRTF has been measured
-		*   \return distance of the speakers structure to calculate the HRTF
-		*   \eh Nothing is reported to the error handler.
-		*/		
-		double GetDistanceOfMeasurement(const Common::CTransform & _referenceLocation, const double & _azimuth, const double & _elevation, const double & _distance) const override {			
+		const int32_t GetSubfilterLengthFR() const override {	return partitionedFRSubfilterLength; }
 			
-			if (!dataReady) {
-				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "GetDistanceOfMeasurement: HRTF data not ready");
-				return 0;
-			}
-			// Find Table to use if exists
-			const TDistanceBucket * distanceBucket = FindDistanceBucket(_distance);
-			if (!distanceBucket) {
-				SET_RESULT(RESULT_ERROR_UNKNOWN, "GetDistanceOfMeasurement: Distance Bucket find error");
-				return 0;
-			}
-			if (distanceBucket->table.size() == 0) {
-				SET_RESULT(RESULT_ERROR_UNKNOWN, "GetDistanceOfMeasurement: Distance Bucket empty");
-				return 0;
-			}
-			float distance = distanceBucket->table.begin()->second.orientation.distance; // All the IRs in the same distance bucket have the same distance, so we can take the distance of the first one.
-			return distance; 	
-		}
-
-				
-
 		/** \brief	Set the radius of the listener head
 		*   \eh Nothing is reported to the error handler.
 		*/
@@ -187,7 +132,7 @@ namespace BRTServices
 		*   \return listenerHeadRadius in meters
 		*   \eh Nothing is reported to the error handler.
 		*/
-		float GetHeadRadius() override {			
+		float GetHeadRadius() const override {			
 			return cranialGeometry.GetHeadRadius();
 		}
 
@@ -216,19 +161,12 @@ namespace BRTServices
 			}				
 		}
 
-		/**
-		 * @brief Set current cranial geometry as default
-		 */
-		void SetCranialGeometryAsDefault() override {
-			originalCranialGeometry = cranialGeometry;
-		}
-
 		/** \brief	Get the relative position of one ear (to the listener head center)
 		* 	\param [in]	_ear			ear type
 		*   \return  Ear local position in meters
 		*   \eh <<Error not allowed>> is reported to error handler
 		*/
-		Common::CVector3 GetEarLocalPosition(Common::T_ear _ear) override {			
+		Common::CVector3 GetEarLocalPosition(Common::T_ear _ear) const override {			
 			if (_ear == Common::T_ear::LEFT)		{ return cranialGeometry.GetLeftEarLocalPosition(); }
 			else if (_ear == Common::T_ear::RIGHT) { return cranialGeometry.GetRightEarLocalPosition(); }
 			else 
@@ -236,6 +174,36 @@ namespace BRTServices
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to set listener ear transform for BOTH or NONE ears");
 				return Common::CVector3();
 			}
+		}
+
+		/**
+		 * @brief Set current cranial geometry as default
+		 */
+		void SetCranialGeometryAsDefault() override {
+			originalCranialGeometry = cranialGeometry;
+		}
+
+		/** 
+		* @brief Get the closest distance at which IR has been measured from a current reference location, azimuth, and elevation. 
+		*/
+		double GetDistanceOfMeasurement(const Common::CTransform & _referenceLocation, const double & _azimuth, const double & _elevation, const double & _distance) const override {
+
+			if (!dataReady) {
+				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "GetDistanceOfMeasurement: HRTF data not ready");
+				return 0;
+			}
+			// Find Table to use if exists
+			const TDistanceBucket * distanceBucket = FindDistanceBucket(_distance);
+			if (!distanceBucket) {
+				SET_RESULT(RESULT_ERROR_UNKNOWN, "GetDistanceOfMeasurement: Distance Bucket find error");
+				return 0;
+			}
+			if (distanceBucket->table.size() == 0) {
+				SET_RESULT(RESULT_ERROR_UNKNOWN, "GetDistanceOfMeasurement: Distance Bucket empty");
+				return 0;
+			}
+			float distance = distanceBucket->table.begin()->second.orientation.distance; // All the IRs in the same distance bucket have the same distance, so we can take the distance of the first one.
+			return distance;
 		}
 		
 		/**
@@ -265,13 +233,28 @@ namespace BRTServices
 		 * @param [out] _windowThreshold 
 		 * @param [out] _windowRiseTime 
 		 */
-		void GetWindowingParameters(float & _fadeInWindowThreshold, float & _fadeInWindowRiseTime, float & _fadeOutWindowThreshold, float & _fadeOutWindowRiseTime) override {
+		void GetWindowingParameters(float & _fadeInWindowThreshold, float & _fadeInWindowRiseTime, float & _fadeOutWindowThreshold, float & _fadeOutWindowRiseTime) const override {
 			_fadeInWindowThreshold = fadeInBegin;
 			_fadeInWindowRiseTime = riseTime;
 			_fadeOutWindowThreshold = fadeOutCutoff;
 			_fadeOutWindowRiseTime = fallTime;
 		}
 
+
+		/**
+		 * @brief Set sampling step for HRIR resampling
+		 * @param _resamplingStep 
+		 */
+		void SetGridSamplingStep(int _samplingStep) override {
+			gridSamplingStep = _samplingStep;
+		}
+		/**
+		 * @brief Get sampling step defined for HRIR resampling
+		 * @return 
+		 */
+		int GetGridSamplingStep() const override {
+			return gridSamplingStep;
+		}
 
 		/** \brief Start a new HRTF configuration
 		*	\param [in] _HRIRLength buffer size of the HRIR to be added
@@ -281,13 +264,13 @@ namespace BRTServices
 		bool BeginSetup(const int32_t & _HRIRLength, const BRTServices::TEXTRAPOLATION_METHOD & _extrapolationMethod) override {
 			std::lock_guard<std::mutex> l(mutex);
 			// Change class state
-			setupInProgress = true;
-			HRTFLoaded = false;
+			setupInProgress = true;			
+			dataReady = false;
 
 			// Clear every table
 			stepVector.clear();
 			distanceFRTable.clear();
-			sofaIRDataBase2.clear();
+			sofaIRDataBase.clear();
 
 			//Update parameters
 			impulseResponseLength = _HRIRLength;
@@ -300,7 +283,7 @@ namespace BRTServices
 			return true;
 		}
 
-		void AddIR(const Common::CVector3 & _referencePosition, const double & _azimuth, const double & _elevation, const double & _distance, THRIRStruct && _newIR) override {
+		void AddIR(const Common::CVector3 & _referencePosition, const double & _azimuth, const double & _elevation, const double & _distance, TIRStruct && _newIR) override {
 			if (!setupInProgress) {
 				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "Cannot add IR - Setup not in progress");
 				return;
@@ -308,10 +291,11 @@ namespace BRTServices
 
 			const double _azimuthInRage = CInterpolationAuxiliarMethods::NormalizeAzimuth0_360(_azimuth);
 			const double _elevationInRange = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(_elevation);
+			
+			TSofaDataBucket newData;
+			newData.data =TIRStruct(TOrientation(_azimuthInRage, _elevationInRange, _distance), std::forward<TIRStruct>(_newIR));			
 
-			TIRStruct newIRData(TOrientation(_azimuthInRage, _elevationInRange, _distance), std::forward<THRIRStruct>(_newIR));
-
-			sofaIRDataBase2.push_back(std::forward<TIRStruct>(newIRData));
+			sofaIRDataBase.push_back(std::forward<TSofaDataBucket>(newData));
 		}
 
 		/** \brief Stop the HRTF configuration
@@ -329,34 +313,34 @@ namespace BRTServices
 				return false;
 			}
 
-			if (sofaIRDataBase2.empty()) {
+			if (sofaIRDataBase.empty()) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "ERROR SphericalFIRTable::EndSetup - No data to be processed");
 				return false;
 			}
-			if (sofaIRDataBase2.size() > 1) spatiallyOriented = true;
+			if (sofaIRDataBase.size() > 1) spatiallyOriented = true;
 
-			std::vector<BRTServices::TIRStruct> windowingIRTable;
-			CalculateWindowingIRTable(sofaIRDataBase2, windowingIRTable);
+			TRawSofaData windowingIRTable;
+			CalculateWindowingIRTable(sofaIRDataBase, windowingIRTable);
 			if (serviceType == TServiceType::hrir_database_interpolated) {
-				RemoveCommonDelayFromTable(windowingIRTable);
+				CFIRTableAuxiliarMethods::RemoveCommonDelayFromTable(windowingIRTable);
 			}
 
 			TRawSofaTableByDistances sofaIRDatabaseByDistances;
-			SlipRawDataByDistances(sofaIRDataBase2, sofaIRDatabaseByDistances);
+			SlipRawDataByDistances(sofaIRDataBase, sofaIRDatabaseByDistances);
 
 			distanceFRTable.clear();
 			for (auto & distBucketIt : sofaIRDatabaseByDistances) {
 				std::vector<TOrientation> _orientationList = offlineInterpolation.CalculateListOfOrientations(distBucketIt.table);
 				CalculateExtrapolation(distBucketIt.table, _orientationList); // Make the extrapolation if it's needed
-				offlineInterpolation.CalculateTF_InPoles<TRawSofaTable, BRTServices::TIRStruct>(distBucketIt.table, impulseResponseLength, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromHemisphereParts());
-				offlineInterpolation.CalculateTF_SphericalCaps<TRawSofaTable, BRTServices::TIRStruct>(distBucketIt.table, impulseResponseLength, gapThreshold, gridSamplingStep, CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
+				offlineInterpolation.CalculateTF_InPoles<TRawSofaTable, BRTServices::TIRStruct>(distBucketIt.table, impulseResponseLength, gridSamplingStep, CFIRTableAuxiliarMethods::CalculateHRIRFromHemisphereParts());
+				offlineInterpolation.CalculateTF_SphericalCaps<TRawSofaTable, BRTServices::TIRStruct>(distBucketIt.table, impulseResponseLength, gapThreshold, gridSamplingStep, CFIRTableAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
 
 				TDistanceBucket aux;
 				aux.distance_mm = distBucketIt.distance_mm;
 
 				//Creation and filling of resampling HRTF table
 				CQuasiUniformSphereDistribution::CreateGrid<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(aux.table, stepVector, gridSamplingStep, distBucketIt.distance);
-				offlineInterpolation.FillResampledTable<TRawSofaTable, TSphericalFIRTablePartitioned, BRTServices::TIRStruct, BRTServices::TFRPartitionedStruct>(distBucketIt.table, aux.table, globalParameters.GetBufferSize(), impulseResponseLength, partitionedFRNumberOfSubfilters, CHRTFAuxiliarMethods::SplitAndGetFFT_HRTFData(), CHRTFAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
+				offlineInterpolation.FillResampledTable<TRawSofaTable, TSphericalFIRTablePartitioned, BRTServices::TIRStruct, BRTServices::TFRPartitionedStruct>(distBucketIt.table, aux.table, globalParameters.GetBufferSize(), impulseResponseLength, partitionedFRNumberOfSubfilters, CFIRTableAuxiliarMethods::SplitAndGetFFT_HRTFData(), CFIRTableAuxiliarMethods::CalculateHRIRFromBarycentrics_OfflineInterpolation());
 
 				// Add to vector of tables
 				distanceFRTable.push_back(std::move(aux));
@@ -369,7 +353,7 @@ namespace BRTServices
 					partitionedFRSubfilterLength = it->table.begin()->second.IR.left[0].size();
 					//partitionedFRSubfilterLength = it->table> second.IR.left[0].size();
 					setupInProgress = false;
-					HRTFLoaded = true;
+					dataReady = true;
 
 					SET_RESULT(RESULT_OK, "Non-Interpolated HRTF Matrix resample completed succesfully");
 					return true;
@@ -389,46 +373,61 @@ namespace BRTServices
 		*   \eh On error, an error code is reported to the error handler.
 		*       Warnings may be reported to the error handler.
 		*/
-		const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear _ear, float _azimuth, float _elevation, bool _runTimeInterpolation, const Common::CTransform &  _referenceLocation) const override {						
-			return GetFR_SpatiallyOriented(_azimuth, _elevation, 0, Common::CTransform(), _ear, _runTimeInterpolation);
-			/*return CHRTFAuxiliarMethods::GetHRIRFromPartitionedTable(t_HRTF_Resampled_partitioned, ear, _azimuth, _elevation, runTimeInterpolation,
-				partitionedFRNumberOfSubfilters, partitionedFRSubfilterLength, stepVector);*/
-		}
+		//const std::vector<CMonoBuffer<float>> GetHRIRPartitioned(Common::T_ear _ear, float _azimuth, float _elevation, bool _runTimeInterpolation, const Common::CTransform &  _referenceLocation) const override {						
+		//	return GetFR_SpatiallyOriented(_azimuth, _elevation, 0, Common::CTransform(), _ear, _runTimeInterpolation);
+		//	/*return CFIRTableAuxiliarMethods::GetHRIRFromPartitionedTable(t_HRTF_Resampled_partitioned, ear, _azimuth, _elevation, runTimeInterpolation,
+		//		partitionedFRNumberOfSubfilters, partitionedFRSubfilterLength, stepVector);*/
+		//}
 
 
-		const TFRPartitions GetFR_SpatiallyOriented(const float & _azimuth, const float & _elevation, const float & _distance, const Common::CTransform & _referenceLocation, const Common::T_ear & ear, bool _runTimeInterpolation) const override { 
-			
-			std::lock_guard<std::mutex> l(mutex);
+		const TFRPartitions GetFR_SpatiallyOriented(const float & _azimuth, const float & _elevation, const float & _distance, const Common::CTransform & _referenceLocation, const Common::T_ear & ear, bool _runTimeInterpolation) const override { 			
+			//std::lock_guard<std::mutex> l(mutex);
 			TFRPartitions _foundData;
 
-			if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE) {
-				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get HRIR for a wrong ear (BOTH or NONE)");
-				return _foundData;
-			}
-
-			if (setupInProgress) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: nonInterpolatedHRTF Setup in progress return empty");
-				return _foundData;
-			}
-						
 			if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE) {
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get IR for a wrong ear (BOTH or NONE)");
 				return _foundData;
 			}
 			
+			if (setupInProgress) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: nonInterpolatedHRTF Setup in progress return empty");
+				return _foundData;
+			}
+
 			// Find Table to use if exists
 			const TDistanceBucket * distanceBucket = FindDistanceBucket(_distance);
 			if (!distanceBucket) {
 				SET_RESULT(RESULT_ERROR_UNKNOWN, "GetFRPartitioned_SpatiallyOriented_2Ears: Distance Bucket find error");
 				return _foundData;
-			}		
-
-			TFRPartitions foundData;
-			foundData = CHRTFAuxiliarMethods::GetHRIRFromPartitionedTable(distanceBucket->table, ear, _azimuth, _elevation, _runTimeInterpolation,
+			}
+				
+			_foundData = CFIRTableAuxiliarMethods::GetHRIRFromPartitionedTable(distanceBucket->table, ear, _azimuth, _elevation, _runTimeInterpolation,
 				partitionedFRNumberOfSubfilters, partitionedFRSubfilterLength, stepVector);
-			return foundData;										
+			return _foundData;
 		}
+		
+		const Common::CEarPair<TFRPartitions> GetFR_SpatiallyOriented_2Ears(const float & _azimuth, const float & _elevation, const float & _distance, const Common::CTransform & _referenceLocation, bool _runTimeInterpolation) const override { 
+		
+			std::lock_guard<std::mutex> l(mutex);
+			Common::CEarPair<TFRPartitions> _foundData;
+			
+			if (setupInProgress) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: nonInterpolatedHRTF Setup in progress return empty");
+				return _foundData;
+			}			
 
+			// Find Table to use if exists
+			const TDistanceBucket * distanceBucket = FindDistanceBucket(_distance);
+			if (!distanceBucket) {
+				SET_RESULT(RESULT_ERROR_UNKNOWN, "GetFRPartitioned_SpatiallyOriented_2Ears: Distance Bucket find error");
+				return _foundData;
+			}
+
+			//TFRPartitions foundData;
+			_foundData = CFIRTableAuxiliarMethods::GetHRIRFromPartitionedTable_2Ears(distanceBucket->table, _azimuth, _elevation, _runTimeInterpolation,
+				partitionedFRNumberOfSubfilters, partitionedFRSubfilterLength, stepVector);
+			return _foundData;
+		}
 		
 		/** \brief Get the HRIR delay, in number of samples, for one ear
 		*	\param [in] ear for which ear we want to get the HRIR
@@ -439,36 +438,36 @@ namespace BRTServices
 		*   \eh On error, an error code is reported to the error handler.
 		*       Warnings may be reported to the error handler.
 		*/
-		THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation, Common::CTransform & _referenceLocation) {
-			
-			Common::CEarPair<uint64_t> data = GetFR_Delay(_azimuthCenter, _elevationCenter, 0, _referenceLocation, runTimeInterpolation);
-			
-			THRIRPartitionedStruct result;
-			result.leftDelay = data.left;
-			result.rightDelay = data.right;
-			return result;
-			//std::lock_guard<std::mutex> l(mutex);
-			//THRIRPartitionedStruct data;
+		//THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation, Common::CTransform & _referenceLocation) {
+		//	
+		//	Common::CEarPair<uint64_t> data = GetFR_Delay(_azimuthCenter, _elevationCenter, 0, _referenceLocation, runTimeInterpolation);
+		//	
+		//	THRIRPartitionedStruct result;
+		//	result.leftDelay = data.left;
+		//	result.rightDelay = data.right;
+		//	return result;
+		//	//std::lock_guard<std::mutex> l(mutex);
+		//	//THRIRPartitionedStruct data;
 
-			//if (setupInProgress) {
-			//	SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIRDelay: nonInterpolatedHRTF Setup in progress return empty");
-			//	return data;
-			//}
+		//	//if (setupInProgress) {
+		//	//	SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIRDelay: nonInterpolatedHRTF Setup in progress return empty");
+		//	//	return data;
+		//	//}
 
-			//// Modify delay if customized delay is activate
-			//if (enableWoodworthITD) {
-			//	data.leftDelay = CHRTFAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::LEFT);
-			//	data.rightDelay = CHRTFAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::RIGHT);
-			//	return data;
-			//}
+		//	//// Modify delay if customized delay is activate
+		//	//if (customITD) {
+		//	//	data.leftDelay = CFIRTableAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::LEFT);
+		//	//	data.rightDelay = CFIRTableAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::RIGHT);
+		//	//	return data;
+		//	//}
 
-			//TFRPartitionedStruct aux = CHRTFAuxiliarMethods::GetHRIRDelayFromPartitioned(t_HRTF_Resampled_partitioned, ear, _azimuthCenter, _elevationCenter, runTimeInterpolation,
-			//	partitionedFRNumberOfSubfilters, partitionedFRSubfilterLength, stepVector);
+		//	//TFRPartitionedStruct aux = CFIRTableAuxiliarMethods::GetHRIRDelayFromPartitioned(t_HRTF_Resampled_partitioned, ear, _azimuthCenter, _elevationCenter, runTimeInterpolation,
+		//	//	partitionedFRNumberOfSubfilters, partitionedFRSubfilterLength, stepVector);
 
-			//data.leftDelay = aux.delay.left;
-			//data.rightDelay = aux.delay.right;
-			//return data;
-		}
+		//	//data.leftDelay = aux.delay.left;
+		//	//data.rightDelay = aux.delay.right;
+		//	//return data;
+		//}
 
 		const Common::CEarPair<uint64_t> GetFR_Delay(const float & _azimuthCenter, const float & _elevationCenter, const float & _distance, const Common::CTransform & _referenceLocation, bool _runTimeInterpolation) const override { 
 			
@@ -481,9 +480,9 @@ namespace BRTServices
 			}
 			
 			// Modify delay if customized delay is activate
-			if (enableWoodworthITD) {
-				foundData.left = CHRTFAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::LEFT);
-				foundData.right = CHRTFAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::RIGHT);
+			if (customITD) {
+				foundData.left = CFIRTableAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::LEFT);
+				foundData.right = CFIRTableAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::RIGHT);
 				return foundData;
 			}
 
@@ -495,7 +494,7 @@ namespace BRTServices
 			}		
 
 			
-			foundData = CHRTFAuxiliarMethods::GetHRIRDelayFromPartitioned_2Ears(distanceBucket->table, _azimuthCenter, _elevationCenter, _runTimeInterpolation,
+			foundData = CFIRTableAuxiliarMethods::GetHRIRDelayFromPartitioned_2Ears(distanceBucket->table, _azimuthCenter, _elevationCenter, _runTimeInterpolation,
 				partitionedFRNumberOfSubfilters, partitionedFRSubfilterLength, stepVector);
 			
 			return foundData;
@@ -519,17 +518,17 @@ namespace BRTServices
 		 * @param _inputData Raw IR data read from the sofa file
 		 * @param _outpuTable vector of tables sliped by distance
 		 */
-		void SlipRawDataByDistances(const std::vector<BRTServices::TIRStruct> & _inputData, TRawSofaTableByDistances & _outpuTable) {
+		void SlipRawDataByDistances(const TRawSofaData & _inputData, TRawSofaTableByDistances & _outpuTable) {
 			if (!setupInProgress) {
 				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "Cannot add IR - Setup not in progress");
 				return;
 			}
 
 			for (auto & dataIt : _inputData) {
-				const double & _azimuth = dataIt.orientation.azimuth;
-				const double & _elevation = dataIt.orientation.elevation;
-				const double & _distance = dataIt.orientation.distance;
-				TIRStruct newIRData = dataIt;
+				const double & _azimuth = dataIt.data.orientation.azimuth;
+				const double & _elevation = dataIt.data.orientation.elevation;
+				const double & _distance = dataIt.data.orientation.distance;
+				TIRStruct newIRData = dataIt.data;
 				// Find o create orientation bucket
 				TDistanceBucketRawSofa * distanceBucket = nullptr;
 
@@ -578,11 +577,11 @@ namespace BRTServices
 			// Select the one that extrapolates with zeros or the one that extrapolates based on the nearest point according to some parameter.			
 			if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::zero_insertion) {
 				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded nonInterpolatedHRTF sofa file, an extrapolation with zeros will be performed to fill it.");
-				extrapolation.Process<TRawSofaTable, BRTServices::TIRStruct>(_table, _orientationList, impulseResponseLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetZerosHRIR());
+				extrapolation.Process<TRawSofaTable, BRTServices::TIRStruct>(_table, _orientationList, impulseResponseLength, DEFAULT_EXTRAPOLATION_STEP, CFIRTableAuxiliarMethods::GetZerosHRIR());
 			}
 			else if (extrapolationMethod == BRTServices::TEXTRAPOLATION_METHOD::nearest_point) {
 				SET_RESULT(RESULT_WARNING, "At least one large gap has been found in the loaded nonInterpolatedHRTF sofa file, an extrapolation will be made to the nearest point to fill it.");
-				extrapolation.Process<TRawSofaTable, BRTServices::TIRStruct>(_table, _orientationList, impulseResponseLength, DEFAULT_EXTRAPOLATION_STEP, CHRTFAuxiliarMethods::GetNearestPointHRIR());
+				extrapolation.Process<TRawSofaTable, BRTServices::TIRStruct>(_table, _orientationList, impulseResponseLength, DEFAULT_EXTRAPOLATION_STEP, CFIRTableAuxiliarMethods::GetNearestPointHRIR());
 			}
 			else {
 				SET_RESULT(RESULT_ERROR_NOTSET, "Extrapolation Method not set up.");
@@ -597,35 +596,35 @@ namespace BRTServices
 		/**
 		 * @brief Calculate and remove the common delay of every IR functions of the DataBase Table. 
 		 */
-		void RemoveCommonDelayFromTable(std::vector<BRTServices::TIRStruct> & table) {
-			//1. Init the minumun value with the fist value of the table
-			auto it0 = table.begin();
-			uint64_t minimumDelayLeft = it0->delay.left; //Vrbl to store the minumun delay value for left ear
-			uint64_t minimumDelayRight = it0->delay.right; //Vrbl to store the minumun delay value for right ear
+		//void RemoveCommonDelayFromTable(TRawSofaData & table) {
+		//	//1. Init the minumun value with the fist value of the table
+		//	auto it0 = table.begin();
+		//	uint64_t minimumDelayLeft = it0->data.delay.left; //Vrbl to store the minumun delay value for left ear
+		//	uint64_t minimumDelayRight = it0->data.delay.right; //Vrbl to store the minumun delay value for right ear
 
-			//2. Find the common delay
-			//Scan the whole table looking for the minimum delay for left and right ears
-			for (auto it = table.begin(); it != table.end(); it++) {
-				//Left ear
-				if (it->delay.left < minimumDelayLeft) {
-					minimumDelayLeft = it->delay.left;
-				}
-				//Right ear
-				if (it->delay.right < minimumDelayRight) {
-					minimumDelayRight = it->delay.right;
-				}
-			}
-			//3. Delete the common delay
-			//Scan the whole table substracting the common delay to every delays for both ears separately
-			//The common delay of each canal have been calculated and subtracted separately in order to correct the asymmetry of the measurement
-			if (minimumDelayRight != 0 || minimumDelayLeft != 0) {
-				for (auto it = table.begin(); it != table.end(); it++) {
-					it->delay.left -= minimumDelayLeft; //Left ear
-					it->delay.right -= minimumDelayRight; //Right ear
-				}
-			}
-			SET_RESULT(RESULT_OK, "Common delay deleted (" + std::to_string(minimumDelayLeft) + "," + std::to_string(minimumDelayRight) + ") from nonInterpolatedHRTF table succesfully");
-		}
+		//	//2. Find the common delay
+		//	//Scan the whole table looking for the minimum delay for left and right ears
+		//	for (auto it = table.begin(); it != table.end(); it++) {
+		//		//Left ear
+		//		if (it->data.delay.left < minimumDelayLeft) {
+		//			minimumDelayLeft = it->data.delay.left;
+		//		}
+		//		//Right ear
+		//		if (it->data.delay.right < minimumDelayRight) {
+		//			minimumDelayRight = it->data.delay.right;
+		//		}
+		//	}
+		//	//3. Delete the common delay
+		//	//Scan the whole table substracting the common delay to every delays for both ears separately
+		//	//The common delay of each canal have been calculated and subtracted separately in order to correct the asymmetry of the measurement
+		//	if (minimumDelayRight != 0 || minimumDelayLeft != 0) {
+		//		for (auto it = table.begin(); it != table.end(); it++) {
+		//			it->data.delay.left -= minimumDelayLeft; //Left ear
+		//			it->data.delay.right -= minimumDelayRight; //Right ear
+		//		}
+		//	}
+		//	SET_RESULT(RESULT_OK, "Common delay deleted (" + std::to_string(minimumDelayLeft) + "," + std::to_string(minimumDelayRight) + ") from nonInterpolatedHRTF table succesfully");
+		//}
 
 		///////////////////
 		// Truncate IRs
@@ -634,37 +633,44 @@ namespace BRTServices
 		 * @brief Check if the windowing process is configured
 		 * @return 
 		 */
-		bool IsFadeInWindowingConfigured() {
-			return fadeInBegin != 0 || riseTime != 0;
-		}
-		/**
-		 * @brief Check if the windowing process is configured
-		 * @return 
-		 */
-		bool IsFadeOutWindowingConfigured() {
-			return fadeOutCutoff != 0 || fallTime != 0;
-		}
+		//bool IsFadeInWindowingConfigured() {
+		//	return fadeInBegin != 0 || riseTime != 0;
+		//}
+		///**
+		// * @brief Check if the windowing process is configured
+		// * @return 
+		// */
+		//bool IsFadeOutWindowingConfigured() {
+		//	return fadeOutCutoff != 0 || fallTime != 0;
+		//}
 
-		void CalculateWindowingIRTable(const std::vector<BRTServices::TIRStruct> & _inTable, std::vector<BRTServices::TIRStruct> & _outTable) {
-			_outTable.clear();
-			_outTable = _inTable;
+		void CalculateWindowingIRTable(const TRawSofaData & _inTable, TRawSofaData & _outTable) {
 
-			if (IsFadeInWindowingConfigured()) {
-				for (auto it = _outTable.begin(); it != _outTable.end(); it++) {					
-					it->IR.left = Common::CIRWindowing::Process(it->IR.left, Common::CIRWindowing::fadein, fadeInBegin, riseTime, globalParameters.GetSampleRate());
-					it->IR.right = Common::CIRWindowing::Process(it->IR.right, Common::CIRWindowing::fadein, fadeInBegin, riseTime, globalParameters.GetSampleRate());
-				}
-			}
-			if (IsFadeOutWindowingConfigured()) {
-				for (auto it = _outTable.begin(); it != _outTable.end(); it++) {
-					it->IR.left = Common::CIRWindowing::Process(it->IR.left, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate());
-					it->IR.right = Common::CIRWindowing::Process(it->IR.right, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate());
-				}
+			if (CFIRTableAuxiliarMethods::CalculateWindowingIRTable(_inTable, _outTable, fadeInBegin, riseTime, fadeOutCutoff, fallTime, globalParameters.GetSampleRate())) {
 
 				// Update impulseResponseLength and the number of subfilters
-				impulseResponseLength = _outTable.begin()->IR.left.size();
+				impulseResponseLength = _outTable.begin()->data.IR.left.size();
 				partitionedFRNumberOfSubfilters = CalculateNumberOPartitions(impulseResponseLength);
 			}
+			//_outTable.clear();
+			//_outTable = _inTable;
+
+			//if (IsFadeInWindowingConfigured()) {
+			//	for (auto it = _outTable.begin(); it != _outTable.end(); it++) {					
+			//		it->data.IR.left = Common::CIRWindowing::Process(it->data.IR.left, Common::CIRWindowing::fadein, fadeInBegin, riseTime, globalParameters.GetSampleRate());
+			//		it->data.IR.right = Common::CIRWindowing::Process(it->data.IR.right, Common::CIRWindowing::fadein, fadeInBegin, riseTime, globalParameters.GetSampleRate());
+			//	}
+			//}
+			//if (IsFadeOutWindowingConfigured()) {
+			//	for (auto it = _outTable.begin(); it != _outTable.end(); it++) {
+			//		it->data.IR.left = Common::CIRWindowing::Process(it->data.IR.left, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate());
+			//		it->data.IR.right = Common::CIRWindowing::Process(it->data.IR.right, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate());
+			//	}
+
+			//	// Update impulseResponseLength and the number of subfilters
+			//	impulseResponseLength = _outTable.begin()->data.IR.left.size();
+			//	partitionedFRNumberOfSubfilters = CalculateNumberOPartitions(impulseResponseLength);
+			//}
 		}
 
 		//////////////////////////////////
@@ -715,12 +721,12 @@ namespace BRTServices
 		void Reset() {
 
 			//Change class state
-			setupInProgress = false;
-			HRTFLoaded = false;
+			setupInProgress = false;			
+			dataReady = false;
 
 			//Clear every table						
 			distanceFRTable.clear();
-			sofaIRDataBase2.clear();
+			sofaIRDataBase.clear();
 			stepVector.clear();
 
 			//Update parameters			
@@ -731,29 +737,29 @@ namespace BRTServices
 		///////////////
 		// ATTRIBUTES
 		///////////////
+		mutable std::mutex mutex;					// Thread management
+		Common::CGlobalParameters globalParameters; // Global parameters of the system
 
-		mutable std::mutex mutex; // Thread management
+		int32_t partitionedFRNumberOfSubfilters;	// Number of subfilters (blocks) for the UPC algorithm
+		int32_t partitionedFRSubfilterLength;		// Size of one HRIR subfilter
+		
+		Common::CCranialGeometry cranialGeometry;			// Cranial geometry of the listener
+		Common::CCranialGeometry originalCranialGeometry;	// Cranial geometry of the listener
+		TEXTRAPOLATION_METHOD extrapolationMethod;			// Methods that is going to be used to extrapolate
 
-		//int32_t impulseResponseLength; // HRIR vector length
-		//int32_t bufferSize;								// Input signal buffer size
-		int32_t partitionedFRNumberOfSubfilters; // Number of subfilters (blocks) for the UPC algorithm
-		int32_t partitionedFRSubfilterLength; // Size of one HRIR subfilter
-		//float distanceOfMeasurement; // Distance where the HRIR have been measurement
-		Common::CCranialGeometry cranialGeometry; // Cranial geometry of the listener
-		Common::CCranialGeometry originalCranialGeometry; // Cranial geometry of the listener
-		TEXTRAPOLATION_METHOD extrapolationMethod; // Methods that is going to be used to extrapolate
+		float sphereBorder;		// Define spheere "sewing"
+		float epsilon_sewing;	// Interpolation parameter
+		float azimuthMin;		// Interpotarion parameter that defines limits of work area
+		float azimuthMax;		// Interpotarion parameter that defines limits of work area
+		float elevationMin;		// Interpotarion parameter that defines limits of work area
+		float elevationMax;		// Interpotarion parameter that defines limits of work area
+		float elevationNorth;	// Elevation of the north pole in the interpolation grid 
+		float elevationSouth;	// Elevation of the south pole in the interpolation grid
 
-		float sphereBorder; // Define spheere "sewing"
-		float epsilon_sewing;
-
-		float azimuthMin, azimuthMax, elevationMin, elevationMax, elevationNorth, elevationSouth; // Variables that define limits of work area
-
-		bool setupInProgress; // Variable that indicates the HRTF add and resample algorithm are in process
-		bool HRTFLoaded; // Variable that indicates if the HRTF has been loaded correctly
-		//bool bInterpolatedResampleTable;			// If true: calculate the HRTF resample matrix with interpolation
-		int gridSamplingStep; // HRTF Resample table step (azimuth and elevation)
-		bool enableWoodworthITD; // Indicate the use of a customized delay
-		int gapThreshold; // Max distance between pole and next elevation to be consider as a gap
+		bool setupInProgress;	// Variable that indicates the HRTF add and resample algorithm are in process		
+		int gridSamplingStep;	// HRTF Resample table step (azimuth and elevation)
+		bool customITD; // Indicate the use of a customized delay
+		int gapThreshold;		// Max distance between pole and next elevation to be consider as a gap
 
 		float fadeInBegin; // Variable to be used in the windowing IR process
 		float riseTime; // Variable to be used in the windowing IR process
@@ -761,22 +767,17 @@ namespace BRTServices
 		float fallTime; // Variable to be used in the windowing IR process 
 
 		// Tables				
-		std::vector<BRTServices::TIRStruct> sofaIRDataBase2;// Time domain database - original data from SOFA file
+		//std::vector<BRTServices::TIRStruct> sofaIRDataBase;// Time domain database - original data from SOFA file
+		TRawSofaData sofaIRDataBase;						// Time domain database - original data from SOFA file; 
 		TDistanceTable distanceFRTable;						// Data in our grid, interpolated, by distance buckets				
 		std::unordered_map<TOrientation, float> stepVector; // Store hrtf interpolated grids steps
-
-		// Empty object to return in some methods
-		THRIRStruct emptyHRIR;
-		TFRPartitionedStruct emptyHRIR_partitioned;
-		CMonoBuffer<float> emptyMonoBuffer;
-		Common::CGlobalParameters globalParameters;
-
+				
 		// Processors
 		//CQuasiUniformSphereDistribution quasiUniformSphereDistribution;
 		COfflineInterpolation offlineInterpolation;
 		CExtrapolation extrapolation;
 
-		friend class CHRTFTester;
+		//friend class CHRTFTester;
 	};
 }
 #endif

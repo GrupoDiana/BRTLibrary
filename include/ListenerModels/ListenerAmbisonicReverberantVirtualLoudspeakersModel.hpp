@@ -25,9 +25,8 @@
 
 #include <memory>
 #include <ListenerModels/ListenerModelBase.hpp>
-#include <ServiceModules/HRTFDefinitions.hpp>
+#include <ServiceModules/SphericalFIRTableDefinitions.hpp>
 #include <ServiceModules/ServicesBase.hpp>
-//#include <ServiceModules/HRBRIR.hpp>
 #include <ServiceModules/AmbisonicBIR.hpp>
 #include <ProcessingModules/BilateralAmbisonicEncoderProcessor.hpp>
 #include <ProcessingModules/AmbisonicDomainConvolverProcessor.hpp>

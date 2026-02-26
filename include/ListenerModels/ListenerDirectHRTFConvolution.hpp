@@ -27,8 +27,7 @@
 #include <ListenerModels/ListenerModelBase.hpp>
 #include <EnvironmentModels/EnvironmentModelBase.hpp>
 #include <ServiceModules/ServicesBase.hpp>
-#include <ServiceModules/HRTF.hpp>
-//#include <ServiceModules/HRBRIR.hpp>
+#include <ServiceModules/SphericalInterpolatedFIRTable.hpp>
 #include <ServiceModules/SphericalFIRTable.hpp>
 #include <ProcessingModules/HRTFConvolverProcessor.hpp>
 #include <ProcessingModules/NearFieldEffectProcessor.hpp>
@@ -147,7 +146,7 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		/*bool SetHRTF(std::shared_ptr< BRTServices::CHRTF > _listenerHRTF) override {			
+		/*bool SetHRTF(std::shared_ptr< BRTServices::CSphericalInterpolatedFIRTable > _listenerHRTF) override {			
 			
 			if (_listenerHRTF->GetSamplingRate() != globalParameters.GetSampleRate()) { 
 				SET_RESULT(RESULT_ERROR_NOTSET, "This HRTF has not been assigned to the listener. The sample rate of the HRTF does not match the one set in the library Global Parameters.");
@@ -651,7 +650,7 @@ namespace BRTListenerModel {
 		mutable std::mutex mutex;									// To avoid access collisions
 		std::string listenerID;										// Store unique listener ID		
 		std::shared_ptr<BRTServices::CSphericalFIRTable> listenerHeadIRModel;	// Head model of listener
-		//std::shared_ptr<BRTServices::CHRTF>		listenerHRTF;					// HRTF of listener
+		//std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable>		listenerHRTF;					// HRTF of listener
 		std::shared_ptr<BRTServices::CServicesBase> listenerHRTF;				// HRTF of listener
 		std::shared_ptr<BRTServices::CSphericalSOSTable> listenerNFCFilters;		// SOS Filter of listener						
 		std::vector< CSourceProcessors> sourcesConnectedProcessors;

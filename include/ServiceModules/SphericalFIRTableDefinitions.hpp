@@ -1,7 +1,7 @@
 /**
-* \HRTF Definitions
+* \Spherical FIR Table Definitions
 *
-* \brief Declaration of CHRTFAuxiliarMethods class interface
+* \brief Declaration of Spherical FIR Table Definitions class interface
 * \date	July 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
@@ -23,8 +23,8 @@
 */
 
 
-#ifndef _CHRTF_DEFINITIONS_HPP
-#define _CHRTF_DEFINITIONS_HPP
+#ifndef _CSPHERICAL_FIR_TABLE_DEFINITIONS_HPP
+#define _CSPHERICAL_FIR_TABLE_DEFINITIONS_HPP
 
 #include <unordered_map>
 #include <vector>
@@ -73,8 +73,7 @@ namespace BRTServices {
 	///////////////////////////////////////////////////
 	//// Spherical Partitioned FIR Table definitions
 	////////////////////////////////////////////////////
-	// 
-	// 
+	 	
 	// IR Table ordered by orientation
 	using TSphericalFIRTablePartitioned = std::unordered_map<TOrientation_key, BRTServices::TFRPartitionedStruct>;
 	
@@ -91,7 +90,6 @@ namespace BRTServices {
 		Common::CVector3 referencePos;
 		std::vector<TDistanceBucket> distances;
 	};
-
 	
 	// Spherical FIR Table Map - Reference position bucket map
 	using TReferenceBucketMap  = std::unordered_map<TVector3_key, TReferenceBucket>;
@@ -132,17 +130,10 @@ namespace BRTServices {
 		TRawSofaTable table;
 	};
 	using TRawSofaTableByDistances = std::vector<TDistanceBucketRawSofa>;
-
-	/** \brief Type definition for table HRTF, this is the one read from the SOFA file.
-	*/
-	//typedef std::unordered_map<TOrientation, BRTServices::THRIRStruct> T_HRTFTable;
-
-	/** \brief Type definition for the HRTF table, this is the one our grid has and is the one used for rendering.
-	*/	
-	//using T_HRTFPartitionedTable = std::unordered_map<TOrientation, THRIRPartitionedStruct>;
-	//using T_HRTFPartitionedTable = std::unordered_map<TOrientation, BRTServices::TFRPartitionedStruct>;
-	//using T_HRTFPartitionedTable = std::unordered_map<TOrientation_key, BRTServices::TFRPartitionedStruct>;
-	
+		
+	/**
+	 * @brief Type definition for the distance table, this is used for rendering.
+	 */
 	using TDistanceTable = std::vector<TDistanceBucket>;	
 }
 #endif

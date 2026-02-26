@@ -26,7 +26,7 @@
 #define _CSOURCE_LISTENER_RELATIVE_POSITION_CALCULATION_HPP_
 
 #include <Common/Buffer.hpp>
-#include <ServiceModules/HRTF.hpp>
+#include <ServiceModules/SphericalInterpolatedFIRTable.hpp>
 
 #define EPSILON 0.0001f
 #define ELEVATION_SINGULAR_POINT_UP 90.0

@@ -183,7 +183,7 @@ namespace BRTProcessing {
 			}
 
 			// Check listener HRTF
-			//std::shared_ptr<BRTServices::CHRTF> _listenerHRTF = _listenerHRTFWeak.lock();
+			//std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable> _listenerHRTF = _listenerHRTFWeak.lock();
 			std::shared_ptr<BRTServices::CServicesBase> _listenerSphericalIRTable = _listenerSphericalIRTable_weak.lock();
 			if (!_listenerSphericalIRTable) {
 				SET_RESULT(RESULT_ERROR_NULLPOINTER, "nonInterpolatedHRTF listener pointer is null when trying to use in HRTFConvolver");
