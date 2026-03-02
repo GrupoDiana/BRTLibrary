@@ -84,11 +84,11 @@ namespace BRTConnectivity {
             EntryPointCreated(entryPointID, _notify);
         }*/
 
-        void CreateABIRPtrEntryPoint(std::string entryPointID, bool _notify = false) {            
+        /*void CreateABIRPtrEntryPoint(std::string entryPointID, bool _notify = false) {            
             std::shared_ptr<BRTConnectivity::CEntryPointABIRPtr> _newEntryPoint = CreateGenericEntryPoint<BRTConnectivity::CEntryPointABIRPtr>(entryPointID, _notify);
             abirPtrEntryPoints.push_back(_newEntryPoint);
             EntryPointCreated(entryPointID, _notify);
-        }
+        }*/
       
          
         template <class T>
@@ -213,7 +213,7 @@ namespace BRTConnectivity {
             }
         }*/
 
-        void connectABIREntryTo(std::shared_ptr<BRTConnectivity::CExitPointABIRPtr> _exitPoint, std::string entryPointID) {
+        /*void connectABIREntryTo(std::shared_ptr<BRTConnectivity::CExitPointABIRPtr> _exitPoint, std::string entryPointID) {
 			std::shared_ptr<BRTConnectivity::CEntryPointABIRPtr> _entryPoint = GetABIRPtrEntryPoint(entryPointID);
             if (_entryPoint) {
                 _exitPoint->attach(*_entryPoint.get());
@@ -222,9 +222,9 @@ namespace BRTConnectivity {
             else {
                 ASSERT(false, RESULT_ERROR_INVALID_PARAM, "There is no entry point with this id " + entryPointID, "");
             }
-        }
+        }*/
 
-        void disconnectABIREntryTo(std::shared_ptr<BRTConnectivity::CExitPointABIRPtr> _exitPoint, std::string entryPointID) {
+        /*void disconnectABIREntryTo(std::shared_ptr<BRTConnectivity::CExitPointABIRPtr> _exitPoint, std::string entryPointID) {
 			std::shared_ptr<BRTConnectivity::CEntryPointABIRPtr> _entryPoint = GetABIRPtrEntryPoint(entryPointID);
             if (_entryPoint) {
                 _exitPoint->detach(_entryPoint.get());
@@ -233,7 +233,7 @@ namespace BRTConnectivity {
             else {
                 ASSERT(false, RESULT_ERROR_INVALID_PARAM, "There is no entry point with this id " + entryPointID, "");
             }
-        }
+        }*/
         
         void connectIDEntryTo(std::shared_ptr<BRTConnectivity::CExitPointID> _exitPoint, std::string entryPointID) {
 			std::shared_ptr<BRTConnectivity::CEntryPointID> _entryPoint2 = GetIDEntryPoint(entryPointID);
@@ -269,7 +269,7 @@ namespace BRTConnectivity {
         //}
 
         // Find entry/exit point in vectors 
-        std::shared_ptr<BRTConnectivity::CEntryPointServicePtr> GetServicePtrEntryPoint(std::string _id) {
+        std::shared_ptr<BRTConnectivity::CEntryPointServicePtr> GetServicePtrEntryPoint(const std::string& _id) {
             for (auto& it : servicePtrEntryPoints) {
                 if (it->GetID() == _id) { return it; }
             }
@@ -290,12 +290,12 @@ namespace BRTConnectivity {
             return nullptr;
         }*/
 
-        std::shared_ptr<BRTConnectivity::CEntryPointABIRPtr> GetABIRPtrEntryPoint(std::string _id) {
+        /*std::shared_ptr<BRTConnectivity::CEntryPointABIRPtr> GetABIRPtrEntryPoint(std::string _id) {
             for (auto& it : abirPtrEntryPoints) {
                 if (it->GetID() == _id) { return it; }                
             }
             return nullptr;
-        }
+        }*/
 
         std::shared_ptr<BRTConnectivity::CEntryPointTransform> GetPositionEntryPoint(std::string _id) {
             for (auto& it : positionEntryPoints) {
@@ -335,7 +335,7 @@ namespace BRTConnectivity {
         std::vector<std::shared_ptr<BRTConnectivity::CEntryPointServicePtr>> servicePtrEntryPoints;
         //std::vector<std::shared_ptr <BRTConnectivity::CEntryPointHRTFPtr>> hrtfPtrEntryPoints;
         //std::vector<std::shared_ptr <BRTConnectivity::CEntryPointILDPtr>> ildPtrEntryPoints;
-        std::vector<std::shared_ptr <BRTConnectivity::CEntryPointABIRPtr>> abirPtrEntryPoints;
+        //std::vector<std::shared_ptr <BRTConnectivity::CEntryPointABIRPtr>> abirPtrEntryPoints;
         std::vector<std::shared_ptr <BRTConnectivity::CEntryPointID> > idEntryPoints;
     };
 };

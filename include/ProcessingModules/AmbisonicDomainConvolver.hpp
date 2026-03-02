@@ -74,7 +74,7 @@ namespace BRTProcessing {
 		 * @param outBuffer Output channel in time in the real domain.
 		 * @param _listenerAmbisoninBIRWeak Smart pointer to impulse responses in the ambisonic domain of virtual loudspeakers.
 		*/
-		void Process(std::vector<CMonoBuffer<float>>& _inChannelsBuffers, CMonoBuffer<float>& outBuffer, std::weak_ptr<BRTServices::CAmbisonicBIR>& _listenerAmbisoninBIRWeak, Common::CTransform& _listenerTransform) {
+		void Process(std::vector<CMonoBuffer<float>>& _inChannelsBuffers, CMonoBuffer<float>& outBuffer, std::weak_ptr<BRTServices::CServicesBase>& _listenerAmbisoninBIRWeak, Common::CTransform& _listenerTransform) {
 
 			std::lock_guard<std::mutex> l(mutex);
 			
@@ -92,7 +92,7 @@ namespace BRTProcessing {
 			}
 
 			// Check listener Ambisonic BIR pointer
-			std::shared_ptr<BRTServices::CAmbisonicBIR> _listenerAmbisonicBIR = _listenerAmbisoninBIRWeak.lock();
+			std::shared_ptr<BRTServices::CServicesBase> _listenerAmbisonicBIR = _listenerAmbisoninBIRWeak.lock();
 			if (!_listenerAmbisonicBIR) {
 				SET_RESULT(RESULT_ERROR_NULLPOINTER, "AmbisonicBIR pointer is null when trying to use in AmbisonicDomainConvolver.");				
 				outBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);				
@@ -100,7 +100,7 @@ namespace BRTProcessing {
 			}
 			
 			// Check listener Ambisonic BIR data ready
-			if (!_listenerAmbisonicBIR->IsReady()) {
+			if (!_listenerAmbisonicBIR->IsDataReady()) {
 				SET_RESULT(RESULT_WARNING, "AmbisonicBIR is not ready to provide IRs. This usually occurs because the ambisonic setup has been changed during reproduction.");
 				outBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 				return;
@@ -117,7 +117,7 @@ namespace BRTProcessing {
 					outBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 					return;				
 				}
-				std::vector<CMonoBuffer<float>>	oneChannel_ABIR_partitioned = _listenerAmbisonicBIR->GetChannelPartitionedIR_OneEar(nChannel, earToProcess, _listenerTransform); // GET ABIR																
+				std::vector<CMonoBuffer<float>>	oneChannel_ABIR_partitioned = _listenerAmbisonicBIR->GetFR_AmbisonicChannel(nChannel, earToProcess, _listenerTransform); // GET ABIR																
 				if (oneChannel_ABIR_partitioned.size() == 0) {
 					SET_RESULT(RESULT_WARNING, "Failure to obtain an IR from AmbisonicIR. This usually occurs because the ABIR has been changed during reproduction.");
 					outBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
@@ -160,10 +160,10 @@ namespace BRTProcessing {
 		/////////////////////
 
 		/// Initialize convolvers and convolition buffers		
-		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CAmbisonicBIR>& _listenerAmbisonicBIR) {
+		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CServicesBase>& _listenerAmbisonicBIR) {
 
-			int numOfSubfilters = _listenerAmbisonicBIR->GetIRNumberOfSubfilters();
-			int subfilterLength = _listenerAmbisonicBIR->GetIRSubfilterLength();
+			int numOfSubfilters = _listenerAmbisonicBIR->GetNumberOfSubfiltersFR();
+			int subfilterLength = _listenerAmbisonicBIR->GetSubfilterLengthFR();
 			
 			for (int nChannel = 0; nChannel < numberOfAmbisonicChannels; nChannel++) {								
 				std::shared_ptr<BRTProcessing::CUniformPartitionedConvolution> channelUPConvolver = std::make_shared<BRTProcessing::CUniformPartitionedConvolution>();				

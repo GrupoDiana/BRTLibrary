@@ -154,12 +154,13 @@ namespace BRTConnectivity {
         /////////////////////
         // AmbisonicBIRs 
         /////////////////////
-        void CreateABIRExitPoint() {            
-            abirExitPoint = std::make_shared<CExitPointABIRPtr>("moduleABIR");
+        void CreateABIRExitPoint() {     
+            CreateServiceExitPoint(ABIR_EXIT_POINT_ID);
+            //abirExitPoint = std::make_shared<CExitPointABIRPtr>("moduleABIR");
         }
 
-        std::shared_ptr<CExitPointABIRPtr> GetABIRExitPoint() {
-            return abirExitPoint;
+        std::shared_ptr<CExitPointServicePtr> GetABIRExitPoint() {
+			return GetServiceExitPoint(ABIR_EXIT_POINT_ID);
         }
 
         /////////////////////
@@ -194,7 +195,7 @@ namespace BRTConnectivity {
         std::vector<std::shared_ptr<CExitPointServicePtr>> serviceExitPointList;
         //std::shared_ptr<CExitPointHRTFPtr>  hrtfExitPoint;
         //std::shared_ptr<CExitPointILDPtr>   ildExitPoint;
-        std::shared_ptr< CExitPointABIRPtr> abirExitPoint;        
+        //std::shared_ptr< CExitPointABIRPtr> abirExitPoint;        
     };
 }
 #endif

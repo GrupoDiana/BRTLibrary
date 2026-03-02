@@ -99,8 +99,7 @@ namespace BRTListenerModel {
 		
 		virtual bool SetHRTF(std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF) { return false; };
 		virtual std::shared_ptr<BRTServices::CServicesBase> GetHRTF() const { return nullptr; }	
-		virtual void RemoveHRTF() {};
-		//virtual bool SetListenerHeadIRModel(std::shared_ptr<BRTServices::CSphericalFIRTable> _listenerBRIR) { return false; };
+		virtual void RemoveHRTF() {};		
 
 		virtual bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CSphericalSOSTable > _listenerILD) { return false; };
 		virtual std::shared_ptr < BRTServices::CSphericalSOSTable> GetNearFieldCompensationFilters() const { return nullptr; }
@@ -132,9 +131,9 @@ namespace BRTListenerModel {
 
 		virtual bool SetAmbisonicOrder(int _ambisonicOrder) { return false; }
 		virtual int GetAmbisonicOrder() { return 0; }
-		virtual bool SetAmbisonicNormalization(BRTProcessing::TAmbisonicNormalization _ambisonicNormalization) { return false; }
-		virtual bool SetAmbisonicNormalization(std::string _ambisonicNormalization) {return false;}
-		virtual BRTProcessing::TAmbisonicNormalization GetAmbisonicNormalization() { return BRTProcessing::TAmbisonicNormalization::none; }
+		virtual bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) { return false; }
+		virtual bool SetAmbisonicNormalization(const std::string & _ambisonicNormalization) { return false; }
+		virtual Common::TAmbisonicNormalization GetAmbisonicNormalization() { return Common::TAmbisonicNormalization::none; }
 		
 		virtual void EnableDistanceAttenuation() {};
 		virtual void DisableDistanceAttenuation() {};

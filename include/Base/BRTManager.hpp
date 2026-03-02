@@ -640,13 +640,14 @@ namespace BRTBase {
 		template <typename T, typename U>
 		bool ConnectModuleABIR(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
-			module2->connectABIREntryTo(module1->GetABIRExitPoint(), entryPointID);
+			//module2->connectABIREntryTo(module1->GetABIRExitPoint(), entryPointID);
+			module2->connectServiceEntryTo(module1->GetABIRExitPoint(), entryPointID);
 			return true;
 		}
 		template <typename T, typename U>
 		bool ConnectModuleABIR(T* module1, std::shared_ptr <U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
-			module2->connectABIREntryTo(module1->GetABIRExitPoint(), entryPointID);
+			module2->connectServiceEntryTo(module1->GetABIRExitPoint(), entryPointID);
 			return true;
 		}
 

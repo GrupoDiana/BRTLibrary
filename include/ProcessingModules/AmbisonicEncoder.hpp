@@ -26,18 +26,21 @@
 #define _CAMBISONIC_ENCODER_HPP_
 
 #include <Common/Buffer.hpp>
+#include <Common/ErrorHandler.hpp>
+#include <Common/CommonDefinitions.hpp>
 
 namespace BRTProcessing {
-
-	enum TAmbisonicNormalization { none, N3D, SN3D, maxN };
-
+	
 	class CAmbisonicEncoder {
 	public:
 		
 		/**
 			\brief Default constructor
 		*/
-		CAmbisonicEncoder() : initialized{ false }, ambisonicOrder { 1 }, normalization{ TAmbisonicNormalization::N3D }/*, bufferSize{ 0 }*/ {
+		CAmbisonicEncoder()
+			: initialized { false }
+			, ambisonicOrder { 1 }
+			, normalization { Common::TAmbisonicNormalization::N3D } /*, bufferSize{ 0 }*/ {
 			numberOfChannels = CalculateNumberOfChannels(ambisonicOrder);
 		}
 
@@ -47,7 +50,7 @@ namespace BRTProcessing {
 		 * @param _ambisonicNormalization Possible normalisations are :N3D, SN3D, maxN
 		 * @param _bufferSize The buffer size
 		*/
-		void Setup(int _ambisonicOrder, TAmbisonicNormalization _ambisonicNormalization/*, int _bufferSize*/) {			
+		void Setup(int _ambisonicOrder, Common::TAmbisonicNormalization _ambisonicNormalization /*, int _bufferSize*/) {			
 			
 			if (_ambisonicOrder >= 1 && _ambisonicOrder <= 3) {
 				//bufferSize = _bufferSize;
@@ -66,7 +69,7 @@ namespace BRTProcessing {
 			initialized = false;
 			//bufferSize = 0;
 			ambisonicOrder = 1;
-			normalization = TAmbisonicNormalization::N3D;
+			normalization = Common::TAmbisonicNormalization::N3D;
 			numberOfChannels = CalculateNumberOfChannels(ambisonicOrder);			
 		}
 
@@ -155,7 +158,7 @@ namespace BRTProcessing {
 		//int bufferSize;
 		int ambisonicOrder;
 		int numberOfChannels;
-		TAmbisonicNormalization normalization;
+		Common::TAmbisonicNormalization normalization;
 	
 
 		/////////////////////
@@ -202,8 +205,10 @@ namespace BRTProcessing {
 
 			}
 
-			if (normalization == TAmbisonicNormalization::SN3D) { ConvertN3DtoSN3D(_factors); }
-			else if (normalization == TAmbisonicNormalization::maxN) { ConvertN3DtoMaxN(_factors); }
+			if (normalization == Common::TAmbisonicNormalization::SN3D) {
+				ConvertN3DtoSN3D(_factors);
+			}
+			else if (normalization == Common::TAmbisonicNormalization::maxN) { ConvertN3DtoMaxN(_factors); }
 			
 			return _factors;
 		}

@@ -25,16 +25,19 @@
 #ifndef _CBILATERAL_AMBISONIC_ENCODER_HPP
 #define _CBILATERAL_AMBISONIC_ENCODER_HPP
 
-#include <ProcessingModules/UniformPartitionedConvolution.hpp>
+#include <memory>
+#include <vector>
+#include <algorithm>
+
 #include <Common/Buffer.hpp>
+#include <Common/GlobalParameters.hpp>
+#include <Common/CommonDefinitions.hpp>
 #include <ProcessingModules/AmbisonicEncoder.hpp>
 #include <Common/AddDelayExpansionMethod.hpp>
 #include <Common/SourceListenerRelativePositionCalculation.hpp>
 #include <ServiceModules/SphericalInterpolatedFIRTable.hpp>
+#include <ProcessingModules/UniformPartitionedConvolution.hpp>
 
-#include <memory>
-#include <vector>
-#include <algorithm>
 
 namespace BRTProcessing {
 	class CBilateralAmbisonicEncoder {
@@ -42,7 +45,7 @@ namespace BRTProcessing {
 		CBilateralAmbisonicEncoder() 
 			: enableProcessor{ true }
 			, ambisonicOrder { 1 }
-			, ambisonicNormalization { BRTProcessing::TAmbisonicNormalization::N3D }
+			, ambisonicNormalization { Common::TAmbisonicNormalization::N3D }
 			, enableInterpolation{ true }
 			, enableITDSimulation{ false }
 			, enableParallaxCorrection{ true } {
@@ -79,7 +82,7 @@ namespace BRTProcessing {
 
 		int GetAmbisonicOrder() {	return ambisonicOrder; }
 		
-		void SetAmbisonicNormalization(BRTProcessing::TAmbisonicNormalization _ambisonicNormalization) {
+		void SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) {
 			std::lock_guard<std::mutex> l(mutex);
 			
 			if (ambisonicNormalization == _ambisonicNormalization) { return; }
@@ -217,7 +220,7 @@ namespace BRTProcessing {
 		CMonoBuffer<float> leftChannelDelayBuffer;				// To store the delay of the left channel of the expansion method
 		CMonoBuffer<float> rightChannelDelayBuffer;				// To store the delay of the right channel of the expansion method
 		int ambisonicOrder;
-		BRTProcessing::TAmbisonicNormalization ambisonicNormalization;
+		Common::TAmbisonicNormalization ambisonicNormalization;
 		
 		bool enableProcessor;								// Flag to enable the processor
 		bool enableInterpolation;							// Enables/Disables the interpolation

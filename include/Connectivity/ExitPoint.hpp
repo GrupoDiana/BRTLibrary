@@ -69,7 +69,7 @@ namespace BRTConnectivity {
     //using CExitPointHRTFPtr = CExitPointBase< std::weak_ptr<BRTServices::CSphericalInterpolatedFIRTable> >;
     //using CExitPointHRBRIRPtr = CExitPointBase< std::weak_ptr<BRTServices::CHRBRIR> >;
     //using CExitPointILDPtr = CExitPointBase< std::weak_ptr<BRTServices::CSOSCoefficients> >;
-    using CExitPointDirectivityTFPtr = CExitPointBase< std::weak_ptr<BRTServices::CDirectivityTF> >;
-    using CExitPointABIRPtr = CExitPointBase< std::weak_ptr<BRTServices::CAmbisonicBIR> >;
+    //using CExitPointDirectivityTFPtr = CExitPointBase< std::weak_ptr<BRTServices::CDirectivityTF> >;
+    //using CExitPointABIRPtr = CExitPointBase< std::weak_ptr<BRTServices::CAmbisonicBIR> >;
 }
 #endif

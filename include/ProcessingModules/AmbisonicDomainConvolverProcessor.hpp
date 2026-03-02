@@ -39,7 +39,8 @@ namespace BRTProcessing {
     public:
 		CAmbisonicDomainConvolverProcessor(Common::T_ear _earToProcess) : CAmbisonicDomainConvolver(_earToProcess) {
 			CreateMultipleChannelsEntryPoint("inputChannels", 1);            
-			CreateABIRPtrEntryPoint("listenerAmbisonicBIR");
+			//CreateABIRPtrEntryPoint("listenerAmbisonicBIR");
+			CreateServicePtrEntryPoint("listenerAmbisonicBIR");
 			CreateIDEntryPoint("sourceID");
 			CreateIDEntryPoint("listenerID");
 			CreatePositionEntryPoint("listenerPosition");
@@ -67,7 +68,7 @@ namespace BRTProcessing {
 			if (channelsBuffer.size() == 0) { return;	}
 			CMonoBuffer<float> outBuffer;			
 							
-			std::weak_ptr<BRTServices::CAmbisonicBIR> listenerABIR = GetABIRPtrEntryPoint("listenerAmbisonicBIR")->GetData();
+			std::weak_ptr<BRTServices::CServicesBase> listenerABIR = GetServicePtrEntryPoint("listenerAmbisonicBIR")->GetData();
 			Common::CTransform _listenerTransform = GetPositionEntryPoint("listenerPosition")->GetData();
 			Process(channelsBuffer, outBuffer, listenerABIR, _listenerTransform);
 			GetSamplesExitPoint("outputSamples")->sendData(outBuffer);					

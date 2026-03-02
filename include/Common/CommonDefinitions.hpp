@@ -66,6 +66,14 @@ public:
 	T right; ///< right channel
 };
 
+/**
+ * @brief Defines normalization schemes for ambisonic audio signals.
+ */
+enum TAmbisonicNormalization { none,
+	N3D,
+	SN3D,
+	maxN };
+
 /** \brief This method check if a number is a power of 2
 		*	\param [in] integer to check
 		*	\param [out] return true if the number is power of two

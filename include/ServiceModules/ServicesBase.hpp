@@ -408,15 +408,17 @@ namespace BRTServices {
 				
 		virtual bool BeginSetup() { return false; }
 		virtual bool BeginSetup(const int32_t & _IRLength, const BRTServices::TEXTRAPOLATION_METHOD & _extrapolationMethod) { return false; }
+		virtual void BeginSetup(int _ambisonicOrder, Common::TAmbisonicNormalization _ambisonicNormalization) { }
 		virtual bool EndSetup() { return false; }
 		
 		virtual void AddIR(const Common::CVector3 & referencePosition, const double & _azimuth, const double & _elevation, const double & _distance, TIRStruct && newIR) { }
 		virtual void AddCoefficients(float azimuth, float distance, TSOSFilterStruct && newCoefs) { }
-						
-		//virtual void AddDirectivityTF(float _azimuth, float _elevation, TDirectivityTFStruct&& DirectivityTF) {}
-		
+		virtual void AddAmbisonicIR(const Common::CVector3 & referencePosition, int channel, TFRPartitionedStruct && newPartitionedIR) { }			
+		virtual bool AddSphericalFIRTable(std::shared_ptr<BRTServices::CServicesBase> _listenerIRData) { return false; }
+
 		virtual std::vector<float> GetSOSFilterCoefficients(Common::T_ear ear, float distance_m, float azimuth) { return std::vector<float>();	}				
-		
+		virtual const TFRPartitions GetFR_AmbisonicChannel(const int & channel, const Common::T_ear & _ear, const Common::CTransform & _referencePosition) { return TFRPartitions(); }
+
 		virtual const TFRPartitions GetFR_SpatiallyOriented(const float & _azimuth, const float & _elevation, const float & _distance, const Common::CTransform & _referenceLocation, const Common::T_ear & ear, bool _findNearest) const { return TFRPartitions(); }		
 		virtual const Common::CEarPair<TFRPartitions> GetFR_SpatiallyOriented_2Ears(const float & _azimuth, const float & _elevation, const float & _distance, const Common::CTransform & _referenceLocation, bool _findNearest) const { return Common::CEarPair<TFRPartitions>(); }
 		virtual const Common::CEarPair<TFRPartitions> GetFR_2Ears() const { return Common::CEarPair<TFRPartitions>(); }

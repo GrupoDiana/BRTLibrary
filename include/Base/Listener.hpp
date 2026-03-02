@@ -648,13 +648,13 @@ namespace BRTBase {
 		 * @brief Get the ambisonic normalization in the listener model if it is supported
 		 * @return current ambisonic normalization
 		 */
-		BRTProcessing::TAmbisonicNormalization GetAmbisonicNormalization() const { 			
+		Common::TAmbisonicNormalization GetAmbisonicNormalization() const { 			
 			for (auto& it : listenerModelsConnected) {
 				if (it->GetListenerModelCharacteristics().IsAmbisonic()) {
 					return it->GetAmbisonicNormalization();
 				}
 			}							
-			return BRTProcessing::TAmbisonicNormalization::none; 
+			return Common::TAmbisonicNormalization::none; 
 		}
 
 		/**
