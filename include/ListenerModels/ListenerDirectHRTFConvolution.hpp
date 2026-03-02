@@ -625,7 +625,7 @@ namespace BRTListenerModel {
 
 				control = control && brtManager->DisconnectModuleID(_listener, it->binauralConvolverProcessor, "listenerID"); // this or listener??
 				control = control && brtManager->DisconnectModuleILD(this, it->nearFieldEffectProcessor, "listenerILD");
-				control = control && brtManager->DisconnectModuleHRTF2(this, it->binauralConvolverProcessor, "listenerHRTF");
+				control = control && brtManager->DisconnectModuleHRTF(this, it->binauralConvolverProcessor, "listenerHRTF");
 				control = control && brtManager->DisconnectModuleTransform(_listener, it->nearFieldEffectProcessor, "listenerPosition");
 				control = control && brtManager->DisconnectModuleTransform(_listener, it->binauralConvolverProcessor, "listenerPosition");
 

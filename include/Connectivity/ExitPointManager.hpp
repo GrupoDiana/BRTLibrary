@@ -155,8 +155,7 @@ namespace BRTConnectivity {
         // AmbisonicBIRs 
         /////////////////////
         void CreateABIRExitPoint() {     
-            CreateServiceExitPoint(ABIR_EXIT_POINT_ID);
-            //abirExitPoint = std::make_shared<CExitPointABIRPtr>("moduleABIR");
+            CreateServiceExitPoint(ABIR_EXIT_POINT_ID);           
         }
 
         std::shared_ptr<CExitPointServicePtr> GetABIRExitPoint() {
@@ -166,13 +165,11 @@ namespace BRTConnectivity {
         /////////////////////
        // ILDs 
        /////////////////////
-        void CreateSOSFilterExitPoint() {
-            //ildExitPoint = std::make_shared<CExitPointILDPtr>("listenerILD");			
+        void CreateSOSFilterExitPoint() {          
 			CreateServiceExitPoint(SOS_COEFFICIENTS_EXIT_POINT_ID);
         }
 
-        std::shared_ptr<CExitPointServicePtr> GetSOSFilterExitPoint() {
-            //return ildExitPoint;
+        std::shared_ptr<CExitPointServicePtr> GetSOSFilterExitPoint() {            
 			return GetServiceExitPoint(SOS_COEFFICIENTS_EXIT_POINT_ID);
         }
 
@@ -192,10 +189,7 @@ namespace BRTConnectivity {
 		std::vector<std::shared_ptr<BRTConnectivity::CExitPointMultipleSamplesVector>> multipleSamplesVectorExitPoints;
         std::shared_ptr<CExitPointID> moduleIDExitPoint;
         
-        std::vector<std::shared_ptr<CExitPointServicePtr>> serviceExitPointList;
-        //std::shared_ptr<CExitPointHRTFPtr>  hrtfExitPoint;
-        //std::shared_ptr<CExitPointILDPtr>   ildExitPoint;
-        //std::shared_ptr< CExitPointABIRPtr> abirExitPoint;        
+        std::vector<std::shared_ptr<CExitPointServicePtr>> serviceExitPointList;               
     };
 }
 #endif

@@ -629,7 +629,7 @@ namespace BRTListenerModel {
 				control = control && brtManager->DisconnectModulesSamples(_source, "samples", it->bilateralAmbisonicEncoderProcessor, "inputSamples");
 				control = control && brtManager->DisconnectModuleID(this, it->bilateralAmbisonicEncoderProcessor, "listenerID");
 				control = control && brtManager->DisconnectModuleILD(this, it->bilateralAmbisonicEncoderProcessor, "listenerILD");
-				control = control && brtManager->DisconnectModuleHRTF2(this, it->bilateralAmbisonicEncoderProcessor, "listenerHRTF");
+				control = control && brtManager->DisconnectModuleHRTF(this, it->bilateralAmbisonicEncoderProcessor, "listenerHRTF");
 				control = control && brtManager->DisconnectModuleTransform(_listener, it->bilateralAmbisonicEncoderProcessor, "listenerPosition");
 
 				if (_source->GetSourceType() == BRTSourceModel::Directivity) {
