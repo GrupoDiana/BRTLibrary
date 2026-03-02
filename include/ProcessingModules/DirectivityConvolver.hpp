@@ -1,7 +1,7 @@
 ﻿/**
 * \class CDirectivityConvolver
 *
-* \brief Declaration of CDirectivityTFConvolver class
+* \brief Declaration of CDirectivityConvolver class
 * \date	June 2023
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, F. Morales-Benitez ||
@@ -23,9 +23,14 @@
 #ifndef _DIRECTIVITYTF_CONVOLVER_
 #define _DIRECTIVITYTF_CONVOLVER_
 
-#include <ProcessingModules/UniformPartitionedConvolution.hpp>
 #include <Common/Buffer.hpp>
-#include <ServiceModules/DirectivityTF.hpp>
+#include <Common/Transform.hpp>
+#include <Common/GlobalParameters.hpp>
+#include <Common/ErrorHandler.hpp>
+#include <ServiceModules/ServicesBase.hpp>
+#include <ProcessingModules/UniformPartitionedConvolution.hpp>
+
+
 
 #include <memory>
 #include <vector>
@@ -34,9 +39,9 @@
 #define EPSILON_GETSOURCECOORDINATES 0.0001f
 
 namespace BRTProcessing {
-	class CDirectivityTFConvolver  {
+	class CDirectivityConvolver  {
 	public:
-		CDirectivityTFConvolver() : enableSourceDirectivity{false}, convolutionBuffersInitialized{false} { }
+		CDirectivityConvolver() : enableSourceDirectivity{false}, convolutionBuffersInitialized{false} { }
 
 		//Enable spatialization process for this source	
 		void EnableSourceDirectionality() { enableSourceDirectivity = true; }
@@ -55,7 +60,7 @@ namespace BRTProcessing {
 		*   \eh The error handler is informed if the size of the input buffer differs from that stored in the global
 		*       parameters and if the DirectivityTF of the listener is null.		   
 		*/
-		void Process(CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::shared_ptr<BRTServices::CDirectivityTF>& _sourceDirectivityTF) {
+		void Process(CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::shared_ptr<BRTServices::CServicesBase>& _sourceDirectivity) {
 
 			ASSERT(_inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");	
 			// Check process flag
@@ -65,27 +70,28 @@ namespace BRTProcessing {
 				return;
 			}
 			// Check listener HRTF
-			if (!_sourceDirectivityTF) {
+			if (!_sourceDirectivity) {
 				SET_RESULT(RESULT_ERROR_NULLPOINTER, "source DirectivityTF pointer is null when trying to use in DirectivityConvolver");
 				outBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 				return;
 			}
 			// First time - Initialize convolution buffers
 			if (!convolutionBuffersInitialized) { 
-				InitializedSourceConvolutionBuffers(_sourceDirectivityTF); 
+				InitializedSourceConvolutionBuffers(_sourceDirectivity); 
 			}
 			// Calculate Source coordinates taking into account Source and Listener transforms
 			float listener_azimuth;
 			float listener_elevation;
-			CalculateListenerCoordinates(sourceTransform, listenerTransform, _sourceDirectivityTF, listener_elevation, listener_azimuth);
+			CalculateListenerCoordinates(sourceTransform, listenerTransform, listener_elevation, listener_azimuth);
 
 			// Get DirectivityTF
-			CMonoBuffer<float>  dataDirectivityTF;
-			std::vector<CMonoBuffer<float>>  dataDirectivityTF_vector;
-			dataDirectivityTF = _sourceDirectivityTF->GetDirectivityTF(listener_azimuth, listener_elevation, true).front(); //IMPORTANT: We only have one partition in the Directivity
-			dataDirectivityTF_vector.push_back(dataDirectivityTF);
+			//CMonoBuffer<float>  dataDirectivityTF;
+			//std::vector<CMonoBuffer<float>>  dataDirectivityTF_vector;
+			BRTServices::TFRPartitions dataDirectivityFR = _sourceDirectivity->GetFR_SpatiallyOriented(listener_azimuth, listener_elevation, 0.0f, Common::CTransform(), Common::T_ear::LEFT, true);
+			//dataDirectivityTF = _sourceDirectivityTF->GetDirectivityTF(listener_azimuth, listener_elevation, true).front(); //IMPORTANT: We only have one partition in the Directivity
+			//dataDirectivityTF_vector.push_back(dataDirectivityTF);
 			// Do convolution			
-			outputUPConvolution.ProcessUPConvolution(_inBuffer, dataDirectivityTF_vector, outBuffer);
+			outputUPConvolution.ProcessUPConvolution(_inBuffer, dataDirectivityFR, outBuffer);
 		}
 
 		/**
@@ -108,10 +114,11 @@ namespace BRTProcessing {
 		*   \eh On error, an error code is reported to the error handler.
 		*       Warnings may be reported to the error handler.
 		*/
-		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CDirectivityTF>& _sourceDirectivityTF) {
-			int directivityTFLength = _sourceDirectivityTF->GetDirectivityTFLength();
-			int numOfSubfilters = _sourceDirectivityTF->GetDirectivityTFNumOfSubfilters();
-			outputUPConvolution.Setup(globalParameters.GetBufferSize(), directivityTFLength, numOfSubfilters, false);			
+		void InitializedSourceConvolutionBuffers(std::shared_ptr<BRTServices::CServicesBase>& _sourceDirectivityTF) {
+			
+			int numOfSubfilters = _sourceDirectivityTF->GetNumberOfSubfiltersFR();
+			int subfilterLength = _sourceDirectivityTF->GetSubfilterLengthFR();			
+			outputUPConvolution.Setup(globalParameters.GetBufferSize(), subfilterLength, numOfSubfilters, false);			
 			convolutionBuffersInitialized = true;
 		}
 
@@ -124,7 +131,7 @@ namespace BRTProcessing {
 		*   \eh On error, an error code is reported to the error handler.
 		*       Warnings may be reported to the error handler.
 		*/
-		void CalculateListenerCoordinates(Common::CTransform& _sourceTransform, Common::CTransform& _listenerTransform, std::shared_ptr<BRTServices::CDirectivityTF>& _sourceDirectivityTF, float& _listenerElevation, float& _listenerAzimuth)
+		void CalculateListenerCoordinates(Common::CTransform& _sourceTransform, Common::CTransform& _listenerTransform, float& _listenerElevation, float& _listenerAzimuth)
 		{
 			//Get azimuth and elevation between listener and source
 			Common::CVector3 vectorToListener = _sourceTransform.GetVectorTo(_listenerTransform);

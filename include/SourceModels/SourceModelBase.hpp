@@ -40,9 +40,10 @@ namespace BRTSourceModel {
 		virtual void Update(std::string entryPointID) = 0;
 		virtual void UpdateCommandSource() = 0;
 
-		virtual bool SetDirectivityTF(std::shared_ptr<BRTServices::CDirectivityTF> _sourceDirectivityTF) { return false; }
-		virtual std::shared_ptr<BRTServices::CDirectivityTF> GetDirectivityTF() { return nullptr; }
-		virtual void RemoveDirectivityTF() {};
+		virtual bool SetDirectivity(std::shared_ptr<BRTServices::CServicesBase> _sourceDirectivity) { return false; }
+		virtual std::shared_ptr<BRTServices::CServicesBase> GetDirectivity() { return nullptr; }
+		virtual void RemoveDirectivity() {};
+
 		virtual void SetDirectivityEnable(bool _enabled) {};
 		virtual bool IsDirectivityEnabled() { return false; }
 

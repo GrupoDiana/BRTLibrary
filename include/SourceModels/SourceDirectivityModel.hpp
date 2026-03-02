@@ -25,11 +25,11 @@
 
 #include <vector>
 #include <SourceModels/SourceModelBase.hpp>
-#include <ProcessingModules/DirectivityTFConvolver.hpp>
-#include <ServiceModules/DirectivityTF.hpp>
+#include <ServiceModules/ServicesBase.hpp>
+#include <ProcessingModules/DirectivityConvolver.hpp>
 
 namespace BRTSourceModel {
-	class CSourceDirectivityModel : public CSourceModelBase, BRTProcessing::CDirectivityTFConvolver {
+	class CSourceDirectivityModel : public CSourceModelBase, BRTProcessing::CDirectivityConvolver {
 
 	public:			
 		CSourceDirectivityModel(std::string _sourceID)
@@ -42,8 +42,8 @@ namespace BRTSourceModel {
 		*	\param[in] pointer to DirectivityTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetDirectivityTF(std::shared_ptr< BRTServices::CDirectivityTF > _sourceDirectivityTF) override {			
-			sourceDirectivityTF = _sourceDirectivityTF;						
+		bool SetDirectivity(std::shared_ptr< BRTServices::CServicesBase > _sourceDirectivity) override {			
+			sourceDirectivity = _sourceDirectivity;						
 			ResetSourceConvolutionBuffers();
 			return true;
 		}
@@ -52,15 +52,15 @@ namespace BRTSourceModel {
 		 * @brief Get the source directivity transfer function
 		 * @return shered pointer to the directivity of the source model
 		*/
-		std::shared_ptr<BRTServices::CDirectivityTF> GetDirectivityTF() override {
-			return sourceDirectivityTF;
+		std::shared_ptr<BRTServices::CServicesBase> GetDirectivity() override {
+			return sourceDirectivity;
 		}
 
 		/**
 		 * @brief Remove the shared pointer of the directivity TF
 		*/
-		void RemoveDirectivityTF() override {
-			sourceDirectivityTF = std::make_shared<BRTServices::CDirectivityTF>();			
+		void RemoveDirectivity() override {
+			sourceDirectivity = std::make_shared<BRTServices::CServicesBase>();			
 		}
 
 		/**
@@ -96,7 +96,7 @@ namespace BRTSourceModel {
 				Common::CTransform sourcePosition = GetSourceTransform();
 				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
 				if (inBuffer.size() != 0) {
-					Process(inBuffer, outBuffer, sourcePosition, listenerPosition, sourceDirectivityTF);
+					Process(inBuffer, outBuffer, sourcePosition, listenerPosition, sourceDirectivity);
 					SendData(outBuffer);
 				}
 			}
@@ -133,7 +133,7 @@ namespace BRTSourceModel {
 		////////////////
 		// Attributes
 		/////////////// 		
-		std::shared_ptr<BRTServices::CDirectivityTF> sourceDirectivityTF;			// Directivity of the source
+		std::shared_ptr<BRTServices::CServicesBase> sourceDirectivity; // Directivity of the source
 		Common::CGlobalParameters globalParameters;
 		
 	};

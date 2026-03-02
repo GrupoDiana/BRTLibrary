@@ -40,13 +40,11 @@
 #include <ListenerModels/ListenerAmbisonicReverberantVirtualLoudspeakersModel.hpp>
 
 #include "ProcessingModules/HRTFConvolverProcessor.hpp"
-#include "ProcessingModules/DirectivityTFConvolver.hpp"
+#include "ProcessingModules/DirectivityConvolver.hpp"
 #include "ServiceModules/SphericalFIRTable.hpp"
 #include "ServiceModules/SphericalInterpolatedFIRTable.hpp"
 #include "ServiceModules/SphericalSOSTable.hpp"
-#include "ServiceModules/DirectivityTF.hpp"
 #include "ServiceModules/Room.hpp"
-
 
 #include "EnvironmentModels/SDNEnvironmentModel.hpp"
 #include "EnvironmentModels/FreeFieldEnvironmentModel.hpp"

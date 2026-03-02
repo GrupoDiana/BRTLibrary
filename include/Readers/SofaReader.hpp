@@ -129,43 +129,22 @@ namespace BRTReaders {
 			return ReadFIREFromSofa(sofafile, listenerHRTF, BRTServices::TServiceType::hrir_database, -1, BRTServices::TEXTRAPOLATION_METHOD::none, 0.0f, 0.0f, 0.0f, 0.0f);			
 		}
 		
-		/** \brief Loads an ILD from a sofa file
-		*	\param [in] path of the sofa file
-		*	\param [out] listener affected by the hrtf
-		*   \eh On error, an error code is reported to the error handler.
-		*/
-		bool ReadSOSFiltersFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CSphericalSOSTable>& listenerNFCFilters)
-		{
-			std::shared_ptr<BRTServices::CServicesBase> data = listenerNFCFilters;
-			
-			// Open file
-			BRTReaders::CLibMySOFALoader loader(sofafile);
-			bool error = loader.getError();
-			if (error) {
-				errorDescription = "Error reading SOFA file - " + loader.GetErrorName(error);
-				return false;
-			}
-
-			// Discover the file type
-			std::string dataType = loader.GetDataType();
-			//std::string sofaConvention = loader.GetSofaConvention();
-
-			// Load Data			
-			if (dataType == "SOS") {
-				ResetError();
-				data->SetServiceType(BRTServices::TServiceType::sos_filter_database);
-				return ReadFromSofaSOSDataType(loader, sofafile, data);			
-			} else {			
-				errorDescription = "The data type contained in the sofa file is not valid for loading NFC Filters - " + dataType;
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, errorDescription);
-				return false;
-			}															
-		}		
-				
-		bool ReadBRIRFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CSphericalFIRTable> listenerHRTF
+		/**
+		 * @brief Reads a BRIR from a sofa file. The sofa file must contain the direct path and the reverberant path
+		 * in the same data variable, and the fade in/out parameters are applied to the direct path, so that it can 
+		 * be smoothly blended with the reverberant path. 
+		 * @param sofafile SOFA file path
+		 * @param _data Output BRIR data.
+		 * @param _fadeInBegin 
+		 * @param _riseTime 
+		 * @param _fadeOutCutoff 
+		 * @param _fallTime 
+		 * @return 
+		 */
+		bool ReadBRIRFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CSphericalFIRTable> _data
 			, float _fadeInBegin, float _riseTime, float _fadeOutCutoff, float _fallTime) {
 
-			return ReadFIREFromSofa(sofafile, listenerHRTF, BRTServices::TServiceType::brir_database, 0, BRTServices::TEXTRAPOLATION_METHOD::none, _fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);			
+			return ReadFIREFromSofa(sofafile, _data, BRTServices::TServiceType::brir_database, 0, BRTServices::TEXTRAPOLATION_METHOD::none, _fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);			
 		}		
 
 		bool ReadIRFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CSphericalFIRTable> filterIr) {
@@ -180,7 +159,38 @@ namespace BRTReaders {
 			return ReadDirectivityFromSofaInternal(sofafile, listenerDirectivity, BRTServices::TServiceType::directivity_database, -1, BRTServices::TEXTRAPOLATION_METHOD::none);
 		}
 		
-				
+		/** \brief Loads an ILD from a sofa file
+		*	\param [in] path of the sofa file
+		*	\param [out] listener affected by the hrtf
+		*   \eh On error, an error code is reported to the error handler.
+		*/
+		bool ReadSOSFiltersFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CSphericalSOSTable> & listenerNFCFilters) {
+			std::shared_ptr<BRTServices::CServicesBase> data = listenerNFCFilters;
+
+			// Open file
+			BRTReaders::CLibMySOFALoader loader(sofafile);
+			bool error = loader.getError();
+			if (error) {
+				errorDescription = "Error reading SOFA file - " + loader.GetErrorName(error);
+				return false;
+			}
+
+			// Discover the file type
+			std::string dataType = loader.GetDataType();
+			//std::string sofaConvention = loader.GetSofaConvention();
+
+			// Load Data
+			if (dataType == "SOS") {
+				ResetError();
+				data->SetServiceType(BRTServices::TServiceType::sos_filter_database);
+				return ReadFromSofaSOSDataType(loader, sofafile, data);
+			} else {
+				errorDescription = "The data type contained in the sofa file is not valid for loading NFC Filters - " + dataType;
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, errorDescription);
+				return false;
+			}
+		}		
+		
 
 	private:
 				
@@ -291,7 +301,7 @@ namespace BRTReaders {
 		}
 		
 		/////////////////////////////////////////////////////////////////
-		/////////////////	FreeFieldDirectivityTF		/////////////////
+		/////////////////	FreeFieldDirectivity		/////////////////
 		/////////////////////////////////////////////////////////////////
 		
 		template <typename T>
@@ -384,11 +394,16 @@ namespace BRTReaders {
 			std::vector<double> dataMeasurements(loader.getHRTF()->DataIR.values, loader.getHRTF()->DataIR.values + loader.getHRTF()->DataIR.elements);
 
 			// Constants
-			const int numberOfMeasurements = loader.getHRTF()->M;
+			int numberOfMeasurements = loader.getHRTF()->M;
 			const int numberOfReceivers = loader.getHRTF()->R;
 			const unsigned int numberOfSamples = loader.getHRTF()->N;
 			const int numberOfEmitters = loader.getHRTF()->E;
 			const int numberOfCoordinates = loader.getHRTF()->C;
+			
+			if (numberOfMeasurements != 1) {
+				SET_RESULT(RESULT_WARNING, "Number of measurements (M) in SOFA file is different from 1 but only the first measurements are going to be taken into account.");
+				numberOfMeasurements = 1;
+			}
 
 			// Start processing and saving data
 			bool success = data->BeginSetup(numberOfSamples, _extrapolationMethod);
@@ -397,28 +412,22 @@ namespace BRTReaders {
 				return false;
 			}
 			data->SetSamplingRate(loader.GetSamplingRate());
-			const int left_ear = 0;															
-						
+
 			Common::CVector3 sourcePosition = GetSourcePositionCartesian(loader, sourcePositionsVector, 0);
 			for (std::size_t receiver = 0; receiver < numberOfReceivers; receiver++) {
-				BRTServices::TIRStruct irData;
-				irData.IR.left.reserve(numberOfMeasurements * numberOfSamples);
+				BRTServices::TIRStruct irData;				
 
 				double azimuth, elevation, distance;
 				GetReceiverPosition(loader, receiverPositionsVector, receiver, azimuth, elevation, distance);				
-				//Common::CVector3 receiverPosition = GetReceiverPosition(loader, receiverPositionsVector, receiver);
-
-				double delay;					
-				GetOneDelay(loader, dataDelayVector, delay, numberOfMeasurements, numberOfReceivers, 1, receiver);
-				irData.delay.left = std::round(delay);
-
-				CMonoBuffer<float> temp;
-				for (std::size_t measure = 0; measure < numberOfMeasurements; measure++) {
-					Get3DMatrixData(dataMeasurements, temp, numberOfReceivers, numberOfSamples, receiver, measure);
-					irData.IR.left.insert(irData.IR.left.end(), temp.begin(), temp.end());
-				}
 				
-				// Fill right ear with zeros
+				double delay;	
+				//GetDelays(loader, dataDelayVector, delay, numberOfMeasurements, numberOfReceivers, 0, receiver);				
+				GetOneDelay(loader, dataDelayVector, delay, numberOfMeasurements, numberOfReceivers, 0, receiver);
+				irData.delay.left = std::round(delay);
+								
+				Get3DMatrixData(dataMeasurements, irData.IR.left, numberOfReceivers, numberOfSamples, receiver, 0);
+								
+				// Fill right ear with zeros				
 				irData.IR.right.resize(irData.IR.left.size(), 0.0f);
 				irData.delay.right = 0;
 
@@ -427,75 +436,6 @@ namespace BRTReaders {
 			return true;
 		}
 		
-
-		bool ReadFromSofaTFDataType(BRTReaders::CLibMySOFALoader & loader, const std::string & sofafile, std::shared_ptr<BRTServices::CServicesBase> & data, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
-			// Get and Save data
-			GetAndSaveGlobalAttributes(loader, CLibMySOFALoader::TSofaConvention::FreeFieldDirectivityTF, sofafile, data); // GET and Save Global Attributes
-			//CheckCoordinateSystems(loader, _SOFAConvention);					// Check coordiante system for Source and Receiver positions
-			CheckListenerOrientation(loader); // Check listener view
-
-			bool result;
-			std::string _error;
-			result = GetDirectivityTF(loader, data, _extrapolationMethod, _error);
-			if (!result) {
-				errorDescription = _error;
-				return false;
-			}
-
-			// Finish setup
-			if (_resamplingStep != -1) {
-				data->SetGridSamplingStep(_resamplingStep);
-			}
-			bool success = data->EndSetup();
-
-			return success;
-		}
-		
-		bool GetDirectivityTF(BRTReaders::CLibMySOFALoader & loader, std::shared_ptr<BRTServices::CServicesBase> & dataDirectivityTF, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, std::string & error) {
-			//Get source positions
-			std::vector<double> receiverPositionsVector(loader.getHRTF()->ReceiverPosition.values, loader.getHRTF()->ReceiverPosition.values + loader.getHRTF()->ReceiverPosition.elements);
-
-			// GET Directivity Transfer Functions (Real dn Imag parts)
-			std::vector<double> dataMeasurementsRealPart(loader.GetDataRealDirectivity()->values, loader.GetDataRealDirectivity()->values + loader.GetDataRealDirectivity()->elements);
-			std::vector<double> dataMeasurementsImagPart(loader.GetDataImagDirectivity()->values, loader.GetDataImagDirectivity()->values + loader.GetDataImagDirectivity()->elements);
-
-			// Constants
-			int numberOfMeasurements = loader.getHRTF()->M;
-			if (numberOfMeasurements != 1) {
-				SET_RESULT(RESULT_WARNING, "Number of measurements (M) in SOFA file is different from 1 but only the first measurements are going to be taken into account.");
-				numberOfMeasurements = 1;
-			}
-
-			const unsigned int numberOfFrequencySamples = loader.getHRTF()->N;
-			int numberOfReceivers = loader.getHRTF()->R;
-
-			// Get and save TFs
-			bool success = dataDirectivityTF->BeginSetup(numberOfFrequencySamples, _extrapolationMethod);
-			if (!success) {
-				error = dataDirectivityTF->GetLastError();
-				return false;
-			}
-
-			// This outtermost loop iterates over TFs
-			for (std::size_t receiver = 0; receiver < numberOfReceivers; receiver++) {
-				BRTServices::TDirectivityTFStruct directivityTF_data;
-				CMonoBuffer<float> dataRealPartPI;
-				CMonoBuffer<float> dataImagPartPI;
-				double azimuth, elevation, distance;
-				GetReceiverPosition(loader, receiverPositionsVector, receiver, azimuth, elevation, distance);
-
-				Get2DMatrixData(dataMeasurementsRealPart, dataRealPartPI, numberOfFrequencySamples, receiver);
-				Get2DMatrixData(dataMeasurementsImagPart, dataImagPartPI, numberOfFrequencySamples, receiver);
-
-				directivityTF_data.realPart = dataRealPartPI;
-				directivityTF_data.imagPart = dataImagPartPI;
-
-				//dataDirectivityTF->AddDirectivityTF(azimuth, elevation, std::move(directivityTF_data));
-			}
-			return true;
-		}
-		
-
 		/////////////////////////////////////////////////////////////////
 		//////////////////	 SingleRoomMIMOSRIR		 ////////////////////
 		/////////////////////////////////////////////////////////////////
