@@ -428,47 +428,17 @@ namespace BRTServices
 				partitionedFRNumberOfSubfilters, partitionedFRSubfilterLength, stepVector);
 			return _foundData;
 		}
+				
 		
-		/** \brief Get the HRIR delay, in number of samples, for one ear
-		*	\param [in] ear for which ear we want to get the HRIR
-		*	\param [in] _azimuthCenter azimuth angle from the source and the listener head center in degrees
-		*	\param [in] _elevationCenter elevation angle from the source and the listener head center in degrees
-		*	\param [in] runTimeInterpolation switch run-time interpolation
-		*	\retval HRIR interpolated buffer with delay for specified ear
-		*   \eh On error, an error code is reported to the error handler.
-		*       Warnings may be reported to the error handler.
-		*/
-		//THRIRPartitionedStruct GetHRIRDelay(Common::T_ear ear, float _azimuthCenter, float _elevationCenter, bool runTimeInterpolation, Common::CTransform & _referenceLocation) {
-		//	
-		//	Common::CEarPair<uint64_t> data = GetFR_Delay(_azimuthCenter, _elevationCenter, 0, _referenceLocation, runTimeInterpolation);
-		//	
-		//	THRIRPartitionedStruct result;
-		//	result.leftDelay = data.left;
-		//	result.rightDelay = data.right;
-		//	return result;
-		//	//std::lock_guard<std::mutex> l(mutex);
-		//	//THRIRPartitionedStruct data;
-
-		//	//if (setupInProgress) {
-		//	//	SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIRDelay: nonInterpolatedHRTF Setup in progress return empty");
-		//	//	return data;
-		//	//}
-
-		//	//// Modify delay if customized delay is activate
-		//	//if (customITD) {
-		//	//	data.leftDelay = CFIRTableAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::LEFT);
-		//	//	data.rightDelay = CFIRTableAuxiliarMethods::CalculateCustomizedDelay(_azimuthCenter, _elevationCenter, cranialGeometry, Common::T_ear::RIGHT);
-		//	//	return data;
-		//	//}
-
-		//	//TFRPartitionedStruct aux = CFIRTableAuxiliarMethods::GetHRIRDelayFromPartitioned(t_HRTF_Resampled_partitioned, ear, _azimuthCenter, _elevationCenter, runTimeInterpolation,
-		//	//	partitionedFRNumberOfSubfilters, partitionedFRSubfilterLength, stepVector);
-
-		//	//data.leftDelay = aux.delay.left;
-		//	//data.rightDelay = aux.delay.right;
-		//	//return data;
-		//}
-
+		/**
+		 * @brief Get the HRIR delay, in number of samples, for both ears
+		 * @param _azimuthCenter azimuth angle from the source and the listener head center in degrees
+		 * @param _elevationCenter elevation angle from the source and the listener head center in degrees
+		 * @param _distance distance from the source to the listener head center
+		 * @param _referenceLocation reference location of the listener
+		 * @param _runTimeInterpolation switch run-time interpolation
+		 * @return 
+		 */
 		const Common::CEarPair<uint64_t> GetFR_Delay(const float & _azimuthCenter, const float & _elevationCenter, const float & _distance, const Common::CTransform & _referenceLocation, bool _runTimeInterpolation) const override { 
 			
 			std::lock_guard<std::mutex> l(mutex);			
@@ -492,7 +462,6 @@ namespace BRTServices
 				SET_RESULT(RESULT_ERROR_UNKNOWN, "GetFRPartitioned_SpatiallyOriented_2Ears: Distance Bucket find error");
 				return foundData;
 			}		
-
 			
 			foundData = CFIRTableAuxiliarMethods::GetHRIRDelayFromPartitioned_2Ears(distanceBucket->table, _azimuthCenter, _elevationCenter, _runTimeInterpolation,
 				partitionedFRNumberOfSubfilters, partitionedFRSubfilterLength, stepVector);
@@ -766,8 +735,7 @@ namespace BRTServices
 		float fadeOutCutoff; // Variable to be used in the windowing IR process
 		float fallTime; // Variable to be used in the windowing IR process 
 
-		// Tables				
-		//std::vector<BRTServices::TIRStruct> sofaIRDataBase;// Time domain database - original data from SOFA file
+		// Tables						
 		TRawSofaData sofaIRDataBase;						// Time domain database - original data from SOFA file; 
 		TDistanceTable distanceFRTable;						// Data in our grid, interpolated, by distance buckets				
 		std::unordered_map<TOrientation, float> stepVector; // Store hrtf interpolated grids steps
