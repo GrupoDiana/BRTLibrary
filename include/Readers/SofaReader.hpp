@@ -349,7 +349,7 @@ namespace BRTReaders {
 			
 			bool result;			
 			std::string _error;
-			result = GetDirectivityFIR(loader, data, _extrapolationMethod, _error);						
+			result = GetDirectivityFIRE(loader, data, _extrapolationMethod, _error);						
 			if (!result) {		
 				errorDescription = _error;				
 				return false;
@@ -360,7 +360,7 @@ namespace BRTReaders {
 			return success;
 		}
 
-		bool GetDirectivityFIR(BRTReaders::CLibMySOFALoader & loader, std::shared_ptr<BRTServices::CServicesBase> & data, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, std::string & error) {
+		bool GetDirectivityFIRE(BRTReaders::CLibMySOFALoader & loader, std::shared_ptr<BRTServices::CServicesBase> & data, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, std::string & error) {
 
 			//Get receiver positions
 			std::vector<double> receiverPositionsVector(loader.getHRTF()->ReceiverPosition.values, loader.getHRTF()->ReceiverPosition.values + loader.getHRTF()->ReceiverPosition.elements);
@@ -403,7 +403,11 @@ namespace BRTReaders {
 			
 			if (numberOfMeasurements != 1) {
 				SET_RESULT(RESULT_WARNING, "Number of measurements (M) in SOFA file is different from 1 but only the first measurements are going to be taken into account.");
-				numberOfMeasurements = 1;
+				//numberOfMeasurements = 1;
+			}
+			if (numberOfEmitters != 1) {
+				SET_RESULT(RESULT_WARNING, "Number of emitters (E) in SOFA file is different from 1 but only the first emitter is going to be taken into account.");
+				//numberOfEmitters = 1;
 			}
 
 			// Start processing and saving data
@@ -413,27 +417,60 @@ namespace BRTReaders {
 				return false;
 			}
 			data->SetSamplingRate(loader.GetSamplingRate());
+			
+			//for (std::size_t emitter = 0; emitter < numberOfEmitters; emitter++)
+			std::size_t emitter = 0;
+			std::size_t measure = 0;
+			{
+				for (std::size_t receiver = 0; receiver < numberOfReceivers; receiver++) {
+					
+					// Get Source position
+					Common::CVector3 sourcePosition = GetSourcePositionCartesian(loader, sourcePositionsVector, measure);
+					// Get source orientation components
+					Common::CVector3 sourceView = GetSourceView(loader, sourceViewVector, numberOfMeasurements, measure);
+					Common::CVector3 sourceUp = GetSourceUp(loader, sourceUpVector, numberOfMeasurements, measure);
+					
+					//Get Emmiter location
+					Common::CVector3 emitterPosition = GetEmitterPosition(loader, emitterPositionsVector, measure, emitter);
+					Common::CTransform globalEmitterLocation = CalculateTransformFromSeparateComponents(emitterPosition, sourceView, sourceUp);
+					globalEmitterLocation.SetPosition(globalEmitterLocation.GetPosition() + sourcePosition);
+					
+					//Get Receiver iListener location
+					Common::CVector3 listenerPosition = GetListenerPosition(loader, listenerPositionsVector, numberOfMeasurements, measure);
+					Common::CVector3 listenerView = GetListenerView(loader, listenerViewVector, numberOfMeasurements, measure);
+					Common::CVector3 listenerUp = GetListenerUp(loader, listenerUpVector, numberOfMeasurements, measure);
+					
+					Common::CVector3 receiverPosition = GetReceiverPosition(loader, receiverPositionsVector, numberOfReceivers, receiver);
+					Common::CTransform globalReceiverLocation = CalculateTransformFromSeparateComponents(receiverPosition, listenerView, listenerUp);
+					globalReceiverLocation.SetPosition(globalReceiverLocation.GetPosition() + listenerPosition);
+					//Common::CTransform listenerLocation = CalculateTransformFromSeparateComponents(listenerPosition, listenerView, listenerUp);
+					
+					// Make projection of source position to listener coordinate system
+					Common::CVector3 vectorEmitterToReceiver = globalEmitterLocation.GetVectorTo(globalReceiverLocation);
+					float _relativeAzimuthEmitterReceiver = vectorEmitterToReceiver.GetAzimuthDegrees();
+					float _relativeElevationEmitterReceiver = vectorEmitterToReceiver.GetElevationDegrees();
+					float _relativeDistanceEmitterReceiver = vectorEmitterToReceiver.GetDistance();
 
-			Common::CVector3 sourcePosition = GetSourcePositionCartesian(loader, sourcePositionsVector, 0);
-			for (std::size_t receiver = 0; receiver < numberOfReceivers; receiver++) {
-				BRTServices::TIRStruct irData;				
+					/////					
+					//double azimuth, elevation, distance;
+					//GetReceiverPosition(loader, receiverPositionsVector, receiver, azimuth, elevation, distance);
+					
+					// Get Delay and IR
+					BRTServices::TIRStruct irData;										
+					double delay;					
+					GetOneDelay(loader, dataDelayVector, delay, numberOfMeasurements, numberOfReceivers, measure, receiver);
+					irData.delay.left = std::round(delay);
 
-				double azimuth, elevation, distance;
-				GetReceiverPosition(loader, receiverPositionsVector, receiver, azimuth, elevation, distance);				
-				
-				double delay;	
-				//GetDelays(loader, dataDelayVector, delay, numberOfMeasurements, numberOfReceivers, 0, receiver);				
-				GetOneDelay(loader, dataDelayVector, delay, numberOfMeasurements, numberOfReceivers, 0, receiver);
-				irData.delay.left = std::round(delay);
-								
-				Get3DMatrixData(dataMeasurements, irData.IR.left, numberOfReceivers, numberOfSamples, receiver, 0);
-								
-				// Fill right ear with zeros				
-				irData.IR.right.resize(irData.IR.left.size(), 0.0f);
-				irData.delay.right = 0;
+					//Get3DMatrixData(dataMeasurements, irData.IR.left, numberOfReceivers, numberOfSamples, receiver, measure);
+					Get4DMatrixData(dataMeasurements, irData.IR.left, numberOfReceivers, numberOfSamples, numberOfEmitters, measure, receiver, emitter);
 
-				data->AddIR(sourcePosition, azimuth, elevation, distance, std::move(irData));
-			}							
+					// Fill right ear with zeros
+					irData.IR.right.resize(irData.IR.left.size(), 0.0f);
+					irData.delay.right = 0;
+
+					data->AddIR(sourcePosition, _relativeAzimuthEmitterReceiver, _relativeElevationEmitterReceiver, _relativeDistanceEmitterReceiver, std::move(irData));
+				}
+			}
 			return true;
 		}
 		
@@ -450,7 +487,7 @@ namespace BRTReaders {
 			
 			data->SetWindowingParameters(_fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);			
 			bool result;			
-			result = GetBRIRs(loader, data, _extrapolationMethod);			
+			result = GetIRFIRE(loader, data, _extrapolationMethod);			
 			if (!result) {
 				errorDescription = "An error occurred creating the data structure from the SOFA file.";
 				SET_RESULT(RESULT_ERROR_UNKNOWN, errorDescription);
@@ -464,7 +501,7 @@ namespace BRTReaders {
 
 		}
 		
-		bool GetBRIRs(BRTReaders::CLibMySOFALoader& loader, std::shared_ptr<BRTServices::CServicesBase>& data, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
+		bool GetIRFIRE(BRTReaders::CLibMySOFALoader & loader, std::shared_ptr<BRTServices::CServicesBase> & data, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
 			//Get source positions												
 			std::vector<double> sourcePositionsVector	= std::move(loader.GetSourcePositionVector());
 			
@@ -705,7 +742,24 @@ namespace BRTReaders {
 				distance = 1.0;
 			}			
 		}
-			
+		
+		std::vector<double> GetReceiverPosition(BRTReaders::CLibMySOFALoader & loader, const std::vector<double> & _receiverPositionsVector, std::size_t numberOfMeasurements, std::size_t measure) {
+			std::vector<double> _receiverPosition;
+			int numberOfCoordinates = loader.getHRTF()->C;
+			// Get Listener position
+			if (_receiverPositionsVector.size() != numberOfMeasurements * numberOfCoordinates) {
+				measure = 0;
+			}
+			GetOneVector3From2DMatrix(_receiverPositionsVector, _receiverPosition, measure, numberOfCoordinates);
+
+			if (IsReceiverPositionCoordinateSystemsSpherical(loader)) {
+				double tempX, tempY, tempZ;
+				ToCartesian(_receiverPosition[0], _receiverPosition[1], _receiverPosition[2], tempX, tempY, tempZ);
+				_receiverPosition = std::vector<double>({ tempX, tempY, tempZ });
+			};
+			return _receiverPosition;
+		}
+
 		/**
 		 * @brief Extract listener position from SOFA struct. If in Spherical  coordinates, convert to Cartesian.
 		 * @param loader The complete data structure read from the SOFA file.
