@@ -281,20 +281,21 @@ namespace BRTReaders {
 			// This outtermost loop iterates over HRIRs
 			for (std::size_t measure = 0; measure < numberOfMeasurements; measure++)
 			{
-				BRTServices::TSOSFilterStruct coefficients;
-				coefficients.leftCoefs.resize(numberOfSamples);
+				Common::CEarPair<CMonoBuffer<float>> coefficients;
+				//BRTServices::TSOSFilterStruct coefficients;
+				coefficients.left.resize(numberOfSamples);
 				
 				double azimuth, elevation, distance;
 				GetSourcePosition(loader, sourcePositionsVector, measure, azimuth, elevation, distance);
 								
-				Get3DMatrixData(dataMeasurements, coefficients.leftCoefs, numberOfReceivers, numberOfSamples, left_ear, measure);
+				Get3DMatrixData(dataMeasurements, coefficients.left, numberOfReceivers, numberOfSamples, left_ear, measure);				
 				if (numberOfReceivers > 1) {
-					coefficients.rightCoefs.resize(numberOfSamples);
+					coefficients.right.resize(numberOfSamples);
 					//GetData(dataMeasurements, coefficients.rightCoefs, numberOfMeasurements, numberOfReceivers, numberOfSamples, right_ear, i);
-					Get3DMatrixData(dataMeasurements, coefficients.rightCoefs, numberOfReceivers, numberOfSamples, right_ear, measure);
+					Get3DMatrixData(dataMeasurements, coefficients.right, numberOfReceivers, numberOfSamples, right_ear, measure);
 				}
 
-				data->AddCoefficients(azimuth, distance, std::move(coefficients));
+				data->AddCoefficients(azimuth, elevation, distance, std::move(coefficients));
 			}
 			return true;
 

@@ -37,7 +37,7 @@ namespace Common {
 	public:
 
 		/**
-		 * @brief Calculates the parameters derived from the source and listener position
+		 * @brief Calcules relative position between source and listener ears, if parallax correction if enabled.		 
 		 * @param _sourceTransform source transform
 		 * @param _listenerTransform listener transform
 		 * @param _listenerHRTF listener HRTF
@@ -103,16 +103,70 @@ namespace Common {
 				leftElevation = centerElevation;
 				rightElevation = centerElevation;
 			}
-
 		}
 	
+		/**
+		 * @brief Calcules relative position between source and listener center head.
+		 * @param _sourceTransform 
+		 * @param _listenerTransform 
+		 * @param centerElevation 
+		 * @param centerAzimuth 
+		 */
+		static void CalculateSourceListenerRelativePositions(const Common::CTransform & _sourceTransform, const Common::CTransform & _listenerTransform, float & centerElevation, float & centerAzimuth) {
 
+			//Get azimuth and elevation between listener and source
+			Common::CVector3 _vectorToListener = _listenerTransform.GetVectorTo(_sourceTransform);
+			float _distanceToListener = _vectorToListener.GetDistance();
+
+			//Check listener and source are in the same position
+			if (_distanceToListener <= MINIMUM_DISTANCE_SOURCE_LISTENER) {
+				SET_RESULT(RESULT_WARNING, "The sound source is too close to the centre of the listener's head in BRTProcessing::CHRTFConvolver");
+				_distanceToListener = MINIMUM_DISTANCE_SOURCE_LISTENER;
+			}
+
+			// Calculate center head location
+			centerElevation = _vectorToListener.GetElevationDegrees(); //Get elevation from the head center
+			if (!Common::AreSame(ELEVATION_SINGULAR_POINT_UP, centerElevation, EPSILON) && !Common::AreSame(ELEVATION_SINGULAR_POINT_DOWN, centerElevation, EPSILON)) {
+				centerAzimuth = _vectorToListener.GetAzimuthDegrees(); //Get azimuth from the head center
+			}			
+		}
+
+		/**
+		 * @brief Calcules distance between source and listener center head.
+		 * @param _sourceTransform 
+		 * @param _listenerTransform 
+		 * @return 
+		 */
 		static float CalculateSourceListenerDistance(Common::CTransform _sourceTransform, Common::CTransform _listenerTransform) {			
 			Common::CVector3 _vectorToListener = _listenerTransform.GetVectorTo(_sourceTransform);
 			float _distanceToListener = _vectorToListener.GetDistance();
+			if (_distanceToListener <= MINIMUM_DISTANCE_SOURCE_LISTENER) {
+				SET_RESULT(RESULT_WARNING, "The sound source is too close to the centre of the listener's head in BRTProcessing::CHRTFConvolver");
+				_distanceToListener = MINIMUM_DISTANCE_SOURCE_LISTENER;
+			}
 			return _distanceToListener;
 		}
 	
+		/**
+		 * @brief Calcules interaural azimuth between source and listener.
+		 * @param _sourceTransform 
+		 * @param _listenerTransform 
+		 * @return 
+		 */ 
+		static float CalculateInterauralAzimuth(const Common::CTransform & _sourceTransform, const Common::CTransform & _listenerTransform) {
+
+			//Get azimuth and elevation between listener and source
+			Common::CVector3 _vectorToListener = _listenerTransform.GetVectorTo(_sourceTransform);
+			float _distanceToListener = _vectorToListener.GetDistance();
+
+			//Check listener and source are in the same position
+			if (_distanceToListener <= MINIMUM_DISTANCE_SOURCE_LISTENER) {
+				SET_RESULT(RESULT_WARNING, "The sound source is too close to the centre of the listener's head");
+				return 0;
+			}
+			return _vectorToListener.GetInterauralAzimuthDegrees();
+		}
+
 	private:
 				
 		/**

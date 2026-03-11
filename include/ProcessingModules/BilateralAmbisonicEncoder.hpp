@@ -190,9 +190,8 @@ namespace BRTProcessing {
 			// Near Field Proccess
 			CMonoBuffer<float> nearFilteredLeftEarBuffer;
 			CMonoBuffer<float> nearFilteredRightEarBuffer;			
-			//nearFieldEffectProcess.Process(delayedLeftEarBuffer, delayedRightEarBuffer, nearFilteredLeftEarBuffer, nearFilteredRightEarBuffer, sourceTransform, listenerTransform, _listenerILDWeak);
-			nearFieldEffectProcess.Process(Common::T_ear::LEFT, delayedLeftEarBuffer, nearFilteredLeftEarBuffer, sourceTransform, listenerTransform, Common::T_ear::LEFT, _listenerILDWeak);
-			nearFieldEffectProcess.Process(Common::T_ear::RIGHT, delayedRightEarBuffer, nearFilteredRightEarBuffer, sourceTransform, listenerTransform, Common::T_ear::RIGHT, _listenerILDWeak);
+			nearFieldEffectProcess.ProcessByInterauralAzimuth(Common::T_ear::LEFT, delayedLeftEarBuffer, nearFilteredLeftEarBuffer, sourceTransform, listenerTransform, Common::T_ear::LEFT, _listenerILDWeak);
+			nearFieldEffectProcess.ProcessByInterauralAzimuth(Common::T_ear::RIGHT, delayedRightEarBuffer, nearFilteredRightEarBuffer, sourceTransform, listenerTransform, Common::T_ear::RIGHT, _listenerILDWeak);
 
 			// Ambisonic Encoder						
 			ambisonicEncoder.EncodedIR(nearFilteredLeftEarBuffer, leftChannelsBuffers, leftAzimuth, leftElevation);

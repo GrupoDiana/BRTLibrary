@@ -74,7 +74,9 @@ namespace BRTFilters {
 		virtual void Process(const CMonoBuffer<float> & _inBuffer, CMonoBuffer<float> & outBuffer, const int & _channel, const Common::CTransform & sourceTransform, const Common::CTransform & listenerTransform) { }		
 		virtual void Process(const CMonoBuffer<float> & _inLeftBuffer, CMonoBuffer<float> & _outLeftBuffer, const CMonoBuffer<float> & _inRightBuffer, CMonoBuffer<float> & _outRightBuffer, const Common::CTransform & sourceTransform, const Common::CTransform & listenerTransform) { }
 		
-		virtual void Process(const int & _channel, const CMonoBuffer<float> & _inBuffer, CMonoBuffer<float> & outBuffer
+		virtual void Process(const int & _channel, const CMonoBuffer<float> & _inBuffer, CMonoBuffer<float> & outBuffer, const Common::CTransform & sourceTransform, const Common::CTransform & listenerTransform, const Common::T_ear _ear, std::weak_ptr<BRTServices::CServicesBase> & _irTableWeakPtr) { }
+
+		virtual void ProcessByInterauralAzimuth(const int & _channel, const CMonoBuffer<float> & _inBuffer, CMonoBuffer<float> & outBuffer
 			, const Common::CTransform & sourceTransform, const Common::CTransform & listenerTransform
 			, const Common::T_ear _ear, std::weak_ptr<BRTServices::CServicesBase> & _irTableWeakPtr) { }
 

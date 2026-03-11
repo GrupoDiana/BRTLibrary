@@ -70,7 +70,12 @@ namespace BRTBilateralFilter {
 		*/
 		bool SetSOSFilterCoefficients(std::shared_ptr<BRTServices::CSphericalSOSTable> _SOSFilterCoefficientsTable) override {
 			SOSFilterCoefficientsTable = _SOSFilterCoefficientsTable;			
-			FiltersSetup();						
+			bool result = FiltersSetup();						
+			if (!result) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "Error setting SOS filter coefficients in SOS Bilateral Filter Model");
+				DisableModel();
+				return false;
+			}
 			return true;
 		}
 
@@ -226,23 +231,33 @@ namespace BRTBilateralFilter {
 			GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
 			GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);			
 		}	
-
 		
 		void UpdateCommand() override { 
 		
 		}
 		
+		bool FiltersSetup() {			
+			Common::CEarPair<CMonoBuffer<float>> coefficients = SOSFilterCoefficientsTable->GetSOSCoefficients_2Ears();
+			int numberOfStages = coefficients.left.size() / NUMBER_OF_COEFFICIENTS_IN_STAGE_SOS;			
 
-		void FiltersSetup() {
-			std::vector<float> coefficientsLeft = SOSFilterCoefficientsTable->GetSOSFilterCoefficients(Common::T_ear::LEFT, 0.1, 0);
-			std::vector<float> coefficientsRight = SOSFilterCoefficientsTable->GetSOSFilterCoefficients(Common::T_ear::RIGHT, 0.1, 0);
-
-			int numberOfStages = coefficientsLeft.size() / NUMBER_OF_COEFFICIENTS_IN_STAGE_SOS;			
-
-			sosFilter.Setup(2, numberOfStages); //2 ears
-			sosFilter.SetCoefficients(Common::T_ear::LEFT, coefficientsLeft);
-			sosFilter.SetCoefficients(Common::T_ear::RIGHT, coefficientsRight);
-			UpdatedEnabledDisabledSOSFilter();			
+			bool result = sosFilter.Setup(2, numberOfStages); //2 ears
+			if (!result) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "Error setting up the SOS filter in CSOSBilateralFilterModel");			
+				return false;
+			}			
+			bool resultLeft = sosFilter.SetCoefficients(Common::T_ear::LEFT, coefficients.left);
+			if (!resultLeft) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "Error setting coefficients of the left channel of SOS filter in CSOSBilateralFilterModel");				
+			}
+			bool resultRight = sosFilter.SetCoefficients(Common::T_ear::RIGHT, coefficients.right);
+			if (!resultRight) {
+				SET_RESULT(RESULT_ERROR_NOTSET, "Error setting coefficients of the right channel of SOS filter in CSOSBilateralFilterModel");
+			}
+			if (!resultLeft && !resultRight) {
+				return false;
+			}
+			UpdatedEnabledDisabledSOSFilter();	
+			return true;
 		}
 
 		void UpdatedEnabledDisabledSOSFilter() {
@@ -252,7 +267,7 @@ namespace BRTBilateralFilter {
 				sosFilter.Disable();
 			}
 		}
-
+		
 		/////////////////
 		// Attributes
 		/////////////////

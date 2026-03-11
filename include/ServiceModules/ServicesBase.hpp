@@ -250,19 +250,7 @@ namespace BRTServices {
 		nearest_point,
 		zero_insertion
 	};
-	
-
-	
-	//TODO delete this struct 
-	/*struct THRIRStruct {
-		uint64_t leftDelay;				///< Left delay, in number of samples
-		uint64_t rightDelay;			///< Right delay, in number of samples
-		CMonoBuffer<float> leftHRIR;	///< Left impulse response data
-		CMonoBuffer<float> rightHRIR;	///< Right impulse response data
-
-		THRIRStruct() : leftDelay{0}, rightDelay{0} {}
-	}*/;
-
+			
 		
 	struct TIRStruct {
 		TOrientation orientation; ///< Original orientation of the IR		
@@ -306,15 +294,7 @@ namespace BRTServices {
 			delay = s.delay;			
 			IR.left = std::move(s.IR.left);
 			IR.right = std::move(s.IR.right);
-		}		
-		/*TIRStruct(const TOrientation & o, THRIRStruct && s)
-			: orientation { o }
-		{
-			delay.left = s.leftDelay;
-			delay.right = s.rightDelay;
-			IR.left = std::move(s.leftHRIR);
-			IR.right = std::move(s.rightHRIR);
-		}	*/	
+		}				
 	};
 	
 	using TFRPartitions = std::vector<CMonoBuffer<float>>; 
@@ -327,27 +307,18 @@ namespace BRTServices {
 			: delay { 0, 0 } 
 		{ }
 	};
-		
-	/** \brief Type definition for a left-right pair of impulse response subfilter set with the ITD removed and stored in a specific struct field
-	*/
-	/*struct THRIRPartitionedStruct {
-		TOrientation orientation; ///< Original orientation of the IR
-		uint64_t leftDelay;				///< Left delay, in number of samples
-		uint64_t rightDelay;			///< Right delay, in number of samples
-		std::vector<CMonoBuffer<float>> leftHRIR_Partitioned;	///< Left partitioned impulse response data
-		std::vector<CMonoBuffer<float>> rightHRIR_Partitioned;	///< Right partitioned impulse response data
+			
+	struct TSOSFilterStruct {		
+		TOrientation orientation;					///< Original orientation of the coeficients		
+		Common::CEarPair<CMonoBuffer<float>> coefs; ///< Impulse response data
 
-		THRIRPartitionedStruct() : leftDelay{ 0 }, rightDelay{ 0 } {}
-	};*/
-
-	struct TSOSFilterStruct {
-		CMonoBuffer<float> leftCoefs;	///< Left filters coefs
-		CMonoBuffer<float> rightCoefs;	///< Right filters coefs
-	};
-
-	struct TDirectivityTFStruct {
-		CMonoBuffer<float> realPart;
-		CMonoBuffer<float> imagPart;
+		TSOSFilterStruct() { }
+		TSOSFilterStruct(const TOrientation & o, Common::CEarPair<CMonoBuffer<float>> & _coefs)
+			: orientation { o }			
+		{
+			coefs.left = std::move(_coefs.left);
+			coefs.right = std::move(_coefs.right);
+		}
 	};
 	
 	enum class TServiceType {
@@ -412,11 +383,13 @@ namespace BRTServices {
 		virtual bool EndSetup() { return false; }
 		
 		virtual void AddIR(const Common::CVector3 & referencePosition, const double & _azimuth, const double & _elevation, const double & _distance, TIRStruct && newIR) { }
-		virtual void AddCoefficients(float azimuth, float distance, TSOSFilterStruct && newCoefs) { }
+		virtual void AddCoefficients(float azimuth, float elevation, float distance, Common::CEarPair<CMonoBuffer<float>> && newCoefs) { }
 		virtual void AddAmbisonicIR(const Common::CVector3 & referencePosition, int channel, TFRPartitionedStruct && newPartitionedIR) { }			
 		virtual bool AddSphericalFIRTable(std::shared_ptr<BRTServices::CServicesBase> _listenerIRData) { return false; }
 
-		virtual std::vector<float> GetSOSFilterCoefficients(Common::T_ear ear, float distance_m, float azimuth) { return std::vector<float>();	}				
+		virtual const std::vector<float> GetSOSCoefficients_SpatiallyOriented(float _azimuth, float _elevation, float _distance, Common::T_ear ear) const { return std::vector<float>(); }
+		virtual const Common::CEarPair<CMonoBuffer<float>> GetSOSCoefficients_2Ears() const { return Common::CEarPair<CMonoBuffer<float>>(); }
+		
 		virtual const TFRPartitions GetFR_AmbisonicChannel(const int & channel, const Common::T_ear & _ear, const Common::CTransform & _referencePosition) { return TFRPartitions(); }
 
 		virtual const TFRPartitions GetFR_SpatiallyOriented(const float & _azimuth, const float & _elevation, const float & _distance, const Common::CTransform & _referenceLocation, const Common::T_ear & ear, bool _findNearest) const { return TFRPartitions(); }		

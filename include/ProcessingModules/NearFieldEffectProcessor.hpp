@@ -100,10 +100,9 @@ class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity/*, pu
 				
 			if (leftBuffer.size() != 0  || rightBuffer.size() !=0)  {
 				CMonoBuffer<float> outLeftBuffer;
-				CMonoBuffer<float> outRightBuffer;
-				//Process(leftBuffer, rightBuffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerNFCFilters);
-				spatiallyOrientedSOSFilter.Process(Common::T_ear::LEFT, leftBuffer, outLeftBuffer, sourcePosition, listenerPosition, Common::T_ear::LEFT, listenerNFCFilters);
-				spatiallyOrientedSOSFilter.Process(Common::T_ear::RIGHT, rightBuffer, outRightBuffer, sourcePosition, listenerPosition, Common::T_ear::RIGHT, listenerNFCFilters);
+				CMonoBuffer<float> outRightBuffer;				
+				spatiallyOrientedSOSFilter.ProcessByInterauralAzimuth(Common::T_ear::LEFT, leftBuffer, outLeftBuffer, sourcePosition, listenerPosition, Common::T_ear::LEFT, listenerNFCFilters);
+				spatiallyOrientedSOSFilter.ProcessByInterauralAzimuth(Common::T_ear::RIGHT, rightBuffer, outRightBuffer, sourcePosition, listenerPosition, Common::T_ear::RIGHT, listenerNFCFilters);
 
 				GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
 				GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);

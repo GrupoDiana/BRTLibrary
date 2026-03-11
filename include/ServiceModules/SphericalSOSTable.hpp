@@ -29,52 +29,29 @@
 #include <Common/Buffer.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <ServiceModules/ServicesBase.hpp>
+#include <ServiceModules/SphericalSearchKDTree.hpp>
 
 
-	/** \brief Class to be used as Key in the hash table used by CSOSCoefficients
-	*/
-	class CSOSFilter_Key
-	{
-	public:
-		int distance;      ///< Distance to the center of the head, in millimeters 
-		int azimuth;       ///< Azimuth angle of interaural coordinates, in degrees
+/** \brief Hash table that contains a set of coefficients for two biquads filters that are indexed through a pair of distance
+	and azimuth values (interaural coordinates). */	
+//typedef std::unordered_map<CSOSFilter_Key, BRTServices::TSOSFilterStruct> T_SOSCoefficients_HashTable;
+using TSphericalSOSTable = std::unordered_map<TOrientation_key, BRTServices::TSOSFilterStruct>;
 
-		CSOSFilter_Key() :CSOSFilter_Key{ 0,0 } {}
+// One distance bucket: one sphere (same distance), many directions
+struct TSOSDistanceBucket {
+	int32_t distance_mm = 0;
+	BRTServices::CSphericalSearchKDTree<TOrientation> searchTree;
+	TSphericalSOSTable table;
+};
+using TSOSDistanceTable = std::vector<TSOSDistanceBucket>;
 
-		CSOSFilter_Key(int _distance, int _azimuth) :distance{ _distance }, azimuth{ _azimuth } {}
 
-		bool operator==(const CSOSFilter_Key& key) const
-		{
-			return (this->azimuth == key.azimuth && this->distance == key.distance);
-		}
-	};
-
-	namespace std
-	{
-		template<>
-		struct hash<CSOSFilter_Key>
-		{
-			// adapted from http://en.cppreference.com/w/cpp/utility/hash
-			size_t operator()(const CSOSFilter_Key & key) const
-			{
-				size_t h1 = std::hash<int>()(key.distance);
-				size_t h2 = std::hash<int>()(key.azimuth);
-				return h1 ^ (h2 << 1);  // exclusive or of hash functions for each int.
-			}
-		};
-	}
-	
-
-	/** \brief Hash table that contains a set of coefficients for two biquads filters that are indexed through a pair of distance
-	 and azimuth values (interaural coordinates). */	
-	typedef std::unordered_map<CSOSFilter_Key, BRTServices::TSOSFilterStruct> T_SOSCoefficients_HashTable;
 
 namespace BRTServices {
 
 	/** \details This class models the effect of frequency-dependent Interaural Level Differences when the sound source is close to the listener
 	*/
-	class CSphericalSOSTable : public CServicesBase
-	{
+	class CSphericalSOSTable : public CServicesBase {
 
 	public:
 		/////////////
@@ -85,295 +62,327 @@ namespace BRTServices {
 		*	\details Leaves SOS Filter Table empty. Use SetSOSFilterTable to load.
 		*   \eh Nothing is reported to the error handler.
 		*/
-		CSphericalSOSTable() 
-			: setupInProgress{ false }
-			//, SOSCoefficientsLoaded{ false }			
-			//, numberOfEars{ -1 }
-			, azimuthStep{-1}
-			, distanceStep{-1}
-			, fileTitle{""}
-			, fileName{""}
+		CSphericalSOSTable()
+			: setupInProgress { false }
 		{
 			serviceType = TServiceType::sos_filter_database;
 		}
 
-
-		bool BeginSetup() override {
-			setupInProgress = true;			
-			//SOSCoefficientsLoaded = false;	
-			dataReady = false;
-			Clear();
-			SET_RESULT(RESULT_OK, "SOS Coefficients Setup started");
-			return true;
-		}
-
-		bool EndSetup() override
-		{
-			if (setupInProgress) {
-				setupInProgress = false;
-				
-				azimuthStep = CalculateTableAzimuthStep();
-				distanceStep = CalculateTableDistanceStep();
-
-				if (numberOfEars != -1 && azimuthStep != -1 && distanceStep != -1) {															
-					//SOSCoefficientsLoaded = true;
-					dataReady = true;
-					SET_RESULT(RESULT_OK, "SOS Filter Setup finished");
-					azimuthList.clear();
-					distanceList.clear();
-					return true;
-				}								
-			}
-			SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Some parameter is missing in order to finish the data upload in BRTServices::CSOSCoefficients.");
-			return false;
-		}
-	
-
-		///** \brief Set the title of the SOFA file
-		//*    \param [in]	_title		string contains title
-		//*/
-		//void SetTitle(std::string _title) override {
-		//	fileTitle = _title;
-		//}
-		
-		///** \brief Get the title of the SOFA file
-		//*   \return string contains title
-		//*/
-		//std::string GetTitle() override {
-		//	return fileTitle;
-		//}
-
-		/** \brief Set the title of the SOFA file
-		*    \param [in]	_title		string contains title
-		*/
-		/*void SetDatabaseName(std::string _databaseName) override {
-			databaseName = _databaseName;
-		}*/
-
-		/** \brief Set the title of the SOFA file
-		*    \param [in]	_title		string contains title
-		*/
-		/*void SetListenerShortName(std::string _listenerShortName) override {
-			listenerShortName = _listenerShortName;
-		}*/
-
-
-		///** \brief Set the name of the SOFA file
-		//*    \param [in]	_fileName		string contains filename
-		//*/
-		//void SetFilename(std::string _fileName) override {
-		//	fileName = _fileName;
-		//}
-
-		///** \brief Get the name of the SOFA file
-		//*   \return string contains filename
-		//*/
-		//std::string GetFilename() {
-		//	return fileName;
-		//}		
-
-		/** \brief Set the samplingRate of the SOFA file
-		*    \param [in]	samplingRate	int contains samplingRate
-		*/
-		//void SetFileSamplingRate(int _samplingRate) {
-		//	samplingRate = _samplingRate;
-		//}
-
-		///** \brief Get the samplingRate of the SOFA file
-		//*   \return int contains samplingRate
-		//*/
-		//int GetFileSamplingRate() {
-		//	return samplingRate;
-		//}
-
-		/**
-		 * @brief Set the number of ears
-		 * @param _numberOfEars number of ears
-		 */
-		//void SetNumberOfEars(int& _numberOfEars) override {
-		//	numberOfEars = _numberOfEars;
-		//}
-
-		///**
-		// * @brief get the number of ears
-		// * @return number of ears
-		// */
-		//int GetNumberOfEars() override {
-		//	return numberOfEars;
-		//}
-	
 		/** \brief	Set the relative position of one ear (to the listener head center)
 		* 	\param [in]	_ear			ear type
 		*   \param [in]	_earPosition	ear local position
 		*   \eh <<Error not allowed>> is reported to error handler
 		*/
 		void SetEarPosition(Common::T_ear _ear, Common::CVector3 _earPosition) override {
-			if (_ear == Common::T_ear::LEFT) { leftEarLocalPosition = _earPosition; }
-			else if (_ear == Common::T_ear::RIGHT) { rightEarLocalPosition = _earPosition; }
-			else if (_ear == Common::T_ear::BOTH || _ear == Common::T_ear::NONE)
-			{
+			if (_ear == Common::T_ear::LEFT) {
+				leftEarLocalPosition = _earPosition;
+			} else if (_ear == Common::T_ear::RIGHT) {
+				rightEarLocalPosition = _earPosition;
+			} else if (_ear == Common::T_ear::BOTH || _ear == Common::T_ear::NONE) {
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to set listener ear transform for BOTH or NONE ears");
 			}
 		}
-
-		/** \brief Add the hash table for computing SOS Filter
-		*	\param [in] newTable data for hash table
-		*   \eh Nothing is reported to the error handler.
-		*/					
-		void AddSOSFilterTable(T_SOSCoefficients_HashTable && newTable)
-		{
-			t_SOSFilter = newTable;
-		}
-
-		/** \brief Add a new HRIR to the HRTF table
-		*	\param [in] azimuth azimuth angle in degrees
-		*	\param [in] elevation elevation angle in degrees
-		*	\param [in] newHRIR HRIR data for both ears
-		*   \eh Warnings may be reported to the error handler.
-		*/
-		void AddCoefficients(float azimuth, float distance, TSOSFilterStruct&& newCoefs) override
-		{
-			if (setupInProgress) {
-				int iAzimuth = static_cast<int> (round(azimuth));
-				int iDistance = static_cast<int> (round(GetDistanceInMM(distance)));
-
-				auto returnValue = t_SOSFilter.emplace(CSOSFilter_Key(iDistance, iAzimuth), std::forward<TSOSFilterStruct>(newCoefs));
-				//Error handler
-				if (returnValue.second) { 
-					/*SET_RESULT(RESULT_OK, "ILD Coefficients emplaced into t_ILDNearFieldEffect succesfully"); */ 
-					azimuthList.push_back(iAzimuth);
-					distanceList.push_back(iDistance);
-				}
-				else { SET_RESULT(RESULT_WARNING, "Error emplacing SOS Filter Cofficients"); }
-			}
-		}
-
-
-		/** \brief Add the hash table for computing ILD Spatialization
-		*	\param [in] newTable data for hash table
-		*   \eh Nothing is reported to the error handler.
-		*/
-		/*void AddILDSpatializationTable(T_ILD_HashTable && newTable)
-		{
-			t_ILDSpatialization = newTable;
-		}*/
-
-		/** \brief Get the internal hash table used for computing SOS Filter
-		*	\retval hashTable data from the hash table
-		*   \eh Nothing is reported to the error handler.
-		*/
-		const T_SOSCoefficients_HashTable & GetSOSFilterTable() { return t_SOSFilter; }
 		
-		/** \brief Get the internal hash table used for computing ILD Spatialization
-		*	\retval hashTable data from the hash table
-		*   \eh Nothing is reported to the error handler.
-		*/
-		//const T_ILD_HashTable & GetILDSpatializationTable() { return t_ILDSpatialization; }
-		
-		/** \brief Get IIR filter coefficients for SOS Filter, for one ear
-		*	\param [in] ear ear for which we want to get the coefficients
-		*	\param [in] distance_m distance, in meters
-		*	\param [in] azimuth azimuth angle, in degrees
-		*	\retval std::vector<float> contains the coefficients following this order [f1_b0, f1_b1, f1_b2, f1_a1, f1_a2, f2_b0, f2_b1, f2_b2, f2_a1, f2_a2]
-		*   \eh On error, an error code is reported to the error handler.
-		*/				
-		std::vector<float> GetSOSFilterCoefficients(Common::T_ear ear, float distance_m, float azimuth) override
-		{
-			if (!dataReady) {
-				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "SOS Filter table was not initialized in BRTServices::CILD::GetSOSFilterCoefficients()");
-				return std::vector<float>();
-			}
-
-			if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE)
-			{
-				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get SOS Filter coefficients for a wrong ear (BOTH or NONE)");
-				std::vector<float> temp;
-				return temp;
-			} 
+		bool BeginSetup() override {
 			
-			if  ((ear == Common::T_ear::RIGHT) && numberOfEars == 1) {
-				return GetSOSFilterCoefficients(Common::LEFT, distance_m, -azimuth);
+			std::lock_guard<std::mutex> l(mutex);
+			Reset();
+			setupInProgress = true;						
+
+			SET_RESULT(RESULT_OK, "SOS Coefficients Setup started");
+			return true;
+		}
+
+		void AddCoefficients(float _azimuth, float _elevation, float _distance, Common::CEarPair<CMonoBuffer<float>> && newCoefs) override {
+			std::lock_guard<std::mutex> l(mutex);
+			if (!setupInProgress) {
+				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "Cannot add SOS Filter coefficients - Setup not in progress");
+				return;
 			}
 
-			ASSERT(distance_m > 0, RESULT_ERROR_OUTOFRANGE, "Distance must be greater than zero when processing ILD", "");
-			ASSERT(azimuth >= -90.0 && azimuth <= 90, RESULT_ERROR_OUTOFRANGE, "Azimuth must be between -90 deg and 90 deg when processing ILD", "");
-			//ASSERT(ILDNearFieldEffectTable_AzimuthStep > 0 && ILDNearFieldEffectTable_DistanceStep > 0, RESULT_ERROR_INVALID_PARAM, "Step values of ILD hash table are not valid", "");
+			// Find o create orientation bucket
+			TSOSDistanceBucket * distanceBucket = nullptr;
 
-			float distance_mm = GetDistanceInMM(distance_m);
-								
-			int q_distance_mm	= GetRoundUp(distance_mm, distanceStep);
-			int q_azimuth		= GetRoundUp(azimuth, azimuthStep);
-
-			auto itEar = t_SOSFilter.find(CSOSFilter_Key(q_distance_mm, q_azimuth));
-			if (itEar != t_SOSFilter.end())
-			{					
-				if (ear == Common::T_ear::LEFT)			{	return itEar->second.leftCoefs;	} 
-				else if (ear == Common::T_ear::RIGHT) {		return itEar->second.rightCoefs; }
-				else { // Should never get here but keep compiler happy
-					SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get SOS Filter coefficients for a wrong ear (BOTH or NONE)");
-					return std::vector<float>();
+			const int32_t distance_mm = quantise_dist_mm(_distance);
+			for (auto & distBucketIt : sosDistanceTable) {
+				if (distBucketIt.distance_mm == distance_mm) {
+					distanceBucket = &distBucketIt;
+					break;
 				}
 			}
-			else
-			{
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "{Distance-Azimuth} key value was not found in the SOS Filter look up table");					
-				return std::vector<float>();
-			}						
+
+			if (!distanceBucket) {
+				TSOSDistanceBucket newDist; // Create new distance bucket
+				//newDist.distance = _distance;
+				newDist.distance_mm = distance_mm;
+				sosDistanceTable.push_back(std::move(newDist));
+				distanceBucket = &sosDistanceTable.back();
+			}
+
+			// Emplace new IR into orientation table
+			const double _azimuthInRage = CInterpolationAuxiliarMethods::NormalizeAzimuth0_360(_azimuth);
+			const double _elevationInRange = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(_elevation);
+			
+			TSOSFilterStruct newData(TOrientation(_azimuthInRage, _elevationInRange, _distance), newCoefs);
+			//newData.orientation = TOrientation(_azimuthInRage, _elevationInRange, _distance);
+			auto returnValue = distanceBucket->table.emplace(TOrientation(_azimuthInRage, _elevationInRange, _distance), newData);
+			//Error handler
+			if (!returnValue.second) {
+				if (distanceBucket->table.find(TOrientation(_azimuthInRage, _elevationInRange, _distance)) != distanceBucket->table.end()) {
+					SET_RESULT(RESULT_WARNING, "Error emplacing SOS coefficients in SOSFilterDataBase map, already exists a coefs in this position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]");
+				} else {
+					SET_RESULT(RESULT_WARNING, "Error emplacing SOS coefficients in SOSFilterDataBase map in position [" + std::to_string(_azimuth) + ", " + std::to_string(_elevation) + "]");
+				}
+			}
 		}
-								
-		/**
-		 * @brief Round a value to the nearest valid integer according to a step value
-		 * @param value value to round
-		 * @param roundStep step value
-		 * @return 
-		 */
-		int GetRoundUp(float value, int roundStep) {			
-			float sign = value > 0 ? 1 : -1;			
-			return roundStep * (int)((value + sign * ((float)roundStep) / 2) / roundStep);
+
+		bool EndSetup() override {
+			std::lock_guard<std::mutex> l(mutex);
+			if (!setupInProgress) { 
+				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "SOS Filter Setup was not started in BRTServices::CSOSCoefficients::EndSetup()");
+				return false;
+			}
+			
+			if (sosDistanceTable.empty()) {
+				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "SOS Filter Setup was not started in BRTServices::CSOSCoefficients::EndSetup() - No data was added");
+				return false;
+			}
+
+			if (sosDistanceTable.size() > 0 && sosDistanceTable.front().table.size() > 1) spatiallyOriented = true;
+
+			// Sort distance buckets by distance_mm
+			std::sort(sosDistanceTable.begin(), sosDistanceTable.end(),
+				[](const TSOSDistanceBucket & a, const TSOSDistanceBucket & b) {
+				return a.distance_mm < b.distance_mm;
+			});
+			
+			// Build search trees for each distance bucket
+			for (auto & distBucketIt : sosDistanceTable) {
+					std::vector<TOrientation> orientations;
+					orientations.reserve(distBucketIt.table.size());
+					for (const auto & tableIt : distBucketIt.table) {
+						orientations.push_back(tableIt.second.orientation);
+					}
+					distBucketIt.searchTree.build(std::move(orientations));
+			}			
+		
+			if (numberOfEars != -1) {				
+				dataReady = true;
+				SET_RESULT(RESULT_OK, "SOS Filter Setup finished");				
+				setupInProgress = false;
+				return true;
+			}
+			
+			SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Some parameter is missing in order to finish the data upload in BRTServices::CSphericalSOSTable");
+			return false;
 		}
 		
+		/**
+		 * @brief Get IIR filter coefficients for SOS Filter, for one ear.
+		 * @detail This method is for spatially oriented SOS tables, as it takes into account the azimuth and elevation parameters.
+		 * @param _azimuth azimuth angle in degrees
+		 * @param _elevation elevation angle in degrees
+		 * @param _distance distance in meters
+		 * @param ear ear for which we want to get the coefficients
+		 * @return std::vector<float> contains the coefficients following this order [f1_b0, f1_b1, f1_b2, f1_a1, f1_a2, f2_b0, f2_b1, f2_b2, f2_a1, f2_a2]
+		 */
+		const std::vector<float> GetSOSCoefficients_SpatiallyOriented(float _azimuth, float _elevation, float _distance, Common::T_ear ear) const override {
+					
+			std::vector<float> foundData;
+			if (!dataReady) {
+				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "Spherical SOS table was not initialized in BRTServices::CSphericalSOSTable::GetSOSFilterCoefficients()");
+				return foundData;
+			}
+
+			if (ear == Common::T_ear::BOTH || ear == Common::T_ear::NONE) {
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get SOS Filter coefficients for a wrong ear (BOTH or NONE)");
+				return foundData;
+			}
+
+			if (!spatiallyOriented) { 
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get SOS Filter coefficients with spatial orientation parameters, but SOS table is not spatially oriented");
+				return foundData;
+			}
+
+			if ((ear == Common::T_ear::RIGHT) && numberOfEars == 1) {
+				// This is a workaround to make our near-field SOS SOFA files work; we should correct it those SOFA.
+				return GetSOSCoefficients_SpatiallyOriented(-_azimuth, _elevation, _distance, Common::T_ear::LEFT);
+			}
+
+			//ASSERT(_distance > 0, RESULT_ERROR_OUTOFRANGE, "Distance must be greater than zero when", "");			
+
+			// Find Table to use if exists
+			const TSOSDistanceBucket * distanceBucket = FindDistanceBucket(_distance);
+			if (!distanceBucket) {
+				SET_RESULT(RESULT_ERROR_UNKNOWN, "GetFRPartitioned_SpatiallyOriented_2Ears: Distance Bucket find error");
+				return foundData;
+			}		
+			
+			Common::CEarPair<CMonoBuffer<float>> data = GetDataFromSphericalSOSTable(distanceBucket, _azimuth, _elevation, true);
+			
+			if (ear == Common::T_ear::LEFT) {
+				return data.left;
+			} else if (ear == Common::T_ear::RIGHT) {
+				return data.right;
+			}			
+		}
+
+		/**
+		 * @brief Get IIR filter coefficients for SOS Filter, for both ears. This method is for not spatially oriented SOS tables, as it does not take into account the azimuth and elevation parameters. For spatially oriented SOS tables.		 
+		 * @return Pair of CMonoBuffer<float> containing the coefficients for left and right ears, following this order [f1_b0, f1_b1, f1_b2, f1_a1, f1_a2, f2_b0, f2_b1, f2_b2, f2_a1, f2_a2]
+		 */
+		const Common::CEarPair<CMonoBuffer<float>> GetSOSCoefficients_2Ears() const override {
+			
+			Common::CEarPair<CMonoBuffer<float>> foundData;
+
+			if (!dataReady) {
+				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "Spherical SOS table was not initialized in BRTServices::CSphericalSOSTable::GetSOSFilterCoefficients()");
+				return foundData;
+			}
+			
+			if (spatiallyOriented) {
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Attempt to get SOS Filter coefficients with NOT spatial orientation parameters, but SOS table is spatially oriented");
+				return foundData;
+			}
+			
+			float _azimuth = 0;
+			float _elevation = 0;
+			float _distance = 0;
+			bool _findNearest = true;
+			// Find Table to use if exists
+			const TSOSDistanceBucket * distanceBucket = FindDistanceBucket(_distance);
+			if (!distanceBucket) {
+				SET_RESULT(RESULT_ERROR_UNKNOWN, "GetFRPartitioned_SpatiallyOriented_2Ears: Distance Bucket find error");
+				return foundData;
+			}
+			
+			return GetDataFromSphericalSOSTable(distanceBucket, _azimuth, _elevation, true);
+		}
+
 	private:
 		
-		void Clear() {
-			t_SOSFilter.clear();
-			azimuthList.clear();
-			distanceList.clear();
-			numberOfEars = -1;
-			azimuthStep = -1;
-			distanceStep = -1;
-		}
+		/**
+		 * @brief Find and return the coefficients for a given distance bucket and orientation parameters. If _findNearest is true, it will return the coefficients of the nearest orientation if an exact match is not found. If _findNearest is false, it will return an empty data if an exact match is not found.
+		 * @param distanceBucket 
+		 * @param _azimuth 
+		 * @param _elevation 
+		 * @param _findNearest 
+		 * @return 
+		 */
+		const Common::CEarPair<CMonoBuffer<float>> GetDataFromSphericalSOSTable(const TSOSDistanceBucket * distanceBucket, const float & _azimuth, const float & _elevation, bool _findNearest) const {
 
-		int CalculateTableAzimuthStep() {			
-			// Order azimuth and remove duplicates
-			std::sort(azimuthList.begin(), azimuthList.end());
-			azimuthList.erase(unique(azimuthList.begin(), azimuthList.end()), azimuthList.end());
+			std::lock_guard<std::mutex> l(mutex);
+			const double _azimuthInRage = CInterpolationAuxiliarMethods::NormalizeAzimuth0_360(_azimuth);
+			const double _elevationInRange = CInterpolationAuxiliarMethods::NormalizeElevation_0_90_270_360(_elevation);
 
-			// Calculate the minimum azimuth
-			int azimuthStep = 999999;	//TODO Why this number?
-			for (int i = 0; i < azimuthList.size() - 1; i++) {
-				if (azimuthList[i + 1] - azimuthList[i] < azimuthStep) {
-					azimuthStep = azimuthList[i + 1] - azimuthList[i];
+			Common::CEarPair<CMonoBuffer<float>> foundData;
+			auto it = distanceBucket->table.find(TOrientation_key(_azimuthInRage, _elevationInRange));
+			if (it != distanceBucket->table.end()) {
+				// Exact match found
+				foundData = it->second.coefs;
+			} else {
+				// No exact match
+				if (!_findNearest) {
+					SET_RESULT(RESULT_ERROR_OUTOFRANGE, "GetDataFromSphericalSOSTable: Requested azimuth and elevation not found in SOS table");
+					return foundData;
+				}
+				// Find nearest
+				TOrientation nearest = distanceBucket->searchTree.nearest(_azimuthInRage, _elevationInRange);
+				auto it = distanceBucket->table.find(TOrientation_key(nearest));
+				if (it != distanceBucket->table.end()) {
+					foundData = it->second.coefs;
+				} else {
+					// ERROR: This should not happen
+					SET_RESULT(RESULT_ERROR_NOTALLOWED, "GetDataFromSphericalSOSTable: SearchTree returned an orientation not present in SOS table");
 				}
 			}
-			return azimuthStep;
+			return foundData;
 		}
+		
+		/**
+		 * @brief Find distance bucket for a given reference location and distance
+		 * @param _referenceLocation reference location
+		 * @param _distance_m distance in meters
+		 * @return 
+		 */
+		const TSOSDistanceBucket * FindDistanceBucket(const float & _distance_m) const {
+			const TSOSDistanceBucket * distanceBucket = nullptr;
+
+			// Pick distance bucket (exact or nearest)
+			const int32_t qDistance_mm = quantise_dist_mm(_distance_m);
+			distanceBucket = FindNearestDistanceBucket(qDistance_mm);
+			if (!distanceBucket) {
+				SET_RESULT(RESULT_ERROR_UNKNOWN, "GetSOSFilterCoefficients: Distance not found error");
+				return distanceBucket;
+			}
+			return distanceBucket;
+		}
+
+		/**
+		 * @brief Find the nearest distance bucket for a given quantised distance in millimeters. It assumes that sosDistanceTable is sorted by distance_mm.
+		 * @param queryDistanceMm 
+		 * @return 
+		 */
+		const TSOSDistanceBucket * FindNearestDistanceBucket(int32_t queryDistanceMm) const {
+
+			// refBucket.distances MUST be sorted by distance_mm (done in finalizeBuild()).
+			auto it = std::lower_bound(sosDistanceTable.begin(), sosDistanceTable.end(), queryDistanceMm,
+				[](const TSOSDistanceBucket & b, int32_t key) { return b.distance_mm < key; });
+
+			// Nearest: choose closest between it and previous
+			if (it == sosDistanceTable.begin())
+				return &(*it);
+
+			if (it == sosDistanceTable.end())
+				return &sosDistanceTable.back();
+
+			const auto & hi = *it;
+			const auto & lo = *(it - 1);
+
+			const int32_t dLo = queryDistanceMm - lo.distance_mm;
+			const int32_t dHi = hi.distance_mm - queryDistanceMm;
+
+			return (dLo <= dHi) ? &lo : &hi; // tie: pick any (lo)
+		}
+
+		void Reset() {			
+			setupInProgress = false;
+			dataReady = false;
+			sosDistanceTable.clear();			
+			numberOfEars = -1;	
+		}
+
+		//int CalculateTableAzimuthStep() {			
+		//	// Order azimuth and remove duplicates
+		//	std::sort(azimuthList.begin(), azimuthList.end());
+		//	azimuthList.erase(unique(azimuthList.begin(), azimuthList.end()), azimuthList.end());
+
+		//	// Calculate the minimum azimuth
+		//	int azimuthStep = 999999;	//TODO Why this number?
+		//	for (int i = 0; i < azimuthList.size() - 1; i++) {
+		//		if (azimuthList[i + 1] - azimuthList[i] < azimuthStep) {
+		//			azimuthStep = azimuthList[i + 1] - azimuthList[i];
+		//		}
+		//	}
+		//	return azimuthStep;
+		//}
 
 		/// Calculate the TABLE Distance STEP from the table
-		float CalculateTableDistanceStep() {			
-			// Order distances and remove duplicates
-			std::sort(distanceList.begin(), distanceList.end());
-			distanceList.erase(unique(distanceList.begin(), distanceList.end()), distanceList.end());
+		//float CalculateTableDistanceStep() {			
+		//	// Order distances and remove duplicates
+		//	std::sort(distanceList.begin(), distanceList.end());
+		//	distanceList.erase(unique(distanceList.begin(), distanceList.end()), distanceList.end());
 
-			// Calculate the minimum d
-			double distanceStep = 999999; //TODO Why this number?
-			for (int i = 0; i < distanceList.size() - 1; i++) {
-				if (distanceList[i + 1] - distanceList[i] < distanceStep) {
-					distanceStep = distanceList[i + 1] - distanceList[i];
-				}
-			}
-						
-			return distanceStep;
-		}
+		//	// Calculate the minimum d
+		//	double distanceStep = 999999; //TODO Why this number?
+		//	for (int i = 0; i < distanceList.size() - 1; i++) {
+		//		if (distanceList[i + 1] - distanceList[i] < distanceStep) {
+		//			distanceStep = distanceList[i + 1] - distanceList[i];
+		//		}
+		//	}
+		//				
+		//	return distanceStep;
+		//}
 
 		/**
 		 * @brief Transform distance in meters to distance in milimetres
@@ -397,25 +406,13 @@ namespace BRTServices {
 		///////////////
 		// ATTRIBUTES
 		///////////////	
-
-		bool setupInProgress;						// Variable that indicates the SOS Filter load is in process
-		//bool SOSCoefficientsLoaded;				// Variable that indicates if the SOS Filter has been loaded correctly
-
-		T_SOSCoefficients_HashTable t_SOSFilter;
-		int azimuthStep;							// In degress
-		int distanceStep;							// In milimeters
-		std::vector<double> azimuthList;
-		std::vector<double> distanceList;
-
+		mutable std::mutex mutex;			// Thread management
+		bool setupInProgress;				// Variable that indicates the SOS Filter load is in process		
+		
+		TSOSDistanceTable sosDistanceTable; // SOS Filter table indexed by distance buckets, each containing a search tree and a hash table indexed by orientation
+		
 		Common::CVector3 leftEarLocalPosition;		// Listener left ear relative position
 		Common::CVector3 rightEarLocalPosition;		// Listener right ear relative position
-
-		std::string fileName;
-		std::string fileTitle;				
-		std::string databaseName;
-		std::string listenerShortName;
-				
-		//int numberOfEars;
 	};
 }
 #endif
