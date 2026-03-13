@@ -171,12 +171,12 @@ namespace BRTBase {
 		 * @param _listener Pointer to the source
 		 * @return True if the connection success
 		*/
-		bool ConnectBinauralFilter(const std::string & _binauralFilterID, Common::T_ear _ear = Common::T_ear::BOTH) {
+		bool ConnectBilateralFilter(const std::string & _binauralFilterID, Common::T_ear _ear = Common::T_ear::BOTH) {
 
-			std::shared_ptr<BRTBilateralFilter::CBilateralFilterModelBase> _binauralFilter = brtManager->GetBinauralFilter<BRTBilateralFilter::CBilateralFilterModelBase>(_binauralFilterID);
+			std::shared_ptr<BRTBilateralFilter::CBilateralFilterModelBase> _binauralFilter = brtManager->GetBilateralFilter<BRTBilateralFilter::CBilateralFilterModelBase>(_binauralFilterID);
 			if (_binauralFilter == nullptr) return false;
 
-			return ConnectBinauralFilter(_binauralFilter, _ear);
+			return ConnectBilateralFilter(_binauralFilter, _ear);
 		};
 
 		/**
@@ -185,7 +185,7 @@ namespace BRTBase {
 		 * @param _ear Ear to connect, both by default
 		 * @return True if the connection success
 		*/
-		bool ConnectBinauralFilter(std::shared_ptr<BRTBilateralFilter::CBilateralFilterModelBase> _binauralFilter, Common::T_ear _ear = Common::T_ear::BOTH) {
+		bool ConnectBilateralFilter(std::shared_ptr<BRTBilateralFilter::CBilateralFilterModelBase> _binauralFilter, Common::T_ear _ear = Common::T_ear::BOTH) {
 
 			if (_binauralFilter == nullptr) return false;
 			if (_binauralFilter->IsConnectedToListener()) {
@@ -221,7 +221,7 @@ namespace BRTBase {
 		*/
 		bool DisconnectBinauralFilter(const std::string & _binauralFilterID, Common::T_ear _ear = Common::T_ear::BOTH) {
 
-			std::shared_ptr<BRTBilateralFilter::CBilateralFilterModelBase> _binauralFilter = brtManager->GetBinauralFilter<BRTBilateralFilter::CBilateralFilterModelBase>(_binauralFilterID);
+			std::shared_ptr<BRTBilateralFilter::CBilateralFilterModelBase> _binauralFilter = brtManager->GetBilateralFilter<BRTBilateralFilter::CBilateralFilterModelBase>(_binauralFilterID);
 			if (_binauralFilter == nullptr) return false;
 
 			return DisconnectBinauralFilter(_binauralFilter, _ear);
@@ -379,7 +379,7 @@ namespace BRTBase {
 		*	\param[in] pointer to NFCFilters to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetBinauralSOSFilter(std::shared_ptr<BRTServices::CSphericalSOSTable> _SOSFilter) {
+		bool SetBilateralSOSFilter(std::shared_ptr<BRTServices::CSphericalSOSTable> _SOSFilter) {
 
 			for (auto & _binauralFilter : binauralFiltersConnected) {				
 				return _binauralFilter->SetSOSFilterCoefficients(_SOSFilter);				
@@ -387,7 +387,7 @@ namespace BRTBase {
 			return false;
 		}
 
-		bool SetBinauralFIRTable(std::shared_ptr<BRTServices::CServicesBase> _FIRTable) {
+		bool SetBilateralFIRTable(std::shared_ptr<BRTServices::CServicesBase> _FIRTable) {
 			for (auto& _binauralFilter : binauralFiltersConnected) {				
 				return _binauralFilter->SetFIRTable(_FIRTable);				
 			}

@@ -403,21 +403,21 @@ namespace BRTBase {
 		 * @return Returns the pointer to the binaural filter if it could be created, otherwise returns a null pointer.
 		*/
 		template <typename T>
-		std::shared_ptr<T> CreateBinauralFilter(const std::string & _binauralFilterID) {
+		std::shared_ptr<T> CreateBilateraFilter(const std::string & _binauralFilterID) {
 			try {
 				if (!setupModeActivated) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "BRT library is not in configuration mode");
 					return nullptr;
 				}
-				auto it = std::find_if(binauralFilters.begin(), binauralFilters.end(), [&_binauralFilterID](std::shared_ptr<BRTBilateralFilter::CBilateralFilterModelBase> & binauralFilterItem) { return binauralFilterItem->GetModelID() == _binauralFilterID; });
-				if (it != binauralFilters.end()) {
+				auto it = std::find_if(bilateralFilters.begin(), bilateralFilters.end(), [&_binauralFilterID](std::shared_ptr<BRTBilateralFilter::CBilateralFilterModelBase> & binauralFilterItem) { return binauralFilterItem->GetModelID() == _binauralFilterID; });
+				if (it != bilateralFilters.end()) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "A binaural filter with such an ID already exists.");
 					return nullptr;
 				}
 
 				std::shared_ptr<T> newBinauralFilter = std::make_shared<T>(_binauralFilterID, this);
 				ConnectModulesCommand(newBinauralFilter);
-				binauralFilters.push_back(newBinauralFilter);
+				bilateralFilters.push_back(newBinauralFilter);
 				SET_RESULT(RESULT_OK, "Binaural filter created succesfully");
 				return newBinauralFilter;
 			} catch (std::bad_alloc & ba) {
@@ -433,20 +433,20 @@ namespace BRTBase {
 		 * @return Pointer to listener if exist, if not returns nullptr
 		*/
 		template <typename T>
-		std::shared_ptr<T> GetBinauralFilter(const std::string & _binauralFilterID) {
-			return FindModel(binauralFilters, _binauralFilterID);
+		std::shared_ptr<T> GetBilateralFilter(const std::string & _bilateralFilterID) {
+			return FindModel(bilateralFilters, _bilateralFilterID);
 		}
 
 		/**
 		 * @brief Get binaural filter IDs list 
-		 * @return List of binaural filter IDs
+		 * @return List of bilateral filter IDs
 		 */
-		std::vector<std::string> GetBinauralFilterIDs() {
-			std::vector<std::string> binauralFilterIDs;
-			for (auto& it : binauralFilters) {
-				binauralFilterIDs.push_back(it->GetModelID());
+		std::vector<std::string> GetBilateralFilterIDs() {
+			std::vector<std::string> bilateralFilterIDs;
+			for (auto& it : bilateralFilters) {
+				bilateralFilterIDs.push_back(it->GetModelID());
 			}
-			return binauralFilterIDs;
+			return bilateralFilterIDs;
 		}
 
 		/**
@@ -455,7 +455,7 @@ namespace BRTBase {
 		 * @return true if the binaural filter exists, false otherwise
 		 */
 		bool IsBinauraFilter(const std::string & _binauralFilterID) {
-			if (FindModel(binauralFilters, _binauralFilterID) != nullptr) {
+			if (FindModel(bilateralFilters, _binauralFilterID) != nullptr) {
 				return true;
 			}
 			return false;
@@ -951,7 +951,7 @@ namespace BRTBase {
 		std::vector<std::shared_ptr<CListenerBase>> listeners; // List of listeners
 		std::vector<std::shared_ptr<BRTListenerModel::CListenerModelBase>> listenerModels; // List of listener Models
 		std::vector<std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase>> environmentModels; // List of virtual sources environments
-		std::vector<std::shared_ptr<BRTBilateralFilter::CBilateralFilterModelBase>> binauralFilters; // List of binaural filters
+		std::vector<std::shared_ptr<BRTBilateralFilter::CBilateralFilterModelBase>> bilateralFilters; // List of binaural filters
 
 		bool initialized;
 		bool setupModeActivated;
