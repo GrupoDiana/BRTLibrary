@@ -403,7 +403,7 @@ namespace BRTBase {
 		 * @return Returns the pointer to the binaural filter if it could be created, otherwise returns a null pointer.
 		*/
 		template <typename T>
-		std::shared_ptr<T> CreateBilateraFilter(const std::string & _binauralFilterID) {
+		std::shared_ptr<T> CreateBilateralFilter(const std::string & _binauralFilterID) {
 			try {
 				if (!setupModeActivated) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "BRT library is not in configuration mode");
