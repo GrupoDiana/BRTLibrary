@@ -125,7 +125,7 @@ namespace BRTReaders {
 			return ReadFIREFromSofa(sofafile, listenerHRTF, BRTServices::TServiceType::hrir_database_interpolated, _spatialResolution, _extrapolationMethod, 0.0f, 0.0f, 0.0f, 0.0f);				
 		}
 		
-		bool ReadHRTFFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CSphericalFIRTable> listenerHRTF) {
+		bool ReadHRTFRawFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CSphericalFIRTable> listenerHRTF) {
 			return ReadFIREFromSofa(sofafile, listenerHRTF, BRTServices::TServiceType::hrir_database, -1, BRTServices::TEXTRAPOLATION_METHOD::none, 0.0f, 0.0f, 0.0f, 0.0f);			
 		}
 		
@@ -147,7 +147,7 @@ namespace BRTReaders {
 			return ReadFIREFromSofa(sofafile, _data, BRTServices::TServiceType::brir_database, 0, BRTServices::TEXTRAPOLATION_METHOD::none, _fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);			
 		}		
 
-		bool ReadIRFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CSphericalFIRTable> filterIr) {
+		bool ReadFIRFilterFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CSphericalFIRTable> filterIr) {
 			return ReadFIREFromSofa(sofafile, filterIr, BRTServices::TServiceType::ir_database, 0, BRTServices::TEXTRAPOLATION_METHOD::none, 0.0f, 0.0f, 0.0f, 0.0f);			
 		}
 
@@ -155,7 +155,7 @@ namespace BRTReaders {
 			return ReadDirectivityFromSofaInternal(sofafile, listenerDirectivity, BRTServices::TServiceType::directivity_database_interpolated, _spatialResolution, _extrapolationMethod);
 		}
 
-		bool ReadDirectivityFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CSphericalFIRTable> listenerDirectivity) {
+		bool ReadDirectivityRawFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CSphericalFIRTable> listenerDirectivity) {
 			return ReadDirectivityFromSofaInternal(sofafile, listenerDirectivity, BRTServices::TServiceType::directivity_database, -1, BRTServices::TEXTRAPOLATION_METHOD::none);
 		}
 		
