@@ -146,7 +146,7 @@ namespace BRTProcessing {
 				}				
 			}
 			if (_IR_partitioned.size() == 0) {
-				SET_RESULT(RESULT_ERROR_BADSIZE, "FIRConvolver::Process: No IR partitions found in FIR table for the requested ear", "");
+				SET_RESULT(RESULT_ERROR_BADSIZE, "FIRConvolver::Process: No IR partitions found in FIR table for the requested ear");
 				_outBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);				
 				return;
 			}
@@ -167,7 +167,7 @@ namespace BRTProcessing {
 			}
 
 			if (channelsConvolvers.size() < 2) {
-				SET_RESULT(RESULT_ERROR_OUTOFRANGE, "FIRConvolver::Process: Number of channels is less than 2, cannot process stereo output", "");
+				SET_RESULT(RESULT_ERROR_OUTOFRANGE, "FIRConvolver::Process: Number of channels is less than 2, cannot process stereo output");
 				_outLeftBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 				_outRightBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 				return;
@@ -195,7 +195,8 @@ namespace BRTProcessing {
 				earFRPartitions = _irTablePtr->GetFR_2Ears();
 			}
 			if (earFRPartitions.left.size() == 0 || earFRPartitions.right.size() == 0) {
-				SET_RESULT(RESULT_ERROR_BADSIZE, "FIRConvolver::Process: No IR partitions found in FIR table for the requested ear", "");
+				SET_RESULT(RESULT_ERROR_BADSIZE, "FIRConvolver::Process: No IR partitions found in FIR table for the requested ear");
+
 				_outLeftBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 				_outRightBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 				return;
@@ -247,7 +248,7 @@ namespace BRTProcessing {
 			_IR_partitioned = _irTablePtr->GetFR_SpatiallyOriented(leftAzimuth, leftElevation, 0.0f, Common::CTransform(), Common::T_ear(_channel), enableFindNearestIR);			
 						
 			if (_IR_partitioned.size() == 0) {
-				SET_RESULT(RESULT_ERROR_BADSIZE, "FIRConvolver::Process: No IR partitions found in FIR table for the requested ear", "");
+				SET_RESULT(RESULT_ERROR_BADSIZE, "FIRConvolver::Process: No IR partitions found in FIR table for the requested ear");
 				_outBuffer.Fill(globalParameters.GetBufferSize(), 0.0f);
 				return;
 			}
