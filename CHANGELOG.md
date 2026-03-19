@@ -5,6 +5,32 @@ All notable changes to the Binaural Rendering Toolbox (BRT) will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-03-19
+
+### Changed
+- Major refactoring of the data structs for services modules.
+- Major refactoring of the base class (inteface definition) of the services and all associated classes.
+- Major refactoring of the HRTF class to support multiple IR measurement distances. More minor changes in related classes.
+- The HRTF class, with all the changes, is now called CSphericalInterpolatedFIRTable. It now supports the storage of various data types, not just HRTFs.
+- The service for storing SOS IIR filters has been refactored and renamed to CSphericalSOSTable.
+- Many of the processing classes have had to be modified to adapt to the major changes in the service modules.
+- Changes to the SOFA file readers.
+
+### Added
+- New data structures for storing information based on a reference point and distance.
+- A new generic data class, called SphericalFIRTable, which allows FIR data to be stored. Specifically, it allows HRTFs, BRIR, source directivity and FIR filter characteristics to be stored. It organises them according to reference position and distance. It does not perform any form of interpolation.
+- Support for a new source directivity convention called SourceDirectivityFIR.
+- New SOFA readers
+
+## Removed
+- Support for Directivity TF-based files has been removed.
+- The FIR filter service has been removed; this is now supported by the new SphericalFIRTable service
+
+## Fixed
+- A few minor errors have been corrected here and there.
+- Standardise the names of the methods in the bilateral filters.
+
+
 ## [2.5.0] - 2026-01-12
 
 ### Changed
