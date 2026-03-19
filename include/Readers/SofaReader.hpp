@@ -85,7 +85,11 @@ namespace BRTReaders {
 			}			
 		}
 
-
+		/**
+		 * @brief Returns the data type contained in the sofa file. Supported data types are FIR, FIR-E and SOS.
+		 * @param sofafile 
+		 * @return 
+		 */
 		TSupportedDataType GetDataTypeFromSofa(const std::string& sofafile)
 		{
 			BRTReaders::CLibMySOFALoader loader(sofafile);
@@ -107,15 +111,12 @@ namespace BRTReaders {
 				ResetError();
 				return TSupportedDataType::SOS;
 			}
-			else if (dataType == "TF") {
-				ResetError();
-				return TSupportedDataType::TF;
-			}
 			else {
 				errorDescription = "The data type contained in the sofa file is not valid - " + dataType;
 				return TSupportedDataType::UNKNOWN;
 			}
 		}
+		
 		/** \brief Loads an HRTF from a sofa file
 		*	\param [in] path of the sofa file
 		*	\param [out] listener affected by the hrtf

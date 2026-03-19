@@ -38,10 +38,9 @@ namespace BRTReaders {
 			none, 
 			SimpleFreeFieldHRIR,
 			SimpleFreeFieldHRSOS,
-			FreeFieldDirectivityTF,
+			SourceDirectivityFIR,
 			SingleRoomMIMOSRIR,
-			GeneralFIR,
-			SourceDirectivityFIR
+			GeneralFIR			
 		};
 
 		const char* SofaConventioToString(TSofaConvention e) noexcept
@@ -50,7 +49,7 @@ namespace BRTReaders {
 			{
 			case TSofaConvention::SimpleFreeFieldHRIR:		return "SimpleFreeFieldHRIR";
 			case TSofaConvention::SimpleFreeFieldHRSOS:		return "SimpleFreeFieldHRSOS";
-			case TSofaConvention::FreeFieldDirectivityTF:	return "FreeFieldDirectivityTF";
+			case TSofaConvention::SourceDirectivityFIR:		return "SourceDirectivityFIR";
 			case TSofaConvention::SingleRoomMIMOSRIR:		return "SingleRoomMIMOSRIR";
 			case TSofaConvention::GeneralFIR:				return "GeneralFIR";
 			}
@@ -120,7 +119,7 @@ namespace BRTReaders {
 			std::string sofaConventions = mysofa_getAttribute(hrtf->hrtf->attributes, "SOFAConventions");
 			if (sofaConventions == "SimpleFreeFieldHRIR") return TSofaConvention::SimpleFreeFieldHRIR;
 			if (sofaConventions == "SimpleFreeFieldHRSOS") return TSofaConvention::SimpleFreeFieldHRSOS;
-			if (sofaConventions == "FreeFieldDirectivityTF") return TSofaConvention::FreeFieldDirectivityTF;
+			if (sofaConventions == "SourceDirectivityFIR") return TSofaConvention::SourceDirectivityFIR;
 			if (sofaConventions == "SingleRoomMIMOSRIR") return TSofaConvention::SingleRoomMIMOSRIR;
 			if (sofaConventions == "GeneralFIR") return TSofaConvention::GeneralFIR;
 			return TSofaConvention::none; 
