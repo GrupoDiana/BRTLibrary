@@ -335,6 +335,8 @@ namespace BRTEnvironmentModel {
 			for (auto & it : sourcesConnectedProcessors) {
 				it.SetupRoom(roomDimensions, roomCentre);
 			}
+
+			UpdateRoomAllWallsAbsortion();
 			return true;
 		};
 
@@ -365,7 +367,7 @@ namespace BRTEnvironmentModel {
 		 * @return 
 		 */
 		bool UpdateRoom() override { 
-			//std::lock_guard<std::mutex> l(mutex);
+			std::lock_guard<std::mutex> l(mutex);
 			if (room == nullptr) return false;			
 
 			UpdateRoomAllWallsAbsortion();
@@ -376,7 +378,7 @@ namespace BRTEnvironmentModel {
 		 * @brief Update room all walls absortion. Called from father class
 		 */
 		void UpdateRoomAllWallsAbsortion() {
-			std::lock_guard<std::mutex> l(mutex);
+			//std::lock_guard<std::mutex> l(mutex);
 			const std::vector<BRTServices::CWall> & walls = room->GetWalls();			
 			
 			for (int _wallIndex = 0; _wallIndex < walls.size(); _wallIndex++) {
