@@ -5,7 +5,7 @@ All notable changes to the Binaural Rendering Toolbox (BRT) will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.0] - 2026-03-19
+## [3.0.0] - 2026-03-20
 
 ### Changed
 - Major refactoring of the data structs for services modules.
@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Fixed
 - A few minor errors have been corrected here and there.
 - Standardise the names of the methods in the bilateral filters.
-
+- The absorption coefficients for the walls were not updated correctly in the SDN model if changes were made before the room was defined within it. 
 
 ## [2.5.0] - 2026-01-12
 
