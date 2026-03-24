@@ -11,7 +11,10 @@
 *
 * \b Copyright: University of Milan - 2023
 *
-* \b Contributions: (additional authors/contributors can be added here)
+* \b Contributions: (additional authors/contributors can be added here) 
+*	3DI-DIANA Research Group (University of Malaga) corrects for distance attenuation in the direct path to allow for distances of less than one metre.
+*	3DI-DIANA Research Group (University of Malaga) members are, in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco, A. Reyes-Lecuona ||
+*	
 *
 * \b Project: SONICOM (https://www.sonicom.eu/) ||
 * \b Website: https://www.sonicom.eu/
@@ -29,8 +32,15 @@
 #include <algorithm>
 #include <Common/Buffer.hpp>
 #include <Common/ErrorHandler.hpp>
+#include <Common/GlobalParameters.hpp>
 #include <EnvironmentModels/SDNEnvironment/WaveGuide.hpp>
 #include <EnvironmentModels/SDNEnvironment/ScatteringNode.hpp>
+
+
+#ifndef MINIMUM_DISTANCE_TO_NODE
+		#define MINIMUM_DISTANCE_TO_NODE 1.0f
+#endif
+
 
 namespace BRTEnvironmentModel {
 
@@ -167,15 +177,19 @@ namespace BRTEnvironmentModel {
 
 			int numConnectionsPerNode = SDNParameters::NUM_WALLS - 1;
 
-			float sourceListenerDist = PointToPointDistance(source.GetPosition(), receiver.GetPosition());
+			//float sourceListenerDist = PointToPointDistance(source.GetPosition(), receiver.GetPosition());
+			float sourceListenerDist = CalulateSourceListenerDistance();
 			sourceListener.Prepare(samplerate, &source, &receiver, sourceListenerDist);
 			sourceListener.SetAttenuation(1 / sourceListenerDist);
 
 			for (int i = 0; i < SDNParameters::NUM_WALLS; i++)
 			{
-				float sourceNodeDistance = PointToPointDistance(source.GetPosition(), wallNodes[i].GetPosition());
-				float nodeListenerDistance = PointToPointDistance(wallNodes[i].GetPosition(), receiver.GetPosition());
+				//float sourceNodeDistance = PointToPointDistanceTruncated(source.GetPosition(), wallNodes[i].GetPosition());
+				//float nodeListenerDistance = PointToPointDistanceTruncated(wallNodes[i].GetPosition(), receiver.GetPosition());
 
+				float sourceNodeDistance = CalculateDistanceToNode(source.GetPosition(), wallNodes[i].GetPosition());
+				float nodeListenerDistance = CalculateDistanceToNode(wallNodes[i].GetPosition(), receiver.GetPosition());
+				
 				sourceNode[i].Prepare(samplerate, &source, &wallNodes[i], sourceNodeDistance);
 				sourceNode[i].SetAttenuation(1 / sourceNodeDistance);
 
@@ -185,8 +199,9 @@ namespace BRTEnvironmentModel {
 				// vector construction such that inWaveguides[i]->GetStart() == outWaveguides[i]->GetEnd() is always true for each wall node
 				for (int j = i + 1; j < SDNParameters::NUM_WALLS; j++)
 				{
-					float nodeDist = PointToPointDistance(wallNodes[j].GetPosition(), wallNodes[i].GetPosition());
-
+					//float nodeDist = PointToPointDistanceTruncated(wallNodes[j].GetPosition(), wallNodes[i].GetPosition());
+					float nodeDist = CalculateDistanceToNode(wallNodes[j].GetPosition(), wallNodes[i].GetPosition());
+					
 					wallNodes[i].inWaveguides[(j - 1)] = &NodeToNode[(j * numConnectionsPerNode) + i]; //j node to i node
 					wallNodes[j].outWaveguides[i] = wallNodes[i].inWaveguides[(j - 1)];
 
@@ -220,15 +235,16 @@ namespace BRTEnvironmentModel {
 				_virtualSourcePositions[i].SetPosition(refl);
 			}
 
-			float sourceListenerDist = PointToPointDistance(source.GetPosition(), receiver.GetPosition());
+			//float sourceListenerDist = PointToPointDistance(source.GetPosition(), receiver.GetPosition());
+			float sourceListenerDist = CalulateSourceListenerDistance();
 			sourceListener.SetDistance(sourceListenerDist);
 			sourceListener.SetAttenuation(1 / sourceListenerDist);
 
 
 			for (int i = 0; i < SDNParameters::NUM_WALLS; i++)
 			{
-				float sourceNodeDistance = PointToPointDistance(source.GetPosition(), wallNodes[i].GetPosition());
-				float nodeListenerDistance = PointToPointDistance(wallNodes[i].GetPosition(), receiver.GetPosition());
+				float sourceNodeDistance = CalculateDistanceToNode(source.GetPosition(), wallNodes[i].GetPosition());
+				float nodeListenerDistance = CalculateDistanceToNode(wallNodes[i].GetPosition(), receiver.GetPosition());
 
 				sourceNode[i].SetDistance(sourceNodeDistance);
 				sourceNode[i].SetAttenuation(1 / sourceNodeDistance);
@@ -237,7 +253,7 @@ namespace BRTEnvironmentModel {
 
 				for (int j = i + 1; j < SDNParameters::NUM_WALLS; j++)
 				{
-					float nodeDist = PointToPointDistance(wallNodes[j].GetPosition(), wallNodes[i].GetPosition());
+					float nodeDist = CalculateDistanceToNode(wallNodes[j].GetPosition(), wallNodes[i].GetPosition());
 
 					NodeToNode[(j * numConnectionsPerNode) + i].SetDistance(nodeDist); //j node to i node
 
@@ -369,16 +385,27 @@ namespace BRTEnvironmentModel {
 
 		}
 
-		float PointToPointDistance(Common::CVector3 startPos, Common::CVector3 endPos)
-		{
-			float distance = sqrtf(powf((startPos.x - endPos.x), 2) + powf((startPos.y - endPos.y), 2)
-				+ powf((startPos.z - endPos.z), 2));
-
-			if (distance < 1) distance = 1.0f;
+		float CalculateDistanceToNode(Common::CVector3 startPos, Common::CVector3 endPos)
+		{			
+			float distance = CalulatePointToPointDistance(startPos, endPos);
+			if (distance < MINIMUM_DISTANCE_TO_NODE) 
+				distance = MINIMUM_DISTANCE_TO_NODE;
 
 			return distance;
 		}
 
+		float CalulateSourceListenerDistance() {						
+			float distance = CalulatePointToPointDistance(source.GetPosition(), receiver.GetPosition());			
+			if (distance < MINIMUM_DISTANCE_SOURCE_LISTENER) distance = MINIMUM_DISTANCE_SOURCE_LISTENER;
+			return distance;
+		}
+
+		float CalulatePointToPointDistance(Common::CVector3 startPos, Common::CVector3 endPos) {
+			//float distance = sqrtf(powf((startPos.x - endPos.x), 2) + powf((startPos.y - endPos.y), 2) + powf((startPos.z - endPos.z), 2));						
+			Common::CVector3 dis = endPos - startPos;
+			float distance = dis.GetDistance();
+			return distance;
+		}
 
 		WaveGuide sourceListener;
 		std::vector<WaveGuide> sourceNode;
