@@ -158,13 +158,14 @@ namespace BRTFilters {
 		{			
 			// Check process flag
 			if (!enable) { 
-				outBuffer = _inBuffer;			
+				outBuffer = _inBuffer;		
 				return;	
 			}		
 			
 			float distance = Common::CSourceListenerRelativePositionCalculation::CalculateSourceListenerDistance(sourceTransform, listenerTransform);			
 			
 			if (distance > DISTANCE_MODEL_THRESHOLD_NEAR) {
+				outBuffer = _inBuffer;
 				return;
 			}
 			if (Common::AreSame(distance, 0, MINIMUM_DISTANCE_SOURCE_LISTENER)) {
