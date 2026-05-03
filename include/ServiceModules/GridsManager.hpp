@@ -43,7 +43,7 @@ namespace BRTServices
 	};*/
 
 	//class CAngularBasedDistribution :public CGridManagerInterface {
-	
+#if 0	
 	template <typename T>
 	class CAngularBasedDistribution  {
 	public:
@@ -108,6 +108,7 @@ namespace BRTServices
 	
 		friend class CHRTFTester;
 	};
+#endif 
 
 	//class CQuasiUniformSphereDistribution : public CGridManagerInterface {
 	
