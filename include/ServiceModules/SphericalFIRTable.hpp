@@ -1,4 +1,4 @@
-﻿/**
+/**
 * \class CSphericalFIRTable
 *
 * \brief Declaration of CSphericalFIRTable class
@@ -278,19 +278,20 @@ namespace BRTServices
 		*/
 		bool EndSetup() override {
 			std::lock_guard<std::mutex> l(mutex);
+            bool result = false;
 			if (!setupInProgress) {
 				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "Cannot end setup - Setup not in progress");
-				return false;
+				return result;
 			}
 			if (serviceType == TServiceType::none) {
 				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "Cannot end setup - Service type not defined");
-				return false;
+				return result;
 			}
 			
 			if (sofaIRDataBase.empty()) { 
 				SET_RESULT(RESULT_ERROR_NOTSET, "ERROR SphericalFIRTable::EndSetup - No data to be processed");
-				return false;
-			}							
+				return result;
+			}
 			if (sofaIRDataBase.size() > 1) spatiallyOriented = true;					
 					
 			TRawSofaData windowingIRTable;
@@ -313,11 +314,12 @@ namespace BRTServices
 							setupInProgress = false;
 							dataReady = true;
 							SET_RESULT(RESULT_OK, "The processing of the IR matrix has been successfully completed.");
-							return true;
+							result = true;
 						}
 					}											
 				}					
-			}																									
+			}
+            return result;
 		}
 					
 		/**
@@ -357,7 +359,7 @@ namespace BRTServices
 
 			if (ear == Common::T_ear::LEFT) {
 				return foundData.left;
-			} else if (ear == Common::T_ear::RIGHT) {
+			} else { // if (ear == Common::T_ear::RIGHT) {
 				return foundData.right;
 			}
 		}

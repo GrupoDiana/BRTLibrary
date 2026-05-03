@@ -1,4 +1,4 @@
-﻿/**
+/**
 * \class CLibMySOFALoader
 *
 * \brief Declaration of CLibMySOFALoader class
@@ -52,6 +52,7 @@ namespace BRTReaders {
 			case TSofaConvention::SourceDirectivityFIR:		return "SourceDirectivityFIR";
 			case TSofaConvention::SingleRoomMIMOSRIR:		return "SingleRoomMIMOSRIR";
 			case TSofaConvention::GeneralFIR:				return "GeneralFIR";
+            default:                                        return "none";
 			}
 		}		
 
