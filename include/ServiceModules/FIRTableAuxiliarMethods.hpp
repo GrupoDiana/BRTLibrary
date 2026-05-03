@@ -271,6 +271,7 @@ namespace BRTServices {
 			TFRPartitionedStruct auxRight = CSlopesMethodOnlineInterpolator::CalculateTF_OnlineMethod<TSphericalFIRTablePartitioned, TFRPartitionedStruct>(table, _numberOfSubfilters, _subfilterLength, _azimuth, _elevation, stepVector, CFIRTableAuxiliarMethods::CalculatePartitionedHRIR_FromBarycentricCoordinates_RightEar());
 			data.left = std::move(auxLeft.IR.left);
 			data.right =std::move(auxRight.IR.right);
+            return data; 
 		}
 		/**
 		 * @brief Get HRIR from a pole

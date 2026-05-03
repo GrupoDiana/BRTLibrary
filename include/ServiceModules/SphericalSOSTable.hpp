@@ -222,7 +222,7 @@ namespace BRTServices {
 			
 			if (ear == Common::T_ear::LEFT) {
 				return data.left;
-			} else if (ear == Common::T_ear::RIGHT) {
+            } else { // (ear == Common::T_ear::RIGHT) 
 				return data.right;
 			}			
 		}
