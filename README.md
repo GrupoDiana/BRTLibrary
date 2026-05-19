@@ -47,5 +47,5 @@ This library includes pieces of code from the 3DTI AudioToolkit, shared under GP
 
 ## Acknowledgements 
 
-![European Union](docs/images/EU_flag.png "European Union") This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743 
+![European Union](docs/images/EU_flag.png "European Union") This project has received funding from the European Union’s Horizon 2020 research and innovation programme under grant agreement no.101017743, and the Spanish National Project SONIX (PID2023-152547NB-I00). 
 
