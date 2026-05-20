@@ -109,9 +109,9 @@ namespace BRTEnvironmentModel {
 			 * @param _listener listener model to disconnect
 			 * @return TRUE if the disconnection is successful
 			 */
-			bool DisconnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listener) {
+			/*bool DisconnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listener) {
 				return (ISMProcessor->DisconnectToListenerModel(_listener));
-			}
+			}*/
 			
 			/**
 			 * @brief Set processor enable or disable
@@ -149,14 +149,16 @@ namespace BRTEnvironmentModel {
 			size_t GetNumberOfVisibleImageSources() {
 				return ISMProcessor->GetNumberOfVisibleImageSources();
 			}
-
+			
+			bool DisconnectFromListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
+				return ISMProcessor->DisconnectFromListenerModel(_listenerModel);
+			}
 			/**
 			 * @brief Reset processor buffers
 			*/
 			void ResetBuffers() {			
 				ISMProcessor->ResetProcessBuffers();
-			}
-			
+			}			
 
 			// Attributes
 			std::string sourceID;
@@ -589,7 +591,7 @@ namespace BRTEnvironmentModel {
 			std::string _sourceID = _source->GetID();
 			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CISMProcessors & sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
 			if (it != sourcesConnectedProcessors.end()) {
-				bool control = it->DisconnectToListenerModel(_listenerModel);
+				bool control = it->DisconnectFromListenerModel(_listenerModel);				
 				control = control && brtManager->DisconnectModulesSamples(_source, "samples", it->ISMProcessor, "inputSamples");
 				control = control && brtManager->DisconnectModuleID(this, it->ISMProcessor, "listenerID");
 				control = control && brtManager->DisconnectModuleTransform(_listener, it->ISMProcessor, "listenerPosition");

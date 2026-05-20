@@ -165,6 +165,7 @@ namespace BRTEnvironmentModel {
 		*/
 		bool IsInBounds(const Common::CVector3& _position) {
 			float distanceToNearestWall = 0.0f;
+			if (ISMParameters->room == nullptr) return false; // If the room is not defined, we consider that the position is out of bounds			
 			return ISMParameters->room->CheckPointInsideRoom(_position, distanceToNearestWall);			
 		}
 

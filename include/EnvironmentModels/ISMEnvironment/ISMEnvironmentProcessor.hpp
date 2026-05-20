@@ -148,21 +148,10 @@ namespace BRTEnvironmentModel {
 			return result;
 		}
 
-		/**
-		 * @brief Disconnect the environment processor from a listener model
-		 * @param _listenerModel Listener model to disconnect
-		 * @return True if the disconnection was successful
-		 */
-		bool DisconnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {			
-			bool result=  DisconnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
-			if (result) {
-				virtualSourcesConnectedToListener = false;
-			} else {
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There was an error disconnecting the virtual sources from the listener model");
-			}
-			return result;
+		bool DisconnectFromListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
+			return ResetVirtualSources(_listenerModel);
 		}
-
+		
 		/**
 		* @brief Mute or unmute line of sight component
 		* @param mute True to mute the line of sight component, False to unmute
@@ -254,6 +243,8 @@ namespace BRTEnvironmentModel {
 			return CISMEnvironment::GetNumberOfVisibleImageSources();
 		}
 
+		
+
 		void ResetProcessBuffers() {
 			//TODO Implement samples buffer cleaning.
 		}
@@ -292,7 +283,6 @@ namespace BRTEnvironmentModel {
 			SyncAllVirtualSourcesToModel();						
 		}
 			
-
 		/**
 		 * @brief Resets the virtual sources by disconnecting from the listener model, removing all virtual sources, and marking setup as incomplete.
 		 * @param _listenerModel A shared pointer to the listener model to disconnect from.
@@ -301,16 +291,16 @@ namespace BRTEnvironmentModel {
 		bool ResetVirtualSources(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
 			//std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			setupDone = false;
-			bool result = DisconnectToListenerModel(_listenerModel);
+			bool result = DisconnectVirtualSourcesFromListenerModel(_listenerModel);
 			if (!result && virtualSourcesConnectedToListener) {
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There was an error disconnecting the virtual sources from the listener model");
 				return false;
-			}			
-			RemoveBRTVirtualSources(); // Remove all the virtual sources			
+			}
+			RemoveBRTVirtualSources(); // Remove all the virtual sources
 			CISMEnvironment::Reset(); // Reset the ISM environment
 			numberOfImageSources = CISMEnvironment::GetNumberOfImageSources();
 			virtualSourceBuffers.clear();
-			virtualSourcePositions.clear();			
+			virtualSourcePositions.clear();
 
 			if (!result) {
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There was an error removing the virtual sources");
@@ -318,6 +308,22 @@ namespace BRTEnvironmentModel {
 			}
 			return result;
 		}
+
+		/**
+		 * @brief Disconnect the environment processor from a listener model
+		 * @param _listenerModel Listener model to disconnect
+		 * @return True if the disconnection was successful
+		 */
+		bool DisconnectVirtualSourcesFromListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
+			bool result = CVirtualSourceList::DisconnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
+			if (result) {
+				virtualSourcesConnectedToListener = false;
+			} else {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There was an error disconnecting the virtual sources from the listener model");
+			}
+			return result;
+		}
+		
 
 		/**
 		 * @brief Create the BRT virtual sources
