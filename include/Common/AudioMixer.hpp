@@ -92,6 +92,11 @@ public:
 
 		return returnBuffer;
 	}
+	
+	void ResetBuffer() {
+		std::fill(mixBuffer.begin(), mixBuffer.end(), 0.0f);
+		buffersReceived = 0;
+	}
 
 private:
 	size_t bufferSize;

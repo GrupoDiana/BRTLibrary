@@ -49,7 +49,9 @@ class CRMSCalculator
 		CRMSCalculator(size_t num_frames = 10)
 			: max_frames(num_frames)
 			, sum_rms { 0 }	
-		{}
+		{
+			rms_history.clear();
+		}
 		
 
 		void SetNumberOfFrames(int _windowSizeMS, int _sampleRate, int _bufferSize) {			
@@ -94,6 +96,11 @@ class CRMSCalculator
 			}
 			double rms = std::sqrt(sum_squares / buffer.size());
 			return rms;
+		}
+
+		void Reset() {
+			sum_rms = 0;
+			rms_history.clear();
 		}
 
 	private:

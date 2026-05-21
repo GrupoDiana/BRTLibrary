@@ -130,6 +130,9 @@ namespace Common {
 			return envelope;
 		}
 
+		void Reset() {
+			envelope = 0;
+		}
 
 	private:
 		// PRIVATE ATTRIBUTES
