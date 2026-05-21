@@ -118,14 +118,8 @@ namespace BRTBilateralFilter {
 			GetSamplesExitPoint("rightEar")->sendData(rightBuffer);			
 		}
 
-		void UpdateCommand() override {
-			// TODO
-
-			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
-			if (command.isNull() || command.GetCommand() == "") {
-				return;
-			}
-			std::string a = command.GetStringParameter("listenerID");
+		void UpdateCommand() override {			
+			
 		}
 
 

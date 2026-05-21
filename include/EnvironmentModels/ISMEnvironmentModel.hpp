@@ -356,7 +356,10 @@ namespace BRTEnvironmentModel {
 				} else if (command.GetCommand() == "/environment/resetBuffers") {
 					ResetProcessorBuffers();
 				}
-			}			
+			}
+			if (command.GetCommand() == "/resetAllBuffers") {
+				ResetProcessorBuffers();
+			}
 		}
 
 

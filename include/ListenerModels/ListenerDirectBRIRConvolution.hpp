@@ -354,6 +354,10 @@ namespace BRTListenerModel {
 					ResetProcessorBuffers();
 				}
 			}		
+			if (command.GetCommand() == "/resetAllBuffers") {
+				ResetProcessorBuffers();
+				ResetMixerBuffers();
+			}
 		}
 
 

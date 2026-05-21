@@ -120,8 +120,10 @@ class CHRTFConvolverProcessor : public BRTConnectivity::CBRTConnectivity, public
 					ResetSourceConvolutionBuffers();					
 				}
 			}
+			std::string commandSourceID = command.GetStringParameter("sourceID");
+			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
 
-			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
+			if (commandSourceID == mySourceID) {
 				if (command.GetCommand() == "/source/resetBuffers") {
 					ResetSourceConvolutionBuffers();
 				}
@@ -132,7 +134,7 @@ class CHRTFConvolverProcessor : public BRTConnectivity::CBRTConnectivity, public
        
 		mutable std::mutex mutex;
 
-		bool IsToMySoundSource(std::string _sourceID) {
+		bool IsToMySoundSource(const std::string& _sourceID) {
 			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
 			return mySourceID == _sourceID;
 		}

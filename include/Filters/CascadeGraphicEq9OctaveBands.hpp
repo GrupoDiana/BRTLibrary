@@ -139,21 +139,12 @@ namespace BRTFilters {
             return commandGains;
         }
 
-        /** 
-         * \brief Enable the processing of the filter chain
-        */
-        //void Enable() {	enable = true; }
-
-        /** 
-         * \brief Disable the processing of the filter chain
-        */
-        //void Disable() { enable = false; }
-
-        /** 
-         * \brief Check if the processing of the filter chain is enabled
-         * \retval true if the processing is enabled, false otherwise
-        */
-        //bool IsEnabled() const { return enable; }
+        /**
+         * @brief Reset the internal buffers of the filters in the chain
+         */
+        void ResetBuffers() override {
+			CBiquadFilterChain::ResetBuffers();
+        }
 
 
 #ifndef NDEBUG

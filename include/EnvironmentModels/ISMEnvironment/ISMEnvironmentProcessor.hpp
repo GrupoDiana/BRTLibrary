@@ -246,13 +246,41 @@ namespace BRTEnvironmentModel {
 		
 
 		void ResetProcessBuffers() {
-			//TODO Implement samples buffer cleaning.
+			
+			for (int i = 0; i < numberOfImageSources; i++) {
+				std::string _virtualSourceId = GetBRTVirtualSourceID(i);
+
+				nlohmann::json j;
+				j["command"] = "/source/resetBuffers";
+				j["sourceID"] = _virtualSourceId;
+				brtManager->ExecuteCommand(j.dump());
+			}
+			ResetWaveguideBuffers();
 		}
 
 		/**
 		 * @brief Implementation of CAdvancedEntryPointManager virtual method
 		*/
 		void UpdateCommand() override {
+
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();
+			if (command.isNull() || command.GetCommand() == "") {
+				return;
+			}
+
+			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
+			std::string commandSourceID = command.GetStringParameter("sourceID");
+			if (mySourceID == commandSourceID) {								
+				// Propagete the command to the virtual sources
+				for (int i = 0; i < numberOfImageSources; i++) {
+					std::string _virtualSourceId = GetBRTVirtualSourceID(i);
+					nlohmann::json j;
+					j["command"] = command.GetCommand();
+					j["sourceID"] = _virtualSourceId;
+					brtManager->ExecuteCommand(j.dump());
+				}
+				ResetWaveguideBuffers();
+			}				
 		}
 		
 

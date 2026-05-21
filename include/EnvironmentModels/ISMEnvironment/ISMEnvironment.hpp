@@ -205,6 +205,11 @@ namespace BRTEnvironmentModel {
 			}
 		}
 
+		void ResetWaveguideBuffers() {
+			for (auto & _channel : listOfChannelSourceListener) {
+				_channel->Reset();
+			}
+		}
 	private:
 		
 		//void ApplyVisibilityGainToOutputBuffers(std::vector<CMonoBuffer<float>> & _outBuffers) {
@@ -424,7 +429,8 @@ namespace BRTEnvironmentModel {
 
 			imageSourcesPreviousAttenuationList.resize(imageSourcesPositionList.size(), 0.0f);
 		}
-		
+				
+
 #if defined(DEBUG) || defined(_DEBUG)
 		// TO remove
 		void ShowImageSourceData(const std::vector<TImageSourceData> & data) {
