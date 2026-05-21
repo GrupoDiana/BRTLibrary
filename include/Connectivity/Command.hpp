@@ -27,7 +27,7 @@
 #include <third_party_libraries/nlohmann/json.hpp>
 
 namespace BRTConnectivity {
-	class CCommand { //TODO repensar esto, se puede almacenar el json ya parseado y se ahorra tiempo de proceso
+	class CCommand { //NOTE: Rethink this; you can store the already-parsed JSON to save processing time
 		using json = nlohmann::json;
 	public:
 		
