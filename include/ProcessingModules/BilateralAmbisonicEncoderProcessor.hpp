@@ -95,7 +95,8 @@ class CBilateralAmbisonicEncoderProcessor : public BRTConnectivity::CBRTConnecti
 		*/
 		void UpdateCommand() {					
 						
-			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			//BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 			if (command.isNull() || command.GetCommand() == "") { return; }
 
 			if (IsToMyListener(command.GetStringParameter("listenerID"))) {

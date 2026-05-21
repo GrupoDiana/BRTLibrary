@@ -112,7 +112,8 @@ class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity/*, pu
 		void UpdateCommand() override {
 			std::lock_guard<std::mutex> l(mutex);
 			
-			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			//BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 			if (command.isNull()) { return; }			
 			
 			if (IsToMyListener(command.GetStringParameter("listenerID"))) { 

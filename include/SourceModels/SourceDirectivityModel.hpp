@@ -107,8 +107,8 @@ namespace BRTSourceModel {
 		* The SourceModelBase class already handles the common commands. Here you have to manage the specific ones.
 		*/
 		void UpdateCommandSource() override {
-			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
-
+			//BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
 				if (command.GetCommand() == "/source/enableDirectivity") {
 					if (command.GetBoolParameter("enable")) {

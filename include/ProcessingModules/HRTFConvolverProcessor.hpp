@@ -101,9 +101,12 @@ class CHRTFConvolverProcessor : public BRTConnectivity::CBRTConnectivity, public
 		void UpdateCommand() override {					
 			
 			std::lock_guard<std::mutex> l(mutex);
-			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
-			if (command.isNull() || command.GetCommand() == "") { return; }
+			//BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();			
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 
+
+			if (command.isNull() || command.GetCommand() == "") { return; }
+			
 			if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
 				if (command.GetCommand() == "/HRTFConvolver/enableSpatialization") {					
 					if (command.GetBoolParameter("enable")) { EnableSpatialization(); }

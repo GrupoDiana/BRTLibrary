@@ -332,7 +332,8 @@ namespace BRTEnvironmentModel {
 		*/
 		void UpdateCommand() override {
 			
-			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			//BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 			if (command.isNull() || command.GetCommand() == "") {
 				return;
 			}
