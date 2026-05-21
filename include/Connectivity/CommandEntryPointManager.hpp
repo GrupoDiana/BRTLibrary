@@ -36,13 +36,14 @@ namespace BRTConnectivity {
          * @brief This method will be called when a command has been received at command entry point
          * @param entryPointID Not needed
         */
-        virtual void UpdateFromCommandEntryPoint(std::string entryPointID) = 0;
+        virtual void UpdateFromCommandEntryPoint(const std::string& entryPointID) = 0;
 
 
         void CreateCommandEntryPoint(/*std::string entryPointID = "command", int _multiplicity = 1*/) {
             std::string entryPointID = static_cast<std::string>(Common::COMMAND_ENTRY_POINT_ID);
             int _multiplicity = 1;
-			commandsEntryPoint = std::make_shared<BRTConnectivity::CEntryPointCommand>(std::bind(&CCommandEntryPointManager::UpdateFromCommandEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+			//commandsEntryPoint = std::make_shared<BRTConnectivity::CEntryPointCommand>(std::bind(&CCommandEntryPointManager::UpdateFromCommandEntryPoint, this, std::placeholders::_1), entryPointID, _multiplicity);
+			commandsEntryPoint = std::make_shared<BRTConnectivity::CEntryPointCommand>(std::bind(&CCommandEntryPointManager::AddCommandToBeProcessed, this, std::placeholders::_1), entryPointID, _multiplicity);
         }
 
         void connectCommandEntryTo(std::shared_ptr<BRTConnectivity::CExitPointCommand> _exitPoint) {
@@ -67,13 +68,40 @@ namespace BRTConnectivity {
             //}
         }
 
-        std::shared_ptr<BRTConnectivity::CEntryPointCommand> GetCommandEntryPoint() {
-            return commandsEntryPoint;
-        }
+        // TODO: I don't think this is working; I've come across a case where the commands are being overwritten and not processed.
+        BRTConnectivity::CCommand GetLastReceivedCommand() {
+            if (commandsStack.size() > 0) {
+                auto command = commandsStack.top();
+                commandsStack.pop();
+                return command;
+            }
+            else {
+                return CCommand();
+            }
+        }    
+
+        /*std::shared_ptr<BRTConnectivity::CEntryPointCommand> GetCommandEntryPoint() {
+			return commandsEntryPoint;
+		}*/
     
     private:
-		std::shared_ptr<BRTConnectivity::CEntryPointCommand> commandsEntryPoint;
 
+		void AddCommandToBeProcessed(const std::string& _entryPointID) {           
+            BRTConnectivity::CCommand command = commandsEntryPoint->GetData();
+			//commandsEntryPoint->reset();
+			if (!command.isNull()) {
+				commandsStack.push(command);
+				UpdateFromCommandEntryPoint(_entryPointID);
+			}
+		}
+
+        std::shared_ptr<BRTConnectivity::CEntryPointCommand> GetCommandEntryPoint() {
+			return commandsEntryPoint;
+	    }
+
+        std::stack<BRTConnectivity::CCommand> commandsStack; // We need to process all the commands received
+
+		std::shared_ptr<BRTConnectivity::CEntryPointCommand> commandsEntryPoint;
     };
 }
 #endif
