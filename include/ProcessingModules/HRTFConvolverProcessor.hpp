@@ -100,31 +100,15 @@ class CHRTFConvolverProcessor : public BRTConnectivity::CBRTConnectivity, public
 
 		void UpdateCommand() override {					
 			
-			std::lock_guard<std::mutex> l(mutex);
-			//BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();			
+			std::lock_guard<std::mutex> l(mutex);						
 			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 
-
-			if (command.isNull() || command.GetCommand() == "") { return; }
-			
-			if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
-				if (command.GetCommand() == "/HRTFConvolver/enableSpatialization") {					
-					if (command.GetBoolParameter("enable")) { EnableSpatialization(); }
-					else { DisableSpatialization(); }
-				}
-				else if (command.GetCommand() == "/HRTFConvolver/enableInterpolation") {					
-					if (command.GetBoolParameter("enable")) { EnableInterpolation(); }
-					else { DisableInterpolation(); }
-				}
-				else if (command.GetCommand() == "/HRTFConvolver/resetBuffers") {
-					ResetSourceConvolutionBuffers();					
-				}
-			}
+			if (command.isNull() || command.GetCommand() == "") { return; }						
 			std::string commandSourceID = command.GetStringParameter("sourceID");
 			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
 
 			if (commandSourceID == mySourceID) {
-				if (command.GetCommand() == "/source/resetBuffers") {
+				if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_STOP) {
 					ResetSourceConvolutionBuffers();
 				}
 			}

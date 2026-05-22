@@ -80,31 +80,34 @@ namespace BRTProcessing {
 		void UpdateCommand() {					
 			
 			std::lock_guard<std::mutex> l(mutex);
-			//BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			
 			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 			if (command.isNull() || command.GetCommand() == "") { return; }
 
-			if (IsToMyListener(command.GetStringParameter("listenerID"))) { 				
-				if (command.GetCommand() == "/ambisonicsDomianConvoler/resetBuffers") {
-					ResetChannelsConvolutionBuffers();
-				}
+			// Check overall commands
+			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_STOP) {
+				ResetChannelsConvolutionBuffers();
+				ResetMixBuffers();
 			}
-
+			
+			// Check if the command is for this processor
 			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
-				if (command.GetCommand() == "/source/resetBuffers") {
+				if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_STOP) {
 					ResetChannelsConvolutionBuffers();
 				}
 			}
 		} 
-
-		////void SetEar(Common::T_ear _ear) { CAmbisonicDomainConvolver::SetEar(_ear);	}
-		//void SetAmbisonicOrder(int _ambisonicOrder) { CAmbisonicDomainConvolver::SetAmbisonicOrder(_ambisonicOrder); }		
+		
 
     private:
        
 		mutable std::mutex mutex;				
 		std::vector<CMonoBuffer<float>> channelsBuffer;		// To store the mix of the ambisonic channels before doing the process.
 				
+
+		void ResetMixBuffers() {
+			channelsBuffer.clear();
+		}
 		/**
 		 * @brief Mix new channes with buffer channesl
 		 * @param inputChannels Vector of CMonoBuffer to be mixed with the buffer

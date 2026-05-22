@@ -256,7 +256,7 @@ namespace BRTListenerModel {
 		void UpdateCommand() override {						
 			// It is only executed if the listener model that derives from this one does not implement this method. 
 			BRTConnectivity::CCommand command = GetLastReceivedCommand();			
-			if (command.GetCommand() == "/resetAllBuffers") {
+			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_STOP) {
 				ResetMixerBuffers();
 			}
 		}

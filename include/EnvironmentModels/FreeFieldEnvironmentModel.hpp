@@ -332,50 +332,53 @@ namespace BRTEnvironmentModel {
 		*/
 		void UpdateCommand() override {
 			
-			//BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			
 			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 			if (command.isNull() || command.GetCommand() == "") {
 				return;
 			}
-									
-			std::string listenerModelID = GetIDEntryPoint("listenerModelID")->GetData();
-			std::shared_ptr<BRTBase::CListener> listener = GetListenerPointer();
-			if (listener == nullptr) return;
-			std::string listenerID = GetListenerPointer()->GetID();
-
-			if (this->GetModelID() == command.GetStringParameter("environmentModelID")) {
-				if (command.GetCommand() == "/environment/enableModel") {
-					if (command.GetBoolParameter("enable")) {
-						EnableModel();
-					} else {
-						DisableModel();
-					}
-				} else if (command.GetCommand() == "/environment/enableDirectPath") {
-					if (command.GetBoolParameter("enable")) {
-						EnableDirectPath();
-					} else {
-						DisableDirectPath();
-					}
-				} else if (command.GetCommand() == "/environment/enableReverbPath") {
-					if (command.GetBoolParameter("enable")) {
-						EnableReverbPath();
-					} else {
-						DisableReverbPath();
-					}
-				} else if (command.GetCommand() == "/environment/resetBuffers") {
-					ResetProcessorBuffers();
-				}
+			
+			// Check overall commands
+			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_STOP) {
+				ResetProcessorBuffers();
 			}
 
-			if (listenerID == command.GetStringParameter("listenerID")) {
-				if (command.GetCommand() == "/listener/resetBuffers") {
-					ResetProcessorBuffers();
-				}
-			}
+			// Check environment specific commands for this model instance
+			CheckEnvironmentCommands(GetModelID(), command);					
 		}
 
 	private:
 		
+		void CheckEnvironmentCommands(const std::string & _modelID, BRTConnectivity::CCommand & command) {
+			if (_modelID != command.GetStringParameter("environmentModelID")) {
+				return;
+			}
+
+			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_ENABLE_MODEL) {
+				if (command.GetBoolParameter("enable")) {
+					EnableModel();
+				} else {
+					DisableModel();
+				}
+			} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_ENVIRONMENT_ENABLE_DISTANCE_ATTENUATION) {
+				if (command.GetBoolParameter("enable")) {
+					EnableDistanceAttenuation();
+				} else {
+					DisableDistanceAttenuation();
+				}
+			} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_ENVIRONMENT_ENABLE_PROPAGATION_DELAY) {
+				if (command.GetBoolParameter("enable")) {
+					EnablePropagationDelay();
+				} else {
+					DisablePropagationDelay();
+				}				
+			} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_ENVIRONMENT_SET_DISTANCE_ATTENUATION_FACTOR) {
+				if (command.GetFloatParameter("distanceAttenuationFactorDB") != 0) {
+					SetDistanceAttenuationFactor(command.GetFloatParameter("distanceAttenuationFactorDB"));
+				}
+			}
+		}
+
 		/**
 		 * @brief Set the gain of the model
 		 * @param _gain 

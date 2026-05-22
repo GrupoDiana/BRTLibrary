@@ -338,32 +338,41 @@ namespace BRTEnvironmentModel {
 		 * @brief Implementation of the virtual method for processing the received commands
 		*/
 		void UpdateCommand() override{
-			//std::lock_guard<std::mutex> l(mutex);
-			//BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			//std::lock_guard<std::mutex> l(mutex);			
 			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 			if (command.isNull() || command.GetCommand() == "") { return; }
-						
-			if (this->GetModelID() == command.GetStringParameter("environmentModelID")) {
-				if (command.GetCommand() == "/environment/enableModel") {
-					if (command.GetBoolParameter("enable")) { EnableModel();} 
-					else {	DisableModel();	}
-				} else if (command.GetCommand() == "/environment/enableDirectPath") {
-					if (command.GetBoolParameter("enable")) { EnableDirectPath(); } 
-					else {	DisableDirectPath(); }
-				} else if (command.GetCommand() == "/environment/enableReverbPath") {
-					if (command.GetBoolParameter("enable")) {	EnableReverbPath();	} 
-					else {	DisableReverbPath();}
-				} else if (command.GetCommand() == "/environment/resetBuffers") {
-					ResetProcessorBuffers();
-				}
-			}
-			if (command.GetCommand() == "/resetAllBuffers") {
+
+			// Check overall commands
+			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_STOP) {
 				ResetProcessorBuffers();
 			}
+
+			// Check environment specific commands for this model instance
+			CheckEnvironmentCommands(GetModelID(), command);						
 		}
 
 
 	private:
+
+		void CheckEnvironmentCommands(const std::string & _modelID, BRTConnectivity::CCommand & command) {
+			if (_modelID != command.GetStringParameter("environmentModelID")) {
+				return;
+			}
+
+			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_ENABLE_MODEL) {
+				if (command.GetBoolParameter("enable")) {
+					EnableModel();
+				} else {
+					DisableModel();
+				}			
+			} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_ENVIRONMENT_ENABLE_REVERB_PATH) {
+				if (command.GetBoolParameter("enable")) {
+					EnableReverbPath();
+				} else {
+					DisableReverbPath();
+				}
+			}
+		}
 
 		/**
 		 * @brief Set the gain of the model

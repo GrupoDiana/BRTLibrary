@@ -119,7 +119,11 @@ namespace BRTBilateralFilter {
 		}
 
 		void UpdateCommand() override {			
-			
+			// It is only executed if the listener model that derives from this one does not implement this method.
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();
+			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_STOP) {
+				ResetMixerBuffers();
+			}
 		}
 
 
@@ -141,8 +145,11 @@ namespace BRTBilateralFilter {
 		// Attributes
 		Common::CGlobalParameters globalParameters;	
 	
-	protected:
-
+	protected:	
+		void ResetMixerBuffers() {
+			leftChannelMixer.ResetBuffer();
+			rightChannelMixer.ResetBuffer();
+		}
 		void SendMyID() { GetIDExitPoint()->sendData(modelID); }
 		
 		Common::CAudioMixer leftChannelMixer;

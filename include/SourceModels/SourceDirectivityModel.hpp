@@ -24,6 +24,8 @@
 #define _SOUND_SOURCE_DIRECTIVITY_MODEL_HPP
 
 #include <vector>
+#include <memory>
+#include <Connectivity/CommandList.hpp>
 #include <SourceModels/SourceModelBase.hpp>
 #include <ServiceModules/ServicesBase.hpp>
 #include <ProcessingModules/DirectivityConvolver.hpp>
@@ -106,19 +108,24 @@ namespace BRTSourceModel {
 		* @brief Implementation of the virtual method for processing the received commands
 		* The SourceModelBase class already handles the common commands. Here you have to manage the specific ones.
 		*/
-		void UpdateCommandSource() override {
-			//BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+		void UpdateCommandSource() override {			
 			BRTConnectivity::CCommand command = GetLastReceivedCommand();
-			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
-				if (command.GetCommand() == "/source/enableDirectivity") {
+
+			// Check overall commands
+			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_STOP) {
+				ResetSourceConvolutionBuffers();				
+			}
+			// Check source specific commands			
+			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {				
+				if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_STOP) {
+					ResetSourceConvolutionBuffers();
+				} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_ENABLE_DIRECTIVITY) {
 					if (command.GetBoolParameter("enable")) {
 						EnableSourceDirectionality();
 					} else {
 						DisableSourceDirectionality();
 					}
-				} else if (command.GetCommand() == "/source/resetBuffers") {
-					ResetSourceConvolutionBuffers();
-				}
+				} 
 			}
 		}
 

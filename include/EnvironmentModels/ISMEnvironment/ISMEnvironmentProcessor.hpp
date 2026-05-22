@@ -251,7 +251,7 @@ namespace BRTEnvironmentModel {
 				std::string _virtualSourceId = GetBRTVirtualSourceID(i);
 
 				nlohmann::json j;
-				j["command"] = "/source/resetBuffers";
+				j["command"] = BRTConnectivity::CCommandList::COMMAND_SOURCE_STOP;
 				j["sourceID"] = _virtualSourceId;
 				brtManager->ExecuteCommand(j.dump());
 			}
@@ -263,24 +263,24 @@ namespace BRTEnvironmentModel {
 		*/
 		void UpdateCommand() override {
 
-			BRTConnectivity::CCommand command = GetLastReceivedCommand();
-			if (command.isNull() || command.GetCommand() == "") {
-				return;
-			}
+		//	BRTConnectivity::CCommand command = GetLastReceivedCommand();
+		//	if (command.isNull() || command.GetCommand() == "") {
+		//		return;
+		//	}
 
-			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
-			std::string commandSourceID = command.GetStringParameter("sourceID");
-			if (mySourceID == commandSourceID) {								
-				// Propagete the command to the virtual sources
-				for (int i = 0; i < numberOfImageSources; i++) {
-					std::string _virtualSourceId = GetBRTVirtualSourceID(i);
-					nlohmann::json j;
-					j["command"] = command.GetCommand();
-					j["sourceID"] = _virtualSourceId;
-					brtManager->ExecuteCommand(j.dump());
-				}
-				ResetWaveguideBuffers();
-			}				
+		//	std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
+		//	std::string commandSourceID = command.GetStringParameter("sourceID");
+		//	if (mySourceID == commandSourceID) {								
+		//		// Propagete the command to the virtual sources
+		//		for (int i = 0; i < numberOfImageSources; i++) {
+		//			std::string _virtualSourceId = GetBRTVirtualSourceID(i);
+		//			nlohmann::json j;
+		//			j["command"] = command.GetCommand();
+		//			j["sourceID"] = _virtualSourceId;
+		//			brtManager->ExecuteCommand(j.dump());
+		//		}
+		//		ResetWaveguideBuffers();
+		//	}				
 		}
 		
 

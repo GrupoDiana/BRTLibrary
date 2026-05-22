@@ -233,7 +233,15 @@ namespace BRTBilateralFilter {
 		}	
 		
 		void UpdateCommand() override { 
-		
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();
+			if (command.isNull() || command.GetCommand() == "") {
+				return;
+			}
+			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_STOP) {
+				
+				sosFilter.ResetBuffers();
+				ResetMixerBuffers();
+			}
 		}
 		
 		bool FiltersSetup() {			

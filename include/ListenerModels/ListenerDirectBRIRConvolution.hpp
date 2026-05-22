@@ -330,38 +330,51 @@ namespace BRTListenerModel {
 		 * @brief Implementation of the virtual method for processing the received commands
 		*/
 		void UpdateCommand() override {
-			std::lock_guard<std::mutex> l(mutex);
-			//BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			std::lock_guard<std::mutex> l(mutex);			
 			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 			if (command.isNull() || command.GetCommand() == "") { return; }
 
-			if (listenerID == command.GetStringParameter("listenerID")) {				
-				if (command.GetCommand() == "/listener/enableSpatialization") {
-						if (command.GetBoolParameter("enable")) { EnableSpatialization(); }
-						else { DisableSpatialization(); }
-				}
-				else if (command.GetCommand() == "/listener/enableInterpolation") {
-					if (command.GetBoolParameter("enable")) { EnableInterpolation(); }
-					else { DisableInterpolation(); }
-				}
-				
-				else if (command.GetCommand() == "/listener/enableITD") {
-					if (command.GetBoolParameter("enable")) { EnableITDSimulation(); }
-					else { DisableITDSimulation(); }
-				}
-				
-				else if (command.GetCommand() == "/listener/resetBuffers") {
-					ResetProcessorBuffers();
-				}
-			}		
-			if (command.GetCommand() == "/resetAllBuffers") {
+			// Check overall commands
+			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_STOP) {
 				ResetProcessorBuffers();
 				ResetMixerBuffers();
 			}
+			
+			// Check if the command is for this listener model
+			CheckListenerCommands(GetModelID(), command);
+			// Check if the command is for the listener which this listener model is connected to
+			std::string listenerID = GetIDEntryPoint("listenerID")->GetData();
+			CheckListenerCommands(listenerID, command);			
+		}
+		
+	private:
+
+		void CheckListenerCommands(const std::string & _listenerID, BRTConnectivity::CCommand & command) {
+			if (_listenerID == command.GetStringParameter("listenerID")) {
+				if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_LISTENER_ENABLE_SPATIALIZATION) {
+					if (command.GetBoolParameter("enable")) {
+						EnableSpatialization();
+					} else {
+						DisableSpatialization();
+					}
+				} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_LISTENER_ENABLE_INTERPOLATION) {
+					if (command.GetBoolParameter("enable")) {
+						EnableInterpolation();
+					} else {
+						DisableInterpolation();
+					}
+				}
+
+				else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_LISTENER_ENABLE_ITD) {
+					if (command.GetBoolParameter("enable")) {
+						EnableITDSimulation();
+					} else {
+						DisableITDSimulation();
+					}
+				}
+			}
 		}
 
-
-	private:
 
 		/**
 		 * @brief Update Configuration in all source processor
@@ -481,7 +494,7 @@ namespace BRTListenerModel {
 		// Attributes
 		/////////////////
 		mutable std::mutex mutex;									// To avoid access collisions
-		std::string listenerID;										// Store unique listener ID		
+		//std::string listenerID;										// Store unique listener ID		
 		std::shared_ptr<BRTServices::CServicesBase>	listenerHRBRIR;	// RBRIR of listener		
 		std::vector< CSourceProcessors> sourcesConnectedProcessors;	// Store the sources connected to this listener		
 

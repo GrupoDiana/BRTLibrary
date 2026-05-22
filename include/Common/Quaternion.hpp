@@ -347,18 +347,69 @@ namespace Common {
 		*	\retval pitch pitch angle in radians
 		*   \eh Nothing is reported to the error handler.
 		*/		
-		float GetPitch()
-		{
-			return std::asin(-2.0 * (x * z - w * y));
+		//float GetPitch()
+		//{
+		//	return std::asin(-2.0 * (x * z - w * y));
+		//}
+
+		///** \brief Get the roll angle in radians
+		//*	\retval roll roll angle in radians
+		//*   \eh Nothing is reported to the error handler.
+		//*/		
+		//float GetRoll()
+		//{
+		//	return std::atan2(2.0 * (x * y + w * z), w * w + x * x - y * y - z * z);
+		//}
+
+		// Get the pitch angle
+		float GetPitch() {
+			// Get vector part of quaternion and extract up, forward and right axis values
+			CVector3 vectorPart = CVector3(x, y, z);
+			float up = vectorPart.GetAxis(UP_AXIS);
+			float right = vectorPart.GetAxis(RIGHT_AXIS);
+			float forward = vectorPart.GetAxis(FORWARD_AXIS);
+			float down = -up;
+
+			// pitch (right-axis rotation)
+			double t2 = 2.0f * (w * right - down * forward);
+			t2 = t2 > 1.0f ? 1.0f : t2;
+			t2 = t2 < -1.0f ? -1.0f : t2;
+			return std::asin(t2);
+
+			//return std::asin(-2.0*(x*z - w*y));
+		}
+		//////////////////////////////////////////////
+
+		// Get the roll angle
+		float GetRoll() {
+			// Get vector part of quaternion and extract up, forward and right axis values
+			CVector3 vectorPart = CVector3(x, y, z);
+			float up = vectorPart.GetAxis(UP_AXIS);
+			float right = vectorPart.GetAxis(RIGHT_AXIS);
+			float forward = vectorPart.GetAxis(FORWARD_AXIS);
+			float down = -up;
+
+			// roll (forward-axis rotation)
+			double t0 = 2.0f * (w * forward + right * down);
+			double t1 = 1.0f - 2.0f * (forward * forward + right * right);
+			return std::atan2(t0, t1);
+
+			//return std::atan2(2.0*(x*y + w*z), w*w + x*x - y*y - z*z);
 		}
 
-		/** \brief Get the roll angle in radians
-		*	\retval roll roll angle in radians
-		*   \eh Nothing is reported to the error handler.
-		*/		
-		float GetRoll()
-		{
-			return std::atan2(2.0 * (x * y + w * z), w * w + x * x - y * y - z * z);
+		//////////////////////////////////////////////
+
+		// Get the yaw angle
+		float GetYaw() {
+			CVector3 vectorPart = CVector3(x, y, z);
+			float up = vectorPart.GetAxis(UP_AXIS);
+			float right = vectorPart.GetAxis(RIGHT_AXIS);
+			float forward = vectorPart.GetAxis(FORWARD_AXIS);
+			float down = -up;
+			double t3 = 2.0f * (w * down + forward * right);
+			double t4 = 1.0f - 2.0f * (right * right + down * down);
+
+			return std::atan2(t3, t4);
 		}
 
 		static CQuaternion ZERO() { return CQuaternion(0.0f, 0.0f, 0.0f, 0.0f); }
