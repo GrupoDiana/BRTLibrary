@@ -49,7 +49,8 @@ namespace BRTEnvironmentModel {
 			 * @brief Remove processor from BRT
 			 * @param brtManager brtManager pointer
 			 */
-			void Clear(BRTBase::CBRTManager* brtManager) {
+			void Clear(BRTBase::CBRTManager* brtManager) {				
+				SDNProcessor->RemoveBRTVirtualSources();
 				sourceID = "";
 				brtManager->RemoveProcessor(SDNProcessor);				
 			}

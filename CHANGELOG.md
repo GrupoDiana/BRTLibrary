@@ -5,6 +5,11 @@ All notable changes to the Binaural Rendering Toolbox (BRT) will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.4] - 2026-05-25
+
+### Fixed
+- The SDN environment model did not properly delete virtual sources when the original source was deleted.  In a use case where sources with the same ID were deleted and created, the system crashed.
+
 ## [3.0.3] - 2026-05-22
 
 ### Added
