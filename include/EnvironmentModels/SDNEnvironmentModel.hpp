@@ -412,30 +412,16 @@ namespace BRTEnvironmentModel {
 		}
 
 
-		/**
-		 * @brief Update room all walls absortion. Called from father class
-		 */
-		/*void UpdateRoomAllWallsAbsortion() {			
-			const std::vector<Common::CWall>& walls = room->GetWalls();
+		void UpdateRoomAllWallsAbsortion(CSDNProcessors & _sdnProcessor) { 
+			if (room == nullptr) return;	
+			const std::vector<BRTServices::CWall> & walls = room->GetWalls();
 			for (int _wallIndex = 0; _wallIndex < walls.size(); _wallIndex++) {
-				UpdateRoomWallAbsortion(ToSDNWallIndex(_wallIndex));				
-			}
-		}*/
-
-		/**
-		 * @brief Update room wall absortion. Called from father class
-		 * @param _wallIndex Pointer to the source
-		*/
-		//void UpdateRoomWallAbsortion(int _wallIndex) {
-		//	std::lock_guard<std::mutex> l(mutex);
-		//	std::vector<float> absortionBands = room->GetWalls().at(_wallIndex).GetAbsortionBand();
-
-		//	//The SDN has one less band, it does not have the lowest frequency band.
-		//	std::vector<float> _sdnWallAbsortion(absortionBands.begin() + 1, absortionBands.end());
-		//	for (auto & it : sourcesConnectedProcessors) {
-		//		it.SetWallAbsortion(ToSDNWallIndex(_wallIndex), _sdnWallAbsortion);
-		//	}
-		//}
+				std::vector<float> absortionBands = walls.at(_wallIndex).GetAbsortionBand();
+				//The SDN has one less band, it does not have the lowest frequency band.
+				std::vector<float> _sdnWallAbsortion(absortionBands.begin() + 1, absortionBands.end());				
+				_sdnProcessor.SetWallAbsortion(ToSDNWallIndex(_wallIndex), _sdnWallAbsortion);				
+			}		
+		}
 
 		/**
 		 * @brief 
@@ -530,6 +516,7 @@ namespace BRTEnvironmentModel {
 					roomDimensions = Common::CVector3(1.0f, 1.0f, 1.0f);				
 				}
 				_newSDNProcessors.SetupRoom(roomDimensions, roomCentre);
+				UpdateRoomAllWallsAbsortion(_newSDNProcessors);
 				SetSourceProcessorsConfiguration(_newSDNProcessors);
 				sourcesConnectedProcessors.push_back(std::move(_newSDNProcessors));
 				return true;
