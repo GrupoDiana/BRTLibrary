@@ -53,7 +53,7 @@ public:
 		, B { 0 }
 		, C { 0 }
 		, D { 0 }
-		, absortionBands { std::vector<float> (NUM_BAND_ABSORTION, 0.0) }
+		, absortionBands { std::vector<float> (NUM_BAND_ABSORTION, 0.01) }
 		, active { true }
 		, polygon { std::vector<Common::CVector3>() } {
 		//Wall purely reflective by default
