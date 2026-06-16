@@ -1,4 +1,4 @@
-﻿/**
+/**
 * \class CListenerEnviromentBRIRModel
 *
 * \brief Declaration of CListenerEnviromentBRIRModel class
@@ -412,8 +412,8 @@ namespace BRTListenerModel {
 			bool control = true;
 			// Connect soundsource to listener, just in case it is a directivity source		
 			if (_source->GetSourceType() == BRTSourceModel::Directivity) {
-				control = control && brtManager->ConnectModuleTransform(this, _source, "listenerPosition");
-			}			
+				control = control && brtManager->ConnectModuleTransform(_listener, _source, "listenerPosition");
+			}
 			// Create new set of processors
 			CSourceProcessors _newSourceProcessors(_source->GetID(), brtManager);			
 			//_newSourceProcessors.distanceAttenuatorProcessor->Setup(distanceAttenuationFactorDB, globalParameters.referenceAttenuationDistance);
@@ -480,7 +480,7 @@ namespace BRTListenerModel {
 				control = control && brtManager->DisconnectModuleTransform(_listener, it->distanceAttenuatorProcessor, "listenerPosition");			
 				
 				if (_source->GetSourceType() == BRTSourceModel::Directivity) {
-					control = control && brtManager->DisconnectModuleTransform(this, _source, "listenerPosition");								
+					control = control && brtManager->DisconnectModuleTransform(_listener, _source, "listenerPosition");								
 				}				
 				
 				it->Clear(brtManager);
