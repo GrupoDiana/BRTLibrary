@@ -262,7 +262,11 @@ namespace BRTEnvironmentModel {
 		void UpdateCommand() override {
 		}
 		
-
+		void RemoveBRTVirtualSources() {
+			for (int i = 0; i < SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT; i++) {
+				RemoveVirtualSource(GetBRTVirtualSourceID(i));
+			}
+		}
 	private:
 		
 		/**
@@ -341,6 +345,9 @@ namespace BRTEnvironmentModel {
 				CreateVirtualSource(GetBRTVirtualSourceID(i), originalSourceID);
 			}
 		}
+
+		
+
 
 		/**
 		* @brief Initialize the environment variables, required before processing. Room is always positioned

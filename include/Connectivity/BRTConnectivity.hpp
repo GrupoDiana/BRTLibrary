@@ -46,11 +46,8 @@ namespace BRTConnectivity {
          * @brief In this method, notification is received that a new command is received at command entry point
          * @param entryPointID 
         */
-		void UpdateFromCommandEntryPoint(std::string entryPointID) override {
-			BRTConnectivity::CCommand _command = GetCommandEntryPoint()->GetData();
-			if (!_command.isNull()) {
-				UpdateCommand();
-			}
+		void UpdateFromCommandEntryPoint(const std::string& entryPointID) override {			
+			UpdateCommand();			
 		}
 
 	};

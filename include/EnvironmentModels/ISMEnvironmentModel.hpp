@@ -109,9 +109,9 @@ namespace BRTEnvironmentModel {
 			 * @param _listener listener model to disconnect
 			 * @return TRUE if the disconnection is successful
 			 */
-			bool DisconnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listener) {
+			/*bool DisconnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listener) {
 				return (ISMProcessor->DisconnectToListenerModel(_listener));
-			}
+			}*/
 			
 			/**
 			 * @brief Set processor enable or disable
@@ -149,14 +149,16 @@ namespace BRTEnvironmentModel {
 			size_t GetNumberOfVisibleImageSources() {
 				return ISMProcessor->GetNumberOfVisibleImageSources();
 			}
-
+			
+			bool DisconnectFromListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
+				return ISMProcessor->DisconnectFromListenerModel(_listenerModel);
+			}
 			/**
 			 * @brief Reset processor buffers
 			*/
 			void ResetBuffers() {			
 				ISMProcessor->ResetProcessBuffers();
-			}
-			
+			}			
 
 			// Attributes
 			std::string sourceID;
@@ -329,36 +331,48 @@ namespace BRTEnvironmentModel {
 			std::lock_guard<std::mutex> l(mutex);
 			for (auto& it : sourcesConnectedProcessors) {
 				it.ResetBuffers();
-			}
+			}		
 		}
 
 		/**
 		 * @brief Implementation of the virtual method for processing the received commands
 		*/
 		void UpdateCommand() override{
-			//std::lock_guard<std::mutex> l(mutex);
-			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();						
+			//std::lock_guard<std::mutex> l(mutex);			
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 			if (command.isNull() || command.GetCommand() == "") { return; }
-			
 
-			if (this->GetModelID() == command.GetStringParameter("environmentModelID")) {
-				if (command.GetCommand() == "/environment/enableModel") {
-					if (command.GetBoolParameter("enable")) { EnableModel();} 
-					else {	DisableModel();	}
-				} else if (command.GetCommand() == "/environment/enableDirectPath") {
-					if (command.GetBoolParameter("enable")) { EnableDirectPath(); } 
-					else {	DisableDirectPath(); }
-				} else if (command.GetCommand() == "/environment/enableReverbPath") {
-					if (command.GetBoolParameter("enable")) {	EnableReverbPath();	} 
-					else {	DisableReverbPath();}
-				} else if (command.GetCommand() == "/environment/resetBuffers") {
-					ResetProcessorBuffers();
-				}
-			}			
+			// Check overall commands
+			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_STOP) {
+				ResetProcessorBuffers();
+			}
+
+			// Check environment specific commands for this model instance
+			CheckEnvironmentCommands(GetModelID(), command);						
 		}
 
 
 	private:
+
+		void CheckEnvironmentCommands(const std::string & _modelID, BRTConnectivity::CCommand & command) {
+			if (_modelID != command.GetStringParameter("environmentModelID")) {
+				return;
+			}
+
+			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_ENABLE_MODEL) {
+				if (command.GetBoolParameter("enable")) {
+					EnableModel();
+				} else {
+					DisableModel();
+				}			
+			} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_ENVIRONMENT_ENABLE_REVERB_PATH) {
+				if (command.GetBoolParameter("enable")) {
+					EnableReverbPath();
+				} else {
+					DisableReverbPath();
+				}
+			}
+		}
 
 		/**
 		 * @brief Set the gain of the model
@@ -589,7 +603,7 @@ namespace BRTEnvironmentModel {
 			std::string _sourceID = _source->GetID();
 			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CISMProcessors & sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
 			if (it != sourcesConnectedProcessors.end()) {
-				bool control = it->DisconnectToListenerModel(_listenerModel);
+				bool control = it->DisconnectFromListenerModel(_listenerModel);				
 				control = control && brtManager->DisconnectModulesSamples(_source, "samples", it->ISMProcessor, "inputSamples");
 				control = control && brtManager->DisconnectModuleID(this, it->ISMProcessor, "listenerID");
 				control = control && brtManager->DisconnectModuleTransform(_listener, it->ISMProcessor, "listenerPosition");

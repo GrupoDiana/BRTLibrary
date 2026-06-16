@@ -95,25 +95,18 @@ class CBilateralAmbisonicEncoderProcessor : public BRTConnectivity::CBRTConnecti
 		*/
 		void UpdateCommand() {					
 						
-			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			//BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 			if (command.isNull() || command.GetCommand() == "") { return; }
 
-			if (IsToMyListener(command.GetStringParameter("listenerID"))) {
-				
-				if (command.GetCommand() == "/bilateralAmbisonicsEncoder/enableNearFieldEffect") {
-					if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
-					else { DisableNearFieldEffect(); }
-				}
-				else if (command.GetCommand() == "/bilateralAmbisonicsEncoder/enableBilateralAmbisonics") {
-					if (command.GetBoolParameter("enable")) { EnableITDSimulation(); }
-					else { DisableITDSimulation(); }
-				}
-				else if (command.GetCommand() == "/bilateralAmbisonicsEncoder/resetBuffers") {
-					ResetBuffers();
-				}
+			// Check overall commands
+			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_STOP) {
+				ResetBuffers();				
 			}
+
+			// Check if the command is for this processor
 			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
-				if (command.GetCommand() == "/source/resetBuffers") {
+				if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_STOP) {
 					ResetBuffers();
 				}
 			}

@@ -100,7 +100,9 @@ namespace BRTSourceModel {
 		 * @brief Get the source ID
 		 * @return Source ID
 		 */ 
-		std::string GetID() { return sourceID; }
+		std::string GetID() { 
+			return sourceID; 
+		}
 		
 		/**
 		 * @brief Get wich type of source is
@@ -149,7 +151,8 @@ namespace BRTSourceModel {
 		void UpdateCommand() override {
 
 			std::lock_guard<std::mutex> l(mutex);
-			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			//BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 
 			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
 				if (command.GetCommand() == "/source/location") {

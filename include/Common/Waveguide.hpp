@@ -141,6 +141,7 @@ namespace Common {
 			SetCirculaBufferCapacity(0);
 			sourcePositionsBuffer.clear(); // reset the source position buffer
 			mostRecentBuffer.clear();
+			if (propagationFilter != nullptr) propagationFilter->ResetBuffers(); // Reset the filter buffers	
 			// Go back to previous state
 			enablePropagationDelay = previousPropagationDelayState;		
 		}

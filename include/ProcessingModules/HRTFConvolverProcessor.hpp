@@ -100,26 +100,15 @@ class CHRTFConvolverProcessor : public BRTConnectivity::CBRTConnectivity, public
 
 		void UpdateCommand() override {					
 			
-			std::lock_guard<std::mutex> l(mutex);
-			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
-			if (command.isNull() || command.GetCommand() == "") { return; }
+			std::lock_guard<std::mutex> l(mutex);						
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 
-			if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
-				if (command.GetCommand() == "/HRTFConvolver/enableSpatialization") {					
-					if (command.GetBoolParameter("enable")) { EnableSpatialization(); }
-					else { DisableSpatialization(); }
-				}
-				else if (command.GetCommand() == "/HRTFConvolver/enableInterpolation") {					
-					if (command.GetBoolParameter("enable")) { EnableInterpolation(); }
-					else { DisableInterpolation(); }
-				}
-				else if (command.GetCommand() == "/HRTFConvolver/resetBuffers") {
-					ResetSourceConvolutionBuffers();					
-				}
-			}
+			if (command.isNull() || command.GetCommand() == "") { return; }						
+			std::string commandSourceID = command.GetStringParameter("sourceID");
+			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
 
-			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
-				if (command.GetCommand() == "/source/resetBuffers") {
+			if (commandSourceID == mySourceID) {
+				if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_STOP) {
 					ResetSourceConvolutionBuffers();
 				}
 			}
@@ -129,7 +118,7 @@ class CHRTFConvolverProcessor : public BRTConnectivity::CBRTConnectivity, public
        
 		mutable std::mutex mutex;
 
-		bool IsToMySoundSource(std::string _sourceID) {
+		bool IsToMySoundSource(const std::string& _sourceID) {
 			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
 			return mySourceID == _sourceID;
 		}

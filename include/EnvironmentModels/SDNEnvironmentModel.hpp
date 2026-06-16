@@ -49,7 +49,8 @@ namespace BRTEnvironmentModel {
 			 * @brief Remove processor from BRT
 			 * @param brtManager brtManager pointer
 			 */
-			void Clear(BRTBase::CBRTManager* brtManager) {
+			void Clear(BRTBase::CBRTManager* brtManager) {				
+				SDNProcessor->RemoveBRTVirtualSources();
 				sourceID = "";
 				brtManager->RemoveProcessor(SDNProcessor);				
 			}
@@ -280,29 +281,48 @@ namespace BRTEnvironmentModel {
 		*/
 		void UpdateCommand() override{
 			//std::lock_guard<std::mutex> l(mutex);
-			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();						
+			
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 			if (command.isNull() || command.GetCommand() == "") { return; }
 			
+			// Check overall commands
+			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_STOP) {
+				ResetProcessorBuffers();				
+			}
 
-			if (this->GetModelID() == command.GetStringParameter("environmentModelID")) {
-				if (command.GetCommand() == "/environment/enableModel") {
-					if (command.GetBoolParameter("enable")) { EnableModel();} 
-					else {	DisableModel();	}
-				} else if (command.GetCommand() == "/environment/enableDirectPath") {
-					if (command.GetBoolParameter("enable")) { EnableDirectPath(); } 
-					else {	DisableDirectPath(); }
-				} else if (command.GetCommand() == "/environment/enableReverbPath") {
-					if (command.GetBoolParameter("enable")) {	EnableReverbPath();	} 
-					else {	DisableReverbPath();}
-				} else if (command.GetCommand() == "/environment/resetBuffers") {
-					ResetProcessorBuffers();
-				}
-			}			
+			// Check environment specific commands for this model instance
+			CheckEnvironmentCommands(GetModelID(), command);			
 		}
 
 
 	private:
-
+		
+		void CheckEnvironmentCommands(const std::string & _modelID, BRTConnectivity::CCommand & command) { 
+			if (_modelID != command.GetStringParameter("environmentModelID")) {	
+				return;
+			}
+						
+			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_ENABLE_MODEL) {
+				if (command.GetBoolParameter("enable")) {
+					EnableModel();
+				} else {
+					DisableModel();
+				}
+			} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_ENVIRONMENT_ENABLE_DIRECT_PATH) {
+				if (command.GetBoolParameter("enable")) {
+					EnableDirectPath();
+				} else {
+					DisableDirectPath();
+				}
+			} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_ENVIRONMENT_ENABLE_REVERB_PATH) {
+				if (command.GetBoolParameter("enable")) {
+					EnableReverbPath();
+				} else {
+					DisableReverbPath();
+				}
+			}
+		}
+		
 		/**
 		 * @brief Set the gain of the model
 		 * @param _gain 
@@ -392,30 +412,16 @@ namespace BRTEnvironmentModel {
 		}
 
 
-		/**
-		 * @brief Update room all walls absortion. Called from father class
-		 */
-		/*void UpdateRoomAllWallsAbsortion() {			
-			const std::vector<Common::CWall>& walls = room->GetWalls();
+		void UpdateRoomAllWallsAbsortion(CSDNProcessors & _sdnProcessor) { 
+			if (room == nullptr) return;	
+			const std::vector<BRTServices::CWall> & walls = room->GetWalls();
 			for (int _wallIndex = 0; _wallIndex < walls.size(); _wallIndex++) {
-				UpdateRoomWallAbsortion(ToSDNWallIndex(_wallIndex));				
-			}
-		}*/
-
-		/**
-		 * @brief Update room wall absortion. Called from father class
-		 * @param _wallIndex Pointer to the source
-		*/
-		//void UpdateRoomWallAbsortion(int _wallIndex) {
-		//	std::lock_guard<std::mutex> l(mutex);
-		//	std::vector<float> absortionBands = room->GetWalls().at(_wallIndex).GetAbsortionBand();
-
-		//	//The SDN has one less band, it does not have the lowest frequency band.
-		//	std::vector<float> _sdnWallAbsortion(absortionBands.begin() + 1, absortionBands.end());
-		//	for (auto & it : sourcesConnectedProcessors) {
-		//		it.SetWallAbsortion(ToSDNWallIndex(_wallIndex), _sdnWallAbsortion);
-		//	}
-		//}
+				std::vector<float> absortionBands = walls.at(_wallIndex).GetAbsortionBand();
+				//The SDN has one less band, it does not have the lowest frequency band.
+				std::vector<float> _sdnWallAbsortion(absortionBands.begin() + 1, absortionBands.end());				
+				_sdnProcessor.SetWallAbsortion(ToSDNWallIndex(_wallIndex), _sdnWallAbsortion);				
+			}		
+		}
 
 		/**
 		 * @brief 
@@ -510,6 +516,7 @@ namespace BRTEnvironmentModel {
 					roomDimensions = Common::CVector3(1.0f, 1.0f, 1.0f);				
 				}
 				_newSDNProcessors.SetupRoom(roomDimensions, roomCentre);
+				UpdateRoomAllWallsAbsortion(_newSDNProcessors);
 				SetSourceProcessorsConfiguration(_newSDNProcessors);
 				sourcesConnectedProcessors.push_back(std::move(_newSDNProcessors));
 				return true;

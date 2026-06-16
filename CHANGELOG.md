@@ -5,6 +5,30 @@ All notable changes to the Binaural Rendering Toolbox (BRT) will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.5] - 2026-05-26
+-The SDN model did not set the absorption coefficients for the walls after deleting and creating sources.
+
+## [3.0.4] - 2026-05-25
+
+### Fixed
+- The SDN environment model did not properly delete virtual sources when the original source was deleted.  In a use case where sources with the same ID were deleted and created, the system crashed.
+
+## [3.0.3] - 2026-05-22
+
+### Added
+- New methods have been created to reset buffers at will in various classes.
+- A new class has been added to hold the library’s internal list of commands (CCommandList.hpp).
+
+### Changed
+- The mechanisms for managing buffer resets have been modified across all models and processors.
+- Refactoring of the library’s internal commands
+- The handling of the library’s internal commands has been reorganised. A queue management system has been added, designed to ensure that no commands are lost without being executed.
+
+### Fixed
+- The ISM environment model did not properly delete virtual sources when the original source was deleted. In a use case where sources were being deleted and created, this resulted in the appearance of unnecessary virtual sources that overloaded the system. 
+- The issue of spurious data being reproduced (old samples remaining in the buffers) when pausing and then resuming playback in certain scenarios has been resolved.
+
+
 ## [3.0.2] - 2026-03-27
 
 ## Fixed

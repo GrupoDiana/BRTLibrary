@@ -27,6 +27,8 @@
 #include "Common/ErrorHandler.hpp"
 #include "Common/EnvelopeDetector.hpp"
 
+#include "Connectivity/CommandList.hpp"
+
 #include "Base/BRTManager.hpp"
 #include "Base/Listener.hpp"
 #include "Base/ListenerBase.hpp"

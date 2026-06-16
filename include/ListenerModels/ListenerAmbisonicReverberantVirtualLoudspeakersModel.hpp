@@ -427,29 +427,21 @@ namespace BRTListenerModel {
 		 * @brief Implementation of the virtual method for processing the received commands
 		*/
 		void UpdateCommand() override {
-			//std::lock_guard<std::mutex> l(mutex);
-			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			//std::lock_guard<std::mutex> l(mutex);			
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 			if (command.isNull() || command.GetAddress() == "") { return; }
 
-			if (listenerID == command.GetStringParameter("listenerID")) {
-				if (command.GetCommand() == "/listener/setAmbisonicsOrder") {
-					SetAmbisonicOrder(command.GetIntParameter("ambisonicsOrder"));					
-				}
-				else if (command.GetCommand() == "/listener/setAmbisonicsNormalization") {
-					SetAmbisonicNormalization(command.GetStringParameter("ambisonicsNormalization"));					
-				}
-				else if (command.GetCommand() == "/listener/enableNearFieldEffect") {
-					if (command.GetBoolParameter("enable")) { EnableNearFieldEffect(); }
-					else { DisableNearFieldEffect(); }
-				}
-				else if (command.GetCommand() == "/listener/enableITD") {
-					if (command.GetBoolParameter("enable")) { EnableITDSimulation(); }
-					else { DisableITDSimulation(); }
-				}			
-				else if (command.GetCommand() == "/listener/resetBuffers") {
-					ResetProcessorBuffers();
-				}
+			// Check overall commands
+			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_STOP) {
+				ResetProcessorBuffers();
+				ResetMixerBuffers();
 			}
+
+			// Check if the command is for this listener model
+			CheckListenerCommands(GetModelID(), command);
+			// Check if the command is for the listener which this listener model is connected to
+			std::string listenerID = GetIDEntryPoint("listenerID")->GetData();
+			CheckListenerCommands(listenerID, command);				
 		}
 
 	private:
@@ -458,6 +450,28 @@ namespace BRTListenerModel {
 		// Methods
 		/////////////////
 		
+		void CheckListenerCommands(const std::string& _listenerID, BRTConnectivity::CCommand& command) {
+			if (listenerID == command.GetStringParameter("listenerID")) {
+				if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_AMBISONICS_ORDER) {
+					SetAmbisonicOrder(command.GetIntParameter("ambisonicsOrder"));
+				} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_AMBISONICS_NORMALIZATION) {
+					SetAmbisonicNormalization(command.GetStringParameter("ambisonicsNormalization"));
+				} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_LISTENER_ENABLE_NEAR_FIELD_EFFECT) {
+					if (command.GetBoolParameter("enable")) {
+						EnableNearFieldEffect();
+					} else {
+						DisableNearFieldEffect();
+					}
+				} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_LISTENER_ENABLE_ITD) {
+					if (command.GetBoolParameter("enable")) {
+						EnableITDSimulation();
+					} else {
+						DisableITDSimulation();
+					}
+				} 
+			}
+		}
+
 		/**
 		 * @brief Initialize the ambisonic IR of the listener
 		 */

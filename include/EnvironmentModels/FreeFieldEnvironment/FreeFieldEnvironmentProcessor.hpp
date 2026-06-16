@@ -159,13 +159,15 @@ namespace BRTEnvironmentModel {
 		*/
 		void UpdateCommand() override {
 			
-			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			//BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 			if (command.isNull() || command.GetCommand() == "") {
 				return;
 			}
 
-			std::string sourceID = GetIDEntryPoint("sourceID")->GetData();
-			if (sourceID == command.GetStringParameter("sourceID")) {
+			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
+			std::string commandSourceID = command.GetStringParameter("sourceID");
+			if (mySourceID == commandSourceID) {
 				// Propagete the command to the virtual sources
 				nlohmann::json j;				
 				j["command"] = command.GetCommand();

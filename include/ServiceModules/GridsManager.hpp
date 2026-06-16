@@ -43,72 +43,71 @@ namespace BRTServices
 	};*/
 
 	//class CAngularBasedDistribution :public CGridManagerInterface {
-#if 0	
-	template <typename T>
-	class CAngularBasedDistribution  {
-	public:
-		void CreateGrid(TSphericalFIRTablePartitioned& table, std::unordered_map<TOrientation, float>& stepVector, int _resamplingStep) {}
-
-		void FindNearestHRIR(const TSphericalFIRTablePartitioned& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<TOrientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int spatialResolution)const
-		{
-			int nearestAzimuth = static_cast<int>(round(_azimuth / spatialResolution) * spatialResolution);
-			int nearestElevation = static_cast<int>(round(_elevation / spatialResolution) * spatialResolution);
-			// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
-			if (nearestAzimuth == DEFAULT_MAX_AZIMUTH) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
-			if (nearestElevation == DEFAULT_MAX_ELEVATION) { nearestElevation = DEFAULT_MIN_ELEVATION; }
-			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
-			if ((nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
-			auto it = table.find(TOrientation(nearestAzimuth, nearestElevation));
-			if (it != table.end())
-			{
-				if (ear == Common::T_ear::LEFT)
-				{
-					newHRIR = it->second.leftHRIR_Partitioned;
-				}
-				else
-				{
-					newHRIR = it->second.rightHRIR_Partitioned;
-				}
-			}
-			else
-			{
-				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");
-			}
-		}
-
-		void FindNearestDelay(const TSphericalFIRTablePartitioned& table, float& HRIR_delay, const std::unordered_map<TOrientation, float >& stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int spatialResolution)const
-		{
-
-			int nearestAzimuth = static_cast<int>(round(_azimuthCenter / spatialResolution) * spatialResolution);
-			int nearestElevation = static_cast<int>(round(_elevationCenter / spatialResolution) * spatialResolution);
-
-			// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
-			if (nearestAzimuth == DEFAULT_MAX_AZIMUTH) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
-			if (nearestElevation == DEFAULT_MAX_ELEVATION) { nearestElevation = DEFAULT_MIN_ELEVATION; }
-			// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
-			if ((nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
-
-			auto it = table.find(TOrientation(nearestAzimuth, nearestElevation));
-			if (it != table.end())
-			{
-				if (ear == Common::T_ear::LEFT)
-				{
-					HRIR_delay = it->second.leftDelay;
-				}
-				else
-				{
-					HRIR_delay = it->second.rightDelay;
-				}
-			}
-			else
-			{
-				SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIRDelay: HRIR not found");
-			}
-		}
 	
-		friend class CHRTFTester;
-	};
-#endif 
+	//template <typename T>
+	//class CAngularBasedDistribution  {
+	//public:
+	//	void CreateGrid(TSphericalFIRTablePartitioned& table, std::unordered_map<TOrientation, float>& stepVector, int _resamplingStep) {}
+
+	//	void FindNearestHRIR(const TSphericalFIRTablePartitioned& table, std::vector<CMonoBuffer<float>>& newHRIR, const std::unordered_map<TOrientation, float>& stepMap, Common::T_ear ear, float _azimuth, float _elevation, int spatialResolution)const
+	//	{
+	//		int nearestAzimuth = static_cast<int>(round(_azimuth / spatialResolution) * spatialResolution);
+	//		int nearestElevation = static_cast<int>(round(_elevation / spatialResolution) * spatialResolution);
+	//		// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
+	//		if (nearestAzimuth == DEFAULT_MAX_AZIMUTH) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
+	//		if (nearestElevation == DEFAULT_MAX_ELEVATION) { nearestElevation = DEFAULT_MIN_ELEVATION; }
+	//		// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
+	//		if ((nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
+	//		auto it = table.find(TOrientation(nearestAzimuth, nearestElevation));
+	//		if (it != table.end())
+	//		{
+	//			if (ear == Common::T_ear::LEFT)
+	//			{
+	//				newHRIR = it->second.leftHRIR_Partitioned;
+	//			}
+	//			else
+	//			{
+	//				newHRIR = it->second.rightHRIR_Partitioned;
+	//			}
+	//		}
+	//		else
+	//		{
+	//			SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIR_partitioned: HRIR not found");
+	//		}
+	//	}
+
+	//	void FindNearestDelay(const TSphericalFIRTablePartitioned& table, float& HRIR_delay, const std::unordered_map<TOrientation, float >& stepMap, Common::T_ear ear, float _azimuthCenter, float _elevationCenter, int spatialResolution)const
+	//	{
+
+	//		int nearestAzimuth = static_cast<int>(round(_azimuthCenter / spatialResolution) * spatialResolution);
+	//		int nearestElevation = static_cast<int>(round(_elevationCenter / spatialResolution) * spatialResolution);
+
+	//		// HRTF table does not contain data for azimuth = 360, which has the same values as azimuth = 0, for every elevation
+	//		if (nearestAzimuth == DEFAULT_MAX_AZIMUTH) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
+	//		if (nearestElevation == DEFAULT_MAX_ELEVATION) { nearestElevation = DEFAULT_MIN_ELEVATION; }
+	//		// When elevation is 90 or 270 degrees, the HRIR value is the same one for every azimuth
+	//		if ((nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::north)) || (nearestElevation == CInterpolationAuxiliarMethods::GetPoleElevation(TPole::south))) { nearestAzimuth = DEFAULT_MIN_AZIMUTH; }
+
+	//		auto it = table.find(TOrientation(nearestAzimuth, nearestElevation));
+	//		if (it != table.end())
+	//		{
+	//			if (ear == Common::T_ear::LEFT)
+	//			{
+	//				HRIR_delay = it->second.leftDelay;
+	//			}
+	//			else
+	//			{
+	//				HRIR_delay = it->second.rightDelay;
+	//			}
+	//		}
+	//		else
+	//		{
+	//			SET_RESULT(RESULT_ERROR_NOTSET, "GetHRIRDelay: HRIR not found");
+	//		}
+	//	}
+	//
+	//	friend class CHRTFTester;
+	//};
 
 	//class CQuasiUniformSphereDistribution : public CGridManagerInterface {
 	

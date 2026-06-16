@@ -207,16 +207,12 @@ namespace BRTListenerModel {
 		
 		void OneEntryPointOneDataReceived(std::string _entryPointId) override{
 						
-			if (_entryPointId == "leftEar") {				
-				//if (!leftDataReady) { InitBuffer(leftBuffer); }				
+			if (_entryPointId == "leftEar") {								
 				CMonoBuffer<float> newBuffer = GetSamplesEntryPoint("leftEar")->GetData();				
-				//leftDataReady = MixEarBuffers(leftBuffer, newBuffer);					
 				leftChannelMixer.AddBuffer(newBuffer);
 			}
-			else if (_entryPointId == "rightEar") {
-				//if (!rightDataReady) { InitBuffer(rightBuffer); }
-				CMonoBuffer<float> newBuffer = GetSamplesEntryPoint("rightEar")->GetData();				
-				//rightDataReady = MixEarBuffers(rightBuffer, newBuffer);	
+			else if (_entryPointId == "rightEar") {				
+				CMonoBuffer<float> newBuffer = GetSamplesEntryPoint("rightEar")->GetData();								
 				rightChannelMixer.AddBuffer(newBuffer);
 			} else {			
 				//nothing
@@ -257,18 +253,19 @@ namespace BRTListenerModel {
 			}						
 		}
 
-		void UpdateCommand() override {
-			// TODO
-
-			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
-			if (command.isNull() || command.GetCommand() == "") {
-				return;
+		void UpdateCommand() override {						
+			// It is only executed if the listener model that derives from this one does not implement this method. 
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();			
+			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_STOP) {
+				ResetMixerBuffers();
 			}
-			std::string a = command.GetStringParameter("listenerID");
-				
 		}
 
-		
+	protected:
+		void ResetMixerBuffers() {
+			leftChannelMixer.ResetBuffer();
+			rightChannelMixer.ResetBuffer();
+		}
 	private:		
 		TListenerModelcharacteristics listenerCharacteristics;
 						

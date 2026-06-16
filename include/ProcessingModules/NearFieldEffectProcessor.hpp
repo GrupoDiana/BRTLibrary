@@ -111,28 +111,13 @@ class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity/*, pu
 
 		void UpdateCommand() override {
 			std::lock_guard<std::mutex> l(mutex);
-			
-			BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+						
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 			if (command.isNull()) { return; }			
 			
-			if (IsToMyListener(command.GetStringParameter("listenerID"))) { 
-				if (command.GetCommand() == "/nearFieldProcessor/enable") {
-					if (command.GetBoolParameter("enable")) {
-						//EnableProcessor();						
-						spatiallyOrientedSOSFilter.Enable();
-					}
-					else { 
-						//DisableProcessor(); 
-						spatiallyOrientedSOSFilter.Disable();
-					}
-				}
-				else if (command.GetCommand() == "/nearFieldProcessor/resetBuffers") {
-					//ResetProcessBuffers();
-					spatiallyOrientedSOSFilter.ResetBuffers();
-				}
-			}
+			
 			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
-				if (command.GetCommand() == "/source/resetBuffers") {
+				if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_STOP) {
 					//ResetProcessBuffers();
 					spatiallyOrientedSOSFilter.ResetBuffers();
 				}

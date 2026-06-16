@@ -165,6 +165,7 @@ namespace BRTEnvironmentModel {
 		*/
 		bool IsInBounds(const Common::CVector3& _position) {
 			float distanceToNearestWall = 0.0f;
+			if (ISMParameters->room == nullptr) return false; // If the room is not defined, we consider that the position is out of bounds			
 			return ISMParameters->room->CheckPointInsideRoom(_position, distanceToNearestWall);			
 		}
 
@@ -204,6 +205,11 @@ namespace BRTEnvironmentModel {
 			}
 		}
 
+		void ResetWaveguideBuffers() {
+			for (auto & _channel : listOfChannelSourceListener) {
+				_channel->Reset();
+			}
+		}
 	private:
 		
 		//void ApplyVisibilityGainToOutputBuffers(std::vector<CMonoBuffer<float>> & _outBuffers) {
@@ -423,7 +429,8 @@ namespace BRTEnvironmentModel {
 
 			imageSourcesPreviousAttenuationList.resize(imageSourcesPositionList.size(), 0.0f);
 		}
-		
+				
+
 #if defined(DEBUG) || defined(_DEBUG)
 		// TO remove
 		void ShowImageSourceData(const std::vector<TImageSourceData> & data) {
