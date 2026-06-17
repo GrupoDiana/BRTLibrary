@@ -51,6 +51,8 @@
 #include "EnvironmentModels/SDNEnvironmentModel.hpp"
 #include "EnvironmentModels/FreeFieldEnvironmentModel.hpp"
 #include "EnvironmentModels/ISMEnvironmentModel.hpp"
+
+#include "BilateralFilterModels/BilateralFilterModelBase.hpp"
 #include "BilateralFilterModels/SOSBilateralFilterModel.hpp"
 #include "BilateralFilterModels/FIRBilateralFilterModel.hpp"
 
