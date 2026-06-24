@@ -330,13 +330,14 @@ namespace BRTListenerModel {
 		 * @brief Implementation of the virtual method for processing the received commands
 		*/
 		void UpdateCommand() override {
-			std::lock_guard<std::mutex> l(mutex);			
+			//std::lock_guard<std::mutex> l(mutex);			
 			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 			if (command.isNull() || command.GetCommand() == "") { return; }
 
 			// Check overall commands
 			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_STOP) {
 				ResetProcessorBuffers();
+				std::lock_guard<std::mutex> l(mutex);	
 				ResetMixerBuffers();
 			}
 			
@@ -412,7 +413,7 @@ namespace BRTListenerModel {
 			bool control = true;
 			// Connect soundsource to listener, just in case it is a directivity source		
 			if (_source->GetSourceType() == BRTSourceModel::Directivity) {
-				control = control && brtManager->ConnectModuleTransform(this, _source, "listenerPosition");
+				control = control && brtManager->ConnectModuleTransform(_listener, _source, "listenerPosition");
 			}			
 			// Create new set of processors
 			CSourceProcessors _newSourceProcessors(_source->GetID(), brtManager);			
