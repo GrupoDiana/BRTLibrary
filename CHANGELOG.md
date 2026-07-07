@@ -5,8 +5,20 @@ All notable changes to the Binaural Rendering Toolbox (BRT) will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.6] - 2026-06-24
+
+### Fixed
+- A non-zero value is set by default for the wall absorption coefficient.
+- Fixed a bug in the Direct BRIR model when using directional microphones
+
+### Changed
+- Change to the convention used for SOFA directivity files. The SOFA committee has renamed the proposal for this new directivity convention.
+
+
 ## [3.0.5] - 2026-05-26
--The SDN model did not set the absorption coefficients for the walls after deleting and creating sources.
+
+### Fixed
+- The SDN model did not set the absorption coefficients for the walls after deleting and creating sources.
 
 ## [3.0.4] - 2026-05-25
 

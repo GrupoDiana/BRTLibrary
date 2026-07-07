@@ -324,7 +324,7 @@ namespace BRTReaders {
 			std::string sofaConvention = loader.GetSofaConvention();
 			const int numberOfMeasurements = loader.getHRTF()->M;
 
-			if (sofaConvention != "SourceDirectivityFIR") {
+			if (sofaConvention != "SourceDirectivityIR") {
 				errorDescription = "The sofa convention contained in the sofa file is not valid for loading directivity data - " + sofaConvention;
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, errorDescription);
 				return false;

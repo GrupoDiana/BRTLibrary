@@ -167,6 +167,11 @@ namespace BRTEnvironmentModel {
 
 			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
 			std::string commandSourceID = command.GetStringParameter("sourceID");
+			
+			if (mySourceID == "" || commandSourceID == "") {
+				return;
+			}
+
 			if (mySourceID == commandSourceID) {
 				// Propagete the command to the virtual sources
 				nlohmann::json j;				
