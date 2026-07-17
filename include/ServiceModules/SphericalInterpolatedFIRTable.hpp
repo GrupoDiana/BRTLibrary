@@ -326,7 +326,7 @@ namespace BRTServices
 			}
 
 			TRawSofaTableByDistances sofaIRDatabaseByDistances;
-			SlipRawDataByDistances(sofaIRDataBase, sofaIRDatabaseByDistances);
+			SlipRawDataByDistances(windowingIRTable, sofaIRDatabaseByDistances);
 
 			distanceFRTable.clear();
 			for (auto & distBucketIt : sofaIRDatabaseByDistances) {
@@ -620,26 +620,7 @@ namespace BRTServices
 				// Update impulseResponseLength and the number of subfilters
 				impulseResponseLength = _outTable.begin()->data.IR.left.size();
 				partitionedFRNumberOfSubfilters = CalculateNumberOPartitions(impulseResponseLength);
-			}
-			//_outTable.clear();
-			//_outTable = _inTable;
-
-			//if (IsFadeInWindowingConfigured()) {
-			//	for (auto it = _outTable.begin(); it != _outTable.end(); it++) {					
-			//		it->data.IR.left = Common::CIRWindowing::Process(it->data.IR.left, Common::CIRWindowing::fadein, fadeInBegin, riseTime, globalParameters.GetSampleRate());
-			//		it->data.IR.right = Common::CIRWindowing::Process(it->data.IR.right, Common::CIRWindowing::fadein, fadeInBegin, riseTime, globalParameters.GetSampleRate());
-			//	}
-			//}
-			//if (IsFadeOutWindowingConfigured()) {
-			//	for (auto it = _outTable.begin(); it != _outTable.end(); it++) {
-			//		it->data.IR.left = Common::CIRWindowing::Process(it->data.IR.left, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate());
-			//		it->data.IR.right = Common::CIRWindowing::Process(it->data.IR.right, Common::CIRWindowing::fadeout, fadeOutCutoff, fallTime, globalParameters.GetSampleRate());
-			//	}
-
-			//	// Update impulseResponseLength and the number of subfilters
-			//	impulseResponseLength = _outTable.begin()->data.IR.left.size();
-			//	partitionedFRNumberOfSubfilters = CalculateNumberOPartitions(impulseResponseLength);
-			//}
+			}			
 		}
 
 		//////////////////////////////////
