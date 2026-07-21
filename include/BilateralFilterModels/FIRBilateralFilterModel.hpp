@@ -204,12 +204,15 @@ namespace BRTBilateralFilter {
 			CMonoBuffer<float> outLeftBuffer;
 			CMonoBuffer<float> outRightBuffer;
 
-			CMonoBuffer<float> leftBuffer = leftChannelMixer.GetMixedBuffer();
-			CMonoBuffer<float> rightBuffer = rightChannelMixer.GetMixedBuffer();
+			CMonoBuffer<float> inputLeftBuffer(globalParameters.GetBufferSize());
+			CMonoBuffer<float> inputRightBuffer(globalParameters.GetBufferSize());
+
+			leftChannelMixer.GetMixedBuffer(inputLeftBuffer);
+			rightChannelMixer.GetMixedBuffer(inputRightBuffer);
 			
-			if (leftBuffer.size() == 0 || rightBuffer.size() == 0) return;
+			if (inputLeftBuffer.size() == 0 || inputRightBuffer.size() == 0) return;
 														
-			firFilter.Process(leftBuffer, outLeftBuffer, rightBuffer, outRightBuffer);
+			firFilter.Process(inputLeftBuffer, outLeftBuffer, inputRightBuffer, outRightBuffer);
 
 			if (enableModel) {
 				outLeftBuffer.ApplyGain(gain);

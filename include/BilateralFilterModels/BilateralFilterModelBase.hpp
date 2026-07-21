@@ -52,11 +52,14 @@ namespace BRTBilateralFilter {
 
 		CBilateralFilterModelBase(const std::string & _binauraFilterID)
 			: CModelBase(_binauraFilterID)
-			, filterType { T_BilateralFilterType::none }			
-			{
+			, filterType { T_BilateralFilterType::none }
+			, leftChannelMixer { Common::CAudioMixer(globalParameters.GetBufferSize()) }
+			, rightChannelMixer { Common::CAudioMixer(globalParameters.GetBufferSize()) }
+			{			
 			
-			leftChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
-			rightChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
+			//leftChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
+			//rightChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
+			
 			CreateSamplesEntryPoint("leftEar");
 			CreateSamplesEntryPoint("rightEar");
 			CreateIDEntryPoint("listenerID");			
@@ -110,12 +113,15 @@ namespace BRTBilateralFilter {
 		 * @brief Implementation of CAdvancedEntryPointManager virtual method
 		*/
 		void AllEntryPointsAllDataReady() override {
+			
+			CMonoBuffer<float> leftChannelBuffer(globalParameters.GetBufferSize());
+			CMonoBuffer<float> rightChannelBuffer(globalParameters.GetBufferSize());
 
-			CMonoBuffer<float> leftBuffer = leftChannelMixer.GetMixedBuffer();
-			CMonoBuffer<float> rightBuffer = rightChannelMixer.GetMixedBuffer();
+			leftChannelMixer.GetMixedBuffer(leftChannelBuffer);
+			rightChannelMixer.GetMixedBuffer(rightChannelBuffer);
 
-			GetSamplesExitPoint("leftEar")->sendData(leftBuffer);
-			GetSamplesExitPoint("rightEar")->sendData(rightBuffer);			
+			GetSamplesExitPoint("leftEar")->sendData(leftChannelBuffer);
+			GetSamplesExitPoint("rightEar")->sendData(rightChannelBuffer);			
 		}
 
 		void UpdateCommand() override {			
@@ -142,8 +148,8 @@ namespace BRTBilateralFilter {
 			buffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
 		}
 
-		// Attributes
-		Common::CGlobalParameters globalParameters;	
+	
+		
 	
 	protected:	
 		void ResetMixerBuffers() {
@@ -152,10 +158,15 @@ namespace BRTBilateralFilter {
 		}
 		void SendMyID() { GetIDExitPoint()->sendData(modelID); }
 		
+		////////////////////
+		// Attributes
+		/////////////////////
 		Common::CAudioMixer leftChannelMixer;
 		Common::CAudioMixer rightChannelMixer;
 
 		T_BilateralFilterType filterType;
+
+		Common::CGlobalParameters globalParameters;	
 	};
 }
 #endif

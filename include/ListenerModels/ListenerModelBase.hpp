@@ -159,9 +159,11 @@ namespace BRTListenerModel {
 		CListenerModelBase(std::string _listenerModelID, TListenerModelcharacteristics _listenerCharacteristics) 
 			: CModelBase(_listenerModelID)
 			, listenerCharacteristics{ _listenerCharacteristics }
+			, leftChannelMixer(globalParameters.GetBufferSize())
+			, rightChannelMixer(globalParameters.GetBufferSize())
 			{											
-			leftChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
-			rightChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
+			//leftChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
+			//rightChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
 
 			CreateSamplesEntryPoint("leftEar");		// TODO is this necessary?
 			CreateSamplesEntryPoint("rightEar");	// TODO is this necessary?								
@@ -226,14 +228,17 @@ namespace BRTListenerModel {
 		*/
 		void AllEntryPointsAllDataReady() override{
 			
-			CMonoBuffer<float> leftBuffer = leftChannelMixer.GetMixedBuffer();
-			CMonoBuffer<float> rightBuffer = rightChannelMixer.GetMixedBuffer();
+			CMonoBuffer<float> leftChannelBuffer(globalParameters.GetBufferSize());
+			CMonoBuffer<float> rightChannelBuffer(globalParameters.GetBufferSize());
 
-			leftBuffer.ApplyGain(gain);
-			rightBuffer.ApplyGain(gain);
+			leftChannelMixer.GetMixedBuffer(leftChannelBuffer);
+			rightChannelMixer.GetMixedBuffer(rightChannelBuffer);
+
+			leftChannelBuffer.ApplyGain(gain);
+			rightChannelBuffer.ApplyGain(gain);
 			
-			GetSamplesExitPoint("leftEar")->sendData(leftBuffer);
-			GetSamplesExitPoint("rightEar")->sendData(rightBuffer);
+			GetSamplesExitPoint("leftEar")->sendData(leftChannelBuffer);
+			GetSamplesExitPoint("rightEar")->sendData(rightChannelBuffer);
 			//leftDataReady = false;
 			//rightDataReady = false;
 						           
@@ -244,11 +249,11 @@ namespace BRTListenerModel {
 		 */
 		void ProcessModelWithoutInputsSamples() { 
 			if (GetSamplesEntryPoint("leftEar")->GetConnections() == 0) { 
-				CMonoBuffer<float> newBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
+				CMonoBuffer<float> newBuffer(globalParameters.GetBufferSize());
 				GetSamplesExitPoint("leftEar")->sendData(newBuffer);
 			}
 			if (GetSamplesEntryPoint("rightEar")->GetConnections() == 0) {
-				CMonoBuffer<float> newBuffer = CMonoBuffer<float>(globalParameters.GetBufferSize());
+				CMonoBuffer<float> newBuffer(globalParameters.GetBufferSize());
 				GetSamplesExitPoint("rightEar")->sendData(newBuffer);
 			}						
 		}

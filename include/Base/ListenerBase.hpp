@@ -41,9 +41,12 @@ namespace BRTBase {
 		
 		CListenerBase(std::string _listenerID) 
 			: listenerID{ _listenerID }
+			, listenerTransform { Common::CTransform() }
+			, leftChannelMixer { Common::CAudioMixer(globalParameters.GetBufferSize()) }
+			, rightChannelMixer { Common::CAudioMixer(globalParameters.GetBufferSize()) }
 		{												
-			leftChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
-			rightChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
+			//leftChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
+			//rightChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
 
 			CreateSamplesEntryPoint("leftEar");
 			CreateSamplesEntryPoint("rightEar");									
@@ -82,8 +85,8 @@ namespace BRTBase {
 		 * @param _rightBuffer Right ear sample buffer
 		*/
 		void GetBuffers(CMonoBuffer<float>& _leftBuffer, CMonoBuffer<float>& _rightBuffer) {									
-			_leftBuffer = leftChannelMixer.GetMixedBuffer();
-			_rightBuffer = rightChannelMixer.GetMixedBuffer();
+			leftChannelMixer.GetMixedBuffer(_leftBuffer);
+			rightChannelMixer.GetMixedBuffer(_rightBuffer);
 		}
 
 		/////////////////////		

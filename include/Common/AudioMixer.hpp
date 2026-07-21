@@ -26,19 +26,14 @@
 
 #include <Common/Buffer.hpp>
 #include <algorithm>
-#include <vector>
 
 namespace Common {
 
 class CAudioMixer {
 public:
-	CAudioMixer()
-		: bufferSize(0)
-		, buffersReceived(0)		
-		, mixBuffer(CMonoBuffer<float>())
-	{
-	}
-
+	
+	CAudioMixer() = delete;
+	
 	CAudioMixer(size_t bufferSize)
 		: bufferSize(bufferSize)
 		, buffersReceived(0)
@@ -56,10 +51,8 @@ public:
 			return false;
 		}		
 
-		for (size_t i = 0; i < bufferSize; i++) {
-			if (_newBuffer[i] != 0.0f) { // only add non-zero samples
-				mixBuffer[i] += _newBuffer[i];	
-			}
+		for (size_t i = 0; i < bufferSize; i++) {			
+			mixBuffer[i] += _newBuffer[i];			
 		}
 
 		buffersReceived++;
@@ -67,31 +60,59 @@ public:
 	}
 
 	/**
-		 * @brief Get mixed buffer and reset accumulation
-		 * @return mixed buffer
-		 */
-	CMonoBuffer<float> GetMixedBuffer(bool _normalization = false) {
+	 * @brief Get the accumulated mix and reset the mixer.
+	 * @return Mixed audio buffer.
+	 */
+	/*CMonoBuffer<float> GetMixedBuffer() {
+		CMonoBuffer<float> returnBuffer = mixBuffer;
 
-		if (buffersReceived == 0) return CMonoBuffer<float>(bufferSize, 0.0f);
+		std::fill(mixBuffer.begin(), mixBuffer.end(), 0.0f);
+		buffersReceived = 0;
+		return returnBuffer;
+	}*/
 
-		CMonoBuffer<float> returnBuffer(bufferSize);
-
-		if (_normalization && buffersReceived > 0) {			
-			// Normalisation: dividing each sample by the number of contributions
-			float temp = 1 / static_cast<float>(buffersReceived);
-			for (size_t i = 0; i < bufferSize; i++) {
-				returnBuffer[i] = mixBuffer[i] * temp;
-			}			
-		} else {
-			returnBuffer = mixBuffer;
+	/**
+	 * @brief Move the accumulated mix into a preallocated output buffer.
+	 * @param outputBuffer Buffer that receives the mixed samples.
+	 * @return True if the output buffer has the expected size.
+	 */
+	bool GetMixedBuffer(CMonoBuffer<float> & outputBuffer) {
+		if (outputBuffer.size() != bufferSize) {
+			return false;
 		}
 
-		// Reset buffers and counter for next frame
-		std::fill(mixBuffer.begin(), mixBuffer.end(), 0.0f);		
+		std::swap(outputBuffer, mixBuffer);
+		std::fill(mixBuffer.begin(), mixBuffer.end(), 0.0f);
 		buffersReceived = 0;
-
-		return returnBuffer;
+		return true;
 	}
+
+	/**
+	* @brief Get mixed buffer and reset accumulation
+	* @return mixed buffer
+	*/
+	//CMonoBuffer<float> GetMixedBuffer(bool _normalization) {
+
+	//	if (buffersReceived == 0) return CMonoBuffer<float>(bufferSize, 0.0f);
+
+	//	CMonoBuffer<float> returnBuffer(bufferSize);
+
+	//	if (_normalization && buffersReceived > 0) {			
+	//		// Normalisation: dividing each sample by the number of contributions
+	//		float temp = 1 / static_cast<float>(buffersReceived);
+	//		for (size_t i = 0; i < bufferSize; i++) {
+	//			returnBuffer[i] = mixBuffer[i] * temp;
+	//		}			
+	//	} else {
+	//		returnBuffer = mixBuffer;
+	//	}
+
+	//	// Reset buffers and counter for next frame
+	//	std::fill(mixBuffer.begin(), mixBuffer.end(), 0.0f);		
+	//	buffersReceived = 0;
+
+	//	return returnBuffer;
+	//}
 	
 	void ResetBuffer() {
 		std::fill(mixBuffer.begin(), mixBuffer.end(), 0.0f);
