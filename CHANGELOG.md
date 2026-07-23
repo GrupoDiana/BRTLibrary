@@ -5,6 +5,22 @@ All notable changes to the Binaural Rendering Toolbox (BRT) will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.8] - 2026-07-23
+
+### Changed
+- The audio mixer has been improved with a view to optimising its performance.
+
+### Fixed
+- Fixes a bug in SphericalInterpolatedFIRTable. The table with the common delay removed was not being saved.
+- Fixes bug in Listener-Ambisonic-RVL-model. When creating new sources, erroneous connections were repeatedly established between the ambisonic encoders and the decoders/convolvers.
+
+## [3.0.7] - 2026-07-07
+
+### Fixed
+- Fixes a bug in the free-field environment model where an unexpected command is triggered when deleting and creating a source with the same name.
+- Merge pull request with bug solved in listener Direct BRIR convolution model
+
+
 ## [3.0.6] - 2026-06-24
 
 ### Fixed
