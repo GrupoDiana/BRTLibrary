@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixes a bug in SphericalInterpolatedFIRTable. The table with the common delay removed was not being saved.
-- Fixes bug in Listener-Ambisonic-RVL-model. When creating new sources, erroneous connections were repeatedly established between the ambisonic encoders and the decoders/convolvers.
+- Fixes bug in Listener-Ambisonics models. When creating new sources, erroneous connections were repeatedly established between the ambisonic encoders and the decoders/convolvers.
 
 ## [3.0.7] - 2026-07-07
 

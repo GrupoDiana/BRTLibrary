@@ -597,9 +597,11 @@ namespace BRTListenerModel {
 
 			control = control && brtManager->ConnectModulesMultipleSamplesVectors(_newSourceProcessors.bilateralAmbisonicEncoderProcessor, "leftAmbisonicChannels", leftAmbisonicDomainConvolverProcessor, "inputChannels");
 			control = control && brtManager->ConnectModulesMultipleSamplesVectors(_newSourceProcessors.bilateralAmbisonicEncoderProcessor, "rightAmbisonicChannels", rightAmbisonicDomainConvolverProcessor, "inputChannels");
-
-			control = control && brtManager->ConnectModulesSamples(leftAmbisonicDomainConvolverProcessor, "outputSamples", this, "leftEar");
-			control = control && brtManager->ConnectModulesSamples(rightAmbisonicDomainConvolverProcessor, "outputSamples", this, "rightEar");
+			
+			if (sourcesConnectedProcessors.size() == 0) {
+				control = control && brtManager->ConnectModulesSamples(leftAmbisonicDomainConvolverProcessor, "outputSamples", this, "leftEar");
+				control = control && brtManager->ConnectModulesSamples(rightAmbisonicDomainConvolverProcessor, "outputSamples", this, "rightEar");
+			}
 
 			if (control) {
 				SetSourceProcessorsConfiguration(_newSourceProcessors);
@@ -628,10 +630,12 @@ namespace BRTListenerModel {
 			std::string _sourceID = _source->GetID();
 			auto it = std::find_if(sourcesConnectedProcessors.begin(), sourcesConnectedProcessors.end(), [&_sourceID](CSourceToBeProcessed& sourceProcessorItem) { return sourceProcessorItem.sourceID == _sourceID; });
 			if (it != sourcesConnectedProcessors.end()) {
-
-				bool control = brtManager->DisconnectModulesSamples(leftAmbisonicDomainConvolverProcessor, "outputSamples", this, "leftEar");
-				control = control && brtManager->DisconnectModulesSamples(rightAmbisonicDomainConvolverProcessor, "outputSamples", this, "rightEar");
-
+				
+				bool control = true; 
+				if (sourcesConnectedProcessors.size() == 1) {
+					control = brtManager->DisconnectModulesSamples(leftAmbisonicDomainConvolverProcessor, "outputSamples", this, "leftEar");
+					control = control && brtManager->DisconnectModulesSamples(rightAmbisonicDomainConvolverProcessor, "outputSamples", this, "rightEar");
+				}
 				control = control && brtManager->DisconnectModulesMultipleSamplesVectors(it->bilateralAmbisonicEncoderProcessor, "leftAmbisonicChannels", leftAmbisonicDomainConvolverProcessor, "inputChannels");
 				control = control && brtManager->DisconnectModulesMultipleSamplesVectors(it->bilateralAmbisonicEncoderProcessor, "rightAmbisonicChannels", rightAmbisonicDomainConvolverProcessor, "inputChannels");
 
