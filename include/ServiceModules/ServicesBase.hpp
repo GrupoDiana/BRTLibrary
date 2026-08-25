@@ -144,33 +144,31 @@ struct TOrientation_key {
 };
 
 
-namespace std {
-	template <>
-	struct std::hash<TOrientation_key> {
-		std::size_t operator()(const TOrientation_key & k) const {
-			std::size_t seed = 0;
-			hash_combine(seed, k.azimuth_q);
-			hash_combine(seed, k.elevation_q);			
-			return seed;
-		}
-	};
-
-	// TODO Remove this
-	template<>
-	struct std::hash<TOrientation>
-	{
-		// adapted from http://en.cppreference.com/w/cpp/utility/hash
-		std::size_t operator()(const TOrientation& key) const
-		{
-			int keyAzimuth_hundredth = static_cast<int>(std::round(key.azimuth * AZIMUTH_ELEVATION_RESOLUTION_INV));
-			int keyElevation_hundredth = static_cast<int>(std::round(key.elevation * AZIMUTH_ELEVATION_RESOLUTION_INV));			
-
-			size_t h1 = std::hash<int32_t>()(keyAzimuth_hundredth);
-			size_t h2 = std::hash<int32_t>()(keyElevation_hundredth);
-			return h1 ^ (h2 << 1);  // exclusive or of hash functions for each int.			
-		}
-	};
+template <>
+struct std::hash<TOrientation_key> {
+	std::size_t operator()(const TOrientation_key & k) const {
+		std::size_t seed = 0;
+		hash_combine(seed, k.azimuth_q);
+		hash_combine(seed, k.elevation_q);
+		return seed;
 	}
+};
+
+// TODO Remove this
+template<>
+struct std::hash<TOrientation>
+{
+	// adapted from http://en.cppreference.com/w/cpp/utility/hash
+	std::size_t operator()(const TOrientation& key) const
+	{
+		int keyAzimuth_hundredth = static_cast<int>(std::round(key.azimuth * AZIMUTH_ELEVATION_RESOLUTION_INV));
+		int keyElevation_hundredth = static_cast<int>(std::round(key.elevation * AZIMUTH_ELEVATION_RESOLUTION_INV));
+
+		size_t h1 = std::hash<int32_t>()(keyAzimuth_hundredth);
+		size_t h2 = std::hash<int32_t>()(keyElevation_hundredth);
+		return h1 ^ (h2 << 1);  // exclusive or of hash functions for each int.
+	}
+};
 
 
 /////
@@ -216,32 +214,27 @@ struct TVector3_key {
 };
 
 
-namespace std
-{
-	template<>	
-	struct hash<TVector3>
-	{		
-		std::size_t operator()(const TVector3& key) const
-		{				
-			size_t h = std::hash<float>()(key.x * DISTANCE_RESOLUTION_INV);
-			hash_combine(h, key.y * DISTANCE_RESOLUTION_INV);
-			hash_combine(h, key.z * DISTANCE_RESOLUTION_INV);
+template<>	
+struct std::hash<TVector3>
+{		
+	std::size_t operator()(const TVector3& key) const {
+		std::size_t h = std::hash<float>()(key.x * DISTANCE_RESOLUTION_INV);
+		hash_combine(h, key.y * DISTANCE_RESOLUTION_INV);
+		hash_combine(h, key.z * DISTANCE_RESOLUTION_INV);
 
-			return h;
-		}
-	};	
-	template <>
-	struct std::hash<TVector3_key> {
-		std::size_t operator()(const TVector3_key & k) const {
-			std::size_t seed = 0;
-			hash_combine(seed, k.x_q);
-			hash_combine(seed, k.y_q);
-			hash_combine(seed, k.z_q);
-			return seed;
-		}
-	};
-
-}
+		return h;
+	}
+};
+template <>
+struct std::hash<TVector3_key> {
+	std::size_t operator()(const TVector3_key & k) const {
+		std::size_t seed = 0;
+		hash_combine(seed, k.x_q);
+		hash_combine(seed, k.y_q);
+		hash_combine(seed, k.z_q);
+		return seed;
+	}
+};
 
 namespace BRTServices {
 

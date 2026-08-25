@@ -25,6 +25,7 @@
 
 #include <vector>
 #include <memory>
+#include <stack>
 #include <Connectivity/EntryPoint.hpp>
 #include <Common/CommonDefinitions.hpp>
 
