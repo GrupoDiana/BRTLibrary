@@ -340,6 +340,7 @@ namespace BRTServices {
 			, impulseResponseLength { 0 }
 			, title { "" }
 			, fileName { "" }
+			, sourceURL { "" }
 			, databaseName { "" }
 			, listenerShortName { "" }			
 		{}
@@ -422,6 +423,17 @@ namespace BRTServices {
 		*/
 		std::string GetFilename() { return fileName; };
 
+		/** \brief Set the source URL of the SOFA file 
+		* \param [in]	_sourceURL		string contains source URL
+		* */
+		void SetSourceURL(const std::string & _sourceURL) { sourceURL = _sourceURL; }
+		
+		/**
+		 * @brief Get the source URL of the SOFA file
+		 * @return string contains source URL
+		 */
+		std::string GetSourceURL() { return sourceURL; }
+
 		/** \brief Set the name of the database of the SOFA file
 		*    \param [in]	_title		string contains title
 		*/
@@ -497,6 +509,7 @@ namespace BRTServices {
 		std::string ID;
 		std::string title;
 		std::string fileName;
+		std::string sourceURL;
 		std::string databaseName;
 		std::string listenerShortName;
 	};

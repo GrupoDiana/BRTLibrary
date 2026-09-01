@@ -122,12 +122,16 @@ namespace BRTReaders {
 		*	\param [out] listener affected by the hrtf
 		*   \eh On error, an error code is reported to the error handler.
 		*/
-		bool ReadHRTFFromSofa(const std::string& sofafile, std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable> listenerHRTF, int _spatialResolution, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {									 
-			return ReadFIREFromSofa(sofafile, listenerHRTF, BRTServices::TServiceType::hrir_database_interpolated, _spatialResolution, _extrapolationMethod, 0.0f, 0.0f, 0.0f, 0.0f);				
+		bool ReadHRTFFromSofa(const std::string & sofafile, const std::string & _sourceUrl, std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable> listenerHRTF, int _spatialResolution, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {									 
+			return ReadFIREFromSofa(sofafile, _sourceUrl, listenerHRTF
+				, BRTServices::TServiceType::hrir_database_interpolated
+				, _spatialResolution, _extrapolationMethod, 0.0f, 0.0f, 0.0f, 0.0f);				
 		}
 		
-		bool ReadHRTFRawFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CSphericalFIRTable> listenerHRTF) {
-			return ReadFIREFromSofa(sofafile, listenerHRTF, BRTServices::TServiceType::hrir_database, -1, BRTServices::TEXTRAPOLATION_METHOD::none, 0.0f, 0.0f, 0.0f, 0.0f);			
+		bool ReadHRTFRawFromSofa(const std::string & sofafile, const std::string & _sourceUrl, std::shared_ptr<BRTServices::CSphericalFIRTable> listenerHRTF) {
+			return ReadFIREFromSofa(sofafile, _sourceUrl, listenerHRTF
+				, BRTServices::TServiceType::hrir_database, -1
+				, BRTServices::TEXTRAPOLATION_METHOD::none, 0.0f, 0.0f, 0.0f, 0.0f);			
 		}
 		
 		/**
@@ -142,22 +146,24 @@ namespace BRTReaders {
 		 * @param _fallTime 
 		 * @return 
 		 */
-		bool ReadBRIRFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CSphericalFIRTable> _data
+		bool ReadBRIRFromSofa(const std::string & sofafile, const std::string & _sourceUrl, std::shared_ptr<BRTServices::CSphericalFIRTable> _data
 			, float _fadeInBegin, float _riseTime, float _fadeOutCutoff, float _fallTime) {
 
-			return ReadFIREFromSofa(sofafile, _data, BRTServices::TServiceType::brir_database, 0, BRTServices::TEXTRAPOLATION_METHOD::none, _fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);			
+			return ReadFIREFromSofa(sofafile, _sourceUrl, _data
+				, BRTServices::TServiceType::brir_database, 0
+				, BRTServices::TEXTRAPOLATION_METHOD::none, _fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);			
 		}		
 
 		bool ReadFIRFilterFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CSphericalFIRTable> filterIr) {
-			return ReadFIREFromSofa(sofafile, filterIr, BRTServices::TServiceType::ir_database, 0, BRTServices::TEXTRAPOLATION_METHOD::none, 0.0f, 0.0f, 0.0f, 0.0f);			
+			return ReadFIREFromSofa(sofafile, "", filterIr, BRTServices::TServiceType::ir_database, 0, BRTServices::TEXTRAPOLATION_METHOD::none, 0.0f, 0.0f, 0.0f, 0.0f);			
 		}
 
-		bool ReadDirectivityFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable> listenerDirectivity, int _spatialResolution, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
-			return ReadDirectivityFromSofaInternal(sofafile, listenerDirectivity, BRTServices::TServiceType::directivity_database_interpolated, _spatialResolution, _extrapolationMethod);
+		bool ReadDirectivityFromSofa(const std::string & sofafile, const std::string & _sourceUrl, std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable> listenerDirectivity, int _spatialResolution, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
+			return ReadDirectivityFromSofaInternal(sofafile, _sourceUrl, listenerDirectivity, BRTServices::TServiceType::directivity_database_interpolated, _spatialResolution, _extrapolationMethod);
 		}
 
-		bool ReadDirectivityRawFromSofa(const std::string & sofafile, std::shared_ptr<BRTServices::CSphericalFIRTable> listenerDirectivity) {
-			return ReadDirectivityFromSofaInternal(sofafile, listenerDirectivity, BRTServices::TServiceType::directivity_database, -1, BRTServices::TEXTRAPOLATION_METHOD::none);
+		bool ReadDirectivityRawFromSofa(const std::string & sofafile, const std::string & _sourceUrl, std::shared_ptr<BRTServices::CSphericalFIRTable> listenerDirectivity) {
+			return ReadDirectivityFromSofaInternal(sofafile, _sourceUrl, listenerDirectivity, BRTServices::TServiceType::directivity_database, -1, BRTServices::TEXTRAPOLATION_METHOD::none);
 		}
 		
 		/** \brief Loads an ILD from a sofa file
@@ -197,7 +203,8 @@ namespace BRTReaders {
 				
 		// Methods
 		template <typename T>
-		bool ReadFIREFromSofa(const std::string & sofafile, std::shared_ptr<T> _inputData,
+		bool ReadFIREFromSofa(const std::string & sofafile, const std::string & _sourceUrl,
+			std::shared_ptr<T> _inputData,
 			BRTServices::TServiceType _dataType, int _spatialResolution, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod,
 			float _fadeInBegin, float _riseTime, float _fadeOutCutoff, float _fallTime) {
 
@@ -212,14 +219,13 @@ namespace BRTReaders {
 			}
 
 			// Discover the file type
-			std::string dataType = loader.GetDataType();
-			//std::string sofaConvention = loader.GetSofaConvention();
+			std::string dataType = loader.GetDataType();			
 
 			// Load Data
 			if (dataType == "FIR" || dataType == "FIR-E") {
 				ResetError();
 				data->SetServiceType(_dataType);
-				return ReadFromSofaFIRDataType(loader, sofafile, data, _spatialResolution, _extrapolationMethod, _fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);
+				return ReadFromSofaFIRDataType(loader, sofafile, _sourceUrl, data, _spatialResolution, _extrapolationMethod, _fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);
 			} else {
 				errorDescription = "The data type contained in the sofa file is not valid for loading HRTFs - " + dataType;
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, errorDescription);
@@ -232,7 +238,7 @@ namespace BRTReaders {
 		/////////////////////////////////////////////////////////////////
 		bool ReadFromSofaSOSDataType(BRTReaders::CLibMySOFALoader& loader, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data) {
 			
-			GetAndSaveGlobalAttributes(loader, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS, sofafile, data); // GET and Save Global Attributes 			
+			GetAndSaveGlobalAttributes(loader, CLibMySOFALoader::TSofaConvention::SimpleFreeFieldHRSOS, sofafile, "", data); // GET and Save Global Attributes 			
 			CheckListenerOrientation(loader);									// Check listener view						
 			GetAndSaveReceiverPosition(loader, data);							// Get and Save listener ear 
 			
@@ -307,7 +313,9 @@ namespace BRTReaders {
 		/////////////////////////////////////////////////////////////////
 		
 		template <typename T>
-		bool ReadDirectivityFromSofaInternal(const std::string & sofafile, std::shared_ptr<T> _inputData, BRTServices::TServiceType _serviceType, int _spatialResolution, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
+		bool ReadDirectivityFromSofaInternal(const std::string & sofafile, const std::string & _sourceUrl
+			, std::shared_ptr<T> _inputData, BRTServices::TServiceType _serviceType
+			, int _spatialResolution, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
 
 			std::shared_ptr<BRTServices::CServicesBase> data = _inputData;
 
@@ -333,7 +341,7 @@ namespace BRTReaders {
 			if (dataType == "FIR" || dataType == "FIR-E") {
 				ResetError();
 				data->SetServiceType(_serviceType);				
-				return ReadFromSofaDirectivityDataType(loader, sofafile, data, _spatialResolution, _extrapolationMethod);
+				return ReadFromSofaDirectivityDataType(loader, sofafile, _sourceUrl, data, _spatialResolution, _extrapolationMethod);
 			} else {
 				errorDescription = "The data type contained in the sofa file is not valid for loading directivity - " + dataType;
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, errorDescription);
@@ -342,9 +350,17 @@ namespace BRTReaders {
 		}
 
 		
-		bool ReadFromSofaDirectivityDataType(BRTReaders::CLibMySOFALoader& loader, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
+		bool ReadFromSofaDirectivityDataType(BRTReaders::CLibMySOFALoader& loader
+			, const std::string& sofafile, const std::string& _sourceUrl
+			, std::shared_ptr<BRTServices::CServicesBase>& data, int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod) {
+			
 			// Get and Save data			
-			GetAndSaveGlobalAttributes(loader, CLibMySOFALoader::TSofaConvention::SourceDirectivityFIR, sofafile, data); // GET and Save Global Attributes 
+			GetAndSaveGlobalAttributes(loader
+				, CLibMySOFALoader::TSofaConvention::SourceDirectivityFIR
+				, sofafile
+				, _sourceUrl
+				, data); // GET and Save Global Attributes 
+			
 			//CheckCoordinateSystems(loader, _SOFAConvention);					// Check coordiante system for Source and Receiver positions
 			CheckListenerOrientation(loader);									// Check listener view			
 			
@@ -478,15 +494,17 @@ namespace BRTReaders {
 		/////////////////////////////////////////////////////////////////
 		//////////////////	 SingleRoomMIMOSRIR		 ////////////////////
 		/////////////////////////////////////////////////////////////////
-		bool ReadFromSofaFIRDataType(BRTReaders::CLibMySOFALoader &loader, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& data,
+		bool ReadFromSofaFIRDataType(BRTReaders::CLibMySOFALoader &loader, 
+			const std::string & sofafile, const std::string & _sourceUrl,
+			std::shared_ptr<BRTServices::CServicesBase>& data,
 			int _resamplingStep, BRTServices::TEXTRAPOLATION_METHOD _extrapolationMethod, 
 			float _fadeInBegin, float _riseTime, float _fadeOutCutoff, float _fallTime) {
 			
 			// Get and Save data					
-			GetAndSaveGlobalAttributes(loader, loader.GetSofaConventionType(), sofafile, data);
-			GetAndSaveReceiverPosition(loader, data); // Get and Save listener ear
-			
-			data->SetWindowingParameters(_fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);			
+			GetAndSaveGlobalAttributes(loader, loader.GetSofaConventionType(), sofafile, _sourceUrl, data);
+			GetAndSaveReceiverPosition(loader, data); // Get and Save listener ear			
+			data->SetWindowingParameters(_fadeInBegin, _riseTime, _fadeOutCutoff, _fallTime);	
+								
 			bool result;			
 			result = GetIRFIRE(loader, data, _extrapolationMethod);			
 			if (!result) {
@@ -866,7 +884,12 @@ namespace BRTReaders {
 
 
 		// Read GLOBAL data from sofa struct and save into HRTF class
-		void GetAndSaveGlobalAttributes(BRTReaders::CLibMySOFALoader& loader, CLibMySOFALoader::TSofaConvention _SOFAConvention, const std::string& sofafile, std::shared_ptr<BRTServices::CServicesBase>& dataHRTF) {
+		void GetAndSaveGlobalAttributes(BRTReaders::CLibMySOFALoader& loader
+			, CLibMySOFALoader::TSofaConvention _SOFAConvention
+			, const std::string & sofafile, const std::string & _sourceUrl
+			, std::shared_ptr<BRTServices::CServicesBase>& dataHRTF) {
+			
+			
 			// GET and Save Global Attributes 			
 			std::string _title = mysofa_getAttribute(loader.getHRTF()->attributes, "Title");
 			dataHRTF->SetTitle(_title);
@@ -884,6 +907,10 @@ namespace BRTReaders {
 			std::filesystem::path p(sofafile);
 			std::string fileName{ p.filename().u8string() };
 			dataHRTF->SetFilename(fileName);
+
+			if (_sourceUrl != "") {
+				dataHRTF->SetSourceURL(_sourceUrl);
+			}
 		}			
 
 		
