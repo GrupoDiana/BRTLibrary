@@ -51,7 +51,7 @@ namespace BRTFilters {
 		 * @param _numberOfFilterStages number of second order stages to set
 		 */
 		bool Setup(int _numberOfChannels, int _numberOfBiquadSectionsPerChannel) override{ 			
-			
+			BRTProcessing::CMultichannelBiquadFilterChain::Reset(); // Reset the filter before setting it up again
 			bool result = BRTProcessing::CMultichannelBiquadFilterChain::Setup(_numberOfChannels, _numberOfBiquadSectionsPerChannel);					
 			
 			if (!result) {

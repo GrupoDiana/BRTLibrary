@@ -148,6 +148,14 @@ namespace BRTProcessing {
 			}			
 		}
 
+		void Reset() {
+			initialized = false;
+			enableProcessor = true;
+			numberOfChannels = 0;
+			numberOfBiquadSectionsPerChannel = 0;
+			numberOfCoefficientsPerChannel = 0;
+			biquadChainTable.clear();
+		}
 	
 	private:
 		///////////////////////
