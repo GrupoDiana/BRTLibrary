@@ -25,99 +25,124 @@
 #ifndef _CRMS_CALCULATOR_HPP_
 #define _CRMS_CALCULATOR_HPP_
 
-#include <Common/Buffer.hpp>
-
-#include <Common/ErrorHandler.hpp>
 #include <cmath>
-#include <math.h>
+#include <cstddef>
+#include <deque>
 
-#define EPSILON_ 0.00001
-
+#include <Common/Buffer.hpp>
+#include <Common/ErrorHandler.hpp>
 
 namespace Common {
 
-	/** \details Class used to detect the envelope of an audio signal
-	*/
+	/**
+	* @brief Calculates the RMS of the samples contained in the last N blocks.
+	*
+	* The temporal window is rounded up to a whole number of audio blocks.
+	* Before the window is full, only the samples received so far are used.
+	*/	
 class CRMSCalculator
 	{
-	public:
-		// PUBLIC METHODS
 
-		/** \brief Default constructor
-		*	\details By default, sets sampling rate to 44100Hz, attack time to 20ms and release time to 100ms
+	public:		
+		/**
+		* @param num_frames Maximum number of audio blocks in the window.
+		* A value of zero is treated as one block.
+		*/		
+		CRMSCalculator(std::size_t num_frames = 10)
+			: max_frames { num_frames > 0 ? num_frames : 1 } {
+		}
+		
+
+		/**
+		* @brief Configures the window duration and clears previous measurements.
+		* Invalid parameters leave the existing configuration unchanged.
 		*/
-		CRMSCalculator(size_t num_frames = 10)
-			: max_frames(num_frames)
-			, sum_rms { 0 }	
-		{
-			rms_history.clear();
-		}
-		
+		void SetNumberOfFrames(int _windowSizeMS, int _sampleRate, int _bufferSize) {
 
-		void SetNumberOfFrames(int _windowSizeMS, int _sampleRate, int _bufferSize) {			
-			int num_frames = CalculateWindowSizeInSamples(_windowSizeMS, _sampleRate, _bufferSize);			
+			if (_windowSizeMS <= 0 || _sampleRate <= 0 || _bufferSize <= 0) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM,	"RMS window, sample rate and buffer size must be positive.");
+				return;
+			}
+
+			const double requiredBlocks = (static_cast<double>(_windowSizeMS)  * static_cast<double>(_sampleRate))
+				/ (1000.0 * static_cast<double>(_bufferSize));
+
+			max_frames = static_cast<std::size_t>(std::ceil(requiredBlocks));
+
+			if (max_frames == 0) {
+				max_frames = 1;
+			}
+			Reset();
+		}
+				
+		/**
+		* @brief Returns the RMS of all samples in the current window.		
+		* Empty buffers return zero and do not modify the history.
+		*/
+		float Process(const CMonoBuffer<float> & buffer) {
+			if (buffer.empty()) {
+				return 0.0f;
+			}
+
+			TBlockStatistics block;
+			block.sampleCount = buffer.size();
+
+			for (const float sample : buffer) {
+				const double value = static_cast<double>(sample);
+				block.sumSquares += value * value;
+			}
+
+			if (history.size() >= max_frames) {
+				history.pop_front();
+			}
+
+			history.push_back(block);
+
+			// Sum the short block history again to avoid accumulated
+			// subtraction errors when old blocks leave the window.
+			double totalSumSquares = 0.0;
+			std::size_t totalSampleCount = 0;
+
+			for (const auto & item : history) {
+				totalSumSquares += item.sumSquares;
+				totalSampleCount += item.sampleCount;
+			}
+
+			return static_cast<float>(std::sqrt(totalSumSquares	/ static_cast<double>(totalSampleCount)));
 		}
 
 		/**
-		 * @brief Calculate the RMS value of a buffer using a moving average
-		 * @param buffer buffer with samples
-		 * @return average rms value of the last N buffers
-		 */
-		float Process(const CMonoBuffer<float> & buffer)
-		{
-			double sum_squares = 0;
-			for (int i = 0; i < buffer.size(); i++) {
-				sum_squares += buffer[i] * buffer[i];
-			}
-			double rms = std::sqrt(sum_squares / buffer.size());
-			
-			
-			// Update moving average
-			if (rms_history.size() == max_frames) {
-				sum_rms -= rms_history.front();
-				rms_history.pop_front();
-			}
-
-			rms_history.push_back(rms);
-			sum_rms += rms;
-						
-			return sum_rms / rms_history.size();
-		}
-
-		/**
-		 * @brief Calculate the RMS value of a buffer
-		 * @param buffer buffer with samples
-		 * @return rms value of the buffer
-		 */
+		* @brief Returns the RMS of one buffer, without a temporal history.
+		*/
 		static float InstantProcess(const CMonoBuffer<float> & buffer) {
-			double sum_squares = 0;
-			for (int i = 0; i < buffer.size(); i++) {
-				sum_squares += buffer[i] * buffer[i];
+			if (buffer.empty()) {
+				return 0.0f;
 			}
-			double rms = std::sqrt(sum_squares / buffer.size());
-			return rms;
+
+			double sumSquares = 0.0;
+			for (const float sample : buffer) {
+				const double value = static_cast<double>(sample);
+				sumSquares += value * value;
+			}
+			return static_cast<float>(std::sqrt(sumSquares / static_cast<double>(buffer.size())));
 		}
 
+		/**
+		* @brief Clears measurements while preserving the configured window.
+		*/
 		void Reset() {
-			sum_rms = 0;
-			rms_history.clear();
+			history.clear();
 		}
 
-	private:
-		
-		size_t CalculateWindowSizeInSamples(int _windowSizeMS, int _sampleRate, int _bufferSize) {
 
-			float frameSize = static_cast<float>(_bufferSize) / static_cast<float>(_sampleRate);
-			float windowRequiredSize = static_cast<float>(_windowSizeMS) / 1000;
-			float framesRequired = windowRequiredSize / frameSize;
-			size_t framesRequired_upper_int = static_cast<size_t>(std::ceil(framesRequired));
-			return framesRequired_upper_int;
-		}
+	private:						
+		struct TBlockStatistics {
+			double sumSquares = 0.0;
+			std::size_t sampleCount = 0;
+		};
 
-		double sum_rms; /// last calculated RMS value
-		std::deque<double> rms_history;
-		size_t max_frames;
-		
+		std::size_t max_frames;
+		std::deque<TBlockStatistics> history;
 	};
 }
 
