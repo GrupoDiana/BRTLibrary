@@ -5,6 +5,16 @@ All notable changes to the Binaural Rendering Toolbox (BRT) will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.9] - 2026-09-21
+
+### Added
+- New field for storing the URL of a resource when it is downloaded from the Sonicom ecosystem.
+
+### Fixed
+- Fixes an error when changing a binaural filter.
+- The sliding window on the RMS calculator did not work correctly in all circumstances.
+- A contribution that resolves compilation errors on platforms other than Windows and Mac.
+
 ## [3.0.8] - 2026-07-23
 
 ### Changed
