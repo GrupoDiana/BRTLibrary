@@ -33,7 +33,7 @@ namespace BRTConnectivity {
 		
 		
 		CCommand() : empty{ true } { };
-		CCommand(std::string _commandJsonString) : j {json::parse(_commandJsonString)}, empty { false }  { }
+		CCommand(std::string _commandJsonString) : j (json::parse(_commandJsonString)), empty { false }  { }
 		
 		bool isNull() { 			
 			return empty;
