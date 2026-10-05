@@ -178,7 +178,8 @@ namespace BRTReaders {
 				
 				if (materialID == -1) continue; // No material assigned to this face
 				auto& coefs = objData.materials[materialID].acoustic_coeffs;		
-				room->SetWallAbsortion(faceIndex, std::vector<float>(coefs.begin(), coefs.end()));	
+				//room->SetWallAbsortion(faceIndex, std::vector<float>(coefs.begin(), coefs.end()));
+				room->SetWallAbsortion(faceIndex, std::vector<double>(coefs.begin(), coefs.end()));
 			}
 		}
 
