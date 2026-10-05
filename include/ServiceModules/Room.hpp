@@ -230,18 +230,18 @@ namespace BRTServices {
 		*	\param [in] index of the wall.
 		*	\param [in] absortion coeficient (frequency independent)
 		*/
-		bool SetWallAbsortion(int wallIndex, float absortion) {
+		bool SetWallAbsortion(int wallIndex, double absortion) {
 			if (!IsThereThisWall(wallIndex)) return false;
 			return walls.at(wallIndex).SetAbsortion(absortion);
 		}
 
 		/** \brief sets the absortion coeficient (frequency independent) of all walls
 		*/
-		bool SetAllWallsAbsortion(float _absortion) {
+		bool SetAllWallsAbsortion(double absortion) {		
 			bool control = true;
 			int wallsNumber = walls.size();
 			for (int i = 0; i < wallsNumber; i++) {
-				control = control && walls.at(i).SetAbsortion(_absortion);
+				control = control && walls.at(i).SetAbsortion(absortion);
 			}
 			return control;
 		}
@@ -252,14 +252,14 @@ namespace BRTServices {
 		*	\param [in] index of the wall.
 		*	\param [in] absortion coeficients for each band (frequency dependent)
 		*/
-		bool SetWallAbsortion(int wallIndex, const std::vector<float>& absortionPerBand) {
+		bool SetWallAbsortion(int wallIndex, const std::vector<double> & absortionPerBand) {
 			if (!IsThereThisWall(wallIndex)) return false;
 			return walls.at(wallIndex).SetAbsortion(absortionPerBand);
 		};
 
 		/** \brief Sets the absortion coeficient (frequency dependent) of all walls
 		*/
-		bool SetAllWallsAbsortion(const std::vector<float>& absortionPerBand) {
+		bool SetAllWallsAbsortion(const std::vector<double> & absortionPerBand) {
 			bool control = true;
 			int wallsNumber = walls.size();
 			for (int i = 0; i < wallsNumber; i++) {
@@ -273,7 +273,7 @@ namespace BRTServices {
 		 * @param absortionPerBand walls absortion coeficients for each band (frequency dependent)
 		 * @return 
 		 */
-		bool SetAllWallsAbsortion(const std::vector<std::vector<float>> & absortionPerBand) {
+		bool SetAllWallsAbsortion(const std::vector<std::vector<double>> & absortionPerBand) {
 			bool control = true;
 			
 			if (absortionPerBand.size() != walls.size()) {
@@ -291,10 +291,10 @@ namespace BRTServices {
 		 * @brief Gets the absortion coefficients of all the walls in the room
 		 * @param _wallsAbsortions 
 		 */
-		void GetAllWallsAbsortion(std::vector<std::vector<float>> & _wallsAbsortions) const {
-			_wallsAbsortions.clear();
+		void GetAllWallsAbsortion(std::vector<std::vector<double>> & wallsAbsortions) const {
+			wallsAbsortions.clear();
 			for (auto & wall: walls) {
-				_wallsAbsortions.push_back(wall.GetAbsortionBand());
+				wallsAbsortions.push_back(wall.GetAbsortionBand());
 			}						
 		}
 		

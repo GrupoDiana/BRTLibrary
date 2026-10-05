@@ -40,6 +40,7 @@
 		#define TWOPI 6.283185307179586476925287
 #endif
 
+#include <cmath>
 #include <vector>
 #include <Common/Vector3.hpp>
 
@@ -53,7 +54,7 @@ public:
 		, B { 0 }
 		, C { 0 }
 		, D { 0 }
-		, absortionBands { std::vector<float> (NUM_BAND_ABSORTION, 0.01) }
+		, absortionBands(NUM_BAND_ABSORTION, 0.01)		
 		, active { true }
 		, polygon { std::vector<Common::CVector3>() } {
 		//Wall purely reflective by default
@@ -111,33 +112,57 @@ public:
 	const std::vector<Common::CVector3>& GetCorners() const {
 		return polygon;
 	}
+	
+	/**
+	 * @brief Sets the same absorption value for all frequency bands of the wall.
+	 * @param absorption Absorption value to be set [0.0 to 1.0). Values 1.0 or greater are clamped.
+	 * @return True if the absorption value was successfully set, false otherwise.
+	 */
+	bool SetAbsortion(double absorption) {
+		double normalized;
 
-	/** \brief set the absortion coeficient (frequency independent) of the wall
-	*   \param [in] Absortion: absortion coeficient of the wall (expressed as a number between 0 (no absortion) and 1 (total absortion).
-	*/
-	bool SetAbsortion(const float& _absortion) {		
-		if (_absortion < 0 || _absortion > 1) {
+		if (!TryNormalizeAbsortion(absorption, normalized)) {
 			return false;
 		}
-		absortionBands = std::vector<float> (NUM_BAND_ABSORTION, _absortion);
+
+		absortionBands.assign(NUM_BAND_ABSORTION, normalized);
 		return true;
 	}
 
-	/** \brief set the absortion coeficients for each band of the wall
-	*	\param [in] Absortion: Vector with absortion coeficients of the wall (expressed as a number between 0 (no absortion) and 1 (total absortion).
-	*/
-	bool SetAbsortion(const std::vector<float>& _absortionPerBand) { 
-		if (IsValidAbsortionsCoefficientsVector(_absortionPerBand)) {
-			absortionBands = _absortionPerBand;
-			return true;
+	/**
+	 * @brief Sets the absorption values for each frequency band of the wall.
+	 * @param absorptionPerBand A vector containing the absorption values for each frequency band. The size of the vector must be equal to NUM_BAND_ABSORTION.
+	 * values outside the range [0.0, 1.0) are clamped to the nearest valid value.
+	 * @return true if the absorption values were successfully set, false otherwise (e.g., if the input vector size is incorrect).
+	 */
+	bool SetAbsortion(const std::vector<double> & absorptionPerBand) {
+		if (absorptionPerBand.size() != NUM_BAND_ABSORTION) {
+			return false;
 		}
-		return false;
+
+		std::vector<double> normalized;
+		normalized.reserve(NUM_BAND_ABSORTION);
+
+		for (double absorption : absorptionPerBand) {
+			double value;
+
+			if (!TryNormalizeAbsortion(absorption, value)) {
+				return false;
+			}
+
+			normalized.push_back(value);
+		}
+
+		// No modificar la pared hasta validar todas las bandas.
+		absortionBands.swap(normalized);
+		return true;
 	}
-	
-	/** \brief Returns the vector with absortion coeficients of the wall. 
-	*	\param [out] Absortion: absortion of the wall. Vector with the absorption coefficients of each band.
-	*/
-	const std::vector<float>& GetAbsortionBand() const {
+
+	/**
+	 * @brief Gets the absorption values for each frequency band of the wall.
+	 * @return 
+	 */
+	const std::vector<double> & GetAbsortionBand() const {
 		return absortionBands;
 	}
 
@@ -465,16 +490,18 @@ private:
 		C = normal.z;
 		D = -(A * polygon.at(2).x + B * polygon.at(2).y + C * polygon.at(2).z);
 	}
-	
-	bool IsValidAbsortionsCoefficientsVector(const std::vector<float>& _absortionPerBand) {		
-		if (_absortionPerBand.size() != NUM_BAND_ABSORTION) return false;
-
-		for (int i = 0; i < _absortionPerBand.size(); i++) {
-			if (_absortionPerBand.at(i) < 0 || _absortionPerBand.at(i) > 1) {
-				return false;
-				break;
-			}
+		
+	static bool TryNormalizeAbsortion(double absorption, double & normalized) {
+		if (!std::isfinite(absorption) || absorption < 0.0 || absorption > 1.0) {
+			return false;
 		}
+
+		// Minimum reflected energy: 1e-10.
+		// This is equivalent to approximately 100 dB of maximum loss.
+		constexpr double maxAbsorption = 1.0 - 1.0e-10;
+
+		normalized = absorption > maxAbsorption ? maxAbsorption : absorption;
+
 		return true;
 	}
 
@@ -482,7 +509,8 @@ private:
 	// Attributes
 	///////////////
 	std::vector<Common::CVector3> polygon;	// corners of the wall
-	std::vector<float> absortionBands;		// absortion coeficients (absorved energy / incident energy) for each octave Band
+	//std::vector<float> absortionBands;		// absortion coeficients (absorved energy / incident energy) for each octave Band
+	std::vector<double> absortionBands;		// absortion coeficients (absorved energy / incident energy) for each octave Band
 	bool active;							// sets wether the wall is active or not (if false, the wall is transparent)
 
 	float A, B, C, D;						// General Plane Eq.: Ax + By + Cz + D = 0
