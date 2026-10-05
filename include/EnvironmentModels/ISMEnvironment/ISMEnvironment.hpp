@@ -485,8 +485,8 @@ namespace BRTEnvironmentModel {
 			std::cout << "Source location = " << std::to_string(sourceLocation.x) << ", " << std::to_string(sourceLocation.y) << ", " << std::to_string(sourceLocation.z) << "\n";
 			std::cout << "Listener location = " << std::to_string(listenerLocation.x) << ", " << std::to_string(listenerLocation.y) << ", " << std::to_string(listenerLocation.z) << "\n";
 												
-			std::cout << "Absortions = ";
-			std::vector<std::vector<float>> wallsAbsortions;
+			std::cout << "Absortions = ";			
+			std::vector<std::vector<double>> wallsAbsortions;
 			ISMParameters->room->GetAllWallsAbsortion(wallsAbsortions);
 			for (int j = 0; j < NUM_BAND_ABSORTION; j++) {
 			std::cout << wallsAbsortions.at(0).at(j) << ", ";

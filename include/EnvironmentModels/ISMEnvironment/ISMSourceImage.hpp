@@ -309,15 +309,20 @@ namespace BRTEnvironmentModel {
 		}
 				
 		void AddCoefficientsFromWall(std::vector<float> & absorptionCoefficients, const BRTServices::CWall & wall) {
-			for (int n = 0; n < absorptionCoefficients.size(); n++) {
-				absorptionCoefficients[n] *= std::sqrt(1 - wall.GetAbsortionBand().at(n));
-			}			
-		}
-		void RemoveCoefficientsFromWall(std::vector<float> & absorptionCoefficients, const BRTServices::CWall & wall) {
-			for (int n = 0; n < absorptionCoefficients.size(); n++) {
-				absorptionCoefficients[n] /= std::sqrt(1 - wall.GetAbsortionBand().at(n));
+			const auto & absorptions = wall.GetAbsortionBand();
+			for (std::size_t n = 0; n < absorptionCoefficients.size(); ++n) {
+				const double reflectionGain = std::sqrt(1.0 - absorptions.at(n));
+				absorptionCoefficients[n] *= static_cast<float>(reflectionGain);
 			}
 		}
+		
+		void RemoveCoefficientsFromWall(std::vector<float> & absorptionCoefficients, const BRTServices::CWall & wall) {
+			const auto & absorptions = wall.GetAbsortionBand();
+			for (std::size_t n = 0; n < absorptionCoefficients.size(); ++n) {
+				const double reflectionGain = std::sqrt(1.0 - absorptions.at(n));
+				absorptionCoefficients[n] /= static_cast<float>(reflectionGain);
+			}
+		}		
 
 		float CalculateRoomsDistance(const BRTServices::CWall & wall, const std::vector<BRTServices::CWall> & path, const Common::CVector3 & imgPos, const Common::CVector3 & listenerPosition) {
 			float roomsDistance = 0.0;

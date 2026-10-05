@@ -191,7 +191,7 @@ namespace BRTEnvironmentModel {
 		void AllEntryPointsAllDataReady() override {			
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			if (!initialized) {	
-				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "The SDN environment processor is not initialized");
+				SET_RESULT(RESULT_ERROR_NOTINITIALIZED, "The ISM environment processor is not initialized");
 				return;
 			}					
 			if (!setupDone) { 	
