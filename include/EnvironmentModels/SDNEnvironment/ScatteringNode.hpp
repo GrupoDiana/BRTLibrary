@@ -98,7 +98,7 @@ public:
 	* @param newValue New frequency absorption value in the range [0, 1]
 	* @param index Octave band index in the [125, 500, 1000, 2000, 4000, 8000, 16000]Hz array
 	*/
-	void SetFreqAbsorption(float newValue, int index)
+	void SetFreqAbsorption(double newValue, int index)	
 	{
 		absorption[index] = newValue;
 		newAbsorption = true;
@@ -108,7 +108,7 @@ public:
 	 * @brief Set the frequency absorption values array
 	 * @param newValues New frequency absorption values array
 	 */
-	void SetFreqAbsortion(std::vector<float> _newValues) {		
+	void SetFreqAbsortion(const std::vector<double> & _newValues) { 	
 		if (_newValues.size() != SDNParameters::NUM_FREQ) {
 			return;
 		}
@@ -199,8 +199,8 @@ private:
 
 	int nOfConnections = 0;
 	float scatteringCoefficient = 0.0f;
-
-	float absorption[SDNParameters::NUM_FREQ] = { 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f, 0.1f };
+	
+	double absorption[SDNParameters::NUM_FREQ] = { 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1 };
 	bool newAbsorption = false;
 	std::vector<double> a, b;
 

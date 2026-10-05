@@ -68,9 +68,9 @@ namespace BRTEnvironmentModel {
 			 * @brief Set Wall absortion coefficientes per band
 			 * @param _wallIndex Wall where the coefficients are to be placed. 
 			 * @param _wallAbsortions absortion coefficients per band
-			 */
-			void SetWallAbsortion(int _wallIndex, std::vector<float> _wallAbsortions) {									
-				SDNProcessor->SetWallFreqAbsorption(_wallIndex, _wallAbsortions);				
+			 */			
+			void SetWallAbsortion(int wallIndex, const std::vector<double> & wallAbsortions) {
+				SDNProcessor->SetWallFreqAbsorption(wallIndex, wallAbsortions);
 			}
 			
 			/**
@@ -401,12 +401,13 @@ namespace BRTEnvironmentModel {
 			//std::lock_guard<std::mutex> l(mutex);
 			const std::vector<BRTServices::CWall> & walls = room->GetWalls();			
 			
-			for (int _wallIndex = 0; _wallIndex < walls.size(); _wallIndex++) {
-				std::vector<float> absortionBands = walls.at(_wallIndex).GetAbsortionBand();				
-				//The SDN has one less band, it does not have the lowest frequency band.
-				std::vector<float> _sdnWallAbsortion(absortionBands.begin() + 1, absortionBands.end());				
+			for (int _wallIndex = 0; _wallIndex < walls.size(); _wallIndex++) {				
+				const auto & absortionBands = walls.at(_wallIndex).GetAbsortionBand();
+				// SDN has one less band, it does not have the lowest frequency band.
+				std::vector<double> sdnWallAbsortion(absortionBands.begin() + 1, absortionBands.end());
+
 				for (auto & it : sourcesConnectedProcessors) {
-					it.SetWallAbsortion(ToSDNWallIndex(_wallIndex), _sdnWallAbsortion);
+					it.SetWallAbsortion(ToSDNWallIndex(_wallIndex), absortionBands);
 				}
 			}
 		}
@@ -415,11 +416,12 @@ namespace BRTEnvironmentModel {
 		void UpdateRoomAllWallsAbsortion(CSDNProcessors & _sdnProcessor) { 
 			if (room == nullptr) return;	
 			const std::vector<BRTServices::CWall> & walls = room->GetWalls();
-			for (int _wallIndex = 0; _wallIndex < walls.size(); _wallIndex++) {
-				std::vector<float> absortionBands = walls.at(_wallIndex).GetAbsortionBand();
-				//The SDN has one less band, it does not have the lowest frequency band.
-				std::vector<float> _sdnWallAbsortion(absortionBands.begin() + 1, absortionBands.end());				
-				_sdnProcessor.SetWallAbsortion(ToSDNWallIndex(_wallIndex), _sdnWallAbsortion);				
+			for (int _wallIndex = 0; _wallIndex < walls.size(); _wallIndex++) {				
+				const auto & absortionBands = walls.at(_wallIndex).GetAbsortionBand();
+				// SDN has one less band, it does not have the lowest frequency band.
+				std::vector<double> sdnWallAbsortion(absortionBands.begin() + 1, absortionBands.end());
+				
+				_sdnProcessor.SetWallAbsortion(ToSDNWallIndex(_wallIndex), absortionBands);				
 			}		
 		}
 

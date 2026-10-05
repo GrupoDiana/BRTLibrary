@@ -190,7 +190,7 @@ namespace BRTEnvironmentModel {
 		* @param wallIndex Index of the desired wall, the array of walls is constructed as [X0, XSize, Y0, YSize, Z0, ZSize]
 		* @param freqIndex Index of the frequency to change, the array of frequencies is [125, 250, 500, 1000, 2000, 4000, 8000, 16000]Hz
 		*/
-		void SetWallFreqAbsorption(float newValue, int wallIndex, int freqIndex)
+		void SetWallFreqAbsorption(double newValue, int wallIndex, int freqIndex)		
 		{
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			wallNodes[wallIndex].SetFreqAbsorption(newValue, freqIndex);
@@ -202,7 +202,7 @@ namespace BRTEnvironmentModel {
 		 * @param newValues Absorption values vector, 8 values are expected, the centre frequencies 
 			of which are as follows: [125, 250, 500, 1000, 2000, 4000, 8000, 16000]Hz
 		 */
-		void SetWallFreqAbsorption(int _wallIndex, std::vector<float> _newValues) {
+		void SetWallFreqAbsorption(int _wallIndex, const std::vector<double> & _newValues) {		
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			if (_newValues.size() != SDNParameters::NUM_FREQ) {
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "The number of values must be equal to the number of frequencies");
