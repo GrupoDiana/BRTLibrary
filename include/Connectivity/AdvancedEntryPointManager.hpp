@@ -63,9 +63,9 @@ namespace BRTConnectivity {
          * @brief This method shall be called whenever data is received at an entry point, with non-zero multiplicity. 
          * @param entryPointID 
         */
-        virtual void OneEntryPointOneDataReceived(std::string entryPointID) {};                      
-                
-       
+        //virtual void OneEntryPointOneDataReceived(std::string entryPointID) {};                      
+        virtual bool OneEntryPointOneDataReceived(std::string entryPointID) { return true; }		
+
     private:                                                 
         /// Implementation of EntryPointManager virtual methods                
 
@@ -118,10 +118,10 @@ namespace BRTConnectivity {
 
             if (it != entryPointsWaitingList.end()) {                                               
                 
-                if (it->connections == 0) { return; }
-                it->timesReceived++;
-                OneEntryPointOneDataReceived(_entryPointID);
+                if (it->connections == 0) { return; }              
+				if (!OneEntryPointOneDataReceived(_entryPointID)) {	return; }                
 
+				it->timesReceived++;
                 if ((it->timesReceived) >= (it->connections)) {
                     it->received = true;
                     OneEntryPointAllDataReady(_entryPointID);

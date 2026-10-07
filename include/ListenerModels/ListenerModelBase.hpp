@@ -207,20 +207,19 @@ namespace BRTListenerModel {
 		 * @param _entryPointId entryPoint ID
 		*/
 		
-		void OneEntryPointOneDataReceived(std::string _entryPointId) override{
-						
+		bool OneEntryPointOneDataReceived(std::string _entryPointId) override{
+			bool result = false;
 			if (_entryPointId == "leftEar") {								
-				CMonoBuffer<float> newBuffer = GetSamplesEntryPoint("leftEar")->GetData();				
-				leftChannelMixer.AddBuffer(newBuffer);
+				CMonoBuffer<float> newBuffer = GetSamplesEntryPoint("leftEar")->GetData();								
+				result = leftChannelMixer.AddBuffer(newBuffer);
 			}
 			else if (_entryPointId == "rightEar") {				
 				CMonoBuffer<float> newBuffer = GetSamplesEntryPoint("rightEar")->GetData();								
-				rightChannelMixer.AddBuffer(newBuffer);
+				result = rightChannelMixer.AddBuffer(newBuffer);
 			} else {			
 				//nothing
 			}
-
-
+			return result;
 		}
 
 		/**

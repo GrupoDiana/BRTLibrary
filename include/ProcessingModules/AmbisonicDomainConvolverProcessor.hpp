@@ -51,12 +51,16 @@ namespace BRTProcessing {
 		 * @brief Implementation of CProcessorBase virtual method
 		 * @param _entryPointId entryPoint ID
 		*/
-		void OneEntryPointOneDataReceived(std::string _entryPointId) {
+		bool OneEntryPointOneDataReceived(std::string _entryPointId) override {
 			std::lock_guard<std::mutex> l(mutex);
+			bool result = false;
 			if (_entryPointId == "inputChannels") {				
 				std::vector<CMonoBuffer<float>> inputChannels = GetMultipleSamplesVectorEntryPoint("inputChannels")->GetData();
-				if (inputChannels.size() != 0) { MixChannelsBuffer(inputChannels); }
+				if (inputChannels.size() != 0) { 
+					MixChannelsBuffer(inputChannels); 
+				}
 			}
+			return result;
 		}
         
 		/**
@@ -112,8 +116,8 @@ namespace BRTProcessing {
 		 * @brief Mix new channes with buffer channesl
 		 * @param inputChannels Vector of CMonoBuffer to be mixed with the buffer
 		*/
-		void MixChannelsBuffer(std::vector<CMonoBuffer<float>> inputChannels) {
-			
+		bool MixChannelsBuffer(std::vector<CMonoBuffer<float>> inputChannels) {
+			bool result = true;
 			if (channelsBuffer.size() != inputChannels.size()) {
 				channelsBuffer = std::vector<CMonoBuffer<float>>(inputChannels.size(), CMonoBuffer<float>(inputChannels[0].size()));
 			}
@@ -121,6 +125,7 @@ namespace BRTProcessing {
 			for (int nChannel = 0; nChannel < inputChannels.size(); nChannel++) {
 				channelsBuffer[nChannel] += inputChannels[nChannel];
 			}
+			return result;
 		}
 
 		/**
