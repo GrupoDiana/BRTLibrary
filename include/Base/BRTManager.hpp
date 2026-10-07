@@ -23,6 +23,8 @@
 #ifndef _BRT_MANAGER_
 #define _BRT_MANAGER_
 
+#include <algorithm>
+#include <mutex>
 #include <thread>
 #include "Connectivity/ExitPoint.hpp"
 #include "SourceModels/SourceModelBase.hpp"
@@ -32,11 +34,39 @@
 #include "BilateralFilterModels/BilateralFilterModelBase.hpp"
 #include "third_party_libraries/nlohmann/json.hpp"
 
+namespace BRTEnvironmentModel {
+class CVirtualSourceList;
+}
+
 namespace BRTBase {
 	using json = nlohmann::json;
 		
 	class CBRTManager {
 
+		struct CProcessingContext {
+			CBRTManager * manager;
+			CProcessingContext * previous;
+
+			static CProcessingContext *& Current() {
+				static thread_local CProcessingContext * current = nullptr;
+				return current;
+			}
+
+			explicit CProcessingContext(CBRTManager * _manager)
+				: manager(_manager)
+				, previous(Current()) {
+				Current() = this;
+			}
+
+			~CProcessingContext() noexcept {
+				Current() = previous;
+			}
+
+			CProcessingContext(const CProcessingContext &) = delete;
+			CProcessingContext & operator=(const CProcessingContext &) = delete;
+		};
+
+		
 	public:
 		CBRTManager()
 			: initialized { false }
@@ -851,31 +881,30 @@ namespace BRTBase {
 
 		/**
 		 * @brief Start audio processing
-		*/
+		*/		
 		void ProcessAll() {
-			if (setupModeActivated) return;
-			std::lock_guard<std::mutex> l(mutex);
-
-			if (!multiThreadingEnabled) {
-				//std::thread thread1 = std::thread(&BRTBase::CBRTManager::ProcessMonoThread, this);
-				//thread1.join();
-				ProcessMonoThread();
-			} else {
-				ProcessMultiThread();
+			// Prevent recursive entry before trying to acquire the mutex.
+			if (IsProcessingOnCurrentThread()) {
+				SET_RESULT(RESULT_ERROR_NOTALLOWED,	"ProcessAll cannot be called recursively.");
+				return;
 			}
-		}
 
-		void ProcessOneSource(std::string _sourceID) {
-			if (setupModeActivated) return;			
-			//std::lock_guard<std::mutex> l(mutex);
-			if (!multiThreadingEnabled) {
-				ProcessOneSourceInternal(_sourceID);
-			} else {
-				//std::thread thread1 = std::thread(&BRTBase::CBRTManager::ProcessOneSourceInternal, this);
-				//thread1.join();
+			std::lock_guard<std::mutex> lock(mutex);
+
+			if (setupModeActivated) {
+				return;
 			}
-				
-		}
+
+			// Temporary restriction while multi-thread processing is reviewed.
+			if (multiThreadingEnabled) {
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Multi-thread processing is not supported by this context yet.");
+				return;
+			}
+
+			CProcessingContext processingContext(this);
+			ProcessMonoThread();
+		}		
+
 		/**
 		 * @brief Executes the received command. To do so, it distributes it to all the connected modules, which are responsible for executing the relevant actions.
 		 * @param commandJson The command to execute following a json format.
@@ -903,12 +932,30 @@ namespace BRTBase {
 			for (auto it = listenerModels.begin(); it != listenerModels.end(); it++)
 				(*it)->ProcessModelWithoutInputsSamples();
 		}
-	
-		void ProcessOneSourceInternal(std::string _sourceID) {
-			std::find_if(audioSources.begin(), audioSources.end()
-				, [&_sourceID](std::shared_ptr<BRTSourceModel::CSourceModelBase> & sourceItem) { 
-				return sourceItem->GetID() == _sourceID;}
-			)->get()->PropagateSamples();
+			
+		void ProcessVirtualSourceInternal(const std::string & _sourceID) {
+			if (!IsProcessingOnCurrentThread()) {
+				SET_RESULT(RESULT_ERROR_NOTALLOWED,	"Virtual sources can only be processed inside an active block.");
+				return;
+			}
+
+			auto it = std::find_if(	audioSources.begin(), audioSources.end(),
+				[&_sourceID](
+					const std::shared_ptr<BRTSourceModel::CSourceModelBase> & source) {
+					return source->GetID() == _sourceID;
+				});
+
+			if (it == audioSources.end()) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There is no source with that ID.");
+				return;
+			}
+
+			if (!(*it)->IsVirtualSource()) {
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "This operation only processes virtual sources.");
+				return;
+			}
+
+			(*it)->PropagateSamples();
 		}
 
 		/**
@@ -958,6 +1005,23 @@ namespace BRTBase {
 			return nullptr;
 		}
 
+		/**
+		 * @brief Checks if the current thread is processing audio. 
+		 * It does so by checking if the current processing context is associated with this manager.
+		 * @return true if the current thread is processing audio, otherwise false
+		 */
+		bool IsProcessingOnCurrentThread() const {
+			for (auto * context = CProcessingContext::Current();
+				context != nullptr;
+				context = context->previous) {
+				if (context->manager == this) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
 		///////////////
 		// Attributes
 		///////////////
@@ -973,6 +1037,9 @@ namespace BRTBase {
 		bool setupModeActivated;
 		bool multiThreadingEnabled;
 		mutable std::mutex mutex;
+
+		friend class BRTEnvironmentModel::CVirtualSourceList;
+
 	};
 }
 #endif

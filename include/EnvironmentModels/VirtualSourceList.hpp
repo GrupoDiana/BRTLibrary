@@ -104,6 +104,15 @@ namespace BRTEnvironmentModel {
 			}
 		}
 		
+		void SetVirtualSourcePosition(const std::string & _virtualSourceID, const Common::CTransform & _sourcePosition) {
+			auto && it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
+			if (it != virtualSources.end()) {
+				it[0]->SetSourceTransform(_sourcePosition);
+			} else {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There is no virtual source with that name.");
+			}
+		}
+
 		void SetVirtualSourceBuffer(const std::string& _virtualSourceID, const CMonoBuffer<float>& _buffer) {			
 			auto&& it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
 			if (it != virtualSources.end()) {					
@@ -113,38 +122,64 @@ namespace BRTEnvironmentModel {
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There is no virtual source with that name.");
 			}			
 		}
-
+									
 		void PropagateVirtualSource(const std::string & _virtualSourceID) {
-			auto && it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
-			if (it != virtualSources.end()) {				
-				brtManager->ProcessOneSource(_virtualSourceID);
-			} else {
+			if (!CheckProcessingContext()) {
+				return;
+			}
+
+			auto it = std::find_if(virtualSources.begin(), virtualSources.end(),
+				[&_virtualSourceID](
+					const std::shared_ptr<BRTSourceModel::CVirtualSourceModel> & source) {
+					return source->GetID() == _virtualSourceID;
+				});
+
+			if (it == virtualSources.end()) {
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There is no virtual source with that name.");
-			}				
+				return;
+			}
+			brtManager->ProcessVirtualSourceInternal(_virtualSourceID);
 		}
 
 		void PropagateVirtualSource(const std::string & _virtualSourceID, const CMonoBuffer<float> & _buffer) {
-			auto && it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
-			if (it != virtualSources.end()) {
-				it[0]->SetBuffer(_buffer);
-				brtManager->ProcessOneSource(_virtualSourceID);
-			} else {
+			if (!CheckProcessingContext()) {
+				return;
+			}
+
+			auto it = std::find_if(virtualSources.begin(), virtualSources.end(),
+				[&_virtualSourceID](
+					const std::shared_ptr<BRTSourceModel::CVirtualSourceModel> & source) {
+					return source->GetID() == _virtualSourceID;
+				});
+
+			if (it == virtualSources.end()) {
 				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There is no virtual source with that name.");
+				return;
 			}
+			(*it)->SetBuffer(_buffer);
+			brtManager->ProcessVirtualSourceInternal(_virtualSourceID);
 		}
-	
-		void SetVirtualSourcePosition(const std::string& _virtualSourceID, const Common::CTransform& _sourcePosition) {
-			auto&& it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
-			if (it != virtualSources.end()) {
-				it[0]->SetSourceTransform(_sourcePosition);
-			}
-			else {
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There is no virtual source with that name.");
-			}
-		}
-		
+
+	public:
+		// Existing public methods continue here.
+
+
 
 	private:		
+
+
+		bool CheckProcessingContext() const {
+			if (brtManager != nullptr && brtManager->IsProcessingOnCurrentThread()) {
+				return true;
+			}
+			SET_RESULT(RESULT_ERROR_NOTALLOWED,	"Virtual source propagation requires an active processing block.");
+			return false;
+		}
+		
+		///////////////////
+		/// Attributes
+		///////////////////
+
 		std::vector<std::shared_ptr<BRTSourceModel::CVirtualSourceModel>> virtualSources;		// Store a list of virtual sources
 		BRTBase::CBRTManager* brtManager;
 	};
