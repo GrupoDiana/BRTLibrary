@@ -30,12 +30,13 @@
 #define _C_FREE_FIELD_ENVIRONMENT_PROCESSOR_HPP_
 namespace BRTEnvironmentModel { 
 
-	class CFreeFieldEnvironmentProcessor : public BRTConnectivity::CBRTConnectivity, public CFreeFieldEnvironment {
+	class CFreeFieldEnvironmentProcessor : public BRTConnectivity::CBRTConnectivity, public CFreeFieldEnvironment, public CVirtualSourceList {
 	
 	public:
 		CFreeFieldEnvironmentProcessor(BRTBase::CBRTManager * _brtManager)			
-			: brtManager { _brtManager }
-			, initialized { false }
+			: CVirtualSourceList(_brtManager)
+			, brtManager { _brtManager }			
+			, initialized { false }			
 			, gain { 1.0f } {
 
 			CreateSamplesEntryPoint("inputSamples");
@@ -56,7 +57,7 @@ namespace BRTEnvironmentModel {
 		bool Setup(std::string _freefieldModelID, std::string _originalSourceID) {
 			std::lock_guard<std::mutex> l(mutex); // Lock the mutex
 			if (initialized) {
-				SET_RESULT(RESULT_ERROR_NOTALLOWED, "The SDN environment processor is already initialized");
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "The Free field environment processor is already initialized");
 				return false;
 			}
 
@@ -66,8 +67,10 @@ namespace BRTEnvironmentModel {
 			}
 
 			virtualSourceID = _freefieldModelID + "_" + _originalSourceID;			
-			virtualSource = brtManager->CreateSoundSource<BRTSourceModel::CVirtualSourceModel>(virtualSourceID);						
-			virtualSource->SetOriginSourceID(_originalSourceID);
+			//virtualSource = brtManager->CreateSoundSource<BRTSourceModel::CVirtualSourceModel>(virtualSourceID);						
+			//virtualSource->SetOriginSourceID(_originalSourceID);
+			CVirtualSourceList::CreateVirtualSource(virtualSourceID, _originalSourceID);
+			
 			initialized = true;
 			return true;
 		}
@@ -95,7 +98,14 @@ namespace BRTEnvironmentModel {
 		 * @return True if the connection was successful
 		 */
 		bool ConnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {			
-			return _listenerModel->ConnectSoundSource(virtualSource);
+			//return _listenerModel->ConnectSoundSource(virtualSource);
+			bool result = CVirtualSourceList::ConnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
+			if (result) {
+				virtualSourceConnectedToListener = true;
+			} else {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There was an error connecting the virtual sources to the listener model");
+			}
+			return result;
 		}
 
 		/**
@@ -104,7 +114,13 @@ namespace BRTEnvironmentModel {
 		 * @return True if the disconnection was successful
 		 */
 		bool DisconnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {			
-			return _listenerModel->DisconnectSoundSource(virtualSource);
+			bool result = CVirtualSourceList::DisconnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
+			if (result) {
+				virtualSourceConnectedToListener = false;
+			} else {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There was an error disconnecting the virtual sources from the listener model");
+			}
+			return result;
 		}
 
 		/**
@@ -133,8 +149,11 @@ namespace BRTEnvironmentModel {
 						
 			outBuffer.ApplyGain(gain);
 
-			virtualSource->SetSourceTransform(effectiveSourcePosition);
-			virtualSource->SetBuffer(outBuffer);													
+			//virtualSource->SetSourceTransform(effectiveSourcePosition);
+			//virtualSource->SetBuffer(outBuffer);
+			//brtManager->ProcessOneSource(virtualSourceID);
+			CVirtualSourceList::SetVirtualSourcePosition(virtualSourceID, effectiveSourcePosition);			
+			CVirtualSourceList::PropagateVirtualSource(virtualSourceID, outBuffer);
 		}
 
 		/**
@@ -176,7 +195,7 @@ namespace BRTEnvironmentModel {
 				// Propagete the command to the virtual sources
 				nlohmann::json j;				
 				j["command"] = command.GetCommand();
-				j["sourceID"] = virtualSource->GetID();
+				j["sourceID"] = virtualSourceID;
 				brtManager->ExecuteCommand(j.dump());				
 			}					
 		}
@@ -188,10 +207,11 @@ namespace BRTEnvironmentModel {
 
 		mutable std::mutex mutex;	// To avoid access collisions		
 		Common::CGlobalParameters globalParameters;		
-		std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource;
+		//std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource;
 		BRTBase::CBRTManager * brtManager;
 						
 		std::string virtualSourceID;
+		bool virtualSourceConnectedToListener;
 		float gain;
 		bool initialized;		
 	};
