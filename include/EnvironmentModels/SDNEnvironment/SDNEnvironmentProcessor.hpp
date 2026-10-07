@@ -139,7 +139,7 @@ namespace BRTEnvironmentModel {
 		 * @return True if the connection was successful
 		 */
 		bool ConnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
-			return ConnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
+			return CVirtualSourceList::ConnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
 		}
 
 		/**
@@ -148,7 +148,7 @@ namespace BRTEnvironmentModel {
 		 * @return True if the disconnection was successful
 		 */
 		bool DisconnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
-			return DisconnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
+			return CVirtualSourceList::DisconnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
 		}
 
 		/**
@@ -264,7 +264,7 @@ namespace BRTEnvironmentModel {
 		
 		void RemoveBRTVirtualSources() {
 			for (int i = 0; i < SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT; i++) {
-				RemoveVirtualSource(GetBRTVirtualSourceID(i));
+				CVirtualSourceList::RemoveVirtualSource(GetBRTVirtualSourceID(i));
 			}
 		}
 	private:
@@ -342,7 +342,7 @@ namespace BRTEnvironmentModel {
 		void CreateBRTVirtualSources() {
 
 			for (int i = 0; i < SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT; i++) {
-				CreateVirtualSource(GetBRTVirtualSourceID(i), originalSourceID);
+				CVirtualSourceList::CreateVirtualSource(GetBRTVirtualSourceID(i), originalSourceID);
 			}
 		}
 
@@ -360,7 +360,7 @@ namespace BRTEnvironmentModel {
 			virtualSourceBuffers = std::vector<CMonoBuffer<float>>(SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT, inBuffer);
 			virtualSourcePositions = std::vector<Common::CTransform>(SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT);
 
-			SyncAllVirtualSourcesToModel();
+			//SyncAllVirtualSourcesToModel();
 
 			Common::CTransform sourcePosition = GetPositionEntryPoint("sourcePosition")->GetData();
 			Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
@@ -386,12 +386,9 @@ namespace BRTEnvironmentModel {
 			if ((index < 6 && muteReverbPath) || (index == 6 && muteLoS)) {
 				std::fill(virtualSourceBuffers[index].begin(), virtualSourceBuffers[index].end(), 0);				
 			} 			
-			SetVirtualSourcePosition(GetBRTVirtualSourceID(index), CalculateGlobalPosition(virtualSourcePositions[index]));
-			
-			//CMonoBuffer<float> outBuffer = virtualSourceBuffers[index];
-			//outBuffer.ApplyGain(gain);
+			CVirtualSourceList::SetVirtualSourcePosition(GetBRTVirtualSourceID(index), CalculateGlobalPosition(virtualSourcePositions[index]));						
 			virtualSourceBuffers[index].ApplyGain(gain);
-			SetVirtualSourceBuffer(GetBRTVirtualSourceID(index), virtualSourceBuffers[index]);
+			CVirtualSourceList::PropagateVirtualSource(GetBRTVirtualSourceID(index), virtualSourceBuffers[index]);
 		}
 		
 		/**

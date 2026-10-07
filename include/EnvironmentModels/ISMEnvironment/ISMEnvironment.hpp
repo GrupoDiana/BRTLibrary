@@ -231,7 +231,7 @@ namespace BRTEnvironmentModel {
 				} else {
 					float distanceAttenuation = distanceAttenuator.CalculateDistanceAttenuation(_virtualSourcePositions[i].GetPosition(), _listenerTransform);
 					float attenuation = distanceAttenuation * imageSourcesDataList[i].visibility;
-					float unnecessary_fixme;
+					float unnecessary_fixme = 0;
 					_outBuffers[i].ApplyGainExponentially(imageSourcesPreviousAttenuationList[i], unnecessary_fixme, attenuation, globalParameters.GetBufferSize(), globalParameters.GetSampleRate());
 				}
 			}
@@ -286,12 +286,11 @@ namespace BRTEnvironmentModel {
 		 * @brief Performs a series of updates after image source positions or visibilities have changed.
 		 */
 		void ActionsAfterUpdateImageSourcePositionsOrVisibilities() {			
-			UpdateImageSourceDataFromImageTree();
-			//UpdateImageSourcesPositionList();
-			UpdateWaveGuideFiltersVisibility();			
-
+			UpdateImageSourceDataFromImageTree();			
+			UpdateWaveGuideFiltersVisibility();		
+			
 #if defined(DEBUG) || defined(_DEBUG)
-			ShowImageSourceData(imageSourcesDataList); // TO DELETE
+			ShowImageSourceData(imageSourcesDataList);
 #endif
 		}
 
@@ -376,8 +375,7 @@ namespace BRTEnvironmentModel {
 					listOfChannelSourceListener[i]->DisablePropagationFilter();
 				}
 			}
-		}		
-
+		}			
 		/**
 		 * @brief Enables propagation delay for all waveguide processors in the list.
 		 */

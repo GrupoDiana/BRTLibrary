@@ -139,7 +139,7 @@ namespace BRTEnvironmentModel {
 		 * @return True if the connection was successful
 		 */
 		bool ConnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {			
-			bool result = ConnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
+			bool result = CVirtualSourceList::ConnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
 			if (result) {
 				virtualSourcesConnectedToListener = true;
 			} else {
@@ -308,7 +308,7 @@ namespace BRTEnvironmentModel {
 			virtualSourcePositions = std::vector<Common::CTransform>(numberOfImageSources);
 			
 			CreateBRTVirtualSources();	
-			SyncAllVirtualSourcesToModel();						
+			//SyncAllVirtualSourcesToModel();						
 		}
 			
 		/**
@@ -358,7 +358,7 @@ namespace BRTEnvironmentModel {
 		 */
 		void CreateBRTVirtualSources() {			
 			for (int i = 0; i < numberOfImageSources; i++) {
-				CreateVirtualSource(GetBRTVirtualSourceID(i), originalSourceID);
+				CVirtualSourceList::CreateVirtualSource(GetBRTVirtualSourceID(i), originalSourceID);
 			}			
 		}
 		
@@ -367,7 +367,7 @@ namespace BRTEnvironmentModel {
 		 */
 		void RemoveBRTVirtualSources() {			
 			for (int i = 0; i < numberOfImageSources; i++) {
-				RemoveVirtualSource(GetBRTVirtualSourceID(i));
+				CVirtualSourceList::RemoveVirtualSource(GetBRTVirtualSourceID(i));
 			}
 		}
 
@@ -392,9 +392,9 @@ namespace BRTEnvironmentModel {
 			if (muteReverbPath) {
 				std::fill(virtualSourceBuffers[index].begin(), virtualSourceBuffers[index].end(), 0);				
 			}						
-			SetVirtualSourcePosition(GetBRTVirtualSourceID(index), virtualSourcePositions[index]);						
+			CVirtualSourceList::SetVirtualSourcePosition(GetBRTVirtualSourceID(index), virtualSourcePositions[index]);						
 			virtualSourceBuffers[index].ApplyGain(gain);
-			SetVirtualSourceBuffer(GetBRTVirtualSourceID(index), virtualSourceBuffers[index]);
+			CVirtualSourceList::PropagateVirtualSource(GetBRTVirtualSourceID(index), virtualSourceBuffers[index]);
 		}
 		
 		/**
