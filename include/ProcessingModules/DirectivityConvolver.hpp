@@ -60,7 +60,7 @@ namespace BRTProcessing {
 		*   \eh The error handler is informed if the size of the input buffer differs from that stored in the global
 		*       parameters and if the DirectivityTF of the listener is null.		   
 		*/
-		void Process(CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::shared_ptr<BRTServices::CServicesBase>& _sourceDirectivity) {
+		void Process(const CMonoBuffer<float>& _inBuffer, CMonoBuffer<float>& outBuffer, Common::CTransform& sourceTransform, Common::CTransform& listenerTransform, std::shared_ptr<BRTServices::CServicesBase>& _sourceDirectivity) {
 
 			ASSERT(_inBuffer.size() == globalParameters.GetBufferSize(), RESULT_ERROR_BADSIZE, "InBuffer size has to be equal to the input size indicated by the BRT::GlobalParameters method", "");	
 			// Check process flag
