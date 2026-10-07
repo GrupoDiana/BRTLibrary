@@ -38,8 +38,11 @@ namespace BRTBase {
 	class CBRTManager {
 
 	public:
-
-		CBRTManager() : initialized{ false }, setupModeActivated{ false } {
+		CBRTManager()
+			: initialized { false }
+			, setupModeActivated { false }
+			, multiThreadingEnabled { false }
+		{
 			commandsExitPoint = std::make_shared<BRTConnectivity::CExitPointCommand>(static_cast<std::string>(Common::COMMAND_EXIT_POINT_ID));
 		}
 
@@ -67,21 +70,25 @@ namespace BRTBase {
 			}
 			return control;
 		}
-		
+
+		void EnableMultiThreading(bool _enable) {
+			std::lock_guard<std::mutex> l(mutex);
+			multiThreadingEnabled = _enable;
+		}
+
 		/**
 		 * @brief 
 		 * @param _listenerID 
 		 * @return 
 		 */
 		template <typename T>
-		std::shared_ptr<T> CreateListener(const std::string& _listenerID) {
-			try
-			{
+		std::shared_ptr<T> CreateListener(const std::string & _listenerID) {
+			try {
 				if (!setupModeActivated) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "BRT library is not in configuration mode");
 					return nullptr;
 				}
-				auto it = std::find_if(listeners.begin(), listeners.end(), [&_listenerID](std::shared_ptr<CListenerBase>& listenerItem) { return listenerItem->GetID() == _listenerID; });
+				auto it = std::find_if(listeners.begin(), listeners.end(), [&_listenerID](std::shared_ptr<CListenerBase> & listenerItem) { return listenerItem->GetID() == _listenerID; });
 				if (it != listeners.end()) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "A Listener with such an ID already exists.");
 					return nullptr;
@@ -91,24 +98,21 @@ namespace BRTBase {
 				listeners.push_back(newListener);
 				SET_RESULT(RESULT_OK, "Listener created succesfully");
 				return newListener;
-			}
-			catch (std::bad_alloc& ba)
-			{
+			} catch (std::bad_alloc & ba) {
 				ASSERT(false, RESULT_ERROR_BADALLOC, ba.what(), "");
 				return nullptr;
 			}
 		}
-
 
 		/**
 		 * @brief Returns pointer to a listener found by its ID
 		 * @tparam T Listener class model
 		 * @param _listenerID listenerID
 		 * @return Pointer to listener if exist, if not returns nullptr
-		*/		
+		*/
 		template <typename T>
-		std::shared_ptr<T> GetListener(const std::string& _listenerID) {
-			for (auto& it : listeners) {
+		std::shared_ptr<T> GetListener(const std::string & _listenerID) {
+			for (auto & it : listeners) {
 				if (it->GetID() == _listenerID) {
 					return it;
 				}
@@ -121,9 +125,9 @@ namespace BRTBase {
 		 * @tparam T Listener class model
 		 * @param _listenerID listenerID
 		 * @return Pointer to listener if exist, if not returns nullptr
-		*/		
-		std::shared_ptr<CListener> GetListener(const std::string& _listenerID) {
-			for (auto& it : listeners) {
+		*/
+		std::shared_ptr<CListener> GetListener(const std::string & _listenerID) {
+			for (auto & it : listeners) {
 				if (it->GetID() == _listenerID) {
 					std::shared_ptr<BRTBase::CListener> _listener = std::dynamic_pointer_cast<BRTBase::CListener>(it);
 					return _listener;
@@ -138,7 +142,7 @@ namespace BRTBase {
 		 */
 		std::vector<std::string> GetListenerIDs() {
 			std::vector<std::string> listenerIDs;
-			for (auto& it : listeners) {
+			for (auto & it : listeners) {
 				listenerIDs.push_back(it->GetID());
 			}
 			return listenerIDs;
@@ -151,12 +155,11 @@ namespace BRTBase {
 		 * @return Returns the pointer to the source if it could be created, otherwise returns a null pointer.
 		*/
 		template <typename T>
-		std::shared_ptr<T> CreateSoundSource(std::string _sourceID) {									
-			try
-			{
-				if (!setupModeActivated) { 
+		std::shared_ptr<T> CreateSoundSource(std::string _sourceID) {
+			try {
+				if (!setupModeActivated) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "BRT library is not in configuration mode");
-					return nullptr; 				
+					return nullptr;
 				}
 				auto it = std::find_if(audioSources.begin(), audioSources.end(), [&_sourceID](std::shared_ptr<BRTSourceModel::CSourceModelBase> & sourceItem) { return sourceItem->GetID() == _sourceID; });
 				if (it != audioSources.end()) {
@@ -168,14 +171,12 @@ namespace BRTBase {
 				audioSources.push_back(newSource);
 				SET_RESULT(RESULT_OK, "Sound source modelcreated succesfully");
 				return newSource;
-			}
-			catch (std::bad_alloc& ba)
-			{
+			} catch (std::bad_alloc & ba) {
 				ASSERT(false, RESULT_ERROR_BADALLOC, ba.what(), "");
 				return nullptr;
 			}
 		}
-		
+
 		/**
 		 * @brief Returns pointer to a source found by its ID
 		 * @tparam T Source class model
@@ -184,7 +185,7 @@ namespace BRTBase {
 		*/
 		std::shared_ptr<BRTSourceModel::CSourceModelBase> GetSoundSource(const std::string & _sourceID) {
 			return FindSoundSource(_sourceID);
-		}	
+		}
 
 		/**
 		 * @brief Delete a source
@@ -212,9 +213,8 @@ namespace BRTBase {
 		 * @return Returns the pointer to the listener if it could be created, otherwise returns a null pointer.
 		*/
 		template <typename T>
-		std::shared_ptr<T> CreateListenerModel(const std::string& _listenerID) {			
-			try
-			{
+		std::shared_ptr<T> CreateListenerModel(const std::string & _listenerID) {
+			try {
 				if (!setupModeActivated) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "BRT library is not in configuration mode");
 					return nullptr;
@@ -230,9 +230,7 @@ namespace BRTBase {
 				listenerModels.push_back(newListener);
 				SET_RESULT(RESULT_OK, "Listener created succesfully");
 				return newListener;
-			}
-			catch (std::bad_alloc& ba)
-			{
+			} catch (std::bad_alloc & ba) {
 				ASSERT(false, RESULT_ERROR_BADALLOC, ba.what(), "");
 				return nullptr;
 			}
@@ -245,7 +243,7 @@ namespace BRTBase {
 		 * @return Pointer to listener if exist, if not returns nullptr
 		*/
 		template <typename T>
-		std::shared_ptr<T> GetListenerModel(const std::string& _listenerModelID) { 					
+		std::shared_ptr<T> GetListenerModel(const std::string & _listenerModelID) {
 			return FindModel(listenerModels, _listenerModelID);
 		}
 
@@ -255,19 +253,19 @@ namespace BRTBase {
 		 */
 		std::vector<std::string> GetListenerModelIDs() {
 			std::vector<std::string> listenerIDs;
-			for (auto& it : listenerModels) {
+			for (auto & it : listenerModels) {
 				listenerIDs.push_back(it->GetModelID());
 			}
 			return listenerIDs;
 		}
 
-		bool IsListenerModel(const std::string & _listenerModelID) {	
+		bool IsListenerModel(const std::string & _listenerModelID) {
 			if (FindModel(listenerModels, _listenerModelID) != nullptr) {
 				return true;
 			}
 			return false;
 		}
-					
+
 		/**
 		 * @brief Creates a new environment and returns a pointer to it. The brtmanager does NOT save the pointer.
 		 * @tparam T It must be a environment module, i.e. a class that inherits from the CEnvironmentBase class.
@@ -275,13 +273,13 @@ namespace BRTBase {
 		*/
 		template <typename T>
 		std::shared_ptr<T> CreateEnvironment(const std::string & _environmentID) {
-			
+
 			try {
 				if (!setupModeActivated) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "BRT library is not in configuration mode");
 					return nullptr;
 				}
-				auto it = std::find_if(environmentModels.begin(), environmentModels.end(), 
+				auto it = std::find_if(environmentModels.begin(), environmentModels.end(),
 					[&_environmentID](std::shared_ptr<BRTEnvironmentModel::CEnviromentModelBase> & environmentItem) { return environmentItem->GetModelID() == _environmentID; });
 				if (it != environmentModels.end()) {
 					SET_RESULT(RESULT_ERROR_NOTALLOWED, "A environment with such an ID already exists.");
@@ -300,7 +298,7 @@ namespace BRTBase {
 		}
 
 		template <typename T>
-		std::shared_ptr<T> GetEnvironmentModel(const std::string & _environmentModelID) {			
+		std::shared_ptr<T> GetEnvironmentModel(const std::string & _environmentModelID) {
 			return FindModel(environmentModels, _environmentModelID);
 		}
 
@@ -313,7 +311,7 @@ namespace BRTBase {
 
 		std::vector<std::string> GetEnvironmentModelIDs() {
 			std::vector<std::string> environmentIDs;
-			for (auto& it : environmentModels) {
+			for (auto & it : environmentModels) {
 				environmentIDs.push_back(it->GetModelID());
 			}
 			return environmentIDs;
@@ -326,21 +324,19 @@ namespace BRTBase {
 		*/
 		template <typename T>
 		std::shared_ptr<T> CreateProcessor() {
-			if (!setupModeActivated) { return nullptr; }
-			try
-			{
+			if (!setupModeActivated) {
+				return nullptr;
+			}
+			try {
 				std::shared_ptr<T> newProcessor = std::make_shared<T>();
 				ConnectModulesCommand(newProcessor);
 				SET_RESULT(RESULT_OK, "Processor created succesfully");
 				return newProcessor;
-			}
-			catch (std::bad_alloc& ba)
-			{
+			} catch (std::bad_alloc & ba) {
 				ASSERT(false, RESULT_ERROR_BADALLOC, ba.what(), "");
 				return nullptr;
 			}
 		}
-		
 
 		/**
 		 * @brief Creates a new processor and returns a pointer to it. The brtmanager does NOT save the pointer.
@@ -349,29 +345,29 @@ namespace BRTBase {
 		*/
 		template <typename T, typename U>
 		std::shared_ptr<T> CreateProcessor(U data) {
-			if (!setupModeActivated) { return nullptr; }
-			try
-			{
+			if (!setupModeActivated) {
+				return nullptr;
+			}
+			try {
 				std::shared_ptr<T> newProcessor = std::make_shared<T>(data);
 				ConnectModulesCommand(newProcessor);
 				SET_RESULT(RESULT_OK, "Processor created succesfully");
 				return newProcessor;
-			}
-			catch (std::bad_alloc& ba)
-			{
+			} catch (std::bad_alloc & ba) {
 				ASSERT(false, RESULT_ERROR_BADALLOC, ba.what(), "");
 				return nullptr;
 			}
 		}
-				
-		
+
 		/**
 		 * @brief Delete a listener
 		 * @param _listenerID Identifier of the listener to be deleted
 		 * @return Returns true in case the listener could have been deleted.
 		*/
 		bool RemoveListener(std::string _listenerID) {
-			if (!setupModeActivated) { return false; }
+			if (!setupModeActivated) {
+				return false;
+			}
 			auto it = std::find_if(listenerModels.begin(), listenerModels.end(), [&_listenerID](std::shared_ptr<BRTListenerModel::CListenerModelBase> & listenerItem) { return listenerItem->GetModelID() == _listenerID; });
 			if (it != listenerModels.end()) {
 				DisconnectModulesCommand(*it);
@@ -390,7 +386,9 @@ namespace BRTBase {
 		*/
 		template <typename T>
 		bool RemoveProcessor(std::shared_ptr<T> _processor) {
-			if (!setupModeActivated) { return false; }
+			if (!setupModeActivated) {
+				return false;
+			}
 			DisconnectModulesCommand(_processor);
 			_processor.reset();
 			return true;
@@ -425,7 +423,7 @@ namespace BRTBase {
 				return nullptr;
 			}
 		}
-		
+
 		/**
 		 * @brief Returns pointer to a listener found by its ID
 		 * @tparam T Listener class model
@@ -443,7 +441,7 @@ namespace BRTBase {
 		 */
 		std::vector<std::string> GetBilateralFilterIDs() {
 			std::vector<std::string> bilateralFilterIDs;
-			for (auto& it : bilateralFilters) {
+			for (auto & it : bilateralFilters) {
 				bilateralFilterIDs.push_back(it->GetModelID());
 			}
 			return bilateralFilterIDs;
@@ -464,7 +462,6 @@ namespace BRTBase {
 		///////////////////////////////////////////
 		// MODULES CONNECTIONs
 		///////////////////////////////////////////
-		
 
 		/**
 		 * @brief Connects the Transform ExitPoint of one module to the Transform EntryPoint of another.
@@ -482,7 +479,7 @@ namespace BRTBase {
 			return true;
 		}
 		template <typename T, typename U>
-		bool ConnectModuleTransform(T* module1, std::shared_ptr<U> module2, std::string entryPointID) {
+		bool ConnectModuleTransform(T * module1, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->connectPositionEntryTo(module1->GetTransformExitPoint(), entryPointID);
 			return true;
@@ -504,7 +501,7 @@ namespace BRTBase {
 			return true;
 		}
 		template <typename T, typename U>
-		bool DisconnectModuleTransform(T* module1, std::shared_ptr<U> module2, std::string entryPointID) {
+		bool DisconnectModuleTransform(T * module1, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->disconnectPositionEntryTo(module1->GetTransformExitPoint(), entryPointID);
 			return true;
@@ -565,7 +562,7 @@ namespace BRTBase {
 		 * @param entryPointID ID of entry point in module 2
 		 * @return Returns true if it was possible to make the disconnection. False in all other cases.
 		*/
-		
+
 		template <typename T, typename U>
 		bool DisconnectModuleHRTF(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
@@ -589,13 +586,13 @@ namespace BRTBase {
 		*/
 		template <typename T, typename U>
 		bool ConnectModuleHRBRIR(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
-			if (!setupModeActivated) return false;			
+			if (!setupModeActivated) return false;
 			module2->connectServiceEntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
 			return true;
 		}
 		template <typename T, typename U>
-		bool ConnectModuleHRBRIR(T* module1, std::shared_ptr <U> module2, std::string entryPointID) {
-			if (!setupModeActivated) return false;			
+		bool ConnectModuleHRBRIR(T * module1, std::shared_ptr<U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
 			module2->connectServiceEntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
 			return true;
 		}
@@ -610,33 +607,31 @@ namespace BRTBase {
 		 * @return Returns true if it was possible to make the disconnection. False in all other cases.
 		*/
 		template <typename T, typename U>
-		bool DisconnectModuleHRBRIR(std::shared_ptr<T> module1, std::shared_ptr <U> module2, std::string entryPointID) {
-			if (!setupModeActivated) return false;			
+		bool DisconnectModuleHRBRIR(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
 			module2->disconnectServiceEntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
 			return true;
 		}
 		template <typename T, typename U>
-		bool DisconnectModuleHRBRIR(T* module1, std::shared_ptr <U> module2, std::string entryPointID) {
+		bool DisconnectModuleHRBRIR(T * module1, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			//module2->disconnectHRBRIREntryTo(module1->GetHRBRIRExitPoint2(), entryPointID);
 			module2->disconnectServiceEntryTo(module1->GetHRBRIRExitPoint(), entryPointID);
 			return true;
 		}
-		
+
 		template <typename T, typename U>
 		bool ConnectModuleABIR(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
-			if (!setupModeActivated) return false;			
-			module2->connectServiceEntryTo(module1->GetABIRExitPoint(), entryPointID);
-			return true;
-		}
-		template <typename T, typename U>
-		bool ConnectModuleABIR(T* module1, std::shared_ptr <U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->connectServiceEntryTo(module1->GetABIRExitPoint(), entryPointID);
 			return true;
 		}
-
-
+		template <typename T, typename U>
+		bool ConnectModuleABIR(T * module1, std::shared_ptr<U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
+			module2->connectServiceEntryTo(module1->GetABIRExitPoint(), entryPointID);
+			return true;
+		}
 
 		/**
 		 * @brief Connects the ILD ExitPoint of one module to the ILD EntryPoint of another.
@@ -648,14 +643,14 @@ namespace BRTBase {
 		 * @return Returns true if it was possible to make the connection. False in all other cases.
 		*/
 		template <typename T, typename U>
-		bool ConnectModuleILD(std::shared_ptr<T>& module1, std::shared_ptr <U> module2, std::string entryPointID) {
+		bool ConnectModuleILD(std::shared_ptr<T> & module1, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			//module2->connectILDEntryTo(module1->GetILDExitPoint(), entryPointID);
 			module2->connectServiceEntryTo(module1->GetSOSFilterExitPoint(), entryPointID);
 			return true;
 		}
 		template <typename T, typename U>
-		bool ConnectModuleILD(T* module1, std::shared_ptr <U> module2, std::string entryPointID) {
+		bool ConnectModuleILD(T * module1, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			//module2->connectILDEntryTo(module1->GetILDExitPoint(), entryPointID);
 			module2->connectServiceEntryTo(module1->GetSOSFilterExitPoint(), entryPointID);
@@ -672,13 +667,13 @@ namespace BRTBase {
 		*/
 		template <typename T, typename U>
 		bool DisconnectModuleILD(std::shared_ptr<T> module1, std::shared_ptr<U> module2, std::string entryPointID) {
-			if (!setupModeActivated) return false;			
+			if (!setupModeActivated) return false;
 			module2->disconnectServiceEntryTo(module1->GetSOSFilterExitPoint(), entryPointID);
 			return true;
-		}		
+		}
 		template <typename T, typename U>
-		bool DisconnectModuleILD(T* module1, std::shared_ptr<U> module2, std::string entryPointID) {
-			if (!setupModeActivated) return false;			
+		bool DisconnectModuleILD(T * module1, std::shared_ptr<U> module2, std::string entryPointID) {
+			if (!setupModeActivated) return false;
 			module2->disconnectServiceEntryTo(module1->GetSOSFilterExitPoint(), entryPointID);
 			return true;
 		}
@@ -699,13 +694,13 @@ namespace BRTBase {
 			return true;
 		}
 		template <typename T, typename U>
-		bool ConnectModuleID(T* module1, std::shared_ptr<U> module2, std::string entryPointID) {
+		bool ConnectModuleID(T * module1, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->connectIDEntryTo(module1->GetIDExitPoint(), entryPointID);
 			return true;
 		}
 		template <typename T, typename U>
-		bool ConnectModuleID(std::shared_ptr<T> module1, U* module2, std::string entryPointID) {
+		bool ConnectModuleID(std::shared_ptr<T> module1, U * module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->connectIDEntryTo(module1->GetIDExitPoint(), entryPointID);
 			return true;
@@ -726,7 +721,7 @@ namespace BRTBase {
 			return true;
 		}
 		template <typename T, typename U>
-		bool DisconnectModuleID(T* soundSourceModule, std::shared_ptr<U> module2, std::string entryPointID) {
+		bool DisconnectModuleID(T * soundSourceModule, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->disconnectIDEntryTo(soundSourceModule->GetIDExitPoint(), entryPointID);
 			return true;
@@ -742,13 +737,13 @@ namespace BRTBase {
 		* @return Returns true if it was possible to make the connection. False in all other cases.
 		*/
 		template <typename T, typename U>
-		bool ConnectModulesSamples(std::shared_ptr <T> module1, std::string exitPointID, std::shared_ptr <U> module2, std::string entryPointID) {
+		bool ConnectModulesSamples(std::shared_ptr<T> module1, std::string exitPointID, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->connectSamplesEntryTo(module1->GetSamplesExitPoint(exitPointID), entryPointID);
 			return true;
 		}
 		template <typename T, typename U>
-		bool ConnectModulesSamples(std::shared_ptr <T> module1, std::string exitPointID, U* module2, std::string entryPointID) {
+		bool ConnectModulesSamples(std::shared_ptr<T> module1, std::string exitPointID, U * module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->connectSamplesEntryTo(module1->GetSamplesExitPoint(exitPointID), entryPointID);
 			return true;
@@ -763,13 +758,13 @@ namespace BRTBase {
 		 * @return Returns true if it was possible to make the disconnection. False in all other cases.
 		*/
 		template <typename T, typename U>
-		bool DisconnectModulesSamples(std::shared_ptr<T> module1, std::string exitPointID, std::shared_ptr <U> module2, std::string entryPointID) {
+		bool DisconnectModulesSamples(std::shared_ptr<T> module1, std::string exitPointID, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->disconnectSamplesEntryTo(module1->GetSamplesExitPoint(exitPointID), entryPointID);
 			return true;
-		}		
+		}
 		template <typename T, typename U>
-		bool DisconnectModulesSamples(std::shared_ptr<T> module1, std::string exitPointID, U* module2, std::string entryPointID) {
+		bool DisconnectModulesSamples(std::shared_ptr<T> module1, std::string exitPointID, U * module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->disconnectSamplesEntryTo(module1->GetSamplesExitPoint(exitPointID), entryPointID);
 			return true;
@@ -785,13 +780,13 @@ namespace BRTBase {
 		 * @return Returns true if it was possible to make the disconnection. False in all other cases.
 		*/
 		template <typename T, typename U>
-		bool ConnectModulesMultipleSamplesVectors(std::shared_ptr <T> module1, std::string exitPointID, std::shared_ptr <U> module2, std::string entryPointID) {			
+		bool ConnectModulesMultipleSamplesVectors(std::shared_ptr<T> module1, std::string exitPointID, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->connectMultipleSamplesVectorsEntryTo(module1->GetMultipleSamplesVectorExitPoint(exitPointID), entryPointID);
 			return true;
 		}
 		template <typename T, typename U>
-		bool ConnectModulesMultipleSamplesVectors(std::shared_ptr <T> module1, std::string exitPointID, U* module2, std::string entryPointID) {
+		bool ConnectModulesMultipleSamplesVectors(std::shared_ptr<T> module1, std::string exitPointID, U * module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->connectMultipleSamplesVectorsEntryTo(module1->GetMultipleSamplesVectorExitPoint(exitPointID), entryPointID);
 			return true;
@@ -807,13 +802,13 @@ namespace BRTBase {
 		 * @return Returns true if it was possible to make the disconnection. False in all other cases.
 		*/
 		template <typename T, typename U>
-		bool DisconnectModulesMultipleSamplesVectors(std::shared_ptr<T> module1, std::string exitPointID, std::shared_ptr <U> module2, std::string entryPointID) {
+		bool DisconnectModulesMultipleSamplesVectors(std::shared_ptr<T> module1, std::string exitPointID, std::shared_ptr<U> module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->disconnectMultipleSamplesVectorsEntryTo(module1->GetMultipleSamplesVectorExitPoint(exitPointID), entryPointID);
 			return true;
 		}
 		template <typename T, typename U>
-		bool DisconnectModulesMultipleSamplesVectors(std::shared_ptr<T> module1, std::string exitPointID, U* module2, std::string entryPointID) {
+		bool DisconnectModulesMultipleSamplesVectors(std::shared_ptr<T> module1, std::string exitPointID, U * module2, std::string entryPointID) {
 			if (!setupModeActivated) return false;
 			module2->disconnectMultipleSamplesVectorsEntryTo(module1->GetMultipleSamplesVectorExitPoint(exitPointID), entryPointID);
 			return true;
@@ -829,7 +824,7 @@ namespace BRTBase {
 		 * @return Returns true if it was possible to make the connection. False in all other cases.
 		*/
 		template <typename T>
-		bool ConnectModulesCommand(std::shared_ptr <T>& module1) {
+		bool ConnectModulesCommand(std::shared_ptr<T> & module1) {
 			//if (!setupModeActivated) return false;
 			module1->connectCommandEntryTo(commandsExitPoint);
 			return true;
@@ -844,7 +839,7 @@ namespace BRTBase {
 		 * @return Returns true if it was possible to make the disconnection. False in all other cases.
 		*/
 		template <typename T>
-		bool DisconnectModulesCommand(std::shared_ptr <T>& module1) {
+		bool DisconnectModulesCommand(std::shared_ptr<T> & module1) {
 			//if (!setupModeActivated) return false;
 			module1->disconnectCommandEntryTo(commandsExitPoint);
 			return true;
@@ -857,16 +852,29 @@ namespace BRTBase {
 		/**
 		 * @brief Start audio processing
 		*/
-		void ProcessAll(bool _multiThread = false) {
+		void ProcessAll() {
 			if (setupModeActivated) return;
 			std::lock_guard<std::mutex> l(mutex);
 
-			if (!_multiThread) {
-				std::thread thread1 = std::thread(&BRTBase::CBRTManager::ProcessMonoThread, this);
-				thread1.join();
+			if (!multiThreadingEnabled) {
+				//std::thread thread1 = std::thread(&BRTBase::CBRTManager::ProcessMonoThread, this);
+				//thread1.join();
+				ProcessMonoThread();
 			} else {
 				ProcessMultiThread();
-			}			
+			}
+		}
+
+		void ProcessOneSource(std::string _sourceID) {
+			if (setupModeActivated) return;			
+			//std::lock_guard<std::mutex> l(mutex);
+			if (!multiThreadingEnabled) {
+				ProcessOneSourceInternal(_sourceID);
+			} else {
+				//std::thread thread1 = std::thread(&BRTBase::CBRTManager::ProcessOneSourceInternal, this);
+				//thread1.join();
+			}
+				
 		}
 		/**
 		 * @brief Executes the received command. To do so, it distributes it to all the connected modules, which are responsible for executing the relevant actions.
@@ -875,35 +883,43 @@ namespace BRTBase {
 		void ExecuteCommand(std::string commandJson) {
 			//std::lock_guard<std::mutex> l(mutex);
 			BRTConnectivity::CCommand command(commandJson);
-			commandsExitPoint->sendData(command);																		
+			commandsExitPoint->sendData(command);
 		}
 
 	private:
-		
-
 		/////////////////
 		// Methods
 		/////////////////
-		
+
 		/**
 		 * @brief Start processing on each of the sources.
 		*/
 		void ProcessMonoThread() {
-			for (auto it = audioSources.begin(); it != audioSources.end(); it++) 
-				(*it)->SetDataReady();
-
+			for (auto it = audioSources.begin(); it != audioSources.end(); it++) {
+				if (!(*it)->IsVirtualSource()) {
+					(*it)->PropagateSamples();
+				}
+			}
 			for (auto it = listenerModels.begin(); it != listenerModels.end(); it++)
 				(*it)->ProcessModelWithoutInputsSamples();
+		}
+	
+		void ProcessOneSourceInternal(std::string _sourceID) {
+			std::find_if(audioSources.begin(), audioSources.end()
+				, [&_sourceID](std::shared_ptr<BRTSourceModel::CSourceModelBase> & sourceItem) { 
+				return sourceItem->GetID() == _sourceID;}
+			)->get()->PropagateSamples();
 		}
 
 		/**
 		 * @brief Start processing on each of the sources.
+		 * EXPERIMENTAL: It uses multithreading to process each source and listener in parallel. It is not recommended to use this method, as it may cause problems with some modules that are not thread-safe.
 		*/
 		void ProcessMultiThread() {						
 			std::vector<std::thread> threads;
 			
 			for (auto it = audioSources.begin(); it != audioSources.end(); it++) {				
-				threads.push_back(std::move(std::thread(&BRTSourceModel::CSourceModelBase::SetDataReady, *it)));				
+				threads.push_back(std::move(std::thread(&BRTSourceModel::CSourceModelBase::PropagateSamples, *it)));				
 			}
 			for (auto it = listenerModels.begin(); it != listenerModels.end(); it++) {
 				threads.push_back(std::move(std::thread(&BRTListenerModel::CListenerModelBase::ProcessModelWithoutInputsSamples, *it)));
@@ -955,6 +971,7 @@ namespace BRTBase {
 
 		bool initialized;
 		bool setupModeActivated;
+		bool multiThreadingEnabled;
 		mutable std::mutex mutex;
 	};
 }

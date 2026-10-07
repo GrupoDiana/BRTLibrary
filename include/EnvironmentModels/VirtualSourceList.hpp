@@ -103,9 +103,8 @@ namespace BRTEnvironmentModel {
 				it->SetOriginSourceID(_originSourceID);
 			}
 		}
-
-		void SetVirtualSourceBuffer(const std::string& _virtualSourceID, const CMonoBuffer<float>& _buffer) {
-			
+		
+		void SetVirtualSourceBuffer(const std::string& _virtualSourceID, const CMonoBuffer<float>& _buffer) {			
 			auto&& it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
 			if (it != virtualSources.end()) {					
 				it[0]->SetBuffer(_buffer);								
@@ -115,7 +114,25 @@ namespace BRTEnvironmentModel {
 			}			
 		}
 
+		void PropagateVirtualSource(const std::string & _virtualSourceID) {
+			auto && it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
+			if (it != virtualSources.end()) {				
+				brtManager->ProcessOneSource(_virtualSourceID);
+			} else {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There is no virtual source with that name.");
+			}				
+		}
 
+		void PropagateVirtualSource(const std::string & _virtualSourceID, const CMonoBuffer<float> & _buffer) {
+			auto && it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
+			if (it != virtualSources.end()) {
+				it[0]->SetBuffer(_buffer);
+				brtManager->ProcessOneSource(_virtualSourceID);
+			} else {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "There is no virtual source with that name.");
+			}
+		}
+	
 		void SetVirtualSourcePosition(const std::string& _virtualSourceID, const Common::CTransform& _sourcePosition) {
 			auto&& it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
 			if (it != virtualSources.end()) {
