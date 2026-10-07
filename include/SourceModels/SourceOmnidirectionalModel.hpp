@@ -40,13 +40,12 @@ namespace BRTSourceModel {
 		 * @brief Actions when the entry points are ready
 		 * @param _entryPointID 
 		 */
-		void Update(std::string _entryPointID) override {
+		void ProcessInputSamples() override {
 			std::lock_guard<std::mutex> l(mutex);
-
-			if (_entryPointID == "samples") {
-				CMonoBuffer<float> buffer = GetBuffer();
-				SendData(buffer);
-			}
+			/*CMonoBuffer<float> & outputBuffer = GetBuffer();
+			SetOutputBuffer(outputBuffer);
+			PropagateBuffer();*/
+			PropageteInputBuffer();
 		}
 
 		/**
@@ -54,7 +53,7 @@ namespace BRTSourceModel {
 		* The SourceModelBase class already handles the common commands. Here you have to manage the specific ones.
 		*/
 		void UpdateCommandSource() override {
-			// Nothing extra to do
+			
 		}
 	};
 }

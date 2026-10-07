@@ -88,19 +88,17 @@ namespace BRTSourceModel {
 		 * @brief Update method of the Source directivity model
 		 * @param _entryPointID ID of the entry ponint to do the update
 		*/
-		void Update(std::string _entryPointID) override {
+		void ProcessInputSamples() override {
 			std::lock_guard<std::mutex> l(mutex);
 
-			if (_entryPointID == "samples") {
-
-				CMonoBuffer<float> outBuffer;
-				CMonoBuffer<float> inBuffer = GetBuffer();
-				Common::CTransform sourcePosition = GetSourceTransform();
-				Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
-				if (inBuffer.size() != 0) {
-					Process(inBuffer, outBuffer, sourcePosition, listenerPosition, sourceDirectivity);
-					SendData(outBuffer);
-				}
+			CMonoBuffer<float> outBuffer;
+			const CMonoBuffer<float> & inBuffer = GetBuffer();
+			Common::CTransform sourcePosition = GetSourceTransform();
+			Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
+			if (inBuffer.size() != 0) {
+				Process(inBuffer, outBuffer, sourcePosition, listenerPosition, sourceDirectivity);
+				SetOutputBuffer(outBuffer);
+				PropagateBuffer();
 			}
 		}
 

@@ -34,7 +34,7 @@ namespace BRTSourceModel {
 		CVirtualSourceModel(std::string _sourceID)
 			: CSourceOmnidirectionalModel(_sourceID)
 			, originSourceID {""} {
-			SetSourceType(TSourceType::Virtual);
+			SetAsVirtualSource();
 		}		
 									
 		void SetOriginSourceID(std::string _originSourceID) {
