@@ -150,14 +150,7 @@ namespace Common {
 		void SetPropagationFilter(std::shared_ptr<BRTFilters::CFilterBase> _filter) {
 			propagationFilter = _filter;
 		}
-
-		// Temporary method to setup a filter
-		void SetupFilter(const std::vector<float> & _gains) {
-			if (propagationFilter == nullptr) return;
-			ASSERT(globalParameters.GetSampleRate() == 48000, RESULT_ERROR_INVALID_PARAM, "The waveguide filter is only compatible with a sampling frequency of 48KHz.", "");			
-			propagationFilter->SetCommandGains(_gains);
-		}
-
+		
 	private:
 		/// Structure for storing the source position of the samples to be inserted into the circular buffer.
 		struct TSourcePosition {
@@ -288,9 +281,8 @@ namespace Common {
 			if (samplesToBeExtracted == globalParameters.GetBufferSize()) {
 				// If it doesn't needed to do and expasion or compression									
 				outbuffer.insert(outbuffer.begin(), circular_buffer.begin(), circular_buffer.begin() + samplesToBeExtracted);
-				// TODO FILTER HERE				
-				//propagationFilter->Process(outbuffer);
-				if (propagationFilter != nullptr)	propagationFilter->Process(outbuffer);
+				
+				if (propagationFilter != nullptr) {	propagationFilter->Process(outbuffer); }
 				ShiftLeftSourcePositionsBuffer(samplesToBeExtracted); // Delete samples that have left the buffer storing the source positions.				
 			} else {				
 				if (samplesToBeExtracted > circular_buffer.size()) {					
