@@ -57,7 +57,7 @@ namespace BRTProcessing {
 			if (_entryPointId == "inputChannels") {				
 				std::vector<CMonoBuffer<float>> inputChannels = GetMultipleSamplesVectorEntryPoint("inputChannels")->GetData();
 				if (inputChannels.size() != 0) { 
-					MixChannelsBuffer(inputChannels); 
+					return MixChannelsBuffer(inputChannels); 
 				}
 			}
 			return result;
