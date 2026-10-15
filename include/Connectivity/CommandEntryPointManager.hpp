@@ -26,6 +26,7 @@
 #include <vector>
 #include <memory>
 #include <stack>
+#include <cstddef>
 #include <Connectivity/EntryPoint.hpp>
 #include <Common/CommonDefinitions.hpp>
 
@@ -69,7 +70,12 @@ namespace BRTConnectivity {
             //}
         }
 
-        // TODO: I don't think this is working; I've come across a case where the commands are being overwritten and not processed.
+        /**
+         * @brief Returns and removes the command available during the callback.
+         *
+         * Commands not consumed by the callback are discarded automatically
+         * when the callback finishes.
+         */
         BRTConnectivity::CCommand GetLastReceivedCommand() {
             if (commandsStack.size() > 0) {
                 auto command = commandsStack.top();
@@ -80,28 +86,53 @@ namespace BRTConnectivity {
                 return CCommand();
             }
         }    
-
-        /*std::shared_ptr<BRTConnectivity::CEntryPointCommand> GetCommandEntryPoint() {
-			return commandsEntryPoint;
-		}*/
-    
+            
     private:
 
-		void AddCommandToBeProcessed(const std::string& _entryPointID) {           
-            BRTConnectivity::CCommand command = commandsEntryPoint->GetData();
-			//commandsEntryPoint->reset();
-			if (!command.isNull()) {
-				commandsStack.push(command);
-				UpdateFromCommandEntryPoint(_entryPointID);
+		//void AddCommandToBeProcessed(const std::string& _entryPointID) {           
+  //          BRTConnectivity::CCommand command = commandsEntryPoint->GetData();
+		//	//commandsEntryPoint->reset();
+		//	if (!command.isNull()) {
+		//		commandsStack.push(command);
+		//		UpdateFromCommandEntryPoint(_entryPointID);
+		//	}
+		//}
+
+        void AddCommandToBeProcessed(const std::string & _entryPointID) {
+			BRTConnectivity::CCommand command = commandsEntryPoint->GetData();
+
+			if (command.isNull()) {
+				return;
 			}
+
+			const std::size_t previousStackSize = commandsStack.size();
+			commandsStack.push(command);
+			auto discardUnconsumedCommands = [this, previousStackSize]() {
+				while (commandsStack.size() > previousStackSize) {
+					commandsStack.pop();
+				}
+			};
+
+			try {
+				UpdateFromCommandEntryPoint(_entryPointID);
+			} catch (...) {
+				discardUnconsumedCommands();
+				throw;
+			}
+
+			discardUnconsumedCommands();
 		}
+
 
         std::shared_ptr<BRTConnectivity::CEntryPointCommand> GetCommandEntryPoint() {
 			return commandsEntryPoint;
 	    }
 
-        std::stack<BRTConnectivity::CCommand> commandsStack; // We need to process all the commands received
-
+        // Attributes
+        
+		// Commands available during synchronous callback execution.
+		// Pending broadcasts are managed by CBRTManager.
+		std::stack<BRTConnectivity::CCommand> commandsStack;
 		std::shared_ptr<BRTConnectivity::CEntryPointCommand> commandsEntryPoint;
     };
 }
