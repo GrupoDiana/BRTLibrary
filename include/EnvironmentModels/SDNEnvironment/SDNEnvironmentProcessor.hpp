@@ -260,6 +260,23 @@ namespace BRTEnvironmentModel {
 		 * @brief Implementation of CAdvancedEntryPointManager virtual method
 		*/
 		void UpdateCommand() override {
+
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();
+			if (command.isNull() || command.GetCommand() == "") {
+				return;
+			}
+
+			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
+			std::string commandSourceID = command.GetStringParameter("sourceID");
+			if (mySourceID != commandSourceID) {
+				return;
+			}
+
+			// Check overall commands
+			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_STOP) {
+				ResetProcessBuffers();
+			}	
+
 		}
 		
 		void RemoveBRTVirtualSources() {

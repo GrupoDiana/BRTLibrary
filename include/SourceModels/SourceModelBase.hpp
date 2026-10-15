@@ -43,8 +43,8 @@ namespace BRTSourceModel {
 
 	public:		
 		virtual ~CSourceModelBase() {}						
-		virtual void ProcessInputSamples() = 0;
-		virtual void UpdateCommandSource() = 0;
+		virtual void ProcessInputSamples() = 0;		
+		virtual void UpdateCommandSource(BRTConnectivity::CCommand & command) = 0;
 
 		virtual bool SetDirectivity(std::shared_ptr<BRTServices::CServicesBase> _sourceDirectivity) { return false; }
 		virtual std::shared_ptr<BRTServices::CServicesBase> GetDirectivity() { return nullptr; }
@@ -163,8 +163,11 @@ namespace BRTSourceModel {
 		void UpdateCommand() override {
 
 			std::lock_guard<std::mutex> l(mutex);
-			//BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
+			
 			BRTConnectivity::CCommand command = GetLastReceivedCommand();
+			if (command.isNull() || command.GetCommand().empty()) {
+				return;
+			}
 
 			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
 				if (command.GetCommand() == "/source/location") {
@@ -188,7 +191,7 @@ namespace BRTSourceModel {
 				}
 			}
 
-			UpdateCommandSource();
+			UpdateCommandSource(command);
 		}
 				
 		////////////////

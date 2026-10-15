@@ -105,25 +105,30 @@ namespace BRTSourceModel {
 		/**
 		* @brief Implementation of the virtual method for processing the received commands
 		* The SourceModelBase class already handles the common commands. Here you have to manage the specific ones.
-		*/
-		void UpdateCommandSource() override {			
-			BRTConnectivity::CCommand command = GetLastReceivedCommand();
+		*/		
+		void UpdateCommandSource(BRTConnectivity::CCommand & command) override {
+			const std::string commandName = command.GetCommand();
 
-			// Check overall commands
-			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_STOP) {
-				ResetSourceConvolutionBuffers();				
+			// Global commands apply to every source.
+			if (commandName == BRTConnectivity::CCommandList::COMMAND_OVERALL_STOP) {
+				ResetSourceConvolutionBuffers();
+				return;
 			}
-			// Check source specific commands			
-			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {				
-				if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_STOP) {
-					ResetSourceConvolutionBuffers();
-				} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_ENABLE_DIRECTIVITY) {
-					if (command.GetBoolParameter("enable")) {
-						EnableSourceDirectionality();
-					} else {
-						DisableSourceDirectionality();
-					}
-				} 
+
+			// Source-specific commands only apply to their target.
+			if (!IsToMySoundSource(command.GetStringParameter("sourceID"))) {
+				return;
+			}
+
+			if (commandName == BRTConnectivity::CCommandList::COMMAND_SOURCE_STOP) {
+				ResetSourceConvolutionBuffers();
+			} else if (
+				commandName == BRTConnectivity::CCommandList::COMMAND_SOURCE_ENABLE_DIRECTIVITY) {
+				if (command.GetBoolParameter("enable")) {
+					EnableSourceDirectionality();
+				} else {
+					DisableSourceDirectionality();
+				}
 			}
 		}
 

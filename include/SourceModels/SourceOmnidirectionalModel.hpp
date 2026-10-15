@@ -52,8 +52,8 @@ namespace BRTSourceModel {
 		* @brief Implementation of the virtual method for processing the received commands
 		* The SourceModelBase class already handles the common commands. Here you have to manage the specific ones.
 		*/
-		void UpdateCommandSource() override {
-			
+		void UpdateCommandSource(BRTConnectivity::CCommand &) override {
+
 		}
 	};
 }
