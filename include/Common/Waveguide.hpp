@@ -50,7 +50,8 @@ namespace Common {
 		/** \brief Enable propagation delay for this waveguide
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnablePropagationDelay() { 
+		void EnablePropagationDelay() {
+			std::lock_guard<std::mutex> l(mutex);
 			checkSoundSpeedLimit = float(globalParameters.GetBufferSize()) * (globalParameters.GetSoundSpeed() / float(globalParameters.GetSampleRate()));
 			enablePropagationDelay = true; 
 		}
@@ -59,8 +60,15 @@ namespace Common {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void DisablePropagationDelay() {
+			std::lock_guard<std::mutex> l(mutex);
 			enablePropagationDelay = false;
-			Reset();
+			ResetInternal();
+		}
+
+		// Set the filter type for the waveguide
+		void SetPropagationFilter(std::shared_ptr<BRTFilters::CFilterBase> _filter) {
+			std::lock_guard<std::mutex> l(mutex);
+			propagationFilter = _filter;
 		}
 
 		/** 
@@ -73,7 +81,8 @@ namespace Common {
 		/**
 		 * @brief Enable the propagation filter
 		 */
-		void EnablePropagationFilter() { 			
+		void EnablePropagationFilter() {
+			std::lock_guard<std::mutex> l(mutex);
 			if (propagationFilter == nullptr) return;
 			propagationFilter->Enable();			
 		}
@@ -81,7 +90,8 @@ namespace Common {
 		/**
 		 * @brief Disable the propagation filter
 		 */
-		void DisablePropagationFilter() { 			
+		void DisablePropagationFilter() { 
+			std::lock_guard<std::mutex> l(mutex);
 			if (propagationFilter == nullptr) return;
 			propagationFilter->Disable();
 		}
@@ -98,7 +108,7 @@ namespace Common {
 		/** \brief Insert a new frame into the waveguide
 		*/		
 		void PushBack(const CMonoBuffer<float>& _inputBuffer, const CVector3& _sourcePosition, const CVector3& _listenerPosition) {
-			
+			std::lock_guard<std::mutex> l(mutex);
 			mostRecentBuffer = _inputBuffer;				// Save a copy of this most recent Buffer
 			mostRecentSourceTransform = _sourcePosition;	// Save a copy of the source position
 			//If propagation delay simulation is not enable, do nothing more
@@ -112,7 +122,7 @@ namespace Common {
 			\brief Get next frame to be processed after pass throught the waveguide
 		*/
 		void PopFront(CMonoBuffer<float>& outbuffer, const CVector3& _listenerPosition, CVector3& sourcePositionWhenWasEmitted) {
-
+			std::lock_guard<std::mutex> l(mutex);
 			// if the propagation delay is not activated, just return the last input buffer
 			if (!enablePropagationDelay) {
 				outbuffer = mostRecentBuffer;
@@ -132,24 +142,11 @@ namespace Common {
 		/** \brief Reset waveguide to an initial state 
 		*/
 		void Reset() {
-			bool previousPropagationDelayState = enablePropagationDelay;
-			// Initialize all
-			enablePropagationDelay = false;
-			previousListenerPositionInitialized = false;
-			previousListenerPosition = CVector3(0, 0, 0); // Init previous Listener position
-			circular_buffer.clear(); // reset the circular buffer
-			SetCirculaBufferCapacity(0);
-			sourcePositionsBuffer.clear(); // reset the source position buffer
-			mostRecentBuffer.clear();
-			if (propagationFilter != nullptr) propagationFilter->ResetBuffers(); // Reset the filter buffers	
-			// Go back to previous state
-			enablePropagationDelay = previousPropagationDelayState;		
+			std::lock_guard<std::mutex> l(mutex);
+			ResetInternal();	
 		}
 
-		// Set the filter type for the waveguide
-		void SetPropagationFilter(std::shared_ptr<BRTFilters::CFilterBase> _filter) {
-			propagationFilter = _filter;
-		}
+		
 		
 	private:
 		/// Structure for storing the source position of the samples to be inserted into the circular buffer.
@@ -174,6 +171,25 @@ namespace Common {
 			};
 
 		};
+
+		/**
+		 * @brief Reset the internal state of the waveguide, clearing buffers and resetting positions. 
+		 * This method is called when propagation delay is disabled or when the waveguide needs to be reinitialized.
+		 */
+		void ResetInternal() {			
+			bool previousPropagationDelayState = enablePropagationDelay;
+			// Initialize all
+			enablePropagationDelay = false;
+			previousListenerPositionInitialized = false;
+			previousListenerPosition = CVector3(0, 0, 0); // Init previous Listener position
+			circular_buffer.clear(); // reset the circular buffer
+			SetCirculaBufferCapacity(0);
+			sourcePositionsBuffer.clear(); // reset the source position buffer
+			mostRecentBuffer.clear();
+			if (propagationFilter != nullptr) propagationFilter->ResetBuffers(); // Reset the filter buffers
+			// Go back to previous state
+			enablePropagationDelay = previousPropagationDelayState;
+		}
 
 		/// Processes the input buffer according to the movement of the source.
 		void ProcessSourceMovement(const CMonoBuffer<float> & _inputBuffer, const CVector3 & _sourcePosition, const CVector3 & _listenerPosition) {
@@ -533,23 +549,13 @@ namespace Common {
 			/// TODO Check the buffer size to select the sourceposition, maybe the output buffer will include more than the just first position of the source position buffer
 			return sourcePositionsBuffer.front().GetPosition();
 		}
-					
-								
-		// TODO Delete me
-		/*void CheckIntegritySourcePositionsBuffer() {
-			if (sourcePositionsBuffer.size() == 0) {
-				return;
-			}
-			if ((sourcePositionsBuffer[sourcePositionsBuffer.size() - 1].endIndex) != (circular_buffer.size() - 1)) {
-				std::cout << "error";
-			}
-		}*/
-
+															
 		///////////////
 		// Attributes
 		///////////////			
+		mutable std::mutex mutex;
 		CGlobalParameters globalParameters; /// To store the global parameters
-		 		 	  
+			  
 		bool enablePropagationDelay;					/// To store if the propagation delay is enabled or not		
 		CMonoBuffer<float> mostRecentBuffer;			/// To store the last buffer introduced into the waveguide
 		CVector3 mostRecentSourceTransform;				/// To store the last source transform introduced into the waveguide
