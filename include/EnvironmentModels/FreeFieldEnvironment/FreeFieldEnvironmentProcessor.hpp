@@ -24,6 +24,7 @@
 #include <Common/ErrorHandler.hpp>
 #include <Base/BRTManager.hpp>
 #include <Connectivity/BRTConnectivity.hpp>
+#include <Connectivity/CommandList.hpp>
 #include <EnvironmentModels/FreeFieldEnvironment/FreeFieldEnvironment.hpp>
 
 #ifndef _C_FREE_FIELD_ENVIRONMENT_PROCESSOR_HPP_
@@ -177,28 +178,32 @@ namespace BRTEnvironmentModel {
 		 * @brief Implementation of CAdvancedEntryPointManager virtual method
 		*/
 		void UpdateCommand() override {
-			
-			//BRTConnectivity::CCommand command = GetCommandEntryPoint()->GetData();
 			BRTConnectivity::CCommand command = GetLastReceivedCommand();
-			if (command.isNull() || command.GetCommand() == "") {
+
+			if (command.isNull()) {
 				return;
 			}
 
-			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
-			std::string commandSourceID = command.GetStringParameter("sourceID");
-			
-			if (mySourceID == "" || commandSourceID == "") {
+			// Only source-stop commands need forwarding to the virtual source.
+			if (command.GetCommand() != BRTConnectivity::CCommandList::COMMAND_SOURCE_STOP) {
 				return;
 			}
 
-			if (mySourceID == commandSourceID) {
-				// Propagete the command to the virtual sources
-				nlohmann::json j;				
-				j["command"] = command.GetCommand();
-				j["sourceID"] = virtualSourceID;
-				brtManager->ExecuteCommand(j.dump());				
-			}					
-		}
+			const std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
+			const std::string commandSourceID = command.GetStringParameter("sourceID");
+
+			if (mySourceID.empty() || commandSourceID != mySourceID || virtualSourceID.empty()) {
+				return;
+			}
+
+			ResetProcessBuffers();
+
+			nlohmann::json forwardedCommand;
+			forwardedCommand["command"] = BRTConnectivity::CCommandList::COMMAND_SOURCE_STOP;
+			forwardedCommand["sourceID"] = virtualSourceID;
+			brtManager->ExecuteCommand(forwardedCommand.dump());
+		}		
+
 	private:
 				
 		/////////////////
