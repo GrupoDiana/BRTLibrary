@@ -31,11 +31,11 @@
 #define _C_FREE_FIELD_ENVIRONMENT_PROCESSOR_HPP_
 namespace BRTEnvironmentModel { 
 
-	class CFreeFieldEnvironmentProcessor : public BRTConnectivity::CBRTConnectivity, public CFreeFieldEnvironment, public CVirtualSourceList {
+	class CFreeFieldEnvironmentProcessor : public BRTConnectivity::CBRTConnectivity, public CFreeFieldEnvironment, public CVirtualSourceManager {
 	
 	public:
 		CFreeFieldEnvironmentProcessor(BRTBase::CBRTManager * _brtManager)			
-			: CVirtualSourceList(_brtManager)
+			: CVirtualSourceManager(_brtManager)
 			, brtManager { _brtManager }			
 			, initialized { false }			
 			, gain { 1.0f } {
@@ -70,7 +70,7 @@ namespace BRTEnvironmentModel {
 			virtualSourceID = _freefieldModelID + "_" + _originalSourceID;			
 			//virtualSource = brtManager->CreateSoundSource<BRTSourceModel::CVirtualSourceModel>(virtualSourceID);						
 			//virtualSource->SetOriginSourceID(_originalSourceID);
-			CVirtualSourceList::CreateVirtualSource(virtualSourceID, _originalSourceID);
+			CVirtualSourceManager::CreateVirtualSource(virtualSourceID, _originalSourceID);
 			
 			initialized = true;
 			return true;
@@ -100,7 +100,7 @@ namespace BRTEnvironmentModel {
 		 */
 		bool ConnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {			
 			//return _listenerModel->ConnectSoundSource(virtualSource);
-			bool result = CVirtualSourceList::ConnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
+			bool result = CVirtualSourceManager::ConnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
 			if (result) {
 				virtualSourceConnectedToListener = true;
 			} else {
@@ -115,7 +115,7 @@ namespace BRTEnvironmentModel {
 		 * @return True if the disconnection was successful
 		 */
 		bool DisconnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {			
-			bool result = CVirtualSourceList::DisconnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
+			bool result = CVirtualSourceManager::DisconnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
 			if (result) {
 				virtualSourceConnectedToListener = false;
 			} else {
@@ -153,8 +153,8 @@ namespace BRTEnvironmentModel {
 			//virtualSource->SetSourceTransform(effectiveSourcePosition);
 			//virtualSource->SetBuffer(outBuffer);
 			//brtManager->ProcessOneSource(virtualSourceID);
-			CVirtualSourceList::SetVirtualSourcePosition(virtualSourceID, effectiveSourcePosition);			
-			CVirtualSourceList::PropagateVirtualSource(virtualSourceID, outBuffer);
+			CVirtualSourceManager::SetVirtualSourcePosition(virtualSourceID, effectiveSourcePosition);			
+			CVirtualSourceManager::PropagateVirtualSource(virtualSourceID, outBuffer);
 		}
 
 		/**

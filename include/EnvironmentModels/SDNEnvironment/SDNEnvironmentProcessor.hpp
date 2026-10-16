@@ -29,7 +29,7 @@
 #include <Common/ErrorHandler.hpp>
 #include <Base/BRTManager.hpp>
 #include <Connectivity/BRTConnectivity.hpp>
-#include <EnvironmentModels/VirtualSourceList.hpp>
+#include <EnvironmentModels/VirtualSourceManager.hpp>
 #include <EnvironmentModels/SDNEnvironment/SDNEnvironment.hpp>
 
 
@@ -37,11 +37,11 @@
 
 namespace BRTEnvironmentModel {
 
-	class CSDNEnvironmentProcessor : public BRTConnectivity::CBRTConnectivity, public CVirtualSourceList, SDNEnvironment {
+	class CSDNEnvironmentProcessor : public BRTConnectivity::CBRTConnectivity, public CVirtualSourceManager, SDNEnvironment {
 	public:
 
 		CSDNEnvironmentProcessor(BRTBase::CBRTManager * _brtManager)
-			: CVirtualSourceList(_brtManager)
+			: CVirtualSourceManager(_brtManager)
 			, brtManager { _brtManager }
 			, initialized { false }
 			, muteLoS { false }
@@ -139,7 +139,7 @@ namespace BRTEnvironmentModel {
 		 * @return True if the connection was successful
 		 */
 		bool ConnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
-			return CVirtualSourceList::ConnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
+			return CVirtualSourceManager::ConnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
 		}
 
 		/**
@@ -148,7 +148,7 @@ namespace BRTEnvironmentModel {
 		 * @return True if the disconnection was successful
 		 */
 		bool DisconnectToListenerModel(std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel) {
-			return CVirtualSourceList::DisconnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
+			return CVirtualSourceManager::DisconnectVirtualSourcesToListenerModel<BRTListenerModel::CListenerModelBase>(_listenerModel);
 		}
 
 		/**
@@ -281,7 +281,7 @@ namespace BRTEnvironmentModel {
 		
 		void RemoveBRTVirtualSources() {
 			for (int i = 0; i < SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT; i++) {
-				CVirtualSourceList::RemoveVirtualSource(GetBRTVirtualSourceID(i));
+				CVirtualSourceManager::RemoveVirtualSource(GetBRTVirtualSourceID(i));
 			}
 		}
 	private:
@@ -359,7 +359,7 @@ namespace BRTEnvironmentModel {
 		void CreateBRTVirtualSources() {
 
 			for (int i = 0; i < SDNParameters::NUM_WAVEGUIDES_TO_OUTPUT; i++) {
-				CVirtualSourceList::CreateVirtualSource(GetBRTVirtualSourceID(i), originalSourceID);
+				CVirtualSourceManager::CreateVirtualSource(GetBRTVirtualSourceID(i), originalSourceID);
 			}
 		}
 
@@ -403,9 +403,9 @@ namespace BRTEnvironmentModel {
 			if ((index < 6 && muteReverbPath) || (index == 6 && muteLoS)) {
 				std::fill(virtualSourceBuffers[index].begin(), virtualSourceBuffers[index].end(), 0);				
 			} 			
-			CVirtualSourceList::SetVirtualSourcePosition(GetBRTVirtualSourceID(index), CalculateGlobalPosition(virtualSourcePositions[index]));						
+			CVirtualSourceManager::SetVirtualSourcePosition(GetBRTVirtualSourceID(index), CalculateGlobalPosition(virtualSourcePositions[index]));						
 			virtualSourceBuffers[index].ApplyGain(gain);
-			CVirtualSourceList::PropagateVirtualSource(GetBRTVirtualSourceID(index), virtualSourceBuffers[index]);
+			CVirtualSourceManager::PropagateVirtualSource(GetBRTVirtualSourceID(index), virtualSourceBuffers[index]);
 		}
 		
 		/**

@@ -25,17 +25,16 @@
 
 #include <memory>
 #include <Base/BRTManager.hpp>
-//#include <SourceModels/SourceModelBase.hpp>
-#include <EnvironmentModels/EnvironmentModelBase.hpp>
 #include <SourceModels/VirtualSourceModel.hpp>
+#include <EnvironmentModels/EnvironmentModelBase.hpp>
 
 namespace BRTEnvironmentModel {
 
 
-	class CVirtualSourceList  {
+	class CVirtualSourceManager  {
 	public:
 						
-		CVirtualSourceList(BRTBase::CBRTManager * _brtManager)
+		CVirtualSourceManager(BRTBase::CBRTManager * _brtManager)
 			: brtManager { _brtManager } {												
 		}
 
