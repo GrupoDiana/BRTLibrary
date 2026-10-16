@@ -32,10 +32,18 @@ public:
 	static inline const std::string COMMAND_OVERALL_STOP = "/stop";
 	static inline const std::string COMMAND_OVERALL_ENABLE_MODEL = "/enableModel";
 
+	static inline const std::string COMMAND_SOURCE_SET_LOCATION = "/source/location";
+	static inline const std::string COMMAND_SOURCE_SET_ORIENTATION = "/source/orientation";
+	static inline const std::string COMMAND_SOURCE_SET_ORIENTATION_QUATERNION = "/source/orientationQuaternion";
+	static inline const std::string COMMAND_SOURCE_SET_TRANSFORM = "/source/transform";
 	static inline const std::string COMMAND_SOURCE_SET_GAIN = "/source/gain";
 	static inline const std::string COMMAND_SOURCE_STOP = "/source/stop";
-	static inline const std::string COMMAND_SOURCE_ENABLE_DIRECTIVITY = "/source/enableDirectivity";	
+	static inline const std::string COMMAND_SOURCE_ENABLE_DIRECTIVITY = "/source/enableDirectivity";
 	
+	static inline const std::string COMMAND_LISTENER_SET_LOCATION = "/listener/location";
+	static inline const std::string COMMAND_LISTENER_SET_ORIENTATION = "/listener/orientation";
+	static inline const std::string COMMAND_LISTENER_SET_ORIENTATION_QUATERNION = "/listener/orientationQuaternion";
+	static inline const std::string COMMAND_LISTENER_SET_TRANSFORM = "/listener/transform";	
 	static inline const std::string COMMAND_LISTENER_ENABLE_SPATIALIZATION = "/listener/enableSpatialization";
 	static inline const std::string COMMAND_LISTENER_ENABLE_INTERPOLATION = "/listener/enableInterpolation";
 	static inline const std::string COMMAND_LISTENER_ENABLE_NEAR_FIELD_EFFECT = "/listener/enableNearFieldEffect";
@@ -45,7 +53,7 @@ public:
 	static inline const std::string COMMAND_LISTENER_SET_AMBISONICS_NORMALIZATION = "/listener/setAmbisonicsNormalization";
 	static inline const std::string COMMAND_LISTENER_SET_DISTANCE_ATTENUATION_FACTOR = "/listener/setDistanceAttenuationFactor";
 	static inline const std::string COMMAND_LISTENER_ENABLE_DISTANCE_ATTENUATION = "/listener/enableDistanceAttenuation";
-
+		
 	static inline const std::string COMMAND_ENVIRONMENT_ENABLE_DIRECT_PATH = "/environment/enableDirectPath";
 	static inline const std::string COMMAND_ENVIRONMENT_ENABLE_REVERB_PATH = "/environment/enableReverbPath";
 	static inline const std::string COMMAND_ENVIRONMENT_ENABLE_PROPAGATION_DELAY = "/environment/enablePropagationDelay";

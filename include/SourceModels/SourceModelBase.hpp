@@ -29,11 +29,17 @@
 #include <memory>
 #include <Common/ErrorHandler.hpp>
 #include <Connectivity/BRTConnectivity.hpp>
+#include <Connectivity/CommandList.hpp>
 
+/// Forward declarations
 namespace BRTBase {
-	class CBRTManager; // Forward declaration
+	class CBRTManager; 
 }
-namespace BRTSourceModel {
+namespace BRTEnvironmentModel {
+	class CVirtualSourceManager;
+}
+
+	namespace BRTSourceModel {
 	
 	enum TSourceType { Omnidirectional, Directivity };	
 	
@@ -92,17 +98,21 @@ namespace BRTSourceModel {
 		 * @brief Set the source transform
 		 * @param _transform Source transform
 		 */
-		void SetSourceTransform(const Common::CTransform & _transform) { 
+		/*void SetSourceTransform(const Common::CTransform & _transform) { 
 			sourceTransform = _transform;			
 			GetTransformExitPoint()->sendData(sourceTransform);
-		}
+		}*/
 						
 		/**
 		 * @brief Get the current source transform
 		 * @return Source transform
 		 */
-		const Common::CTransform& GetSourceTransform() const { return sourceTransform; };		
-		
+		//const Common::CTransform& GetSourceTransform() const { return sourceTransform; };		
+		Common::CTransform GetSourceTransform() const {
+			std::lock_guard<std::mutex> lock(transformMutex);
+			return sourceTransform;
+		}
+
 		/**
 		 * @brief Get the source ID
 		 * @return Source ID
@@ -170,24 +180,33 @@ namespace BRTSourceModel {
 			}
 
 			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
-				if (command.GetCommand() == "/source/location") {
+				
+				if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_LOCATION) {
 					Common::CVector3 location = command.GetVector3Parameter("location");
 					Common::CTransform sourceTransform = GetSourceTransform();
 					sourceTransform.SetPosition(location);
 					SetSourceTransform(sourceTransform);
-				} else if (command.GetCommand() == "/source/TOrientation") {
-					Common::CVector3 orientationYawPitchRoll = command.GetVector3Parameter("TOrientation");
+
+				} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_ORIENTATION) {
+					Common::CVector3 orientationYawPitchRoll = command.GetVector3Parameter("orientationYPR");
 					Common::CQuaternion TOrientation;
 					TOrientation = TOrientation.FromYawPitchRoll(orientationYawPitchRoll.x, orientationYawPitchRoll.y, orientationYawPitchRoll.z);
 
 					Common::CTransform sourceTransform = GetSourceTransform();
 					sourceTransform.SetOrientation(TOrientation);
 					SetSourceTransform(sourceTransform);
-				} else if (command.GetCommand() == "/source/orientationQuaternion") {
-					Common::CQuaternion TOrientation = command.GetQuaternionParameter("TOrientation");
+					
+				} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_ORIENTATION_QUATERNION) {
+					Common::CQuaternion TOrientation = command.GetQuaternionParameter("orientationQuaternion");
 					Common::CTransform sourceTransform = GetSourceTransform();
 					sourceTransform.SetOrientation(TOrientation);
 					SetSourceTransform(sourceTransform);
+
+				} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_TRANSFORM) {
+					Common::CTransform transform;
+					transform.SetPosition(command.GetVector3Parameter("location"));
+					transform.SetOrientation(command.GetQuaternionParameter("orientationQuaternion"));
+					SetSourceTransform(transform);
 				}
 			}
 
@@ -201,21 +220,39 @@ namespace BRTSourceModel {
 		TSourceType sourceType;
 		bool virtualSource;
 
-		TState state;
-		//bool inputBufferReceived;
+		TState state;		
 		CMonoBuffer<float> inputBuffer;		
 		CMonoBuffer<float> outputBuffer;	
 		Common::CTransform sourceTransform;		
 		Common::CGlobalParameters globalParameters;
 
-		friend class BRTBase::CBRTManager; // Declare CBRTManager
+		mutable std::mutex transformMutex;
+
+		friend class BRTEnvironmentModel::CVirtualSourceManager;
+		friend class BRTBase::CBRTManager; 
 
 	protected:
-		
+				
+		void SetSourceTransform(const Common::CTransform & _transform) {
+			Common::CTransform transformToPublish = _transform;
+
+			{
+				std::lock_guard<std::mutex> lock(transformMutex);
+				sourceTransform = transformToPublish;
+			}
+
+			GetTransformExitPoint()->sendData(transformToPublish);
+		}
+
+		/**
+		 * @brief Set the output buffer
+		 * @param _buffer Buffer to be sent
+		 */
 		void SetOutputBuffer(CMonoBuffer<float> & _buffer) {
 			outputBuffer = _buffer;
 			state = TState::Processed;
 		}
+
 		/**
 		 * @brief Send the data to the exit point
 		 * @param _buffer Buffer to be sent

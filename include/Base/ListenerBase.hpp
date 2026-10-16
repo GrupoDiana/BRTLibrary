@@ -24,11 +24,13 @@
 #define _CLISTENER_BASE_H_
 
 #include <memory>
-#include <Connectivity/BRTConnectivity.hpp>
-#include <ListenerModels/ListenerModelBase.hpp>
+#include <mutex>
+#include <Common/Buffer.hpp>
 #include <Common/CommonDefinitions.hpp>
 #include <Common/AudioMixer.hpp>
-#include <Common/Buffer.hpp>
+#include <Connectivity/BRTConnectivity.hpp>
+#include <Connectivity/CommandList.hpp>
+#include <ListenerModels/ListenerModelBase.hpp>
 
 namespace BRTServices {
 	class CSphericalInterpolatedFIRTable;
@@ -44,10 +46,7 @@ namespace BRTBase {
 			, listenerTransform { Common::CTransform() }
 			, leftChannelMixer { Common::CAudioMixer(globalParameters.GetBufferSize()) }
 			, rightChannelMixer { Common::CAudioMixer(globalParameters.GetBufferSize()) }
-		{												
-			//leftChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
-			//rightChannelMixer = Common::CAudioMixer(globalParameters.GetBufferSize());
-
+		{															
 			CreateSamplesEntryPoint("leftEar");
 			CreateSamplesEntryPoint("rightEar");									
 			CreateTransformExitPoint();			
@@ -61,17 +60,20 @@ namespace BRTBase {
 		*	\param [in] _listenerTransform new listener position and orientation
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void SetListenerTransform(Common::CTransform _transform) {
-			listenerTransform = _transform;
-			GetTransformExitPoint()->sendData(listenerTransform);	// Send to subscribers			
-		}
+		//void SetListenerTransform(Common::CTransform _transform) {
+		//	listenerTransform = _transform;
+		//	GetTransformExitPoint()->sendData(listenerTransform);	// Send to subscribers			
+		//}
 
 		/** \brief Get listener position and orientation
 		*	\retval transform current listener position and orientation
 		*   \eh Nothing is reported to the error handler.
 		*/
-		Common::CTransform GetListenerTransform() { return listenerTransform; }
-
+		//Common::CTransform GetListenerTransform() { return listenerTransform; }
+		Common::CTransform GetListenerTransform() const {
+			std::lock_guard<std::mutex> lock(transformMutex);
+			return listenerTransform;
+		}
 		/**
 		 * @brief Get listener ID
 		 * @return Return listener identificator
@@ -105,19 +107,54 @@ namespace BRTBase {
 		}
 		
 		void UpdateCommand() override {
-			//Do nothing		
+			BRTConnectivity::CCommand command = GetLastReceivedCommand();
+
+			if (command.isNull()) {
+				return;
+			}
+
+			if (command.GetStringParameter("listenerID") != GetID()) {
+				return;
+			}
+
+			const std::string commandName = command.GetCommand();
+
+			if (commandName != BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_LOCATION 
+				&& commandName != BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_ORIENTATION 
+				&& commandName != BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_ORIENTATION_QUATERNION 
+				&& commandName != BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_TRANSFORM) {
+				return;
+			}
+
+			Common::CTransform transform = GetListenerTransform();
+
+			if (commandName == BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_LOCATION) {
+				transform.SetPosition(command.GetVector3Parameter("location"));
+
+			} else if (commandName == BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_ORIENTATION) {
+				transform.SetOrientation(command.GetQuaternionParameter("orientationYPR"));
+
+			} else if (commandName == BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_ORIENTATION_QUATERNION) {
+				transform.SetOrientation(command.GetQuaternionParameter("orientationQuaternion"));
+
+			} else if (commandName == BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_TRANSFORM) {
+				transform.SetPosition(command.GetVector3Parameter("location"));
+				transform.SetOrientation(command.GetQuaternionParameter("orientationQuaternion"));
+			}
+			else {
+
+			}
+
+			SetListenerTransform(transform);
 		}
 		
 
 	private:
-				
 		//////////////////////////
 		// Private Methods
 		/////////////////////////
 		
 		
-
-
 		//////////////////////////
 		// Private Attributes
 		/////////////////////////
@@ -128,6 +165,20 @@ namespace BRTBase {
 
 		Common::CAudioMixer leftChannelMixer;
 		Common::CAudioMixer rightChannelMixer;		
+
+		mutable std::mutex transformMutex;
+
+	protected:
+
+		void SetListenerTransform(const Common::CTransform & _transform) {
+			Common::CTransform transformToPublish = _transform;
+			{
+				std::lock_guard<std::mutex> lock(transformMutex);
+				listenerTransform = transformToPublish;
+			}
+			GetTransformExitPoint()->sendData(transformToPublish);
+		}
 	};
+
 }
 #endif

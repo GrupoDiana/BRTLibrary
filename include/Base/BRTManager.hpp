@@ -29,6 +29,7 @@
 #include <deque>
 #include <utility>
 #include "Connectivity/ExitPoint.hpp"
+#include <Connectivity/CommandList.hpp>
 #include "SourceModels/SourceModelBase.hpp"
 #include "ListenerBase.hpp"
 #include "ListenerModels/ListenerModelBase.hpp"
@@ -37,7 +38,7 @@
 #include "third_party_libraries/nlohmann/json.hpp"
 
 namespace BRTEnvironmentModel {
-class CVirtualSourceList;
+class CVirtualSourceManager;
 }
 
 namespace BRTBase {
@@ -899,36 +900,117 @@ namespace BRTBase {
 			return true;
 		}
 
-		//////////////////////
+		///////////////////////////
+		// Source SET/GET METHODs
+		//////////////////////////
+
+		void SetSoundSourcePosition(const std::string & sourceID, const Common::CVector3 & position) {
+			json j = {
+				{ "command", BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_LOCATION },
+				{ "sourceID", sourceID },
+				{ "location", { position.x, position.y, position.z } }
+			};
+
+			ExecuteCommand(j.dump());
+		}
+
+		void SetSoundSourceOrientation(const std::string & sourceID, const Common::CVector3 & _orientationYPR) {
+			json j = {
+				{ "command",
+					BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_ORIENTATION_QUATERNION },
+				{ "sourceID", sourceID },
+				{ "orientationYPR", { _orientationYPR.x, _orientationYPR.y, _orientationYPR.z } }
+			};
+
+			ExecuteCommand(j.dump());
+		}
+
+		void SetSoundSourceOrientation(const std::string & sourceID, const Common::CQuaternion & orientation) {
+			json j = {
+				{ "command",
+					BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_ORIENTATION_QUATERNION },
+				{ "sourceID", sourceID },
+				{ "orientationQuaternion", { orientation.w, orientation.x, orientation.y, orientation.z } }
+			};
+
+			ExecuteCommand(j.dump());
+		}
+
+		void SetSoundSourceTransform(const std::string & sourceID, const Common::CTransform & transform) {
+			const auto position = transform.GetPosition();
+			const auto orientation = transform.GetOrientation();
+
+			json j = {
+				{ "command",
+					BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_TRANSFORM },
+				{ "sourceID", sourceID },
+				{ "location", { position.x, position.y, position.z } },
+				{ "orientationQuaternion", { orientation.w, orientation.x, orientation.y, orientation.z } }
+			};
+
+			ExecuteCommand(j.dump());
+		}
+
+		///////////////////////////
+		// Listener SET/GET METHODs
+		//////////////////////////
+		void SetListenerPosition(const std::string & listenerID, const Common::CVector3 & position) {
+			json j = {
+				{ "command",
+					BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_LOCATION },
+				{ "listenerID", listenerID },
+				{ "location", { position.x, position.y, position.z } }
+			};
+
+			ExecuteCommand(j.dump());
+		}
+
+		void SetListenerOrientation(const std::string & listenerID, const Common::CVector3 & _orientationYPR) {
+			json j = {
+				{ "command",
+					BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_ORIENTATION },
+				{ "listenerID", listenerID },
+				{ "orientationQuaternion", { _orientationYPR.x, _orientationYPR.y, _orientationYPR.z } }
+			};
+
+			ExecuteCommand(j.dump());
+		}
+
+		void SetListenerOrientation(const std::string & listenerID,	const Common::CQuaternion & orientation) {
+			json j = {
+				{ "command",
+					BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_ORIENTATION_QUATERNION },
+				{ "listenerID", listenerID },
+				{ "orientationQuaternion", { orientation.w, orientation.x, orientation.y, orientation.z } }
+			};
+
+			ExecuteCommand(j.dump());
+		}
+
+		void SetListenerTransform(const std::string & listenerID, const Common::CTransform & transform) {
+			
+			const auto position = transform.GetPosition();
+			const auto orientation = transform.GetOrientation();
+
+			json j = {
+				{ "command",
+					BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_TRANSFORM },
+				{ "listenerID", listenerID },
+				{ "location", { position.x, position.y, position.z } },
+				{ "orientationQuaternion", { orientation.w, orientation.x, orientation.y, orientation.z } }
+			};
+
+			ExecuteCommand(j.dump());
+		}
+
+
+		///////////////////////////
 		// PROCESS METHODs
 		/////////////////////
 
 		/**
 		 * @brief Start audio processing
 		*/		
-		//void ProcessAll() {
-		//	// Prevent recursive entry before trying to acquire the mutex.
-		//	if (IsProcessingOnCurrentThread()) {
-		//		SET_RESULT(RESULT_ERROR_NOTALLOWED,	"ProcessAll cannot be called recursively.");
-		//		return;
-		//	}
-
-		//	std::lock_guard<std::mutex> lock(mutex);
-
-		//	if (setupModeActivated) {
-		//		return;
-		//	}
-
-		//	// Temporary restriction while multi-thread processing is reviewed.
-		//	if (multiThreadingEnabled) {
-		//		SET_RESULT(RESULT_ERROR_NOTALLOWED, "Multi-thread processing is not supported by this context yet.");
-		//		return;
-		//	}
-
-		//	CProcessingContext processingContext(this);
-		//	ProcessMonoThread();
-		//}		
-
 		void ProcessAll() {
 			// Prevent entry from callbacks belonging to an active operation.
 			if (IsProcessingOnCurrentThread() || IsDispatchingCommandsOnCurrentThread()) {
@@ -961,17 +1043,7 @@ namespace BRTBase {
 			// The manager mutex is still held.
 			DrainPendingCommands();
 		}
-
-		///**
-		// * @brief Executes the received command. To do so, it distributes it to all the connected modules, which are responsible for executing the relevant actions.
-		// * @param commandJson The command to execute following a json format.
-		//*/
-		//void ExecuteCommand(std::string commandJson) {
-		//	//std::lock_guard<std::mutex> l(mutex);
-		//	BRTConnectivity::CCommand command(commandJson);
-		//	commandsExitPoint->sendData(command);
-		//}
-
+		
 		/**
 		 * @brief Submit a command.
 		 *
@@ -1176,7 +1248,7 @@ namespace BRTBase {
 		bool multiThreadingEnabled;
 		mutable std::mutex mutex;
 
-		friend class BRTEnvironmentModel::CVirtualSourceList;
+		friend class BRTEnvironmentModel::CVirtualSourceManager;
 
 	};
 }
