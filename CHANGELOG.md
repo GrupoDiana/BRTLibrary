@@ -5,6 +5,22 @@ All notable changes to the Binaural Rendering Toolbox (BRT) will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.10] - 2026-10-16
+
+### Added
+- A new message queue system has been introduced to prevent threads collisions.
+
+### Fixed
+- A correction to the definition of a constructor in the CCommand class, which caused a compilation error in the most recent versions of Clang.
+- An IMPORTANT bug has been fixed which caused sample buffers to become misaligned within a frame due to incorrect usage.
+- A safeguard has been included in the waveguide to prevent potential collisions between threads.
+
+### Changed
+-  The absorption coefficients of the walls are now read (from a file and via the OSC command), saved and processed using double precision. This prevents coefficients that are very close to 1 from being rounded down to 1. Up to ten decimal places are now permitted (0.9999...), which allows losses of up to 100 dB to be simulated. 
+- The sources models have been slightly restructured to make them clearer. Minor errors have also been corrected.
+- A reorganisation has been carried out to separate the execution of virtual sources from that of real sources. An execution context has also been created to prevent potential collisions during the execution of virtual sources by preventing re-entry into the mutex.
+- Improved collision handling has been implemented in single-threaded execution. To this end, a new message queue system has been introduced to prevent collisions. Furthermore, the entire control message management system has been modified. 
+
 ## [3.0.9] - 2026-09-21
 
 ### Added
