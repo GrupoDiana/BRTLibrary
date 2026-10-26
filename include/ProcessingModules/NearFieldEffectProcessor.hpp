@@ -116,7 +116,7 @@ class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity/*, pu
 			if (command.isNull()) { return; }			
 			
 			
-			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
+			if (IsToMySoundSource(command.GetStringParameter(BRTConnectivity::CCommand::FIELD_CONTENT_SOURCE_ID))) {
 				if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_STOP) {
 					//ResetProcessBuffers();
 					spatiallyOrientedSOSFilter.ResetBuffers();

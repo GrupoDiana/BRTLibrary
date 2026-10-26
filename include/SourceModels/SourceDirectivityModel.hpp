@@ -116,7 +116,7 @@ namespace BRTSourceModel {
 			}
 
 			// Source-specific commands only apply to their target.
-			if (!IsToMySoundSource(command.GetStringParameter("sourceID"))) {
+			if (!IsToMySoundSource(command.GetStringParameter(BRTConnectivity::CCommand::FIELD_CONTENT_SOURCE_ID))) {
 				return;
 			}
 
@@ -124,7 +124,7 @@ namespace BRTSourceModel {
 				ResetSourceConvolutionBuffers();
 			} else if (
 				commandName == BRTConnectivity::CCommandList::COMMAND_SOURCE_ENABLE_DIRECTIVITY) {
-				if (command.GetBoolParameter("enable")) {
+				if (command.GetBoolParameter(BRTConnectivity::CCommand::FIELD_CONTENT_ENABLE_PARAMETER)) {
 					EnableSourceDirectionality();
 				} else {
 					DisableSourceDirectionality();

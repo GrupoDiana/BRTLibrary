@@ -179,16 +179,16 @@ namespace BRTEnvironmentModel {
 				return;
 			}
 
-			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
+			if (IsToMySoundSource(command.GetStringParameter(BRTConnectivity::CCommand::FIELD_CONTENT_SOURCE_ID))) {
 				
 				if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_LOCATION) {
-					Common::CVector3 location = command.GetVector3Parameter("location");
+					Common::CVector3 location = command.GetVector3Parameter(BRTConnectivity::CCommand::FIELD_CONTENT_LOCATION);
 					Common::CTransform sourceTransform = GetSourceTransform();
 					sourceTransform.SetPosition(location);
 					SetSourceTransform(sourceTransform);
 
 				} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_ORIENTATION) {
-					Common::CVector3 orientationYawPitchRoll = command.GetVector3Parameter("orientationYPR");
+					Common::CVector3 orientationYawPitchRoll = command.GetVector3Parameter(BRTConnectivity::CCommand::FIELD_CONTENT_ORIENTATION_YPR);
 					Common::CQuaternion TOrientation;
 					TOrientation = TOrientation.FromYawPitchRoll(orientationYawPitchRoll.x, orientationYawPitchRoll.y, orientationYawPitchRoll.z);
 
@@ -197,15 +197,15 @@ namespace BRTEnvironmentModel {
 					SetSourceTransform(sourceTransform);
 					
 				} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_ORIENTATION_QUATERNION) {
-					Common::CQuaternion TOrientation = command.GetQuaternionParameter("orientationQuaternion");
+					Common::CQuaternion TOrientation = command.GetQuaternionParameter(BRTConnectivity::CCommand::FIELD_CONTENT_ORIENTATION_QUATERNION);
 					Common::CTransform sourceTransform = GetSourceTransform();
 					sourceTransform.SetOrientation(TOrientation);
 					SetSourceTransform(sourceTransform);
 
 				} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_TRANSFORM) {
 					Common::CTransform transform;
-					transform.SetPosition(command.GetVector3Parameter("location"));
-					transform.SetOrientation(command.GetQuaternionParameter("orientationQuaternion"));
+					transform.SetPosition(command.GetVector3Parameter(BRTConnectivity::CCommand::FIELD_CONTENT_LOCATION));
+					transform.SetOrientation(command.GetQuaternionParameter(BRTConnectivity::CCommand::FIELD_CONTENT_ORIENTATION_QUATERNION));
 					SetSourceTransform(transform);
 				}
 			}

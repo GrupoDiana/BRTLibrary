@@ -355,18 +355,18 @@ namespace BRTEnvironmentModel {
 	private:
 
 		void CheckEnvironmentCommands(const std::string & _modelID, BRTConnectivity::CCommand & command) {
-			if (_modelID != command.GetStringParameter("environmentModelID")) {
+			if (_modelID != command.GetStringParameter(BRTConnectivity::CCommand::FIELD_CONTENT_ENVIRONMENT_ID)) {
 				return;
 			}
 
 			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_ENABLE_MODEL) {
-				if (command.GetBoolParameter("enable")) {
+				if (command.GetBoolParameter(BRTConnectivity::CCommand::FIELD_CONTENT_ENABLE_PARAMETER)) {
 					EnableModel();
 				} else {
 					DisableModel();
 				}			
 			} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_ENVIRONMENT_ENABLE_REVERB_PATH) {
-				if (command.GetBoolParameter("enable")) {
+				if (command.GetBoolParameter(BRTConnectivity::CCommand::FIELD_CONTENT_ENABLE_PARAMETER)) {
 					EnableReverbPath();
 				} else {
 					DisableReverbPath();

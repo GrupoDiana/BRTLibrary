@@ -113,7 +113,7 @@ namespace BRTBase {
 				return;
 			}
 
-			if (command.GetStringParameter("listenerID") != GetID()) {
+			if (command.GetStringParameter(BRTConnectivity::CCommand::FIELD_CONTENT_LISTENER_ID) != GetID()) {
 				return;
 			}
 
@@ -129,17 +129,17 @@ namespace BRTBase {
 			Common::CTransform transform = GetListenerTransform();
 
 			if (commandName == BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_LOCATION) {
-				transform.SetPosition(command.GetVector3Parameter("location"));
+				transform.SetPosition(command.GetVector3Parameter(BRTConnectivity::CCommand::FIELD_CONTENT_LOCATION));
 
 			} else if (commandName == BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_ORIENTATION) {
-				transform.SetOrientation(command.GetQuaternionParameter("orientationYPR"));
+				transform.SetOrientation(command.GetVector3Parameter(BRTConnectivity::CCommand::FIELD_CONTENT_ORIENTATION_YPR));
 
 			} else if (commandName == BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_ORIENTATION_QUATERNION) {
-				transform.SetOrientation(command.GetQuaternionParameter("orientationQuaternion"));
+				transform.SetOrientation(command.GetQuaternionParameter(BRTConnectivity::CCommand::FIELD_CONTENT_ORIENTATION_QUATERNION));
 
 			} else if (commandName == BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_TRANSFORM) {
-				transform.SetPosition(command.GetVector3Parameter("location"));
-				transform.SetOrientation(command.GetQuaternionParameter("orientationQuaternion"));
+				transform.SetPosition(command.GetVector3Parameter(BRTConnectivity::CCommand::FIELD_CONTENT_LOCATION));
+				transform.SetOrientation(command.GetQuaternionParameter(BRTConnectivity::CCommand::FIELD_CONTENT_ORIENTATION_QUATERNION));
 			}
 			else {
 

@@ -190,7 +190,7 @@ namespace BRTEnvironmentModel {
 			}
 
 			const std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
-			const std::string commandSourceID = command.GetStringParameter("sourceID");
+			const std::string commandSourceID = command.GetStringParameter(BRTConnectivity::CCommand::FIELD_CONTENT_SOURCE_ID);
 
 			if (mySourceID.empty() || commandSourceID != mySourceID || virtualSourceID.empty()) {
 				return;

@@ -451,19 +451,19 @@ namespace BRTListenerModel {
 		/////////////////
 		
 		void CheckListenerCommands(const std::string& _listenerID, BRTConnectivity::CCommand& command) {
-			if (listenerID == command.GetStringParameter("listenerID")) {
+			if (listenerID == command.GetStringParameter(BRTConnectivity::CCommand::FIELD_CONTENT_LISTENER_ID)) {
 				if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_AMBISONICS_ORDER) {
-					SetAmbisonicOrder(command.GetIntParameter("ambisonicsOrder"));
+					SetAmbisonicOrder(command.GetIntParameter(BRTConnectivity::CCommand::FIELD_CONTENT_AMBISONICS_ORDER));
 				} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_AMBISONICS_NORMALIZATION) {
 					SetAmbisonicNormalization(command.GetStringParameter("ambisonicsNormalization"));
 				} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_LISTENER_ENABLE_NEAR_FIELD_EFFECT) {
-					if (command.GetBoolParameter("enable")) {
+					if (command.GetBoolParameter(BRTConnectivity::CCommand::FIELD_CONTENT_ENABLE_PARAMETER)) {
 						EnableNearFieldEffect();
 					} else {
 						DisableNearFieldEffect();
 					}
 				} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_LISTENER_ENABLE_ITD) {
-					if (command.GetBoolParameter("enable")) {
+					if (command.GetBoolParameter(BRTConnectivity::CCommand::FIELD_CONTENT_ENABLE_PARAMETER)) {
 						EnableITDSimulation();
 					} else {
 						DisableITDSimulation();

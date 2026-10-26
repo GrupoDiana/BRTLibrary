@@ -27,11 +27,24 @@
 #include <third_party_libraries/nlohmann/json.hpp>
 
 namespace BRTConnectivity {
-	class CCommand { //NOTE: Rethink this; you can store the already-parsed JSON to save processing time
+	class CCommand { 
+		//NOTE: Rethink this; you can store the already-parsed JSON to save processing time
 		using json = nlohmann::json;
+	
 	public:
-		
-		
+		static inline const std::string FIELD_CONTENT_COMMAND = "command";
+		static inline const std::string FIELD_CONTENT_LOCATION = "location";
+		static inline const std::string FIELD_CONTENT_ORIENTATION_YPR = "orientationYPR";
+		static inline const std::string FIELD_CONTENT_ORIENTATION_QUATERNION = "orientationQuaternion";
+
+		static inline const std::string FIELD_CONTENT_LISTENER_ID = "listenerID";
+		static inline const std::string FIELD_CONTENT_SOURCE_ID = "sourceID";
+		static inline const std::string FIELD_CONTENT_ENVIRONMENT_ID = "environmentModelID";
+		static inline const std::string FIELD_CONTENT_AMBISONICS_ORDER = "ambisonicsOrder";
+		static inline const std::string FIELD_CONTENT_DISTANCE_ATTENUATION_FACTOR = "distanceAttenuationFactorDB";
+		static inline const std::string FIELD_CONTENT_ENABLE_PARAMETER = "enable";
+
+
 		CCommand() : empty{ true } { };
 		CCommand(std::string _commandJsonString) 
 			: j (json::parse(_commandJsonString))
@@ -67,7 +80,7 @@ namespace BRTConnectivity {
 		}
 
 		int GetIntParameter(std::string fieldName) {
-			int _parameter;
+			int _parameter = -1;
 			if (!j[fieldName].is_null() && j[fieldName].is_number_integer()) {
 				_parameter = j[fieldName].get<int>();
 			}
@@ -93,7 +106,7 @@ namespace BRTConnectivity {
 		}
 
 		bool GetBoolParameter(std::string fieldName) {
-			bool _parameter;
+			bool _parameter = false;
 			if (!j[fieldName].is_null() && j[fieldName].is_boolean()) {
 				_parameter = j[fieldName];
 			}

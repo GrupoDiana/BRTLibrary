@@ -1,7 +1,7 @@
 ﻿/**
-* \class CVirtualSourcesModel
+* \class CVirtualSourcesManager
 *
-* \brief Declaration of CVirtualSourcesModel class
+* \brief Declaration of CVirtualSourcesManager class
 * \date	Sep 2024
 *
 * \authors 3DI-DIANA Research Group (University of Malaga), in alphabetical order: M. Cuevas-Rodriguez, D. Gonzalez-Toledo, L. Molina-Tanco ||
@@ -104,6 +104,11 @@ namespace BRTEnvironmentModel {
 		}
 		
 		void SetVirtualSourcePosition(const std::string & _virtualSourceID, const Common::CTransform & _sourcePosition) {
+			
+			if (!CheckProcessingContext()) {
+				return;
+			}
+
 			auto && it = std::find_if(virtualSources.begin(), virtualSources.end(), [&_virtualSourceID](std::shared_ptr<BRTSourceModel::CVirtualSourceModel> virtualSource) { return virtualSource->GetID() == _virtualSourceID; });
 			if (it != virtualSources.end()) {
 				it[0]->SetSourceTransform(_sourcePosition);

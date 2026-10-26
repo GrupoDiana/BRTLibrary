@@ -104,7 +104,7 @@ class CHRTFConvolverProcessor : public BRTConnectivity::CBRTConnectivity, public
 			BRTConnectivity::CCommand command = GetLastReceivedCommand();
 
 			if (command.isNull() || command.GetCommand() == "") { return; }						
-			std::string commandSourceID = command.GetStringParameter("sourceID");
+			std::string commandSourceID = command.GetStringParameter(BRTConnectivity::CCommand::FIELD_CONTENT_SOURCE_ID);
 			std::string mySourceID = GetIDEntryPoint("sourceID")->GetData();
 
 			if (commandSourceID == mySourceID) {

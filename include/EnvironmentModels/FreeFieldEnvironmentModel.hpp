@@ -350,31 +350,31 @@ namespace BRTEnvironmentModel {
 	private:
 		
 		void CheckEnvironmentCommands(const std::string & _modelID, BRTConnectivity::CCommand & command) {
-			if (_modelID != command.GetStringParameter("environmentModelID")) {
+			if (_modelID != command.GetStringParameter(BRTConnectivity::CCommand::FIELD_CONTENT_ENVIRONMENT_ID)) {
 				return;
 			}
 
 			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_ENABLE_MODEL) {
-				if (command.GetBoolParameter("enable")) {
+				if (command.GetBoolParameter(BRTConnectivity::CCommand::FIELD_CONTENT_ENABLE_PARAMETER)) {
 					EnableModel();
 				} else {
 					DisableModel();
 				}
 			} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_ENVIRONMENT_ENABLE_DISTANCE_ATTENUATION) {
-				if (command.GetBoolParameter("enable")) {
+				if (command.GetBoolParameter(BRTConnectivity::CCommand::FIELD_CONTENT_ENABLE_PARAMETER)) {
 					EnableDistanceAttenuation();
 				} else {
 					DisableDistanceAttenuation();
 				}
 			} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_ENVIRONMENT_ENABLE_PROPAGATION_DELAY) {
-				if (command.GetBoolParameter("enable")) {
+				if (command.GetBoolParameter(BRTConnectivity::CCommand::FIELD_CONTENT_ENABLE_PARAMETER)) {
 					EnablePropagationDelay();
 				} else {
 					DisablePropagationDelay();
 				}				
 			} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_ENVIRONMENT_SET_DISTANCE_ATTENUATION_FACTOR) {
-				if (command.GetFloatParameter("distanceAttenuationFactorDB") != 0) {
-					SetDistanceAttenuationFactor(command.GetFloatParameter("distanceAttenuationFactorDB"));
+				if (command.GetFloatParameter(BRTConnectivity::CCommand::FIELD_CONTENT_DISTANCE_ATTENUATION_FACTOR) != 0) {
+					SetDistanceAttenuationFactor(command.GetFloatParameter(BRTConnectivity::CCommand::FIELD_CONTENT_DISTANCE_ATTENUATION_FACTOR));
 				}
 			}
 		}

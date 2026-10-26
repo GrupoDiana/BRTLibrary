@@ -29,6 +29,7 @@
 #include <deque>
 #include <utility>
 #include "Connectivity/ExitPoint.hpp"
+#include <Connectivity/Command.hpp>
 #include <Connectivity/CommandList.hpp>
 #include "SourceModels/SourceModelBase.hpp"
 #include "ListenerBase.hpp"
@@ -906,20 +907,19 @@ namespace BRTBase {
 
 		void SetSoundSourcePosition(const std::string & sourceID, const Common::CVector3 & position) {
 			json j = {
-				{ "command", BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_LOCATION },
-				{ "sourceID", sourceID },
-				{ "location", { position.x, position.y, position.z } }
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_COMMAND, BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_LOCATION },
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_SOURCE_ID, sourceID },
+				{ BRTConnectivity ::CCommand::FIELD_CONTENT_LOCATION, { position.x, position.y, position.z } }
 			};
 
 			ExecuteCommand(j.dump());
 		}
 
-		void SetSoundSourceOrientation(const std::string & sourceID, const Common::CVector3 & _orientationYPR) {
+		void SetSoundSourceOrientationYPR(const std::string & sourceID, const Common::CVector3 & _orientationYPR) {
 			json j = {
-				{ "command",
-					BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_ORIENTATION_QUATERNION },
-				{ "sourceID", sourceID },
-				{ "orientationYPR", { _orientationYPR.x, _orientationYPR.y, _orientationYPR.z } }
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_COMMAND, BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_ORIENTATION_QUATERNION },
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_SOURCE_ID, sourceID },
+				{ BRTConnectivity ::CCommand::FIELD_CONTENT_ORIENTATION_YPR, { _orientationYPR.x, _orientationYPR.y, _orientationYPR.z } }
 			};
 
 			ExecuteCommand(j.dump());
@@ -927,10 +927,10 @@ namespace BRTBase {
 
 		void SetSoundSourceOrientation(const std::string & sourceID, const Common::CQuaternion & orientation) {
 			json j = {
-				{ "command",
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_COMMAND, 
 					BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_ORIENTATION_QUATERNION },
-				{ "sourceID", sourceID },
-				{ "orientationQuaternion", { orientation.w, orientation.x, orientation.y, orientation.z } }
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_SOURCE_ID, sourceID },
+				{ BRTConnectivity ::CCommand::FIELD_CONTENT_ORIENTATION_QUATERNION, { orientation.w, orientation.x, orientation.y, orientation.z } }
 			};
 
 			ExecuteCommand(j.dump());
@@ -941,11 +941,10 @@ namespace BRTBase {
 			const auto orientation = transform.GetOrientation();
 
 			json j = {
-				{ "command",
-					BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_TRANSFORM },
-				{ "sourceID", sourceID },
-				{ "location", { position.x, position.y, position.z } },
-				{ "orientationQuaternion", { orientation.w, orientation.x, orientation.y, orientation.z } }
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_COMMAND, BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_TRANSFORM },
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_SOURCE_ID, sourceID },
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_LOCATION, { position.x, position.y, position.z } },
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_ORIENTATION_QUATERNION, { orientation.w, orientation.x, orientation.y, orientation.z } }
 			};
 
 			ExecuteCommand(j.dump());
@@ -956,10 +955,9 @@ namespace BRTBase {
 		//////////////////////////
 		void SetListenerPosition(const std::string & listenerID, const Common::CVector3 & position) {
 			json j = {
-				{ "command",
-					BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_LOCATION },
-				{ "listenerID", listenerID },
-				{ "location", { position.x, position.y, position.z } }
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_COMMAND, BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_LOCATION },
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_LISTENER_ID, listenerID },
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_LOCATION, { position.x, position.y, position.z } }
 			};
 
 			ExecuteCommand(j.dump());
@@ -967,10 +965,10 @@ namespace BRTBase {
 
 		void SetListenerOrientation(const std::string & listenerID, const Common::CVector3 & _orientationYPR) {
 			json j = {
-				{ "command",
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_COMMAND,
 					BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_ORIENTATION },
-				{ "listenerID", listenerID },
-				{ "orientationQuaternion", { _orientationYPR.x, _orientationYPR.y, _orientationYPR.z } }
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_LISTENER_ID, listenerID },
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_ORIENTATION_YPR, { _orientationYPR.x, _orientationYPR.y, _orientationYPR.z } }
 			};
 
 			ExecuteCommand(j.dump());
@@ -978,10 +976,9 @@ namespace BRTBase {
 
 		void SetListenerOrientation(const std::string & listenerID,	const Common::CQuaternion & orientation) {
 			json j = {
-				{ "command",
-					BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_ORIENTATION_QUATERNION },
-				{ "listenerID", listenerID },
-				{ "orientationQuaternion", { orientation.w, orientation.x, orientation.y, orientation.z } }
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_COMMAND,	BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_ORIENTATION_QUATERNION },
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_LISTENER_ID, listenerID },
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_ORIENTATION_QUATERNION, { orientation.w, orientation.x, orientation.y, orientation.z } }
 			};
 
 			ExecuteCommand(j.dump());
@@ -993,11 +990,11 @@ namespace BRTBase {
 			const auto orientation = transform.GetOrientation();
 
 			json j = {
-				{ "command",
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_COMMAND,
 					BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_TRANSFORM },
-				{ "listenerID", listenerID },
-				{ "location", { position.x, position.y, position.z } },
-				{ "orientationQuaternion", { orientation.w, orientation.x, orientation.y, orientation.z } }
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_LISTENER_ID, listenerID },
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_LOCATION, { position.x, position.y, position.z } },
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_ORIENTATION_QUATERNION, { orientation.w, orientation.x, orientation.y, orientation.z } }
 			};
 
 			ExecuteCommand(j.dump());

@@ -105,7 +105,7 @@ class CBilateralAmbisonicEncoderProcessor : public BRTConnectivity::CBRTConnecti
 			}
 
 			// Check if the command is for this processor
-			if (IsToMySoundSource(command.GetStringParameter("sourceID"))) {
+			if (IsToMySoundSource(command.GetStringParameter(BRTConnectivity::CCommand::FIELD_CONTENT_SOURCE_ID))) {
 				if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_STOP) {
 					ResetBuffers();
 				}
