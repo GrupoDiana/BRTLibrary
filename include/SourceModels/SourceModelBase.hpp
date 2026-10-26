@@ -51,13 +51,13 @@ namespace BRTEnvironmentModel {
 		virtual ~CSourceModelBase() {}						
 		virtual void ProcessInputSamples() = 0;		
 		virtual void UpdateCommandSource(BRTConnectivity::CCommand & command) = 0;
-
-		virtual bool SetDirectivity(std::shared_ptr<BRTServices::CServicesBase> _sourceDirectivity) { return false; }
+		
+		virtual bool SetDirectivity(std::shared_ptr<BRTServices::CServicesBase> _directivity) {	return false; }
+		virtual bool SetDirectivity(std::shared_ptr<BRTServices::CServicesBase> _directivity, bool _enabled) { return false; }		
 		virtual std::shared_ptr<BRTServices::CServicesBase> GetDirectivity() { return nullptr; }
-		virtual void RemoveDirectivity() {};
-
-		virtual void SetDirectivityEnable(bool _enabled) {};
-		virtual bool IsDirectivityEnabled() { return false; }
+		virtual bool RemoveDirectivity(std::shared_ptr<BRTServices::CServicesBase> _expected = nullptr) { return false;	}		
+		virtual bool SetDirectivityEnable(bool _enabled) {	return false; }
+		virtual bool IsDirectivityEnabled() { return false; }		
 
 		virtual void ResetBuffers() {};
 

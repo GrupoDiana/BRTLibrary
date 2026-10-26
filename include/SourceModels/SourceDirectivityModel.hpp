@@ -44,45 +44,111 @@ namespace BRTSourceModel {
 		*	\param[in] pointer to DirectivityTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetDirectivity(std::shared_ptr< BRTServices::CServicesBase > _sourceDirectivity) override {			
-			sourceDirectivity = _sourceDirectivity;						
-			ResetSourceConvolutionBuffers();
-			return true;
+		bool SetDirectivity(std::shared_ptr< BRTServices::CServicesBase > _sourceDirectivity) override {						
+			std::lock_guard<std::mutex> lock(mutex);
+			return SetDirectivityWithoutLock(_sourceDirectivity, BRTProcessing::CDirectivityConvolver::IsSourceDirectionalityEnabled());
+		}
+
+		bool SetDirectivity(std::shared_ptr<BRTServices::CServicesBase> _directivity, bool _enabled) override {
+			std::lock_guard<std::mutex> lock(mutex);
+			return SetDirectivityWithoutLock(_directivity, _enabled);
 		}
 
 		/**
 		 * @brief Get the source directivity transfer function
 		 * @return shered pointer to the directivity of the source model
-		*/
+		*/		
 		std::shared_ptr<BRTServices::CServicesBase> GetDirectivity() override {
+			std::lock_guard<std::mutex> lock(mutex);
 			return sourceDirectivity;
 		}
-
+		
 		/**
 		 * @brief Remove the shared pointer of the directivity TF
 		*/
-		void RemoveDirectivity() override {
-			sourceDirectivity = std::make_shared<BRTServices::CServicesBase>();			
+		bool RemoveDirectivity(std::shared_ptr<BRTServices::CServicesBase> _expected = nullptr) override {
+			
+			std::lock_guard<std::mutex> lock(mutex);
+			if (_expected && sourceDirectivity != _expected) {
+				return false;
+			}
+			BRTProcessing::CDirectivityConvolver::DisableSourceDirectionality();
+			sourceDirectivity.reset();
+			BRTProcessing::CDirectivityConvolver::ResetSourceConvolutionBuffers();
+			return true;
 		}
 
 		/**
 		 * @brief Enable or disable directivity for the source model
 		 * @param _enabled boolean true if you want to enable the directivity, false if disable
-		*/		
-		void SetDirectivityEnable(bool _enabled) override {
-			if (_enabled) { EnableSourceDirectionality(); }
-			else { DisableSourceDirectionality(); }
+		*/				
+		bool SetDirectivityEnable(bool _enabled) override {
+			std::lock_guard<std::mutex> lock(mutex);
+			return SetDirectivityEnableWithoutLock(_enabled);
 		}
+
 		
 		/**
 		 * @brief Get the status of the directivity of the source model
 		 * @return true if it is enabled, false if it is disabled
-		 */
+		 */		
 		bool IsDirectivityEnabled() override {
+			std::lock_guard<std::mutex> lock(mutex);
 			return IsSourceDirectionalityEnabled();
 		}
 
 	private:	
+		/**
+		 * @brief Set the directivity of the source model without locking the mutex. 
+		 * This method is intended to be called from within a locked context.		 
+		 * @param _directivity 
+		 * @param _enabled 
+		 * @return 
+		 */
+		bool SetDirectivityWithoutLock(const std::shared_ptr<BRTServices::CServicesBase> & _directivity, bool _enabled) {
+			if (!_directivity || !_directivity->IsDataReady()) {
+				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Directivity resource must be non-null and ready.");
+				return false;
+			}
+
+			sourceDirectivity = _directivity;
+			ResetSourceConvolutionBuffers();
+
+			if (_enabled) {
+				EnableSourceDirectionality();
+			} else {
+				DisableSourceDirectionality();
+			}
+
+			return true;
+		}
+		
+		/**
+		 * @brief Set the directivity enable state without locking the mutex. 
+		 * This method is intended to be called from within a locked context.
+		 * @param _enabled 
+		 * @return 
+		 */
+		bool SetDirectivityEnableWithoutLock(bool _enabled) {
+			if (_enabled && (!sourceDirectivity || !sourceDirectivity->IsDataReady())) {
+				SET_RESULT(RESULT_ERROR_NOTALLOWED,	"Cannot enable directivity without a ready resource.");
+				return false;
+			}
+
+			if (BRTProcessing::CDirectivityConvolver::IsSourceDirectionalityEnabled() == _enabled) {
+				return true;
+			}
+
+			// Discard history belonging to the previous processing state.
+			BRTProcessing::CDirectivityConvolver::ResetSourceConvolutionBuffers();
+			if (_enabled) {
+				BRTProcessing::CDirectivityConvolver::EnableSourceDirectionality();
+			} else {
+				BRTProcessing::CDirectivityConvolver::DisableSourceDirectionality();
+			}
+
+			return true;
+		}
 
 		/**
 		 * @brief Update method of the Source directivity model
@@ -122,13 +188,11 @@ namespace BRTSourceModel {
 
 			if (commandName == BRTConnectivity::CCommandList::COMMAND_SOURCE_STOP) {
 				ResetSourceConvolutionBuffers();
+			
 			} else if (
 				commandName == BRTConnectivity::CCommandList::COMMAND_SOURCE_ENABLE_DIRECTIVITY) {
-				if (command.GetBoolParameter(BRTConnectivity::CCommand::FIELD_CONTENT_ENABLE_PARAMETER)) {
-					EnableSourceDirectionality();
-				} else {
-					DisableSourceDirectionality();
-				}
+				SetDirectivityEnableWithoutLock(
+					command.GetBoolParameter(BRTConnectivity::CCommand::FIELD_CONTENT_ENABLE_PARAMETER));
 			}
 		}
 
@@ -137,6 +201,7 @@ namespace BRTSourceModel {
 		*/
 		// TODO Move to command
 		void ResetBuffers() override {
+			std::lock_guard<std::mutex> lock(mutex);
 			ResetSourceConvolutionBuffers();
 		}
 
