@@ -60,20 +60,28 @@ namespace BRTBilateralFilter {
 		 */
 		void DisableModel() override {
 			std::lock_guard<std::mutex> l(mutex);
-			enableModel = false;	
-			//binauralFilter.DisableProcessor();
+			enableModel = false;				
 			sosFilter.Disable();
 		};
+
+		bool IsModelEnabled() override {
+			std::lock_guard<std::mutex> lock(mutex);
+			return enableModel;
+		}
 		
 		/** \brief SET SOS filters of the Binaural Filter
 		*	\param[in] pointer to SOS filter to be stored		
 		*/
 		bool SetSOSFilterCoefficients(std::shared_ptr<BRTServices::CSphericalSOSTable> _SOSFilterCoefficientsTable) override {
+			std::lock_guard<std::mutex> lock(mutex);
+			
 			SOSFilterCoefficientsTable = _SOSFilterCoefficientsTable;			
 			bool result = FiltersSetup();						
 			if (!result) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "Error setting SOS filter coefficients in SOS Bilateral Filter Model");
-				DisableModel();
+				// DisableModel
+				enableModel = false;
+				sosFilter.Disable();
 				return false;
 			}
 			return true;
@@ -211,26 +219,28 @@ namespace BRTBilateralFilter {
 		 * @brief Implementation of CAdvancedEntryPointManager virtual method
 		*/
 		void AllEntryPointsAllDataReady() override {
-
-			CMonoBuffer<float> inputLeftBuffer(globalParameters.GetBufferSize());
-			CMonoBuffer<float> inputRightBuffer(globalParameters.GetBufferSize());
-
+			
 			CMonoBuffer<float> outLeftBuffer;
 			CMonoBuffer<float> outRightBuffer;
+			{
+				std::lock_guard<std::mutex> lock(mutex);
 
-			leftChannelMixer.GetMixedBuffer(inputLeftBuffer);
-			rightChannelMixer.GetMixedBuffer(inputRightBuffer);
-			
-			if (inputLeftBuffer.size() == 0 || inputRightBuffer.size() == 0) return;
-						
-			sosFilter.Process(inputLeftBuffer, outLeftBuffer, Common::T_ear::LEFT);
-			sosFilter.Process(inputRightBuffer, outRightBuffer, Common::T_ear::RIGHT);
-			
-			if (enableModel) {
-				outLeftBuffer.ApplyGain(gain);
-				outRightBuffer.ApplyGain(gain);
+				CMonoBuffer<float> inputLeftBuffer(globalParameters.GetBufferSize());
+				CMonoBuffer<float> inputRightBuffer(globalParameters.GetBufferSize());
+
+				leftChannelMixer.GetMixedBuffer(inputLeftBuffer);
+				rightChannelMixer.GetMixedBuffer(inputRightBuffer);
+
+				if (inputLeftBuffer.size() == 0 || inputRightBuffer.size() == 0) return;
+
+				sosFilter.Process(inputLeftBuffer, outLeftBuffer, Common::T_ear::LEFT);
+				sosFilter.Process(inputRightBuffer, outRightBuffer, Common::T_ear::RIGHT);
+
+				if (enableModel) {
+					outLeftBuffer.ApplyGain(gain);
+					outRightBuffer.ApplyGain(gain);
+				}
 			}
-
 			GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
 			GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);			
 		}	

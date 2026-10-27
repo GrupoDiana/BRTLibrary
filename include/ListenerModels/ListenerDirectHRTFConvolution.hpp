@@ -299,113 +299,139 @@ namespace BRTListenerModel {
 			return DisconnectAnySoundSource(_source);
 		};
 
-		/** \brief Enable binaural spatialization based in HRTF convolution
-		*   \eh Nothing is reported to the error handler.
+		/** 
+		* \brief Enable binaural spatialization based in HRTF convolution		
 		*/
 		void EnableSpatialization() override { 
-			enableSpatialization = true;	
-			SetConfigurationInALLSourcesProcessors();
+			std::lock_guard<std::mutex> lock(mutex);
+			enableSpatialization = true;
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}		
 
-		/** \brief Disable binaural spatialization based in HRTF convolution
-		*/
+		/**
+		 * @brief Disable binaural spatialization based in HRTF convolution
+		 */
 		void DisableSpatialization() override
 		{
+			std::lock_guard<std::mutex> lock(mutex);
 			enableSpatialization = false;
-			SetConfigurationInALLSourcesProcessors();			
+			SetConfigurationInALLSourcesProcessorsWithoutLock();			
 		}
 
-		///** \brief Get the flag for run-time HRTF interpolation
-		//*	\retval IsInterpolationEnabled if true, run-time HRTF interpolation is enabled for this source
-		//*   \eh Nothing is reported to the error handler.
-		//*/
-		bool IsSpatializationEnabled() override { return enableSpatialization; }
+		/**
+		 * @brief Check if binaural spatialization based in HRTF convolution is enabled
+		 * @return 
+		 */
+		bool IsSpatializationEnabled() override { 
+			std::lock_guard<std::mutex> lock(mutex);
+			return enableSpatialization; 
+		}
 
 		/** \brief Enable run-time HRTF interpolation
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void EnableInterpolation() override {
+			std::lock_guard<std::mutex> lock(mutex);
 			enableInterpolation = true;
-			SetConfigurationInALLSourcesProcessors();			
+			SetConfigurationInALLSourcesProcessorsWithoutLock();			
 		}
 
 		/** \brief Disable run-time HRTF interpolation
 		*/
 		void DisableInterpolation() override {
+			std::lock_guard<std::mutex> lock(mutex);
 			enableInterpolation = false;
-			SetConfigurationInALLSourcesProcessors();			
+			SetConfigurationInALLSourcesProcessorsWithoutLock();			
 		}
 
 		/** \brief Get the flag for run-time HRTF interpolation
 		*	\retval IsInterpolationEnabled if true, run-time HRTF interpolation is enabled for this source
 		*   \eh Nothing is reported to the error handler.
 		*/
-		bool IsInterpolationEnabled() override { return enableInterpolation; }
+		bool IsInterpolationEnabled() override { 
+			std::lock_guard<std::mutex> lock(mutex);
+			return enableInterpolation; 
+		}
 
-		/** \brief Enable near field effect for this source
-		*   \eh Nothing is reported to the error handler.
+		/**
+		* \brief Enable near field effect for this source		
 		*/
 		void EnableNearFieldEffect() override {
+			std::lock_guard<std::mutex> lock(mutex);
 			enableNearFieldEffect = true;
-			SetConfigurationInALLSourcesProcessors();			
+			SetConfigurationInALLSourcesProcessorsWithoutLock();			
 		}
 
-		/** \brief Disable near field effect for this source
-		*   \eh Nothing is reported to the error handler.
+		/** 
+		* \brief Disable near field effect for this source		
 		*/
 		void DisableNearFieldEffect() override {
+			std::lock_guard<std::mutex> lock(mutex);
 			enableNearFieldEffect = false;
-			SetConfigurationInALLSourcesProcessors();		
+			SetConfigurationInALLSourcesProcessorsWithoutLock();		
 		}
 
-		/** \brief Get the flag for near field effect enabling
-		*	\retval nearFieldEffectEnabled if true, near field effect is enabled for this source
-		*   \eh Nothing is reported to the error handler.
-		*/
-		bool IsNearFieldEffectEnabled() override { return enableNearFieldEffect; }
+		/**
+		 * @brief Get the flag for near field effect
+		 * @return 
+		 */
+		bool IsNearFieldEffectEnabled() override { 
+			std::lock_guard<std::mutex> lock(mutex);
+			return enableNearFieldEffect; 
+		}
 
 		/**
 		 * @brief Enable ITD simulation
 		*/
 		void EnableITDSimulation() override { 
+			std::lock_guard<std::mutex> lock(mutex);
 			enableITDSimulation = true; 
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 
 		/**
 		 * @brief Disable ITD simulation
 		*/
 		void DisableITDSimulation() override { 
+			std::lock_guard<std::mutex> lock(mutex);
 			enableITDSimulation = false; 
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 
 		/**
 		 * @brief Check if ITD simulation is enabled
 		 * @return 
 		 */
-		bool IsITDSimulationEnabled() override { return enableITDSimulation; }
+		bool IsITDSimulationEnabled() override {
+			std::lock_guard<std::mutex> lock(mutex);
+			return enableITDSimulation; 
+		}
 
 		/**
 		 * @brief Enable Parallax Correction
 		*/
 		void EnableParallaxCorrection() override { 
+			std::lock_guard<std::mutex> lock(mutex);
 			enableParallaxCorrection = true; 
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 
 		/**
 		 * @brief Disable Parallax Correction
 		*/
 		void DisableParallaxCorrection() override { 
+			std::lock_guard<std::mutex> lock(mutex);
 			enableParallaxCorrection = false; 
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 
 		/**
 		* @brief Get Parallax Correction state
 		*/
-		bool IsParallaxCorrectionEnabled() override { return enableParallaxCorrection; }
+		bool IsParallaxCorrectionEnabled() override { 
+			std::lock_guard<std::mutex> lock(mutex);
+			return enableParallaxCorrection; 
+		}
 
 		/**
 		 * @brief Enable model
@@ -429,6 +455,10 @@ namespace BRTListenerModel {
 			}
 		};
 
+		bool IsModelEnabled() override {
+			std::lock_guard<std::mutex> lock(mutex);
+			return enableModel;
+		}
 
 		/**
 		 * @brief Reset all processor buffers
@@ -586,12 +616,19 @@ namespace BRTListenerModel {
 
 		/**
 		 * @brief Update Configuration in all source processor
-		*/
-		void SetConfigurationInALLSourcesProcessors() {
-			std::lock_guard<std::mutex> l(mutex);
-			for (auto& it : sourcesConnectedProcessors) {								
-				SetSourceProcessorsConfiguration(it);				
-			}			
+		*/		
+		/*void SetConfigurationInALLSourcesProcessors() {
+			std::lock_guard<std::mutex> lock(mutex);
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
+		}*/
+
+		/**
+		 * @brief Update Configuration in all source processor without lock
+		 */
+		void SetConfigurationInALLSourcesProcessorsWithoutLock() {
+			for (auto & it : sourcesConnectedProcessors) {
+				SetSourceProcessorsConfiguration(it);
+			}
 		}
 		/**
 		 * @brief Update configuration just in one source processor

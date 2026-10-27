@@ -57,6 +57,7 @@ class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity/*, pu
 		 * @brief Enable processor
 		 */
 		void EnableProcessor() {
+			std::lock_guard<std::mutex> l(mutex);
 			spatiallyOrientedSOSFilter.Enable();
 		}
 
@@ -64,6 +65,7 @@ class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity/*, pu
 		 * @brief Disable processor
 		 */
 		void DisableProcessor() {
+			std::lock_guard<std::mutex> l(mutex);
 			spatiallyOrientedSOSFilter.Disable();
 		}
 
@@ -73,12 +75,14 @@ class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity/*, pu
 		 * @param _coefficientsRight vector of coefficients for the right ear
 		 */
 		void SetCoefficients(const std::vector<float> & _coefficientsLeft, const std::vector<float> & _coefficientsRight) {			
+			std::lock_guard<std::mutex> l(mutex);
 			spatiallyOrientedSOSFilter.SetCoefficients(0, _coefficientsLeft); //Set LEFT coefficients
 			spatiallyOrientedSOSFilter.SetCoefficients(1, _coefficientsRight); //Set RIGHT coefficients
 		}
 		
 
 		void ResetProcessBuffers() {
+			std::lock_guard<std::mutex> l(mutex);
 			spatiallyOrientedSOSFilter.ResetBuffers();
 		}
 
@@ -117,8 +121,7 @@ class CNearFieldEffectProcessor : public BRTConnectivity::CBRTConnectivity/*, pu
 			
 			
 			if (IsToMySoundSource(command.GetStringParameter(BRTConnectivity::CCommand::FIELD_CONTENT_SOURCE_ID))) {
-				if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_STOP) {
-					//ResetProcessBuffers();
+				if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_STOP) {					
 					spatiallyOrientedSOSFilter.ResetBuffers();
 				}
 			}

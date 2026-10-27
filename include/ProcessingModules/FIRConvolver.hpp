@@ -86,7 +86,10 @@ namespace BRTProcessing {
 		 * @brief Get the flag to know if the processor is enabled.
 		 * @return true if the processor is enabled, false otherwise
 		 */
-		bool IsProcessorEnabled() { return enableProcessor; }
+		bool IsProcessorEnabled() { 
+			std::lock_guard<std::mutex> l(mutex);
+			return enableProcessor; 
+		}
 			
 		/**
 		 * @brief Enable Find Nearest IR method
@@ -106,7 +109,10 @@ namespace BRTProcessing {
 		 * @brief Get the flag to know if Find Nearest IR is enabled.
 		 * @return true if Find Nearest IR is enabled, false otherwise
 		 */
-		bool IsFindNearestIREnabled() { return enableFindNearestIR; }
+		bool IsFindNearestIREnabled() { 
+			std::lock_guard<std::mutex> l(mutex);
+			return enableFindNearestIR; 
+		}
 
 
 		void Process(const CMonoBuffer<float> & _inBuffer, CMonoBuffer<float> & _outBuffer, const int & channel, std::weak_ptr<BRTServices::CServicesBase> _irTableWeakPtr) {

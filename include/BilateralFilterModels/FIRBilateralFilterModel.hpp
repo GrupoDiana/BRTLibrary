@@ -60,11 +60,16 @@ namespace BRTBilateralFilter {
 			firFilter.Disable();
 		};
 		
+		bool IsModelEnabled() override {
+			std::lock_guard<std::mutex> lock(mutex);
+			return enableModel;
+		}
 
 		/** \brief SET SOS filters of the Binaural Filter
 		*	\param[in] pointer to SOS filter to be stored		
 		*/
-		bool SetFIRTable(std::shared_ptr<BRTServices::CServicesBase> _firTable) override {			
+		bool SetFIRTable(std::shared_ptr<BRTServices::CServicesBase> _firTable) override {
+			std::lock_guard<std::mutex> lock(mutex);
 			bool result = firFilter.SetFIRTable(_firTable);
 			if (result) {				
 				UpdatedEnabledDisabledFIRFilter();			
@@ -203,22 +208,24 @@ namespace BRTBilateralFilter {
 
 			CMonoBuffer<float> outLeftBuffer;
 			CMonoBuffer<float> outRightBuffer;
-
-			CMonoBuffer<float> inputLeftBuffer(globalParameters.GetBufferSize());
-			CMonoBuffer<float> inputRightBuffer(globalParameters.GetBufferSize());
-
-			leftChannelMixer.GetMixedBuffer(inputLeftBuffer);
-			rightChannelMixer.GetMixedBuffer(inputRightBuffer);
 			
-			if (inputLeftBuffer.size() == 0 || inputRightBuffer.size() == 0) return;
-														
-			firFilter.Process(inputLeftBuffer, outLeftBuffer, inputRightBuffer, outRightBuffer);
+			{
+				std::lock_guard<std::mutex> lock(mutex);
+				CMonoBuffer<float> inputLeftBuffer(globalParameters.GetBufferSize());
+				CMonoBuffer<float> inputRightBuffer(globalParameters.GetBufferSize());
+			
+				leftChannelMixer.GetMixedBuffer(inputLeftBuffer);
+				rightChannelMixer.GetMixedBuffer(inputRightBuffer);
 
-			if (enableModel) {
-				outLeftBuffer.ApplyGain(gain);
-				outRightBuffer.ApplyGain(gain);
+				if (inputLeftBuffer.size() == 0 || inputRightBuffer.size() == 0) return;
+
+				firFilter.Process(inputLeftBuffer, outLeftBuffer, inputRightBuffer, outRightBuffer);
+
+				if (enableModel) {
+					outLeftBuffer.ApplyGain(gain);
+					outRightBuffer.ApplyGain(gain);
+				}
 			}
-			
 			GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
 			GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);			
 		}	

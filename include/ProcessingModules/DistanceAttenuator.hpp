@@ -45,47 +45,36 @@ public:
 		, previousAttenuation_Channel { 0 }		
 	{
 	}
-
+	
 	/**
-         * @brief Set up the distance attenuation processor
-         * @param _distanceAttenuationFactorDB Distance attenuation factor in decibels
-         * @param _attenuationReferenceDistance Distance at which the attenuation is 0 dB, in meters.
-         */
-	/*void Setup(float _distanceAttenuationFactorDB, float _attenuationReferenceDistance) {
+    * @brief Enable distance attenuation process
+    */
+	void EnableProcessor() {
 		std::lock_guard<std::mutex> l(mutex);
-		if (_distanceAttenuationFactorDB > 0) {
-			SET_RESULT(RESULT_ERROR_PHYSICS, "Attenuation factor in decibels must be a negative value");
-			return;
-		}
-		if (_attenuationReferenceDistance <= 0) {
-			SET_RESULT(RESULT_ERROR_PHYSICS, "Reference distance must be a positive value");
-			return;
-		}
-		distanceAttenuationFactorDB = _distanceAttenuationFactorDB;
-		referenceAttenuationDistance = _attenuationReferenceDistance;
-		setupDone = true;
-	}*/
+		enableProcessor = true; 
+	}
 
 	/**
-         * @brief Enable distance attenuation process
-         */
-	void EnableProcessor() { enableProcessor = true; }
+    * @brief Disable distance attenuation process
+    */
+	void DisableProcessor() {
+		std::lock_guard<std::mutex> l(mutex);
+		enableProcessor = false; 
+	}
 
 	/**
-         * @brief Disable distance attenuation process
-         */
-	void DisableProcessor() { enableProcessor = false; }
+    * @brief Check if distance attenuation process is enabled
+    * @return True if the processor is enabled
+    */
+	bool IsProcessorEnabled() { 
+		std::lock_guard<std::mutex> l(mutex);
+		return enableProcessor; 
+	}
 
 	/**
-         * @brief Check if distance attenuation process is enabled
-         * @return True if the processor is enabled
-         */
-	bool IsProcessorEnabled() { return enableProcessor; }
-
-	/**
-         * @brief Set the distance attenuation factor in decibels
-         * @param _distanceAttenuationFactorDB distance attenuation factor in decibels
-         */
+    * @brief Set the distance attenuation factor in decibels
+    * @param _distanceAttenuationFactorDB distance attenuation factor in decibels
+    */
 	bool SetDistanceAttenuationFactor(float _distanceAttenuationFactorDB) {
 		std::lock_guard<std::mutex> l(mutex);
 		if (_distanceAttenuationFactorDB > 0) {
@@ -97,17 +86,17 @@ public:
 	}
 
 	/**
-         * @brief Get the distance attenuation factor in decibels
-         * @return distance attenuation factor in decibels
-         */
+    * @brief Get the distance attenuation factor in decibels
+    * @return distance attenuation factor in decibels
+    */
 	float GetDistanceAttenuationFactor() {
 		return distanceAttenuationFactorDB;
 	}
 
 	/**
-         * @brief Set the distance attenuation reference distance. This is the distance at which the attenuation is 0 dB
-         * @param _referenceAttenuationDistance Distance at which the attenuation is 0 dB, in meters.
-         */
+    * @brief Set the distance attenuation reference distance. This is the distance at which the attenuation is 0 dB
+    * @param _referenceAttenuationDistance Distance at which the attenuation is 0 dB, in meters.
+    */
 	bool SetReferenceAttenuationDistance(float _referenceAttenuationDistance) {
 		std::lock_guard<std::mutex> l(mutex);
 		if (_referenceAttenuationDistance <= 0) {
@@ -119,20 +108,20 @@ public:
 	}
 
 	/**
-         * @brief Get the distance attenuation reference distance
-         * @return attenuation reference distance
-         */
+    * @brief Get the distance attenuation reference distance
+    * @return attenuation reference distance
+    */
 	float GetReferenceAttenuationDistance() {
 		return referenceAttenuationDistance;
 	}
 
 	/**
-         * @brief Apply distance attenuation to the input buffer
-         * @param _inBuffer input buffer
-         * @param outBuffer output buffer attenuated by distance between source and listener
-         * @param sourceTransform source transform
-         * @param listenerTransform listener transform
-         */
+    * @brief Apply distance attenuation to the input buffer
+    * @param _inBuffer input buffer
+    * @param outBuffer output buffer attenuated by distance between source and listener
+    * @param sourceTransform source transform
+    * @param listenerTransform listener transform
+    */
 	void Process(const CMonoBuffer<float> & _inBuffer, CMonoBuffer<float> & outBuffer, Common::CTransform sourceTransform, Common::CTransform listenerTransform) {
 		std::lock_guard<std::mutex> l(mutex);
 						
@@ -161,6 +150,12 @@ public:
 			outBuffer.ApplyGainExponentially(previousAttenuation_Channel, unnecessary_fixme, attenuation, globalParameters.GetBufferSize(), globalParameters.GetSampleRate());
 	}
 	
+	/**
+	 * @brief Calculate the distance attenuation factor between source and listener
+	 * @param sourceTransform 
+	 * @param listenerTransform 
+	 * @return 
+	 */
 	float CalculateDistanceAttenuation(Common::CTransform sourceTransform, Common::CTransform listenerTransform) {
 		if (!enableProcessor) {
 			return 1.0f;

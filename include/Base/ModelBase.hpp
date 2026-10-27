@@ -49,8 +49,8 @@ class CModelBase : public BRTConnectivity::CBRTConnectivity {
 		std::string GetModelID() { return modelID; }
 
 		// Virtual methods
-		virtual void EnableModel() {};
-		virtual void DisableModel() {};
+		virtual void EnableModel() {}
+		virtual void DisableModel() {}
 		virtual bool IsModelEnabled() { return enableModel; }
 
 		virtual void SetGain(float _gain) { gain = _gain; }

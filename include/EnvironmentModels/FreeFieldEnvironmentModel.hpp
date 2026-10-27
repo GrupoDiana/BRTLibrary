@@ -192,48 +192,59 @@ namespace BRTEnvironmentModel {
 				it.SetEnableProcessor(false);
 			}
 		};
+
+		bool IsModelEnabled() override {
+			std::lock_guard<std::mutex> lock(mutex);
+			return enableModel;
+		}
 				
 		/**
 		 * @brief Enable distance attenuation
 		 */
-		void EnableDistanceAttenuation() override {			
+		void EnableDistanceAttenuation() override {	
+			std::lock_guard<std::mutex> l(mutex);
 			enableDistanceAttenuation = true;
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 		/**
 		 * @brief Disable distance attenuation
 		 */
-		void DisableDistanceAttenuation() override {			
+		void DisableDistanceAttenuation() override {	
+			std::lock_guard<std::mutex> l(mutex);
 			enableDistanceAttenuation = false;
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 		/**
 		 * @brief Get the flag for distance attenuation enabling
 		 * @return True if the distance attenuation is enabled
 		 */
 		bool IsDistanceAttenuationEnabled() override {
+			std::lock_guard<std::mutex> l(mutex);
 			return enableDistanceAttenuation;
 		}
 
 		/**
 		 * @brief Enable propagation delay
 		 */
-		void EnablePropagationDelay() override {			
+		void EnablePropagationDelay() override {
+			std::lock_guard<std::mutex> l(mutex);
 			enablePropagationDelay = true;
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 		/**
 		 * @brief Disable propagation delay
 		 */ 
-		void DisablePropagationDelay() override {			
+		void DisablePropagationDelay() override {
+			std::lock_guard<std::mutex> l(mutex);
 			enablePropagationDelay = false;
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 		/**
 		 * @brief Get the flag for propagation delay enabling
 		 * @return True if the propagation delay is enabled
 		 */
 		bool IsPropagationDelayEnabled() override {
+			std::lock_guard<std::mutex> l(mutex);
 			return enablePropagationDelay;
 		}
 
@@ -509,6 +520,10 @@ namespace BRTEnvironmentModel {
 		*/
 		void SetConfigurationInALLSourcesProcessors() {
 			std::lock_guard<std::mutex> l(mutex);
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
+		}
+
+		void SetConfigurationInALLSourcesProcessorsWithoutLock() {
 			for (auto & it : sourcesConnectedProcessors) {
 				SetSourceProcessorsConfiguration(it);
 			}

@@ -67,8 +67,11 @@ namespace BRTProcessing {
 		/**
 		 * @brief Get the flag to know if the processor is enabled.
 		 * @return true if the processor is enabled, false otherwise
-		 */
-		bool IsProcessorEnabled() { return enableProcessor; }
+		 */		
+		bool IsProcessorEnabled() {
+			std::lock_guard<std::mutex> lock(mutex);
+			return enableProcessor;
+		}
 						
 		/**
 		 * @brief Enable spatialization process for this source
@@ -88,7 +91,10 @@ namespace BRTProcessing {
 		 * @brief Get the flag to know if spatialization is enabled.
 		 * @return true if spatialization is enabled, false otherwise
 		 */
-		bool IsSpatializationEnabled() { return enableSpatialization; }
+		bool IsSpatializationEnabled() { 
+			std::lock_guard<std::mutex> lock(mutex);
+			return enableSpatialization; 
+		}
 		
 		/**
 		 * @brief Enable HRTF interpolation method
@@ -108,7 +114,10 @@ namespace BRTProcessing {
 		 * @brief Get the flag to know if HRTF interpolation is enabled.
 		 * @return true if HRTF interpolation is enabled, false otherwise
 		 */
-		bool IsInterpolationEnabled() { return enableInterpolation; }
+		bool IsInterpolationEnabled() { 
+			std::lock_guard<std::mutex> l(mutex);
+			return enableInterpolation; 
+		}
 		
 		/**
 		 * @brief Enable ITD method
@@ -128,7 +137,10 @@ namespace BRTProcessing {
 		 * @brief Get the flag to know if ITD simulation is enabled.
 		 * @return true if ITD is enabled, false otherwise
 		 */
-		bool IsITDEnabledSimulation() { return enableITDSimulation; }
+		bool IsITDEnabledSimulation() { 
+			std::lock_guard<std::mutex> l(mutex);
+			return enableITDSimulation; 
+		}
 
 		/**
 		 * @brief Enable Parallax Correction method
@@ -150,7 +162,10 @@ namespace BRTProcessing {
 		 * @brief Get the flag to know if Parallax Correction is enabled.
 		 * @return true if Parallax Correction is enabled, false otherwise
 		 */
-		bool IsParallaxCorrectionEnabled() { return enableParallaxCorrection; }
+		bool IsParallaxCorrectionEnabled() {
+			std::lock_guard<std::mutex> l(mutex);
+			return enableParallaxCorrection;
+		}
 		
 		/** \brief Process data from input buffer to generate spatialization by convolution
 		*	\param [in] inBuffer input buffer with anechoic audio

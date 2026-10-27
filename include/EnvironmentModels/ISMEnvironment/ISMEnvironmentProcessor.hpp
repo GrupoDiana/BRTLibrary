@@ -113,16 +113,25 @@ namespace BRTEnvironmentModel {
 		/**
 		 * @brief Enable processor
 		 */
-		void EnableProcessor() { enableProcessor = true; }
+		void EnableProcessor() { 
+			std::lock_guard<std::mutex> l(mutex);
+			enableProcessor = true; 
+		}
 		/**
 		 * @brief Disable processor
 		 */
-		void DisableProcessor() { enableProcessor = false; }
+		void DisableProcessor() { 
+			std::lock_guard<std::mutex> l(mutex);
+			enableProcessor = false; 
+		}
 		/**
 		 * @brief Get the flag to know if the processor is enabled.
 		 * @return true if the processor is enabled, false otherwise
 		 */
-		bool IsProcessorEnabled() { return enableProcessor; }
+		bool IsProcessorEnabled() { 
+			std::lock_guard<std::mutex> l(mutex);
+			return enableProcessor; 
+		}
 
 		/**
 		 * @brief Set the gain of the environment processor
@@ -174,6 +183,7 @@ namespace BRTEnvironmentModel {
 		* @param mute True to mute the reverb path, False to unmute
 		*/
 		void MuteReverbPath(bool mute) {
+			std::lock_guard<std::mutex> l(mutex);
 			muteReverbPath = mute;
 		}
 
@@ -182,6 +192,7 @@ namespace BRTEnvironmentModel {
 		 * @return True if the reverb path component is muted, False otherwise
 		 */
 		bool GetMuteReverbPath() {
+			std::lock_guard<std::mutex> l(mutex);
 			return muteReverbPath;
 		}				
 		

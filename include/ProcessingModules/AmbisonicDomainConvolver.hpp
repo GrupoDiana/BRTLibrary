@@ -47,16 +47,25 @@ namespace BRTProcessing {
 		/**
 		 * @brief Enable processor
 		 */
-		void EnableProcessor() { enableProcessor = true; }
+		void EnableProcessor() { 
+			std::lock_guard<std::mutex> l(mutex);
+			enableProcessor = true; 
+		}
 		/**
 		 * @brief Disable processor
 		 */
-		void DisableProcessor() { enableProcessor = false; }
+		void DisableProcessor() { 
+			std::lock_guard<std::mutex> l(mutex);
+			enableProcessor = false; 
+		}
 		/**
 		 * @brief Get the flag to know if the processor is enabled.
 		 * @return true if the processor is enabled, false otherwise
 		 */
-		bool IsProcessorEnabled() { return enableProcessor; }
+		bool IsProcessorEnabled() { 
+			std::lock_guard<std::mutex> l(mutex);
+			return enableProcessor; 
+		}
 
 		/**
 		 * @brief Set the ambisonic order to be user

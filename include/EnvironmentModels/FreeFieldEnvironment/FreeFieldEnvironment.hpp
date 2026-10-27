@@ -60,7 +60,10 @@ namespace BRTEnvironmentModel {
 		 * @brief Get the flag to know if the processor is enabled.
 		 * @return true if the processor is enabled, false otherwise
 		 */
-		bool IsProcessorEnabled() { return enableProcessor; }
+		bool IsProcessorEnabled() { 
+			std::lock_guard<std::mutex> l(mutex);
+			return enableProcessor; 
+		}
 
 		/**
 		 * @brief Enable distance attenuation for this waveguide
@@ -82,7 +85,10 @@ namespace BRTEnvironmentModel {
 		 * @brief Get the flag for distance attenuation enabling
 		 * @return true if the distance attenuation is enabled, false otherwise
 		 */
-		bool IsDistanceAttenuationEnabled() { return distanceAttenuation.IsProcessorEnabled(); }
+		bool IsDistanceAttenuationEnabled() { 
+			std::lock_guard<std::mutex> l(mutex);
+			return distanceAttenuation.IsProcessorEnabled(); 
+		}
 
 		/**
 		 * @brief Enable propagation delay for this waveguide
@@ -104,7 +110,10 @@ namespace BRTEnvironmentModel {
 		 * @brief Get the flag for propagation delay enabling
 		 * @return true if the propagation delay is enabled, false otherwise
 		 */
-		bool IsPropagationDelayEnabled() { return channelSourceListener.IsPropagationDelayEnabled(); }
+		bool IsPropagationDelayEnabled() { 
+			std::lock_guard<std::mutex> l(mutex);
+			return channelSourceListener.IsPropagationDelayEnabled(); 
+		}
 		
 		/**
 		 * @brief Set the distance attenuation factor in dB

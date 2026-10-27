@@ -76,7 +76,10 @@ namespace Common {
 		* \retval propagationDelayEnabled if true, propagation delay simulation is enabled for this source
 		* \eh Nothing is reported to the error handler.
 		*/
-		bool IsPropagationDelayEnabled() { return enablePropagationDelay; }
+		bool IsPropagationDelayEnabled() {
+			std::lock_guard<std::mutex> l(mutex);
+			return enablePropagationDelay; 
+		}
 
 		/**
 		 * @brief Enable the propagation filter

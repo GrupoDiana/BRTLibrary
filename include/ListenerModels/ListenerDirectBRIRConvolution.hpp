@@ -153,47 +153,62 @@ namespace BRTListenerModel {
 			}
 		};
 
+		bool IsModelEnabled() override {
+			std::lock_guard<std::mutex> lock(mutex);
+			return enableModel;
+		}
+
 		/** \brief Enable binaural spatialization based in HRTF convolution
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void EnableSpatialization() override {
+			std::lock_guard<std::mutex> l(mutex);
 			enableSpatialization = true;
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 
 		/** \brief Disable binaural spatialization based in HRTF convolution
 		*/
 		void DisableSpatialization() override {
+			std::lock_guard<std::mutex> l(mutex);
 			enableSpatialization = false;
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 
 		/** \brief Get the flag for run-time HRTF interpolation
 		/*	\retval IsInterpolationEnabled if true, run-time HRTF interpolation is enabled for this source
 		/*   \eh Nothing is reported to the error handler.
 		/*/
-		bool IsSpatializationEnabled() override { return enableSpatialization; }
+		bool IsSpatializationEnabled() override { 
+			std::lock_guard<std::mutex> l(mutex);
+			return enableSpatialization; 
+		}
 
 		/** \brief Enable run-time HRTF interpolation
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void EnableInterpolation() override {
+			std::lock_guard<std::mutex> l(mutex);
 			enableInterpolation = true;
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 
 		/** \brief Disable run-time HRTF interpolation
 		*/
 		void DisableInterpolation() override {
+			std::lock_guard<std::mutex> l(mutex);
 			enableInterpolation = false;
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 
 		/** \brief Get the flag for run-time HRTF interpolation
 		*	\retval IsInterpolationEnabled if true, run-time HRTF interpolation is enabled for this source
 		*   \eh Nothing is reported to the error handler.
 		*/
-		bool IsInterpolationEnabled() override { return enableInterpolation; }
+		bool IsInterpolationEnabled() override { 
+			std::lock_guard<std::mutex> l(mutex);
+			return enableInterpolation; 
+		}
 
 		/** \brief SET HRBRIR of listener
 		*	\param[in] pointer to HRBRIR to be stored
@@ -231,16 +246,18 @@ namespace BRTListenerModel {
 		 * @brief Enable distance attenuation
 		 */
 		void EnableDistanceAttenuation() override {
+			std::lock_guard<std::mutex> l(mutex);
 			enableDistanceAttenuation = true;
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 
 		/**
 		 * @brief Disable distance attenuation
 		 */
 		void DisableDistanceAttenuation() override {
+			std::lock_guard<std::mutex> l(mutex);
 			enableDistanceAttenuation = false;
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 
 		/**
@@ -248,6 +265,7 @@ namespace BRTListenerModel {
 		 * @return True if the distance attenuation is enabled
 		 */
 		bool IsDistanceAttenuationEnabled() override {
+			std::lock_guard<std::mutex> l(mutex);
 			return enableDistanceAttenuation;
 		}
 
@@ -380,8 +398,8 @@ namespace BRTListenerModel {
 		/**
 		 * @brief Update Configuration in all source processor
 		*/
-		void SetConfigurationInALLSourcesProcessors() {
-			std::lock_guard<std::mutex> l(mutex);
+		void SetConfigurationInALLSourcesProcessorsWithoutLock() {
+			//std::lock_guard<std::mutex> l(mutex);
 			for (auto& it : sourcesConnectedProcessors) {								
 				SetSourceProcessorsConfiguration(it);				
 			}			

@@ -74,14 +74,12 @@ class CHRTFConvolverProcessor : public BRTConnectivity::CBRTConnectivity, public
 			Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
 			
 			// Check process flag
-			if (!CHRTFConvolver::IsSpatializationEnabled())
+			/*if (!CHRTFConvolver::IsSpatializationEnabled())
 			{
 				outLeftBuffer = buffer;
 				outRightBuffer = buffer;				
 			}
-			else {
-				//std::weak_ptr<BRTServices::CServicesBase> listenerHRTF = GetHRTFPtrEntryPoint("listenerHRTF")->GetData();
-				//std::weak_ptr<BRTServices::CServicesBase> listenerHRBRIR = GetHRBRIRPtrEntryPoint("listenerHRBRIR")->GetData();
+			else {				
 				std::weak_ptr<BRTServices::CServicesBase> listenerHRTF = GetServicePtrEntryPoint("listenerHRTF")->GetData();
 				std::weak_ptr<BRTServices::CServicesBase> listenerHRBRIR = GetServicePtrEntryPoint("listenerHRBRIR")->GetData();
 
@@ -95,7 +93,14 @@ class CHRTFConvolverProcessor : public BRTConnectivity::CBRTConnectivity, public
 					outRightBuffer.Fill(buffer.size(), 0.0f);
 					return;
 				}
-			}	
+			}	*/
+
+			std::weak_ptr<BRTServices::CServicesBase> listenerIR = GetServicePtrEntryPoint("listenerHRTF")->GetData();
+			if (listenerIR.expired()) {
+				listenerIR = GetServicePtrEntryPoint("listenerHRBRIR")->GetData();
+			}
+			CHRTFConvolver::Process(buffer,	outLeftBuffer,	outRightBuffer,	sourcePosition,	listenerPosition,listenerIR);
+
 			GetSamplesExitPoint("leftEar")->sendData(outLeftBuffer);
 			GetSamplesExitPoint("rightEar")->sendData(outRightBuffer);				
         }

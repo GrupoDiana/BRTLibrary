@@ -273,66 +273,81 @@ namespace BRTListenerModel {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void EnableNearFieldEffect() override {
+			std::lock_guard<std::mutex> l(mutex);
 			enableNearFieldEffect = true;
-			SetConfigurationInALLSourcesProcessors();			
+			SetConfigurationInALLSourcesProcessorsWithoutLock();			
 		}
 
 		/** \brief Disable near field effect for this source
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void DisableNearFieldEffect() override {
+			std::lock_guard<std::mutex> l(mutex);
 			enableNearFieldEffect = false;
-			SetConfigurationInALLSourcesProcessors();			
+			SetConfigurationInALLSourcesProcessorsWithoutLock();	
 		}
 
 		/** \brief Get the flag for near field effect enabling
 		*	\retval nearFieldEffectEnabled if true, near field effect is enabled for this listener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		bool IsNearFieldEffectEnabled() override { return enableNearFieldEffect; }
+		bool IsNearFieldEffectEnabled() override { 
+			std::lock_guard<std::mutex> l(mutex);
+			return enableNearFieldEffect; 
+		}
 
 		/** \brief Enable bilaterality for all source connected to this listener
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void EnableITDSimulation() override {
+			std::lock_guard<std::mutex> l(mutex);
 			enableITDSimulation = true;
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 
 		/** \brief Disable bilaterality for all source connected to this listener
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void DisableITDSimulation() override {
+			std::lock_guard<std::mutex> l(mutex);
 			enableITDSimulation = false;
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 		
 		/**
 		 * @brief Check if ITD simulation is enabled
 		 * @return
 		 */
-		bool IsITDSimulationEnabled() override { return enableITDSimulation; }
+		bool IsITDSimulationEnabled() override { 
+			std::lock_guard<std::mutex> l(mutex);
+			return enableITDSimulation; 
+		}
 
 		/**
 		 * @brief Enable Parallax Correction
 		*/
 		void EnableParallaxCorrection() override { 
+			std::lock_guard<std::mutex> l(mutex);
 			enableParallaxCorrection = true; 
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 
 		/**
 		 * @brief Disable Parallax Correction
 		*/
-		void DisableParallaxCorrection() override { 
+		void DisableParallaxCorrection() override {
+			std::lock_guard<std::mutex> l(mutex);
 			enableParallaxCorrection = false; 
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 
 		/**
 		* @brief Get Parallax Correction state
 		*/
-		bool IsParallaxCorrectionEnabled() override { return enableParallaxCorrection; }
+		bool IsParallaxCorrectionEnabled() override { 
+			std::lock_guard<std::mutex> l(mutex);
+			return enableParallaxCorrection; 
+		}
 
 		/**
 		 * @brief Enable model
@@ -360,6 +375,10 @@ namespace BRTListenerModel {
 			rightAmbisonicDomainConvolverProcessor->DisableProcessor();
 		};
 
+		bool IsModelEnabled() override {
+			std::lock_guard<std::mutex> lock(mutex);
+			return enableModel;
+		}
 
 		/**
 		 * @brief Connect a new source to this listener
@@ -543,12 +562,19 @@ namespace BRTListenerModel {
 			}
 		}
 
-
 		/**
 		 * @brief Update Configuration in all source processor
 		*/
 		void SetConfigurationInALLSourcesProcessors() {
 			std::lock_guard<std::mutex> l(mutex);
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
+		}
+
+		/**
+		 * @brief Update Configuration in all source processor
+		*/
+		void SetConfigurationInALLSourcesProcessorsWithoutLock() {
+			//std::lock_guard<std::mutex> l(mutex);
 			for (auto& it : sourcesConnectedProcessors) {
 				SetSourceProcessorsConfiguration(it);
 			}

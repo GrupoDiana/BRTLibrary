@@ -93,8 +93,7 @@ namespace BRTEnvironmentModel {
 			: CModelBase(_environmentModelID) {
 
 			
-			CreateIDExitPoint();
-			//CreateIDEntryPoint("listenerID");
+			CreateIDExitPoint();			
 			CreateIDEntryPoint("listenerModelID");
 			GetIDExitPoint()->sendData(modelID);
 			CreateCommandEntryPoint();
@@ -117,128 +116,6 @@ namespace BRTEnvironmentModel {
 			std::string _listenerModelID = GetIDEntryPoint("listenerModelID")->GetData();
 			return (_listenerModelID != "");			
 		}
-
-
-		/*void SetupRoom(Common::CRoom& _room) {
-			roomDefinition = _room;
-		}*/
-
-		/**
-		 * @brief Set up a shoebox room
-		 * @param length extension of the room along the X axis
-		 * @param width extension of the room along the Y axis.
-		 * @param height extension of the room along the Z axis
-		 */
-		//bool SetupShoeBoxRoom(float length, float width, float height) {
-		//	if (length <= 0 || width <= 0 || height <= 0) return false;
-		//	
-		//	Common::CVector3 currentRoomDimensions = Common::CVector3::ZERO();
-		//	if (roomDefinition.IsShoeBox()) { 
-		//		currentRoomDimensions = roomDefinition.GetShoeBoxRoomSize();				
-		//	}
-		//	if (currentRoomDimensions.x == length && currentRoomDimensions.y == width && currentRoomDimensions.z == height) {
-		//		return true; 				// No need to update
-		//	}
-		//	if (roomDefinition.SetupShoeBox(length, width, height)) {
-		//		UpdateRoomGeometry();
-		//		return true;
-		//	}
-		//	return false;
-		//}
-
-		/**
-		 * @brief Get room definition
-		 * @return Room defined
-		 */
-		/*Common::CRoom& GetRoom() {
-			return roomDefinition;
-		}*/
-
-		/**
-		 * @brief Sets the absortion coeficient (frequency independent) of one wall
-		 *	\details Sets the absortion coeficient (absorved energy / incident energy) of the i-th wall of the room.
-		 *			Absortion coeficient of the wall (expressed as a number between 0 (no absortion) and 1 (total absortion).
-		 * @param wallIndex index of the wall
-		 * @param absortion absortion coeficient (frequency independent)
-		 */
-		/*bool SetRoomWallAbsortion(int& wallIndex, float& absortion) {
-			if (roomDefinition.SetWallAbsortion(wallIndex, absortion)) {				
-				UpdateRoomWallAbsortion(wallIndex);
-				return true;
-			} 
-			return false;
-		}*/
-
-		/**
-		 * @brief Sets the absorption coeficient (frequency independent) of all walls
-		 *	\details Sets the absorption coeficient (absorved energy / incident energy) of each of the nine bands for the i-th wall of the room
-		 * @param absortion absortion coeficient (frequency independent)
-		 */ 
-		/*bool SetRoomAllWallsAbsortion(float& _absortion) {
-			if (roomDefinition.SetAllWallsAbsortion(_absortion)) {
-				UpdateRoomAllWallsAbsortion();
-				return true;
-			}
-			return false;			
-		}*/
-
-		/**
-		 * @brief Sets the absorption coeficient (frequency dependent) of one wall
-		 *	\details Sets the absorption coeficient (absorved energy / incident energy) of each of the nine bands for the i-th wall of the room
-		 * @param wallIndex index of the wall
-		 * @param absortionPerBand absortion coeficients for each band (frequency dependent). 9 bands are expected, 
-								the centre frequencies of which are as follows:	[62.5, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]Hz
-		 */
-		/*bool SetRoomWallAbsortion(int wallIndex, const std::vector<float>& absortionPerBand) {
-			if (roomDefinition.SetWallAbsortion(wallIndex, absortionPerBand)) {
-				UpdateRoomWallAbsortion(wallIndex);
-				return true;
-			}
-			return false;
-		}*/
-		
-		/**
-		 * @brief Sets the absortion coeficient (frequency dependent) of all walls
-		 *	\details Sets the absortion coeficient (absorved energy / incident energy) of each of the nine bands for the i-th wall of the room
-		 * @param absortionPerBand absortion coeficients for each band (frequency dependent). 9 bands are expected, 
-								the centre frequencies of which are as follows:	[62.5, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]Hz
-		 */
-		/*bool SetRoomAllWallsAbsortion(const std::vector<float>& absortionPerBand) {
-			if (roomDefinition.SetAllWallsAbsortion(absortionPerBand)) {
-				UpdateRoomAllWallsAbsortion();
-				return true;
-			}
-			return false;
-		}*/
-		
-		/**
-		 * @brief Enables a wall in the room by its index and updates the room geometry.
-		 * @param _wallIndex Reference to the index of the wall to enable.
-		 */
-		/*void EnableRoomWall(int & _wallIndex) { 
-			roomDefinition.EnableWall(_wallIndex);
-			UpdateRoomGeometry();
-		}*/
-		/**
-		 * @brief Disables a wall in the current room by its index and updates the room geometry.
-		 * @param _wallIndex Reference to the index of the wall to disable.
-		/* */
-		/* void DisableRoomWall(int & _wallIndex) { 
-			roomDefinition.DisableWall(_wallIndex);
-			UpdateRoomGeometry();
-		}*/
-		/**
-		 * @brief Checks if the specified room wall is enabled.
-		 * @param _wallIndex Reference to the index of the wall to check.
-		 * @return True if the room is defined and the specified wall is active; otherwise, false.
-		 */
-		/*bool IsRoomWallEnabled(int & _wallIndex) const { 
-			
-			if (!roomDefinition.IsRoomDefined()) {
-				return false;
-			}			
-			return roomDefinition.IsWallActive(_wallIndex);		
-		}*/
 
 
 		/////////////////////

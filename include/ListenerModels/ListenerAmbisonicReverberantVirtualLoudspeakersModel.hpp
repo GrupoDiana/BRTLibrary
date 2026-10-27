@@ -171,6 +171,11 @@ namespace BRTListenerModel {
 			rightAmbisonicDomainConvolverProcessor->DisableProcessor();
 		};
 
+		bool IsModelEnabled() override {
+			std::lock_guard<std::mutex> lock(mutex);
+			return enableModel;
+		}
+
 		/** \brief SET HRBRIR of listener
 		*	\param[in] pointer to HRBRIR to be stored
 		*   \eh On error, NO error code is reported to the error handler.
@@ -363,16 +368,18 @@ namespace BRTListenerModel {
 		 * @brief Enable distance attenuation
 		 */
 		void EnableDistanceAttenuation() override {
+			std::lock_guard<std::mutex> l(mutex);
 			enableDistanceAttenuation = true;
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 
 		/**
 		 * @brief Disable distance attenuation
 		 */
 		void DisableDistanceAttenuation() override {
+			std::lock_guard<std::mutex> l(mutex);
 			enableDistanceAttenuation = false;
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 
 		/**
@@ -380,6 +387,7 @@ namespace BRTListenerModel {
 		 * @return True if the distance attenuation is enabled
 		 */
 		bool IsDistanceAttenuationEnabled() override {
+			std::lock_guard<std::mutex> l(mutex);
 			return enableDistanceAttenuation;
 		}
 		
@@ -496,11 +504,13 @@ namespace BRTListenerModel {
 		*/
 		void SetConfigurationInALLSourcesProcessors() {
 			std::lock_guard<std::mutex> l(mutex);
-			for (auto& it : sourcesConnectedProcessors) {
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
+		}
+		void SetConfigurationInALLSourcesProcessorsWithoutLock() {			
+			for (auto & it : sourcesConnectedProcessors) {
 				SetSourceProcessorsConfiguration(it);
 			}
 		}
-
 		/**
 		 * @brief Update configuration just in one source processor
 		 * @param sourceProcessor

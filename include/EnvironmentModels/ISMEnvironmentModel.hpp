@@ -213,7 +213,11 @@ namespace BRTEnvironmentModel {
 				it.SetEnableProcessor(false);
 			}
 		};
-				
+		
+		bool IsModelEnabled() override {
+			std::lock_guard<std::mutex> lock(mutex);
+			return enableModel;
+		}
 		/**
 		 * @brief Enable Direct Path
 		 */
@@ -240,21 +244,24 @@ namespace BRTEnvironmentModel {
 		 * @brief Enable Reverb Path
 		 */
 		void EnableReverbPath() override {
+			std::lock_guard<std::mutex> l(mutex);
 			enableReverbPath = true;
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 		/**
 		 * @brief Disable Reverb Path
 		 */
 		void DisableReverbPath() override {
+			std::lock_guard<std::mutex> l(mutex);
 			enableReverbPath = false;
-			SetConfigurationInALLSourcesProcessors();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();
 		}
 		/**
 		 * @brief Check if Reverb Path is enabled
 		 * @return True if Reverb Path is enabled
 		 */
 		bool IsReverbPathEnabled() override {
+			std::lock_guard<std::mutex> l(mutex);
 			return enableReverbPath;
 		}
 			
@@ -510,8 +517,8 @@ namespace BRTEnvironmentModel {
 		/**
 		 * @brief Update Configuration in all source processor
 		*/
-		void SetConfigurationInALLSourcesProcessors() {
-			std::lock_guard<std::mutex> l(mutex);
+		void SetConfigurationInALLSourcesProcessorsWithoutLock() {
+			//std::lock_guard<std::mutex> l(mutex);
 			for (auto & it : sourcesConnectedProcessors) {
 				SetSourceProcessorsConfiguration(it);
 			}
