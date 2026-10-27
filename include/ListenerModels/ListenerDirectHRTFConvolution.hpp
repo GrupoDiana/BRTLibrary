@@ -24,6 +24,7 @@
 #define _CLISTENER_DIRECT_HRTF_CONVOLUTION_MODEL_HPP_
 
 #include <memory>
+#include <mutex>
 #include <ListenerModels/ListenerModelBase.hpp>
 #include <EnvironmentModels/EnvironmentModelBase.hpp>
 #include <ServiceModules/ServicesBase.hpp>
@@ -159,36 +160,76 @@ namespace BRTListenerModel {
 			return true;
 		}*/
 
+		//bool SetHRTF(std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF) override {
+
+		//	if (_listenerHRTF->GetSamplingRate() != globalParameters.GetSampleRate()) {
+		//		SET_RESULT(RESULT_ERROR_NOTSET, "This nonInterpolatedHRTF has not been assigned to the listener. The sample rate of the nonInterpolatedHRTF does not match the one set in the library Global Parameters.");
+		//		return false;
+		//	}
+		//	listenerHRTF = _listenerHRTF;
+		//	//GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
+		//	GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
+		//	ResetProcessorBuffers();
+
+		//	return true;
+		//}
+
 		bool SetHRTF(std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF) override {
+			return brtManager->ExecuteResourceUpdate(
+				[this, _listenerHRTF]() -> bool {
+					if (!_listenerHRTF || !_listenerHRTF->IsDataReady()) {
+						SET_RESULT(RESULT_ERROR_INVALID_PARAM, "HRTF resource must be non-null and ready.");
+						return false;
+					}
 
-			if (_listenerHRTF->GetSamplingRate() != globalParameters.GetSampleRate()) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "This nonInterpolatedHRTF has not been assigned to the listener. The sample rate of the nonInterpolatedHRTF does not match the one set in the library Global Parameters.");
-				return false;
-			}
-			listenerHRTF = _listenerHRTF;
-			//GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
-			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
-			ResetProcessorBuffers();
+					if (_listenerHRTF->GetSamplingRate() != globalParameters.GetSampleRate()) {
+						SET_RESULT(RESULT_ERROR_NOTSET,
+							"HRTF sample rate does not match the library sample rate.");
+						return false;
+					}
 
-			return true;
+					{
+						std::lock_guard<std::mutex> lock(resourceMutex);
+						listenerHRTF = _listenerHRTF;
+					}
+
+					GetHRTFExitPoint()->sendDataPtr(_listenerHRTF);
+					ResetProcessorBuffers();
+
+					return true;
+				});
 		}
 
 		/** \brief Get HRTF of this listener model
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
 		*/		
-		std::shared_ptr<BRTServices::CServicesBase> GetHRTF() const override
-		{
+		std::shared_ptr<BRTServices::CServicesBase> GetHRTF() const override {
+			std::lock_guard<std::mutex> lock(resourceMutex);
 			return listenerHRTF;
 		}
 
 		/** \brief Remove the HRTF of this listener model
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void RemoveHRTF() override {
+		/*void RemoveHRTF() override {
 			listenerHRTF = nullptr;						
-		}
+		}*/
 		
+		void RemoveHRTF() override {
+			brtManager->ExecuteResourceUpdate(
+				[this]() -> bool {
+					{
+						std::lock_guard<std::mutex> lock(resourceMutex);
+						listenerHRTF.reset();
+					}
+					GetHRTFExitPoint()->sendDataPtr(std::weak_ptr<BRTServices::CServicesBase> {});
+					ResetProcessorBuffers();
+					ResetMixerBuffers();
+					return true;
+				});
+		}
+
 		///
 		/** \brief SET Near field compesation filter of listener model
 		*	\param[in] pointer to HRTF to be stored
@@ -654,15 +695,17 @@ namespace BRTListenerModel {
 		/////////////////
 		// Attributes
 		/////////////////
-		mutable std::mutex mutex;									// To avoid access collisions
-		//std::string listenerID;										// Store unique listener ID		
-		std::shared_ptr<BRTServices::CSphericalFIRTable> listenerHeadIRModel;	// Head model of listener
-		//std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable>		listenerHRTF;					// HRTF of listener
-		std::shared_ptr<BRTServices::CServicesBase> listenerHRTF;				// HRTF of listener
-		std::shared_ptr<BRTServices::CSphericalSOSTable> listenerNFCFilters;		// SOS Filter of listener						
-		std::vector< CSourceProcessors> sourcesConnectedProcessors;
-		BRTBase::CBRTManager* brtManager;
+		BRTBase::CBRTManager * brtManager;
 		Common::CGlobalParameters globalParameters;
+
+		mutable std::mutex mutex;									// To avoid access collisions
+		mutable std::mutex resourceMutex;
+		
+		std::shared_ptr<BRTServices::CSphericalFIRTable> listenerHeadIRModel;	// Head model of listener		
+		std::shared_ptr<BRTServices::CServicesBase> listenerHRTF;				// HRTF of listener
+		std::shared_ptr<BRTServices::CSphericalSOSTable> listenerNFCFilters;	// SOS Filter of listener						
+
+		std::vector< CSourceProcessors> sourcesConnectedProcessors;
 
 		bool enableSpatialization;		// Flags for independent control of processes
 		bool enableInterpolation;		// Enables/Disables the interpolation on run time

@@ -272,9 +272,8 @@ namespace BRTBase {
 		/** \brief SET HRTF of listener
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
-		*/
-		//bool SetHRTF(std::shared_ptr< BRTServices::CSphericalInterpolatedFIRTable > _listenerHRTF) {
-		bool SetHRTF(std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF) {	
+		*/		
+		/*bool SetHRTF(std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF) {	
 			bool control = false;
 			for (auto& _listenerModel : listenerModelsConnected) {
 
@@ -288,23 +287,36 @@ namespace BRTBase {
 				}
 			}
 			return control;
+		}*/
+
+		bool SetHRTF(std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF) {
+			return brtManager->ExecuteResourceUpdate(
+				[this, _listenerHRTF]() -> bool {
+					if (!_listenerHRTF || !_listenerHRTF->IsDataReady()) {
+						SET_RESULT(RESULT_ERROR_INVALID_PARAM, "HRTF resource must be non-null and ready.");
+						return false;
+					}
+
+					bool control = false;
+
+					for (auto & model : listenerModelsConnected) {
+						if (!model->GetListenerModelCharacteristics().SupportHRTF()) {
+							continue;
+						}
+
+						if (model->SetHRTF(_listenerHRTF)) {
+							control = true;
+						}
+					}
+
+					return control;
+				});
 		}
 
 		/** \brief Get HRTF of listener
 		*	\retval HRTF pointer to current listener HRTF
 		*   \eh On error, an error code is reported to the error handler.
-		*/
-		
-		/*std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable> GetHRTF() const		
-		{
-			for (auto& _listenerModel : listenerModelsConnected) {
-				if (_listenerModel->GetListenerModelCharacteristics().SupportHRTF()) {
-					return _listenerModel->GetHRTF();				
-				}
-			}			
-			return nullptr;
-		}*/
-		
+		*/						
 		std::shared_ptr<BRTServices::CServicesBase> GetHRTF() const {
 			for (auto & _listenerModel : listenerModelsConnected) {
 				if (_listenerModel->GetListenerModelCharacteristics().SupportHRTF()) {
@@ -317,7 +329,7 @@ namespace BRTBase {
 		/** \brief Remove the HRTF of thelistener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		bool RemoveHRTF() {			
+		/*bool RemoveHRTF() {			
 			for (auto& _listenerModel : listenerModelsConnected) {
 				if (_listenerModel->GetListenerModelCharacteristics().SupportHRTF()) {
 					_listenerModel->RemoveHRTF();	
@@ -325,6 +337,27 @@ namespace BRTBase {
 				}
 			}	
 			return false;
+		}*/
+		bool RemoveHRTF(std::shared_ptr<BRTServices::CServicesBase> _expected = nullptr) {
+			return brtManager->ExecuteResourceUpdate(
+				[this, _expected]() -> bool {
+					bool removed = false;
+
+					for (auto & model : listenerModelsConnected) {
+						if (!model->GetListenerModelCharacteristics().SupportHRTF()) {
+							continue;
+						}
+
+						if (_expected && model->GetHRTF() != _expected) {
+							continue;
+						}
+
+						model->RemoveHRTF();
+						removed = true;
+					}
+
+					return removed;
+				});
 		}
 
 		/** \brief SET HRBRIR of listener

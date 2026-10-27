@@ -90,7 +90,9 @@ class CHRTFConvolverProcessor : public BRTConnectivity::CBRTConnectivity, public
 				} else if (listenerHRBRIR.lock() != nullptr) {				
 					Process(buffer, outLeftBuffer, outRightBuffer, sourcePosition, listenerPosition, listenerHRBRIR);
 				} else {
-					SET_RESULT(RESULT_ERROR_NOTSET, "nonInterpolatedHRTF Convolver error: No nonInterpolatedHRTF or HRBRIR data available");
+					SET_RESULT(RESULT_ERROR_NOTSET, "Convolver error: No nonInterpolatedHRTF or HRBRIR data available");
+					outLeftBuffer.Fill(buffer.size(), 0.0f);
+					outRightBuffer.Fill(buffer.size(), 0.0f);
 					return;
 				}
 			}	

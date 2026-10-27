@@ -42,9 +42,15 @@ namespace BRTEnvironmentModel {
 class CVirtualSourceManager;
 }
 
+namespace BRTListenerModel {
+class CListenerDirectHRTFConvolutionModel;
+}
+
 namespace BRTBase {
 	using json = nlohmann::json;
 		
+	class CListener;
+
 	class CBRTManager {
 
 		struct CProcessingContext {
@@ -1227,6 +1233,47 @@ namespace BRTBase {
 		}
 
 
+		/**
+		 * @brief Executes a resource update operation safely. Resource replacement cannot run inside sample-processing callbacks.
+		 * @tparam Operation The type of the operation to execute.
+		 * @param operation The operation to execute.
+		 * @return true if the operation was successful, false otherwise.
+		 */
+		template <typename Operation>
+		bool ExecuteResourceUpdate(Operation operation) {
+			
+			if (IsProcessingOnCurrentThread()) {
+				SET_RESULT(RESULT_ERROR_NOTALLOWED,	"Resources cannot be replaced during audio processing.");
+				return false;
+			}
+
+			// An enclosing control operation already holds the manager mutex.
+			if (IsDispatchingCommandsOnCurrentThread()) {
+				return operation();
+			}
+
+			std::lock_guard<std::mutex> lock(mutex);
+
+			if (setupModeActivated) {
+				SET_RESULT(RESULT_ERROR_NOTALLOWED,	"Resources must be assigned after EndSetup.");
+				return false;
+			}
+
+			bool result = false;
+
+			try {
+				// Nested commands are queued until this operation has finished.
+				CCommandDispatchContext controlContext(this);
+				result = operation();
+			} catch (...) {
+				pendingCommands.clear();
+				throw;
+			}
+
+			DrainPendingCommands();
+			return result;
+		}
+
 		///////////////
 		// Attributes
 		///////////////
@@ -1244,9 +1291,10 @@ namespace BRTBase {
 		bool setupModeActivated;
 		bool multiThreadingEnabled;
 		mutable std::mutex mutex;
-
+		
+		friend class CListener;
+		friend class BRTListenerModel::CListenerDirectHRTFConvolutionModel;
 		friend class BRTEnvironmentModel::CVirtualSourceManager;
-
 	};
 }
 #endif
