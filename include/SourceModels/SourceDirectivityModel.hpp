@@ -154,11 +154,12 @@ namespace BRTSourceModel {
 		 * @brief Update method of the Source directivity model
 		 * @param _entryPointID ID of the entry ponint to do the update
 		*/
-		void ProcessInputSamples() override {
+		void ProcessInputSamples() override {			
 			std::lock_guard<std::mutex> l(mutex);
 
-			CMonoBuffer<float> outBuffer;
-			const CMonoBuffer<float> & inBuffer = GetBuffer();
+			CMonoBuffer<float> outBuffer;			
+			CMonoBuffer<float> inBuffer = GetInputBufferWithGain();
+
 			Common::CTransform sourcePosition = GetSourceTransform();
 			Common::CTransform listenerPosition = GetPositionEntryPoint("listenerPosition")->GetData();
 			if (inBuffer.size() != 0) {

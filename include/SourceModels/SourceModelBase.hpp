@@ -65,7 +65,9 @@ namespace BRTEnvironmentModel {
 			: state { TState::Waiting }			
 			, sourceID { _sourceID }
 			, sourceType { _sourceType }
-			, virtualSource { false } {
+			, virtualSource { false }
+			, sourceTransform { Common::CTransform() }
+			, gain {1.0f} {
 			
 			CreateSamplesExitPoint("samples");
 			CreateTransformExitPoint();			
@@ -81,8 +83,7 @@ namespace BRTEnvironmentModel {
 		 * @param _buffer samples buffer
 		 */
 		void SetBuffer(const CMonoBuffer<float>& _buffer) { 
-			inputBuffer = _buffer; 
-			//inputBufferReceived = true;
+			inputBuffer = _buffer; 			
 			state = TState::inputBufferReceived;
 		}
 
@@ -95,22 +96,28 @@ namespace BRTEnvironmentModel {
 		}
 		
 		/**
-		 * @brief Set the source transform
-		 * @param _transform Source transform
-		 */
-		/*void SetSourceTransform(const Common::CTransform & _transform) { 
-			sourceTransform = _transform;			
-			GetTransformExitPoint()->sendData(sourceTransform);
-		}*/
-						
+		 * @brief Get the input buffer with gain applied. If gain is 1.0, returns the original input buffer.
+		 * Requires the source processing mutex to have been acquired
+		 * @return Reference to the input buffer with gain applied
+		 */		
+		CMonoBuffer<float> GetInputBufferWithGain() {
+			CMonoBuffer<float> buffer = inputBuffer;
+			buffer.ApplyGain(GetGain());
+			return buffer;
+		}
+
 		/**
 		 * @brief Get the current source transform
 		 * @return Source transform
-		 */
-		//const Common::CTransform& GetSourceTransform() const { return sourceTransform; };		
+		 */		
 		Common::CTransform GetSourceTransform() const {
 			std::lock_guard<std::mutex> lock(transformMutex);
 			return sourceTransform;
+		}
+				
+		float GetGain() const {
+			std::lock_guard<std::mutex> lock(gainMutex);
+			return gain;
 		}
 
 		/**
@@ -139,6 +146,13 @@ namespace BRTEnvironmentModel {
 		// Methods
 		//////////////
 
+
+		void SetGain(float _gain) {
+			std::lock_guard<std::mutex> lock(gainMutex);
+			gain = _gain;
+		}
+		
+
 		/**
 		 * @brief Set the data ready flag. Internal use only.
 		 */
@@ -163,8 +177,8 @@ namespace BRTEnvironmentModel {
 		* Only entry points that have a notification make a call to this method.
 		*/
 		void UpdateEntryPointData(std::string entryPointID) override {
-			if (entryPointID == "samples")
-				ProcessInputSamples();
+			/*if (entryPointID == "samples")
+				ProcessInputSamples();*/
 		}
 
 		/**
@@ -207,6 +221,9 @@ namespace BRTEnvironmentModel {
 					transform.SetPosition(command.GetVector3Parameter(BRTConnectivity::CCommand::FIELD_CONTENT_LOCATION));
 					transform.SetOrientation(command.GetQuaternionParameter(BRTConnectivity::CCommand::FIELD_CONTENT_ORIENTATION_QUATERNION));
 					SetSourceTransform(transform);
+
+				} else if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_GAIN) {
+					SetGain(command.GetFloatParameter(BRTConnectivity::CCommand::FIELD_CONTENT_GAIN));
 				}
 			}
 
@@ -221,11 +238,15 @@ namespace BRTEnvironmentModel {
 		bool virtualSource;
 
 		TState state;		
-		CMonoBuffer<float> inputBuffer;		
+		
+		CMonoBuffer<float> inputBuffer;				
 		CMonoBuffer<float> outputBuffer;	
+
 		Common::CTransform sourceTransform;		
 		Common::CGlobalParameters globalParameters;
+		float gain;
 
+		mutable std::mutex gainMutex;
 		mutable std::mutex transformMutex;
 
 		friend class BRTEnvironmentModel::CVirtualSourceManager;
@@ -266,15 +287,17 @@ namespace BRTEnvironmentModel {
 			state = TState::Waiting;
 		}
 
-		void PropageteInputBuffer() {
+		/*void PropageteInputBuffer() {
 			if (state != TState::Processing) {
 				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Trying to propagate input buffer before receiving it.");
 				return;
 			}
+			
+			CMonoBuffer<float> bufferToSend = GetInputBufferWithGain();
 			state = TState::Processed;
-			GetSamplesExitPoint("samples")->sendData(inputBuffer);
+			GetSamplesExitPoint("samples")->sendData(bufferToSend);
 			state = TState::Waiting;
-		}
+		}*/
 
 		///**
 		// * @brief Send the data to the exit point

@@ -41,11 +41,11 @@ namespace BRTSourceModel {
 		 * @param _entryPointID 
 		 */
 		void ProcessInputSamples() override {
-			std::lock_guard<std::mutex> l(mutex);
-			/*CMonoBuffer<float> & outputBuffer = GetBuffer();
-			SetOutputBuffer(outputBuffer);
-			PropagateBuffer();*/
-			PropageteInputBuffer();
+			std::lock_guard<std::mutex> l(mutex);			
+						
+			CMonoBuffer<float> inBuffer = GetInputBufferWithGain();
+			SetOutputBuffer(inBuffer);
+			PropagateBuffer();		
 		}
 
 		/**
