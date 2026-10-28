@@ -956,6 +956,17 @@ namespace BRTBase {
 			ExecuteCommand(j.dump());
 		}
 
+		void SetSoundSourceGain(const std::string & sourceID, float linearGain) {
+
+			json j = {
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_COMMAND,	BRTConnectivity::CCommandList::COMMAND_SOURCE_SET_GAIN },
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_SOURCE_ID, sourceID },
+				{ BRTConnectivity::CCommand::FIELD_CONTENT_GAIN, linearGain }
+			};
+
+			ExecuteCommand(j.dump());
+		}
+
 		///////////////////////////
 		// Listener SET/GET METHODs
 		//////////////////////////

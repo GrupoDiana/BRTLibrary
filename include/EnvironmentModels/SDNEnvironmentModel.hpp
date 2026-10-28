@@ -237,6 +237,13 @@ namespace BRTEnvironmentModel {
 			return enableReverbPath;
 		}
 
+		void SetGain(float _gain) override {
+			std::lock_guard<std::mutex> lock(mutex);
+
+			BRTBase::CModelBase::SetGain(_gain);
+			UpdateGainWithoutLock();
+		}
+
 		/**
 		 * @brief Connect a new source to this listener
 		 * @param _source Pointer to the source
@@ -338,10 +345,23 @@ namespace BRTEnvironmentModel {
 		 * @brief Set the gain of the model
 		 * @param _gain 
 		 */
-		void UpdateGain() override {
+		/*void UpdateGain() override {
 			std::lock_guard<std::mutex> l(mutex);
 			for (auto & it : sourcesConnectedProcessors) {
 				it.SetGain(gain);
+		}
+		}*/
+
+		void UpdateGain() override {
+			std::lock_guard<std::mutex> lock(mutex);
+			UpdateGainWithoutLock();
+		}
+		// Requiere tener adquirido el mutex del modelo.
+		void UpdateGainWithoutLock() {
+			const float currentGain = BRTBase::CModelBase::GetGain();
+
+			for (auto & it : sourcesConnectedProcessors) {
+				it.SetGain(currentGain);
 			}
 		}
 
@@ -478,6 +498,7 @@ namespace BRTEnvironmentModel {
 		*/
 		void SetSourceProcessorsConfiguration(CSDNProcessors & sourceProcessor) {
 			sourceProcessor.SetConfiguration(enableDirectPath, enableReverbPath);
+			sourceProcessor.SetGain(BRTBase::CModelBase::GetGain());
 		}
 
 

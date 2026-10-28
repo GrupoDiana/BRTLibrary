@@ -90,6 +90,7 @@ namespace BRTEnvironmentModel {
 		 * @return Gain value
 		 */
 		float GetGain() {
+			std::lock_guard<std::mutex> lock(mutex);
 			return gain;
 		}
 		
@@ -149,10 +150,7 @@ namespace BRTEnvironmentModel {
 			Process(inBuffer, outBuffer, sourcePosition, listenerPosition, effectiveSourcePosition);
 						
 			outBuffer.ApplyGain(gain);
-
-			//virtualSource->SetSourceTransform(effectiveSourcePosition);
-			//virtualSource->SetBuffer(outBuffer);
-			//brtManager->ProcessOneSource(virtualSourceID);
+			
 			CVirtualSourceManager::SetVirtualSourcePosition(virtualSourceID, effectiveSourcePosition);			
 			CVirtualSourceManager::PropagateVirtualSource(virtualSourceID, outBuffer);
 		}

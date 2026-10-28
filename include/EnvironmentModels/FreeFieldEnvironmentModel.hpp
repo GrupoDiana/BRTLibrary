@@ -288,6 +288,12 @@ namespace BRTEnvironmentModel {
 			return referenceAttenuationDistance;
 		}
 
+		void SetGain(float _gain) override {
+			std::lock_guard<std::mutex> lock(mutex);
+			BRTBase::CModelBase::SetGain(_gain);
+			UpdateGainWithoutLock();
+		}
+
 		/**
 		 * @brief Connect a new source to this listener
 		 * @param _source Pointer to the source
@@ -390,17 +396,31 @@ namespace BRTEnvironmentModel {
 			}
 		}
 
-		/**
-		 * @brief Set the gain of the model
-		 * @param _gain 
-		 */
+		
+
 		void UpdateGain() override {
-			std::lock_guard<std::mutex> l(mutex);
+			std::lock_guard<std::mutex> lock(mutex);
+			UpdateGainWithoutLock();
+		}
+		///**
+		// * @brief Set the gain of the model
+		// * @param _gain 
+		// */
+		//void UpdateGain() override {
+		//	std::lock_guard<std::mutex> l(mutex);
+		//	for (auto & it : sourcesConnectedProcessors) {
+		//		it.SetGain(gain);
+		//	}
+		//}
+
+		// Requiere tener adquirido el mutex del modelo.
+		void UpdateGainWithoutLock() {
+			const float currentGain = BRTBase::CModelBase::GetGain();
+
 			for (auto & it : sourcesConnectedProcessors) {
-				it.SetGain(gain);
+				it.SetGain(currentGain);
 			}
 		}
-
 		/**
 		 * @brief Connect a new source to this listener
 		 * @tparam T It must be a source model, i.e. a class that inherits from the CSourceModelBase class.
@@ -534,6 +554,7 @@ namespace BRTEnvironmentModel {
 		*/
 		void SetSourceProcessorsConfiguration(CSourceProcessors & sourceProcessor) {
 			sourceProcessor.SetConfiguration(enableDistanceAttenuation, enablePropagationDelay, distanceAttenuationFactorDB, referenceAttenuationDistance);
+			sourceProcessor.SetGain(BRTBase::CModelBase::GetGain());
 		}
 
 		/////////////////

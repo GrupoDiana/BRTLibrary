@@ -43,7 +43,8 @@ namespace BRTConnectivity {
 		static inline const std::string FIELD_CONTENT_AMBISONICS_ORDER = "ambisonicsOrder";
 		static inline const std::string FIELD_CONTENT_DISTANCE_ATTENUATION_FACTOR = "distanceAttenuationFactorDB";
 		static inline const std::string FIELD_CONTENT_ENABLE_PARAMETER = "enable";
-
+		
+		static inline const std::string FIELD_CONTENT_GAIN = "gain";
 
 		CCommand() : empty{ true } { };
 		CCommand(std::string _commandJsonString) 
@@ -94,7 +95,7 @@ namespace BRTConnectivity {
 		double GetDoubleParameter(std::string fieldName) {
 			double _parameter = 0.0;
 			std::vector<double> tempV;
-			if (!j[fieldName].is_null() && j[fieldName].is_number_float()) {
+			if (!j[fieldName].is_null() && j[fieldName].is_number()) {
 				_parameter = j[fieldName];
 			}
 			else if (!j[fieldName].is_null() && j[fieldName].is_structured()) {

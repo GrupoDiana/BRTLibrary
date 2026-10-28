@@ -24,6 +24,7 @@
 #define _C_MODEL_BASE_HPP_
 
 #include <string>
+#include <mutex>
 #include <Connectivity/BRTConnectivity.hpp>
 #include "SourceModels/SourceOmnidirectionalModel.hpp"
 #include <SourceModels/SourceDirectivityModel.hpp>
@@ -32,12 +33,7 @@
 
 namespace BRTBase {
 class CModelBase : public BRTConnectivity::CBRTConnectivity {
-	
-	protected:		
-		std::string modelID; // Store unique model ID	
-		bool enableModel; // Enable or disable the model
-		float gain; // Output audio samples gain
-
+				
 	public:		
 
 		CModelBase(const std::string _modelID)
@@ -53,14 +49,25 @@ class CModelBase : public BRTConnectivity::CBRTConnectivity {
 		virtual void DisableModel() {}
 		virtual bool IsModelEnabled() { return enableModel; }
 
-		virtual void SetGain(float _gain) { gain = _gain; }
-		virtual float GetGain() { return gain; }
+		virtual void SetGain(float _gain) {
+			std::lock_guard<std::mutex> lock(gainMutex);
+			gain = _gain;
+		}
+
+		virtual float GetGain() {
+			std::lock_guard<std::mutex> lock(gainMutex);
+			return gain;
+		}
 		
 		virtual bool IsConnectedToListener() { return false; }
 		virtual bool IsConnectedToListenerModel() { return false; }
 
 		std::vector<std::string> GetInputs() { return inputConnections; }
 		std::vector<std::string> GetOutputs() { return outputConnections; }
+
+	private:
+		float gain; // Output audio samples gain
+		mutable std::mutex gainMutex;
 
 	protected:
 
@@ -80,6 +87,9 @@ class CModelBase : public BRTConnectivity::CBRTConnectivity {
 
 		std::vector<std::string> inputConnections;
 		std::vector<std::string> outputConnections;
+
+		std::string modelID; // Store unique model ID
+		bool enableModel; // Enable or disable the model
 };
 }
 #endif

@@ -233,8 +233,10 @@ namespace BRTListenerModel {
 			leftChannelMixer.GetMixedBuffer(leftChannelBuffer);
 			rightChannelMixer.GetMixedBuffer(rightChannelBuffer);
 
-			leftChannelBuffer.ApplyGain(gain);
-			rightChannelBuffer.ApplyGain(gain);
+			const float blockGain = GetGain();
+
+			leftChannelBuffer.ApplyGain(blockGain);
+			rightChannelBuffer.ApplyGain(blockGain);
 			
 			GetSamplesExitPoint("leftEar")->sendData(leftChannelBuffer);
 			GetSamplesExitPoint("rightEar")->sendData(rightChannelBuffer);

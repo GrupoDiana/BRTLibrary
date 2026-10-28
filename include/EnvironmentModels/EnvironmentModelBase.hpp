@@ -103,10 +103,11 @@ namespace BRTEnvironmentModel {
 		 * @brief Set the gain of the model
 		 * @param _gain New gain value
 		 */
-		void SetGain(float _gain) override {
+		void SetGain(float _gain) override = 0;
+		/*void SetGain(float _gain) override {
 			gain = _gain;
 			UpdateGain();
-		}
+		}*/
 
 		/**
 		 * @brief Check if this environment is already connected to a listener model
