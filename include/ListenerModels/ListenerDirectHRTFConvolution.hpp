@@ -130,50 +130,6 @@ namespace BRTListenerModel {
 			CreateSOSFilterExitPoint();									
 		}
 
-		/*bool SetListenerHeadIRModel(std::shared_ptr<BRTServices::CSphericalFIRTable> _listenerHeadIRModel) override {
-			
-			if (_listenerHeadIRModel->GetSamplingRate() != globalParameters.GetSampleRate()) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "This nonInterpolatedHRTF has not been assigned to the listener. The sample rate of the nonInterpolatedHRTF does not match the one set in the library Global Parameters.");
-				return false;
-			}
-			listenerHeadIRModel = _listenerHeadIRModel;			
-			GetHRTFExitPoint()->sendDataPtr(listenerHeadIRModel);
-			ResetProcessorBuffers();
-
-			return true;
-		}*/
-		
-		/** \brief SET HRTF to this listener model
-		*	\param[in] pointer to HRTF to be stored
-		*   \eh On error, NO error code is reported to the error handler.
-		*/
-		/*bool SetHRTF(std::shared_ptr< BRTServices::CSphericalInterpolatedFIRTable > _listenerHRTF) override {			
-			
-			if (_listenerHRTF->GetSamplingRate() != globalParameters.GetSampleRate()) { 
-				SET_RESULT(RESULT_ERROR_NOTSET, "This HRTF has not been assigned to the listener. The sample rate of the HRTF does not match the one set in the library Global Parameters.");
-				return false;
-			}
-			listenerHRTF = _listenerHRTF;			
-			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);	
-			ResetProcessorBuffers();
-						
-			return true;
-		}*/
-
-		//bool SetHRTF(std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF) override {
-
-		//	if (_listenerHRTF->GetSamplingRate() != globalParameters.GetSampleRate()) {
-		//		SET_RESULT(RESULT_ERROR_NOTSET, "This nonInterpolatedHRTF has not been assigned to the listener. The sample rate of the nonInterpolatedHRTF does not match the one set in the library Global Parameters.");
-		//		return false;
-		//	}
-		//	listenerHRTF = _listenerHRTF;
-		//	//GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
-		//	GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
-		//	ResetProcessorBuffers();
-
-		//	return true;
-		//}
-
 		bool SetHRTF(std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF) override {
 			return brtManager->ExecuteResourceUpdate(
 				[this, _listenerHRTF]() -> bool {
@@ -317,10 +273,7 @@ namespace BRTListenerModel {
 		/** 
 		* \brief Enable binaural spatialization based in HRTF convolution		
 		*/
-		void EnableSpatialization() override { 
-			/*std::lock_guard<std::mutex> lock(mutex);
-			enableSpatialization = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void EnableSpatialization() override { 			
 			SetConfigurationFlag(enableSpatialization, true);
 		}		
 
@@ -328,10 +281,7 @@ namespace BRTListenerModel {
 		 * @brief Disable binaural spatialization based in HRTF convolution
 		 */
 		void DisableSpatialization() override
-		{
-			/*std::lock_guard<std::mutex> lock(mutex);
-			enableSpatialization = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/	
+		{			
 			SetConfigurationFlag(enableSpatialization, false);
 		}
 
@@ -347,19 +297,13 @@ namespace BRTListenerModel {
 		/** \brief Enable run-time HRTF interpolation
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableInterpolation() override {
-			/*std::lock_guard<std::mutex> lock(mutex);
-			enableInterpolation = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void EnableInterpolation() override {			
 			SetConfigurationFlag(enableInterpolation, true);
 		}
 
 		/** \brief Disable run-time HRTF interpolation
 		*/
-		void DisableInterpolation() override {
-			/*std::lock_guard<std::mutex> lock(mutex);
-			enableInterpolation = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void DisableInterpolation() override {			
 			SetConfigurationFlag(enableInterpolation, false);
 		}
 
@@ -375,20 +319,14 @@ namespace BRTListenerModel {
 		/**
 		* \brief Enable near field effect for this source		
 		*/
-		void EnableNearFieldEffect() override {
-		/*	std::lock_guard<std::mutex> lock(mutex);
-			enableNearFieldEffect = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void EnableNearFieldEffect() override {		
 			SetConfigurationFlag(enableNearFieldEffect, true);
 		}
 
 		/** 
 		* \brief Disable near field effect for this source		
 		*/
-		void DisableNearFieldEffect() override {
-			/*std::lock_guard<std::mutex> lock(mutex);
-			enableNearFieldEffect = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/	
+		void DisableNearFieldEffect() override {			
 			SetConfigurationFlag(enableNearFieldEffect, false);
 		}
 
@@ -404,20 +342,14 @@ namespace BRTListenerModel {
 		/**
 		 * @brief Enable ITD simulation
 		*/
-		void EnableITDSimulation() override { 
-			/*std::lock_guard<std::mutex> lock(mutex);
-			enableITDSimulation = true; 
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void EnableITDSimulation() override { 			
 			SetConfigurationFlag(enableITDSimulation, true);
 		}
 
 		/**
 		 * @brief Disable ITD simulation
 		*/
-		void DisableITDSimulation() override { 
-			/*std::lock_guard<std::mutex> lock(mutex);
-			enableITDSimulation = false; 
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void DisableITDSimulation() override { 			
 			SetConfigurationFlag(enableITDSimulation, false);
 		}
 
@@ -433,20 +365,14 @@ namespace BRTListenerModel {
 		/**
 		 * @brief Enable Parallax Correction
 		*/
-		void EnableParallaxCorrection() override { 
-			/*std::lock_guard<std::mutex> lock(mutex);
-			enableParallaxCorrection = true; 
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void EnableParallaxCorrection() override { 			
 			SetConfigurationFlag(enableParallaxCorrection, true);
 		}
 
 		/**
 		 * @brief Disable Parallax Correction
 		*/
-		void DisableParallaxCorrection() override { 
-			/*std::lock_guard<std::mutex> lock(mutex);
-			enableParallaxCorrection = false; 
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void DisableParallaxCorrection() override { 			
 			SetConfigurationFlag(enableParallaxCorrection, false);
 		}
 
@@ -460,14 +386,7 @@ namespace BRTListenerModel {
 
 		/**
 		 * @brief Enable model
-		 */
-		/*void EnableModel() override {			
-			std::lock_guard<std::mutex> l(mutex);
-			enableModel = true;			
-			for (auto& it : sourcesConnectedProcessors) {
-				it.SetEnableProcessor(true);
-			}
-		};*/
+		 */		
 
 		void EnableModel() override {
 			SetEnableFlag(true);

@@ -195,24 +195,14 @@ namespace BRTEnvironmentModel {
 		/**
 		 * @brief Enable model
 		 */
-		void EnableModel() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableModel = true;
-			for (auto & it : sourcesConnectedProcessors) {
-				it.SetEnableProcessor(true);
-			}*/
+		void EnableModel() override {			
 			SetEnableFlag(true);
 		};
 
 		/**
 		 * @brief Disable model
 		 */
-		void DisableModel() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableModel = false;
-			for (auto & it : sourcesConnectedProcessors) {
-				it.SetEnableProcessor(false);
-			}*/
+		void DisableModel() override {			
 			SetEnableFlag(false);
 		};
 		
@@ -245,19 +235,13 @@ namespace BRTEnvironmentModel {
 		/**
 		 * @brief Enable Reverb Path
 		 */
-		void EnableReverbPath() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableReverbPath = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void EnableReverbPath() override {			
 			SetConfigurationFlag(enableReverbPath, true);
 		}
 		/**
 		 * @brief Disable Reverb Path
 		 */
-		void DisableReverbPath() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableReverbPath = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void DisableReverbPath() override {			
 			SetConfigurationFlag(enableReverbPath, false);
 		}
 		/**
@@ -295,12 +279,10 @@ namespace BRTEnvironmentModel {
 			return numberOrVisibleVirtualSources;
 		}
 
-		/*void SetGain(float _gain) override {
-			std::lock_guard<std::mutex> lock(mutex);
-
-			BRTBase::CModelBase::SetGain(_gain);
-			UpdateGainWithoutLock();
-		}*/
+		/**
+		 * @brief Set the gain of the model and all its processors
+		 * @param _gain 
+		 */
 		void SetGain(float _gain) override {
 			brtManager->ExecuteConfigurationUpdate(
 				[this, _gain]() -> bool {
@@ -312,6 +294,7 @@ namespace BRTEnvironmentModel {
 					return true;
 				});
 		}
+
 		/**
 		 * @brief Connect a new source to this listener
 		 * @param _source Pointer to the source

@@ -173,24 +173,14 @@ namespace BRTEnvironmentModel {
 		/**
 		 * @brief Enable model
 		 */
-		void EnableModel() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableModel = true;
-			for (auto & it : sourcesConnectedProcessors) {
-				it.SetEnableProcessor(true);
-			}*/
+		void EnableModel() override {			
 			SetEnableFlag(true);
 		};
 
 		/**
 		 * @brief Disable model
 		 */
-		void DisableModel() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableModel = false;
-			for (auto & it : sourcesConnectedProcessors) {
-				it.SetEnableProcessor(false);
-			}*/
+		void DisableModel() override {			
 			SetEnableFlag(false);
 		};
 
@@ -202,20 +192,13 @@ namespace BRTEnvironmentModel {
 		/**
 		 * @brief Enable distance attenuation
 		 */
-		void EnableDistanceAttenuation() override {	
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableDistanceAttenuation = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
-
+		void EnableDistanceAttenuation() override {				
 			SetConfigurationFlag(enableDistanceAttenuation, true);
 		}
 		/**
 		 * @brief Disable distance attenuation
 		 */
-		void DisableDistanceAttenuation() override {	
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableDistanceAttenuation = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void DisableDistanceAttenuation() override {			
 			SetConfigurationFlag(enableDistanceAttenuation, false);
 		}
 		/**
@@ -230,19 +213,13 @@ namespace BRTEnvironmentModel {
 		/**
 		 * @brief Enable propagation delay
 		 */
-		void EnablePropagationDelay() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enablePropagationDelay = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void EnablePropagationDelay() override {			
 			SetConfigurationFlag(enablePropagationDelay, true);
 		}
 		/**
 		 * @brief Disable propagation delay
 		 */ 
-		void DisablePropagationDelay() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enablePropagationDelay = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void DisablePropagationDelay() override {			
 			SetConfigurationFlag(enablePropagationDelay, false);
 		}
 		/**
@@ -425,18 +402,11 @@ namespace BRTEnvironmentModel {
 					return true;
 				});
 		}
-		///**
-		// * @brief Set the gain of the model
-		// * @param _gain 
-		// */
-		//void UpdateGain() override {
-		//	std::lock_guard<std::mutex> l(mutex);
-		//	for (auto & it : sourcesConnectedProcessors) {
-		//		it.SetGain(gain);
-		//	}
-		//}
-
-		// Requiere tener adquirido el mutex del modelo.
+		
+		/**
+		 * @brief Update the gain of the model without locking the mutex.
+		 * This method should be called only when the mutex is already locked.
+		 */
 		void UpdateGainWithoutLock() {
 			const float currentGain = BRTBase::CModelBase::GetGain();
 

@@ -153,19 +153,13 @@ namespace BRTListenerModel {
 		/** \brief Enable binaural spatialization based in HRTF convolution
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableSpatialization() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableSpatialization = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void EnableSpatialization() override {		
 			SetConfigurationFlag(enableSpatialization, true);
 		}
 
 		/** \brief Disable binaural spatialization based in HRTF convolution
 		*/
-		void DisableSpatialization() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableSpatialization = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void DisableSpatialization() override {			
 			SetConfigurationFlag(enableSpatialization, false);
 		}
 
@@ -181,19 +175,13 @@ namespace BRTListenerModel {
 		/** \brief Enable run-time HRTF interpolation
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableInterpolation() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableInterpolation = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void EnableInterpolation() override {			
 			SetConfigurationFlag(enableInterpolation, true);
 		}
 
 		/** \brief Disable run-time HRTF interpolation
 		*/
-		void DisableInterpolation() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableInterpolation = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void DisableInterpolation() override {			
 			SetConfigurationFlag(enableInterpolation, false);
 		}
 
@@ -263,20 +251,14 @@ namespace BRTListenerModel {
 		/**
 		 * @brief Enable distance attenuation
 		 */
-		void EnableDistanceAttenuation() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableDistanceAttenuation = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void EnableDistanceAttenuation() override {			
 			SetConfigurationFlag(enableDistanceAttenuation, true);
 		}
 
 		/**
 		 * @brief Disable distance attenuation
 		 */
-		void DisableDistanceAttenuation() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableDistanceAttenuation = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void DisableDistanceAttenuation() override {			
 			SetConfigurationFlag(enableDistanceAttenuation, false);
 		}
 

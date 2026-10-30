@@ -148,28 +148,14 @@ namespace BRTListenerModel {
 		/**
 		 * @brief Enable model
 		 */
-		void EnableModel() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableModel = true;
-			for (auto & it : sourcesConnectedProcessors) {
-				it.SetEnableProcessor(true);
-			}
-			leftAmbisonicDomainConvolverProcessor->EnableProcessor();
-			rightAmbisonicDomainConvolverProcessor->EnableProcessor();*/
+		void EnableModel() override {			
 			SetEnableFlag(true);
 		};
 
 		/**
 		 * @brief Disable model
 		 */
-		void DisableModel() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableModel = false;
-			for (auto & it : sourcesConnectedProcessors) {
-				it.SetEnableProcessor(false);
-			}
-			leftAmbisonicDomainConvolverProcessor->DisableProcessor();
-			rightAmbisonicDomainConvolverProcessor->DisableProcessor();*/
+		void DisableModel() override {			
 			SetEnableFlag(false);
 		};
 
@@ -335,20 +321,14 @@ namespace BRTListenerModel {
 		/**
 		 * @brief Enable distance attenuation
 		 */
-		void EnableDistanceAttenuation() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableDistanceAttenuation = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void EnableDistanceAttenuation() override {			
 			SetConfigurationFlag(enableDistanceAttenuation, true);
 		}
 
 		/**
 		 * @brief Disable distance attenuation
 		 */
-		void DisableDistanceAttenuation() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableDistanceAttenuation = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void DisableDistanceAttenuation() override {			
 			SetConfigurationFlag(enableDistanceAttenuation, false);
 		}
 

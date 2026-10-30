@@ -334,20 +334,14 @@ namespace BRTListenerModel {
 		/** \brief Enable near field effect for this source
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableNearFieldEffect() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableNearFieldEffect = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();	*/
+		void EnableNearFieldEffect() override {			
 			SetConfigurationFlag(enableNearFieldEffect, true);
 		}
 
 		/** \brief Disable near field effect for this source
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void DisableNearFieldEffect() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableNearFieldEffect = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void DisableNearFieldEffect() override {			
 			SetConfigurationFlag(enableNearFieldEffect, false);
 		}
 
@@ -363,20 +357,14 @@ namespace BRTListenerModel {
 		/** \brief Enable bilaterality for all source connected to this listener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void EnableITDSimulation() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableITDSimulation = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void EnableITDSimulation() override {			
 			SetConfigurationFlag(enableITDSimulation, true);	
 		}
 
 		/** \brief Disable bilaterality for all source connected to this listener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void DisableITDSimulation() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableITDSimulation = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void DisableITDSimulation() override {			
 			SetConfigurationFlag(enableITDSimulation, false);
 		}
 		
@@ -392,20 +380,14 @@ namespace BRTListenerModel {
 		/**
 		 * @brief Enable Parallax Correction
 		*/
-		void EnableParallaxCorrection() override { 
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableParallaxCorrection = true; 
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void EnableParallaxCorrection() override { 			
 			SetConfigurationFlag(enableParallaxCorrection, true);
 		}
 
 		/**
 		 * @brief Disable Parallax Correction
 		*/
-		void DisableParallaxCorrection() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableParallaxCorrection = false; 
-			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+		void DisableParallaxCorrection() override {			
 			SetConfigurationFlag(enableParallaxCorrection, false);
 		}
 
@@ -420,28 +402,14 @@ namespace BRTListenerModel {
 		/**
 		 * @brief Enable model
 		 */
-		void EnableModel() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableModel = true;
-			for (auto& it : sourcesConnectedProcessors) {
-				it.SetEnableProcessor(true);
-			}
-			leftAmbisonicDomainConvolverProcessor->EnableProcessor();
-			rightAmbisonicDomainConvolverProcessor->EnableProcessor();*/
+		void EnableModel() override {			
 			SetEnableFlag(true);
 		};
 
 		/**
 		 * @brief Disable model
 		 */
-		void DisableModel() override {
-			/*std::lock_guard<std::mutex> l(mutex);
-			enableModel = false;
-			for (auto& it : sourcesConnectedProcessors) {
-				it.SetEnableProcessor(false);
-			}
-			leftAmbisonicDomainConvolverProcessor->DisableProcessor();
-			rightAmbisonicDomainConvolverProcessor->DisableProcessor();*/
+		void DisableModel() override {			
 			SetEnableFlag(false);
 		};
 
@@ -523,15 +491,7 @@ namespace BRTListenerModel {
 			if (_environmentModel == nullptr) return false;
 
 			return DisconnectEnvironmentModel(_environmentModel);
-		};
-
-		/**
-		 * @brief Implementation of the virtual method to process the data received by the entry points.
-		 * @param entryPointID ID of the entry point
-		*/
-		//void Update(std::string entryPointID) override {
-		//	// Nothing to do
-		//}
+		};		
 
 		/**
 		 * @brief Implementation of the virtual method for processing the received commands
