@@ -468,20 +468,28 @@ namespace BRTBase {
 
 		/**
 		 * @brief Enable spatialization in the listener model if it is supported
-		 */
-		void EnableSpatialization(){			
-			for (auto& it : listenerModelsConnected) {				
-				it->EnableSpatialization();								
-			}			
-		}
+		 */		
+		void EnableSpatialization() {
+			brtManager->ExecuteConfigurationUpdate(
+				[this]() -> bool {
+					for (auto & it : listenerModelsConnected) {
+						it->EnableSpatialization();
+					}
+					return true;
+				});
+		}		
 
 		/**
 		 * @brief Disable spatialization in the listener model if it is supported
 		 */
-		void DisableSpatialization() {			 
-			 for (auto& it : listenerModelsConnected) {
-				 it->DisableSpatialization();			
-			 }			
+		void DisableSpatialization() {
+			brtManager->ExecuteConfigurationUpdate(
+				[this]() -> bool {
+					for (auto & it : listenerModelsConnected) {
+						it->DisableSpatialization();
+					}
+					return true;
+				});
 		}
 
 		//** \brief Get the flag for HRTF spatialization
@@ -503,18 +511,26 @@ namespace BRTBase {
 		 * @brief Enable interpolation in the listener model if it is supported
 		 */
 		void EnableInterpolation() {
-			for (auto& it : listenerModelsConnected) {
-				it->EnableInterpolation();
-			}
+			brtManager->ExecuteConfigurationUpdate(
+				[this]() -> bool {
+					for (auto & it : listenerModelsConnected) {
+						it->EnableInterpolation();
+					}
+					return true;
+				});
 		}
 
 		/**
 		 * @brief Disable interpolation in the listener model if it is supported
 		 */
 		void DisableInterpolation() {
-			for (auto& it : listenerModelsConnected) {
-				it->DisableInterpolation();
-			}
+			brtManager->ExecuteConfigurationUpdate(
+				[this]() -> bool {
+					for (auto & it : listenerModelsConnected) {
+						it->DisableInterpolation();
+					}
+					return true;
+				});
 		}
 
 		//** \brief Get the flag for run-time HRTF interpolation
@@ -534,22 +550,30 @@ namespace BRTBase {
 		 * @brief Enable ITD simulation in the listener model if it is supported
 		 */
 		void EnableITDSimulation() {
-			for (auto& it : listenerModelsConnected) {
-				if (it->GetListenerModelCharacteristics().SupportITDSimulation()) {
-					it->EnableITDSimulation();
-				}
-			}
+			brtManager->ExecuteConfigurationUpdate(
+				[this]() -> bool {
+					for (auto & it : listenerModelsConnected) {
+						if (it->GetListenerModelCharacteristics().SupportITDSimulation()) {
+							it->EnableITDSimulation();
+						}
+					}
+					return true;
+				});
 		}
 
 		/**
 		 * @brief Disable ITD simulation in the listener model if it is supported
 		 */
 		void DisableITDSimulation() {
-			for (auto& it : listenerModelsConnected) {
-				if (it->GetListenerModelCharacteristics().SupportITDSimulation()) {
-					it->DisableITDSimulation();
-				}
-			}
+			brtManager->ExecuteConfigurationUpdate(
+				[this]() -> bool {
+					for (auto & it : listenerModelsConnected) {
+						if (it->GetListenerModelCharacteristics().SupportITDSimulation()) {
+							it->DisableITDSimulation();
+						}
+					}
+					return true;
+				});
 		}
 
 		/**
@@ -569,22 +593,30 @@ namespace BRTBase {
 		 * @brief Enable near field effect in the listener model if it is supported
 		 */
 		void EnableNearFieldEffect() {
-			for (auto& it : listenerModelsConnected) {
-				if (it->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {
-					it->EnableNearFieldEffect();
-				}
-			}
+			brtManager->ExecuteConfigurationUpdate(
+				[this]() -> bool {
+					for (auto & it : listenerModelsConnected) {
+						if (it->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {
+							it->EnableNearFieldEffect();
+						}
+					}
+					return true;
+				});
 		}
 
 		/**
 		 * @brief Disable near field effect in the listener model if it is supported
 		 */
 		void DisableNearFieldEffect() {
-			for (auto& it : listenerModelsConnected) {
-				if (it->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {
-					it->DisableNearFieldEffect();
-				}
-			}
+			brtManager->ExecuteConfigurationUpdate(
+				[this]() -> bool {
+					for (auto & it : listenerModelsConnected) {
+						if (it->GetListenerModelCharacteristics().SupportNearFieldCompensation()) {
+							it->DisableNearFieldEffect();
+						}
+					}
+					return true;
+				});
 		}
 
 		/**
@@ -604,22 +636,30 @@ namespace BRTBase {
 		 * @brief Enable parallax correction in the listener model if it is supported
 		 */
 		void EnableParallaxCorrection() {
-			for (auto& it : listenerModelsConnected) {
-				if (it->GetListenerModelCharacteristics().SupportParallaxCorrection()) {
-					it->EnableParallaxCorrection();
-				}
-			}
+			brtManager->ExecuteConfigurationUpdate(
+				[this]() -> bool {
+					for (auto & it : listenerModelsConnected) {
+						if (it->GetListenerModelCharacteristics().SupportParallaxCorrection()) {
+							it->EnableParallaxCorrection();
+						}
+					}
+					return true;
+				});
 		}
 
 		/**
 		 * @brief Disable parallax correction in the listener model if it is supported
 		 */ 
 		void DisableParallaxCorrection() {
-			for (auto& it : listenerModelsConnected) {
-				if (it->GetListenerModelCharacteristics().SupportParallaxCorrection()) {
-					it->DisableParallaxCorrection();
-				}
-			}
+			brtManager->ExecuteConfigurationUpdate(
+				[this]() -> bool {
+					for (auto & it : listenerModelsConnected) {
+						if (it->GetListenerModelCharacteristics().SupportParallaxCorrection()) {
+							it->DisableParallaxCorrection();
+						}
+					}
+					return true;
+				});
 		}
 
 		/**
@@ -641,12 +681,15 @@ namespace BRTBase {
 		 * @return true if the ambisonic order is set
 		 */
 		bool SetAmbisonicOrder(int _ambisonicOrder) {
-			for (auto& it : listenerModelsConnected) {
-				if (it->GetListenerModelCharacteristics().IsAmbisonic()) {
-					return it->SetAmbisonicOrder(_ambisonicOrder);
-				}
-			}
-			return false;
+			return brtManager->ExecuteConfigurationUpdate(
+				[this, _ambisonicOrder]() -> bool {				
+					for (auto & it : listenerModelsConnected) {
+						if (it->GetListenerModelCharacteristics().IsAmbisonic()) {
+							return it->SetAmbisonicOrder(_ambisonicOrder);
+						}
+					}
+					return false;
+				});
 		}
 
 		/**
@@ -669,12 +712,15 @@ namespace BRTBase {
 		 */
 		template <typename T>
 		bool SetAmbisonicNormalization(T _ambisonicNormalization) {
-			for (auto& it : listenerModelsConnected) {
-				if (it->GetListenerModelCharacteristics().IsAmbisonic()) {
-					return it->SetAmbisonicNormalization(_ambisonicNormalization);
-				}
-			}
-			return false;
+			return brtManager->ExecuteConfigurationUpdate(			
+				[this, _ambisonicNormalization]() -> bool {
+					for (auto & it : listenerModelsConnected) {
+						if (it->GetListenerModelCharacteristics().IsAmbisonic()) {
+							return it->SetAmbisonicNormalization(_ambisonicNormalization);
+						}
+					}
+					return false;
+				});
 		}
 		
 		/**
@@ -692,25 +738,35 @@ namespace BRTBase {
 
 		/**
 		 * @brief Enable distance attenuation in the listener model
-		 */
+		 */		
 		void EnableDistanceAttenuation() {
-			for (auto & it : listenerModelsConnected) {
-				if (it->GetListenerModelCharacteristics().SupportDistanceAttenuation()) {
-					it->EnableDistanceAttenuation();
-				}
-			}
+			brtManager->ExecuteConfigurationUpdate(
+				[this]() -> bool {
+					for (auto & it : listenerModelsConnected) {
+						if (it->GetListenerModelCharacteristics()
+								.SupportDistanceAttenuation()) {
+							it->EnableDistanceAttenuation();
+						}
+					}
+					return true;
+				});
 		}
 
 		/**
 		 * @brief Disable distance attenuation in the listener model
 		 */
 		void DisableDistanceAttenuation() {
-			for (auto & it : listenerModelsConnected) {
-				if (it->GetListenerModelCharacteristics().SupportDistanceAttenuation()) {
-					it->DisableDistanceAttenuation();
-				}
-			}
-		}
+			brtManager->ExecuteConfigurationUpdate(
+				[this]() -> bool {
+					for (auto & it : listenerModelsConnected) {
+						if (it->GetListenerModelCharacteristics()
+								.SupportDistanceAttenuation()) {
+							it->DisableDistanceAttenuation();
+						}
+					}
+					return true;
+				});
+		}		
 		
 		/**
 		 * @brief Get the flag for distance attenuation enabling

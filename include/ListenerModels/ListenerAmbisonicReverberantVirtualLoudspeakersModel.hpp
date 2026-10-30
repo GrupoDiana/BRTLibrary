@@ -149,26 +149,28 @@ namespace BRTListenerModel {
 		 * @brief Enable model
 		 */
 		void EnableModel() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableModel = true;
 			for (auto & it : sourcesConnectedProcessors) {
 				it.SetEnableProcessor(true);
 			}
 			leftAmbisonicDomainConvolverProcessor->EnableProcessor();
-			rightAmbisonicDomainConvolverProcessor->EnableProcessor();
+			rightAmbisonicDomainConvolverProcessor->EnableProcessor();*/
+			SetEnableFlag(true);
 		};
 
 		/**
 		 * @brief Disable model
 		 */
 		void DisableModel() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableModel = false;
 			for (auto & it : sourcesConnectedProcessors) {
 				it.SetEnableProcessor(false);
 			}
 			leftAmbisonicDomainConvolverProcessor->DisableProcessor();
-			rightAmbisonicDomainConvolverProcessor->DisableProcessor();
+			rightAmbisonicDomainConvolverProcessor->DisableProcessor();*/
+			SetEnableFlag(false);
 		};
 
 		bool IsModelEnabled() override {
@@ -181,27 +183,33 @@ namespace BRTListenerModel {
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
 		bool SetHRBRIR(std::shared_ptr<BRTServices::CServicesBase> _listenerHRBRIR) override {
-			
-			if (!_listenerHRBRIR->IsDataReady()) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "The HRBRIR has not been assigned becaused it is empty.");
-				return false;
-			}	
-			if (_listenerHRBRIR->GetSamplingRate() != globalParameters.GetSampleRate()) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "This HRBRIR has not been assigned to the listener. The sample rate of the HRBRIR does not match the one set in the library Global Parameters.");
-				return false;
-			}
-						
-			EnableAmbisonicDomainConvolvers(false);		// Stop the convolvers
-						
-			listenerHRBRIR = _listenerHRBRIR;			
-			InitListenerAmbisonicIR();
-			GetHRBRIRExitPoint()->sendDataPtr(listenerHRBRIR);
-			GetABIRExitPoint()->sendDataPtr(listenerAmbisonicIR);			
-			ResetProcessorBuffers();
-			
-			EnableAmbisonicDomainConvolvers(true);		// Start again
-			
-			return true;
+			return brtManager->ExecuteResourceUpdate(
+				[this, _listenerHRBRIR]() -> bool {
+					if (!_listenerHRBRIR || !_listenerHRBRIR->IsDataReady()) {
+						SET_RESULT(RESULT_ERROR_INVALID_PARAM, "BRIR resource must be non-null and ready.");
+						return false;
+					}
+
+					if (_listenerHRBRIR->GetSamplingRate() != globalParameters.GetSampleRate()) {
+						SET_RESULT(RESULT_ERROR_NOTSET,
+							"BRIR sample rate does not match the library sample rate.");
+						return false;
+					}
+
+					//EnableAmbisonicDomainConvolvers(false); // Stop the convolvers
+					{
+						std::lock_guard<std::mutex> lock(resourceMutex);
+						listenerHRBRIR = _listenerHRBRIR;
+					}						
+					InitListenerAmbisonicIR();
+					GetHRBRIRExitPoint()->sendDataPtr(listenerHRBRIR);
+					GetABIRExitPoint()->sendDataPtr(listenerAmbisonicIR);
+					ResetProcessorBuffers();
+
+					//EnableAmbisonicDomainConvolvers(true); // Start again
+
+					return true;
+				});
 		}
 
 		/** \brief Get HRBRIR of listener
@@ -209,6 +217,7 @@ namespace BRTListenerModel {
 		*   \eh On error, an error code is reported to the error handler.
 		*/
 		std::shared_ptr<BRTServices::CServicesBase> GetHRBRIR() const override {
+			std::lock_guard<std::mutex> lock(resourceMutex);
 			return listenerHRBRIR;
 		}
 
@@ -216,33 +225,53 @@ namespace BRTListenerModel {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void RemoveHRBRIR() override {
-			listenerHRBRIR = nullptr;
-		}
+			brtManager->ExecuteResourceUpdate(
+				[this]() -> bool {				
+					{
+						std::lock_guard<std::mutex> lock(resourceMutex);
+						listenerHRBRIR.reset();						
+						listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicBIR>();						
+					}	
+					GetHRBRIRExitPoint()->sendDataPtr(std::weak_ptr<BRTServices::CServicesBase> {});
+					GetABIRExitPoint()->sendDataPtr(listenerAmbisonicIR);
 
-		
+					ResetProcessorBuffers();
+					ResetMixerBuffers();
+					return true;
+				});
+		}
+				
 		/**
 		 * @brief Set the ambisonic order to the listener
 		 * @param _ambisonicOrder Ambisonic order to be set up. Currently only orders between 1 to 3 are allowed
 		 * @return true if it is a valid order.
 		*/
 		bool SetAmbisonicOrder(int _ambisonicOrder) override {
-			
-			if (_ambisonicOrder < 1 || _ambisonicOrder > 3) { return false; }
-			if (ambisonicOrder == _ambisonicOrder) { return true; }			
-			
-			EnableAmbisonicDomainConvolvers(false); // Stop the convolvers
-								
-			ambisonicOrder = _ambisonicOrder;
-			/*if (listenerHRBRIR->IsHRBRIRLoaded()) {
-				InitListenerAmbisonicIR();
-			}*/
-			InitListenerAmbisonicIR();
-			SetConfigurationInALLSourcesProcessors();
-			leftAmbisonicDomainConvolverProcessor->SetAmbisonicOrder(_ambisonicOrder);
-			rightAmbisonicDomainConvolverProcessor->SetAmbisonicOrder(_ambisonicOrder);
+			 return brtManager->ExecuteConfigurationUpdate(
+				[this, _ambisonicOrder]() {
+					std::lock_guard<std::mutex> lock(mutex);
+					if (_ambisonicOrder < 1 || _ambisonicOrder > 3) {
+					return false;
+					}
+					if (ambisonicOrder == _ambisonicOrder) {
+						return true;
+					}
 
-			EnableAmbisonicDomainConvolvers(true); // Start again
-			return true;
+				ambisonicOrder = _ambisonicOrder;
+
+				if (listenerHRBRIR && listenerHRBRIR->IsDataReady()) {
+					InitListenerAmbisonicIRWithoutLock();
+				}				
+				SetConfigurationInALLSourcesProcessorsWithoutLock();
+				
+				leftAmbisonicDomainConvolverProcessor->SetAmbisonicOrder(_ambisonicOrder);
+				rightAmbisonicDomainConvolverProcessor->SetAmbisonicOrder(_ambisonicOrder);
+				
+				ResetProcessorBuffersWithoutLock();
+				ResetMixerBuffers();
+				
+				return true;
+			});
 		}
 
 		/**
@@ -250,6 +279,7 @@ namespace BRTListenerModel {
 		 * @return order
 		*/
 		int GetAmbisonicOrder() override {
+			std::lock_guard<std::mutex> lock(mutex);
 			return ambisonicOrder;
 		}
 
@@ -258,17 +288,24 @@ namespace BRTListenerModel {
 		 * @param _ambisonicNormalization Normalization to be set up. 
 		*/
 		bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) override {
-			
-			if (ambisonicNormalization == _ambisonicNormalization) { return true; }
-			
-			EnableAmbisonicDomainConvolvers(false); // Stop the convolvers
-			
-			ambisonicNormalization = _ambisonicNormalization;
-			InitListenerAmbisonicIR();
-			SetConfigurationInALLSourcesProcessors();
-			
-			EnableAmbisonicDomainConvolvers(true); // Start again
-			return true;
+			return brtManager->ExecuteConfigurationUpdate(
+				[this, _ambisonicNormalization]() {
+					std::lock_guard<std::mutex> lock(mutex);
+					if (ambisonicNormalization == _ambisonicNormalization) {
+						return true;
+					}
+
+					//EnableAmbisonicDomainConvolvers(false); // Stop the convolvers
+
+					ambisonicNormalization = _ambisonicNormalization;
+					InitListenerAmbisonicIRWithoutLock();
+					SetConfigurationInALLSourcesProcessorsWithoutLock();
+					
+					ResetProcessorBuffersWithoutLock();
+					ResetMixerBuffers();
+					//EnableAmbisonicDomainConvolvers(true); // Start again
+					return true;
+				});
 		}
 		
 		/**
@@ -291,9 +328,69 @@ namespace BRTListenerModel {
 		 * @return current established ambisonic normalization
 		*/
 		Common::TAmbisonicNormalization GetAmbisonicNormalization() override {
+			std::lock_guard<std::mutex> lock(mutex);
 			return ambisonicNormalization;
 		}
-				
+						
+		/**
+		 * @brief Enable distance attenuation
+		 */
+		void EnableDistanceAttenuation() override {
+			/*std::lock_guard<std::mutex> l(mutex);
+			enableDistanceAttenuation = true;
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableDistanceAttenuation, true);
+		}
+
+		/**
+		 * @brief Disable distance attenuation
+		 */
+		void DisableDistanceAttenuation() override {
+			/*std::lock_guard<std::mutex> l(mutex);
+			enableDistanceAttenuation = false;
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableDistanceAttenuation, false);
+		}
+
+		/**
+		 * @brief Get the flag for distance attenuation enabling
+		 * @return True if the distance attenuation is enabled
+		 */
+		bool IsDistanceAttenuationEnabled() override {
+			std::lock_guard<std::mutex> l(mutex);
+			return enableDistanceAttenuation;
+		}
+		
+		/**
+		 * @brief Set the distance attenuation factor in dB
+		 * @param _distanceAttenuationFactorDB Attenuation factor in dB
+		 */
+		bool SetDistanceAttenuationFactor(float _distanceAttenuationFactorDB) override {
+			return brtManager->ExecuteConfigurationUpdate(
+				[this, _distanceAttenuationFactorDB]() {
+					
+					std::lock_guard<std::mutex> lock(mutex);					
+					if (_distanceAttenuationFactorDB > 0) {
+						SET_RESULT(RESULT_ERROR_PHYSICS, "Attenuation factor in decibels must be a negative value");
+						return false;
+					}
+					distanceAttenuationFactorDB = _distanceAttenuationFactorDB;
+					for (auto & it : sourcesConnectedProcessors) {
+						it.SetDistanceAttenuationFactor(_distanceAttenuationFactorDB);
+					}
+					return true;
+				});
+		}
+
+		/**
+		 * @brief Get the distance attenuation factor in dB
+		 * @return Distance attenuation factor in decibels
+		 */
+		float GetDistanceAttenuationFactor() override {
+			std::lock_guard<std::mutex> lock(mutex);
+			return distanceAttenuationFactorDB;
+		}
+
 		/**
 		 * @brief Connect a new source to this listener
 		 * @param _source Pointer to the source
@@ -302,7 +399,7 @@ namespace BRTListenerModel {
 		bool ConnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) override {
 			return ConnectAnySoundSource(_source);
 		};
-		
+
 		/**
 		 * @brief Connect a new source to this listener model
 		 * @param _sourceID Source ID
@@ -321,8 +418,8 @@ namespace BRTListenerModel {
 		*/
 		bool DisconnectSoundSource(std::shared_ptr<BRTSourceModel::CSourceModelBase> _source) override {
 			return DisconnectAnySoundSource(_source);
-		};		
-				
+		};
+
 		/**
 		 * @brief Disconnect a new source to this listener model
 		 * @param _sourceID Source ID
@@ -345,8 +442,8 @@ namespace BRTListenerModel {
 				brtManager->ConnectModuleTransform(_listener, leftAmbisonicDomainConvolverProcessor, "listenerPosition");
 				brtManager->ConnectModuleTransform(_listener, rightAmbisonicDomainConvolverProcessor, "listenerPosition");
 				return true;
-			}			
-			return false;			
+			}
+			return false;
 		}
 
 		/**
@@ -363,81 +460,24 @@ namespace BRTListenerModel {
 			}
 			return false;
 		}
-		
-		/**
-		 * @brief Enable distance attenuation
-		 */
-		void EnableDistanceAttenuation() override {
-			std::lock_guard<std::mutex> l(mutex);
-			enableDistanceAttenuation = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
-		}
-
-		/**
-		 * @brief Disable distance attenuation
-		 */
-		void DisableDistanceAttenuation() override {
-			std::lock_guard<std::mutex> l(mutex);
-			enableDistanceAttenuation = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
-		}
-
-		/**
-		 * @brief Get the flag for distance attenuation enabling
-		 * @return True if the distance attenuation is enabled
-		 */
-		bool IsDistanceAttenuationEnabled() override {
-			std::lock_guard<std::mutex> l(mutex);
-			return enableDistanceAttenuation;
-		}
-		
-
-		/**
-		 * @brief Set the distance attenuation factor in dB
-		 * @param _distanceAttenuationFactorDB Attenuation factor in dB
-		 */
-		bool SetDistanceAttenuationFactor(float _distanceAttenuationFactorDB) override {
-			std::lock_guard<std::mutex> l(mutex);
-			if (_distanceAttenuationFactorDB > 0) {
-				SET_RESULT(RESULT_ERROR_PHYSICS, "Attenuation factor in decibels must be a negative value");
-				return false;
-			}
-			distanceAttenuationFactorDB = _distanceAttenuationFactorDB;
-			for (auto & it : sourcesConnectedProcessors) {
-				it.SetDistanceAttenuationFactor(_distanceAttenuationFactorDB);
-			}	
-			return true;
-		}
-
-		/**
-		 * @brief Get the distance attenuation factor in dB
-		 * @return Distance attenuation factor in decibels
-		 */
-		float GetDistanceAttenuationFactor() override {
-			return distanceAttenuationFactorDB;
-		}
 
 		/**
 		 * @brief Reset all processor buffers
 		*/
 		void ResetProcessorBuffers() {		
-			std::lock_guard<std::mutex> l(mutex);
-			
-			leftAmbisonicDomainConvolverProcessor->ResetChannelsConvolutionBuffers();
-			rightAmbisonicDomainConvolverProcessor->ResetChannelsConvolutionBuffers();
-
-			for (auto& it : sourcesConnectedProcessors) {
-				it.ResetBuffers();
-			}
+			std::lock_guard<std::mutex> l(mutex);			
+			ResetProcessorBuffersWithoutLock();
 		}
-		
+				
 		/**
 		 * @brief Implementation of the virtual method for processing the received commands
 		*/
 		void UpdateCommand() override {
 			//std::lock_guard<std::mutex> l(mutex);			
 			BRTConnectivity::CCommand command = GetLastReceivedCommand();
-			if (command.isNull() || command.GetAddress() == "") { return; }
+			if (command.isNull() || command.GetCommand().empty()) {	
+				return;
+			}
 
 			// Check overall commands
 			if (command.GetCommand() == BRTConnectivity::CCommandList::COMMAND_OVERALL_STOP) {
@@ -483,22 +523,24 @@ namespace BRTListenerModel {
 		/**
 		 * @brief Initialize the ambisonic IR of the listener
 		 */
-		void InitListenerAmbisonicIR() {
-			if (!listenerHRBRIR->IsDataReady()) {
+		void InitListenerAmbisonicIR() {			
+			std::lock_guard<std::mutex> l(mutex);												
+			InitListenerAmbisonicIRWithoutLock();			
+		}
+
+		void InitListenerAmbisonicIRWithoutLock() {
+			if (!listenerHRBRIR || !listenerHRBRIR->IsDataReady()) {
 				return;
 			}
-			std::lock_guard<std::mutex> l(mutex);												
 			
-			listenerAmbisonicIR->BeginSetup(ambisonicOrder, ambisonicNormalization);			
+			listenerAmbisonicIR->BeginSetup(ambisonicOrder, ambisonicNormalization);
 			bool control = listenerAmbisonicIR->AddSphericalFIRTable(listenerHRBRIR);
-			if (control) {				
+			if (control) {
 				listenerAmbisonicIR->EndSetup();
-			}
-			else {
+			} else {
 				ASSERT(false, RESULT_ERROR_UNKNOWN, "It has not been possible to initialise the ambisonic IR of the associated listener.", "");
 			}
 		}
-
 		/**
 		 * @brief Update Configuration in all source processor
 		*/
@@ -632,6 +674,19 @@ namespace BRTListenerModel {
 		}
 
 		/**
+		 * @brief Reset all processor buffers without locking the mutex. 
+		 * This function should be called only when the mutex is already locked.
+		 */
+		void ResetProcessorBuffersWithoutLock() {
+			leftAmbisonicDomainConvolverProcessor->ResetChannelsConvolutionBuffers();
+			rightAmbisonicDomainConvolverProcessor->ResetChannelsConvolutionBuffers();
+
+			for (auto & it : sourcesConnectedProcessors) {
+				it.ResetBuffers();
+			}
+		}
+
+		/**
 		 * @brief Enable or disable left and right ambisonic domain convolvers
 		 * @param _enable true to enable, false to disable
 		 */
@@ -645,10 +700,46 @@ namespace BRTListenerModel {
 			}	
 		}
 
+		/**
+		 * @brief Set configuration flag and update all source processors in a thread-safe manner
+		 * @param flag 
+		 * @param enabled 
+		 */
+		void SetConfigurationFlag(bool & flag, bool enabled) {
+			brtManager->ExecuteConfigurationUpdate(
+				[this, &flag, enabled]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);
+
+					flag = enabled;
+					SetConfigurationInALLSourcesProcessorsWithoutLock();
+					return true;
+				});
+		}
+
+		/**
+		 * @brief Set enable/disable model and update all source processors in a thread-safe manner
+		 * @param enabled 
+		 */
+		void SetEnableFlag(bool enabled) {
+			brtManager->ExecuteConfigurationUpdate(
+				[this, enabled]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);
+					enableModel = enabled;
+
+					for (auto & it : sourcesConnectedProcessors) {
+						it.SetEnableProcessor(enabled);
+					}
+					EnableAmbisonicDomainConvolvers(enabled);					
+					return true;
+				});
+		}
+
 		/////////////////
 		// Attributes
 		/////////////////		
 		mutable std::mutex mutex;													// To avoid access collisions
+		mutable std::mutex resourceMutex; // To avoid access collisions when updating resources
+
 		std::string listenerID;														// Store unique listener ID
 		//std::shared_ptr<BRTServices::CHRBRIR>	listenerHRBRIR;						// RBRIR of listener				
 		std::shared_ptr<BRTServices::CServicesBase> listenerHRBRIR;					// RBRIR of listener				

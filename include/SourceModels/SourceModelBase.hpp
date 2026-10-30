@@ -76,8 +76,7 @@ namespace BRTEnvironmentModel {
 
 			CreateCommandEntryPoint();
 		}
-		
-		
+				
 		/**
 		 * @brief Set audio frame buffers
 		 * @param _buffer samples buffer
@@ -94,18 +93,7 @@ namespace BRTEnvironmentModel {
 		CMonoBuffer<float> & GetBuffer() {
 			return inputBuffer;			
 		}
-		
-		/**
-		 * @brief Get the input buffer with gain applied. If gain is 1.0, returns the original input buffer.
-		 * Requires the source processing mutex to have been acquired
-		 * @return Reference to the input buffer with gain applied
-		 */		
-		CMonoBuffer<float> GetInputBufferWithGain() {
-			CMonoBuffer<float> buffer = inputBuffer;
-			buffer.ApplyGain(GetGain());
-			return buffer;
-		}
-
+				
 		/**
 		 * @brief Get the current source transform
 		 * @return Source transform
@@ -144,8 +132,7 @@ namespace BRTEnvironmentModel {
 
 		//////////////
 		// Methods
-		//////////////
-
+		//////////////				
 
 		void SetGain(float _gain) {
 			std::lock_guard<std::mutex> lock(gainMutex);
@@ -253,7 +240,11 @@ namespace BRTEnvironmentModel {
 		friend class BRTBase::CBRTManager; 
 
 	protected:
-				
+		
+		/**
+		 * @brief Set the source transform and send it to the exit point. This method is thread-safe.
+		 * @param _transform 
+		 */
 		void SetSourceTransform(const Common::CTransform & _transform) {
 			Common::CTransform transformToPublish = _transform;
 
@@ -265,6 +256,17 @@ namespace BRTEnvironmentModel {
 			GetTransformExitPoint()->sendData(transformToPublish);
 		}
 
+		/**
+		 * @brief Get the input buffer with gain applied. If gain is 1.0, returns the original input buffer.
+		 * Requires the source processing mutex to have been acquired
+		 * @return Reference to the input buffer with gain applied
+		 */
+		CMonoBuffer<float> GetInputBufferWithGain() {
+			CMonoBuffer<float> buffer = inputBuffer;
+			buffer.ApplyGain(GetGain());
+			return buffer;
+		}
+		
 		/**
 		 * @brief Set the output buffer
 		 * @param _buffer Buffer to be sent

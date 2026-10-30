@@ -235,10 +235,16 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetNearFieldCompensationFilters(std::shared_ptr<BRTServices::CSphericalSOSTable> _listenerILD) override {
-			listenerNFCFilters = _listenerILD;
-			GetSOSFilterExitPoint()->sendDataPtr(listenerNFCFilters);				
-			return true;
+		bool SetNearFieldCompensationFilters(std::shared_ptr<BRTServices::CSphericalSOSTable> _listenerNFC) override {
+			return brtManager->ExecuteResourceUpdate(
+				[this, _listenerNFC]() -> bool {
+					{
+						std::lock_guard<std::mutex> lock(resourceMutex);
+						listenerNFCFilters = _listenerNFC;
+					}					
+					GetSOSFilterExitPoint()->sendDataPtr(listenerNFCFilters);
+					return true;
+				});
 		}
 
 		/** \brief Get Near field compesation filter of listener model
@@ -247,6 +253,7 @@ namespace BRTListenerModel {
 		*/
 		std::shared_ptr<BRTServices::CSphericalSOSTable> GetNearFieldCompensationFilters() const override
 		{
+			std::lock_guard<std::mutex> lock(resourceMutex);
 			return listenerNFCFilters;
 		}
 
@@ -254,7 +261,15 @@ namespace BRTListenerModel {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void RemoveNearFierldCompensationFilters() override {
-			listenerNFCFilters = nullptr;
+			brtManager->ExecuteResourceUpdate(
+				[this]() -> bool {					
+					{						
+						std::lock_guard<std::mutex> lock(resourceMutex);
+						listenerNFCFilters.reset();					
+					}
+					GetSOSFilterExitPoint()->sendDataPtr(listenerNFCFilters);
+					return true;
+				});
 		}
 		
 		/**
@@ -303,9 +318,10 @@ namespace BRTListenerModel {
 		* \brief Enable binaural spatialization based in HRTF convolution		
 		*/
 		void EnableSpatialization() override { 
-			std::lock_guard<std::mutex> lock(mutex);
+			/*std::lock_guard<std::mutex> lock(mutex);
 			enableSpatialization = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableSpatialization, true);
 		}		
 
 		/**
@@ -313,9 +329,10 @@ namespace BRTListenerModel {
 		 */
 		void DisableSpatialization() override
 		{
-			std::lock_guard<std::mutex> lock(mutex);
+			/*std::lock_guard<std::mutex> lock(mutex);
 			enableSpatialization = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();			
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/	
+			SetConfigurationFlag(enableSpatialization, false);
 		}
 
 		/**
@@ -331,17 +348,19 @@ namespace BRTListenerModel {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void EnableInterpolation() override {
-			std::lock_guard<std::mutex> lock(mutex);
+			/*std::lock_guard<std::mutex> lock(mutex);
 			enableInterpolation = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();			
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableInterpolation, true);
 		}
 
 		/** \brief Disable run-time HRTF interpolation
 		*/
 		void DisableInterpolation() override {
-			std::lock_guard<std::mutex> lock(mutex);
+			/*std::lock_guard<std::mutex> lock(mutex);
 			enableInterpolation = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();			
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableInterpolation, false);
 		}
 
 		/** \brief Get the flag for run-time HRTF interpolation
@@ -357,18 +376,20 @@ namespace BRTListenerModel {
 		* \brief Enable near field effect for this source		
 		*/
 		void EnableNearFieldEffect() override {
-			std::lock_guard<std::mutex> lock(mutex);
+		/*	std::lock_guard<std::mutex> lock(mutex);
 			enableNearFieldEffect = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();			
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableNearFieldEffect, true);
 		}
 
 		/** 
 		* \brief Disable near field effect for this source		
 		*/
 		void DisableNearFieldEffect() override {
-			std::lock_guard<std::mutex> lock(mutex);
+			/*std::lock_guard<std::mutex> lock(mutex);
 			enableNearFieldEffect = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();		
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/	
+			SetConfigurationFlag(enableNearFieldEffect, false);
 		}
 
 		/**
@@ -384,18 +405,20 @@ namespace BRTListenerModel {
 		 * @brief Enable ITD simulation
 		*/
 		void EnableITDSimulation() override { 
-			std::lock_guard<std::mutex> lock(mutex);
+			/*std::lock_guard<std::mutex> lock(mutex);
 			enableITDSimulation = true; 
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableITDSimulation, true);
 		}
 
 		/**
 		 * @brief Disable ITD simulation
 		*/
 		void DisableITDSimulation() override { 
-			std::lock_guard<std::mutex> lock(mutex);
+			/*std::lock_guard<std::mutex> lock(mutex);
 			enableITDSimulation = false; 
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableITDSimulation, false);
 		}
 
 		/**
@@ -411,18 +434,20 @@ namespace BRTListenerModel {
 		 * @brief Enable Parallax Correction
 		*/
 		void EnableParallaxCorrection() override { 
-			std::lock_guard<std::mutex> lock(mutex);
+			/*std::lock_guard<std::mutex> lock(mutex);
 			enableParallaxCorrection = true; 
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableParallaxCorrection, true);
 		}
 
 		/**
 		 * @brief Disable Parallax Correction
 		*/
 		void DisableParallaxCorrection() override { 
-			std::lock_guard<std::mutex> lock(mutex);
+			/*std::lock_guard<std::mutex> lock(mutex);
 			enableParallaxCorrection = false; 
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableParallaxCorrection, false);
 		}
 
 		/**
@@ -436,23 +461,23 @@ namespace BRTListenerModel {
 		/**
 		 * @brief Enable model
 		 */
-		void EnableModel() override {			
+		/*void EnableModel() override {			
 			std::lock_guard<std::mutex> l(mutex);
 			enableModel = true;			
 			for (auto& it : sourcesConnectedProcessors) {
 				it.SetEnableProcessor(true);
 			}
+		};*/
+
+		void EnableModel() override {
+			SetEnableFlag(true);
 		};
 
 		/**
 		 * @brief Disable model
 		 */
 		void DisableModel() override {
-			std::lock_guard<std::mutex> l(mutex);
-			enableModel = false;			
-			for (auto& it : sourcesConnectedProcessors) {
-				it.SetEnableProcessor(false);
-			}
+			SetEnableFlag(false);
 		};
 
 		bool IsModelEnabled() override {
@@ -613,31 +638,6 @@ namespace BRTListenerModel {
 			}
 			return nullptr;
 		}
-
-		/**
-		 * @brief Update Configuration in all source processor
-		*/		
-		/*void SetConfigurationInALLSourcesProcessors() {
-			std::lock_guard<std::mutex> lock(mutex);
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
-		}*/
-
-		/**
-		 * @brief Update Configuration in all source processor without lock
-		 */
-		void SetConfigurationInALLSourcesProcessorsWithoutLock() {
-			for (auto & it : sourcesConnectedProcessors) {
-				SetSourceProcessorsConfiguration(it);
-			}
-		}
-		/**
-		 * @brief Update configuration just in one source processor
-		 * @param sourceProcessor 
-		*/
-		void SetSourceProcessorsConfiguration(CSourceProcessors& sourceProcessor) {			
-			sourceProcessor.SetConfiguration(enableSpatialization, enableInterpolation, enableNearFieldEffect, enableITDSimulation, enableParallaxCorrection);
-		}
-
 		
 		/**
 		 * @brief Connect a new source to this listener		 
@@ -727,6 +727,56 @@ namespace BRTListenerModel {
 				return true;
 			}
 			return false;
+		}
+		
+		/**
+		 * @brief Update Configuration in all source processor without lock
+		 */
+		void SetConfigurationInALLSourcesProcessorsWithoutLock() {
+			for (auto & it : sourcesConnectedProcessors) {
+				SetSourceProcessorsConfiguration(it);
+			}
+		}
+
+		/**
+		 * @brief Update configuration just in one source processor
+		 * @param sourceProcessor 
+		*/
+		void SetSourceProcessorsConfiguration(CSourceProcessors & sourceProcessor) {
+			sourceProcessor.SetConfiguration(enableSpatialization, enableInterpolation, enableNearFieldEffect, enableITDSimulation, enableParallaxCorrection);
+		}
+
+		/**
+		 * @brief Set configuration flag and update all source processors in a thread-safe manner
+		 * @param flag 
+		 * @param enabled 
+		 */
+		void SetConfigurationFlag(bool & flag, bool enabled) {
+			brtManager->ExecuteConfigurationUpdate(
+				[this, &flag, enabled]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);
+
+					flag = enabled;
+					SetConfigurationInALLSourcesProcessorsWithoutLock();
+					return true;
+				});
+		}
+		
+		/**
+		 * @brief Set enable/disable model and update all source processors in a thread-safe manner
+		 * @param enabled 
+		 */
+		void SetEnableFlag(bool enabled) {
+			brtManager->ExecuteConfigurationUpdate(
+				[this, enabled]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);					
+					enableModel = enabled;
+					
+					for (auto & it : sourcesConnectedProcessors) {
+						it.SetEnableProcessor(enabled);
+					}
+					return true;
+				});
 		}
 
 		/////////////////

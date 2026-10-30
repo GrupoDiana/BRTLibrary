@@ -196,22 +196,24 @@ namespace BRTEnvironmentModel {
 		 * @brief Enable model
 		 */
 		void EnableModel() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableModel = true;
 			for (auto & it : sourcesConnectedProcessors) {
 				it.SetEnableProcessor(true);
-			}
+			}*/
+			SetEnableFlag(true);
 		};
 
 		/**
 		 * @brief Disable model
 		 */
 		void DisableModel() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableModel = false;
 			for (auto & it : sourcesConnectedProcessors) {
 				it.SetEnableProcessor(false);
-			}
+			}*/
+			SetEnableFlag(false);
 		};
 		
 		bool IsModelEnabled() override {
@@ -244,17 +246,19 @@ namespace BRTEnvironmentModel {
 		 * @brief Enable Reverb Path
 		 */
 		void EnableReverbPath() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableReverbPath = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableReverbPath, true);
 		}
 		/**
 		 * @brief Disable Reverb Path
 		 */
 		void DisableReverbPath() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableReverbPath = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableReverbPath, false);
 		}
 		/**
 		 * @brief Check if Reverb Path is enabled
@@ -291,13 +295,23 @@ namespace BRTEnvironmentModel {
 			return numberOrVisibleVirtualSources;
 		}
 
-		void SetGain(float _gain) override {
+		/*void SetGain(float _gain) override {
 			std::lock_guard<std::mutex> lock(mutex);
 
 			BRTBase::CModelBase::SetGain(_gain);
 			UpdateGainWithoutLock();
-		}
+		}*/
+		void SetGain(float _gain) override {
+			brtManager->ExecuteConfigurationUpdate(
+				[this, _gain]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);
 
+					BRTBase::CModelBase::SetGain(_gain);
+					UpdateGainWithoutLock();
+
+					return true;
+				});
+		}
 		/**
 		 * @brief Connect a new source to this listener
 		 * @param _source Pointer to the source
@@ -391,17 +405,16 @@ namespace BRTEnvironmentModel {
 		/**
 		 * @brief Set the gain of the model
 		 * @param _gain 
-		 */
-		/*void UpdateGain() override {
-			std::lock_guard<std::mutex> l(mutex);
-			for (auto & it : sourcesConnectedProcessors) {
-				it.SetGain(gain);
-			}
-		}*/
+		 */		
 		void UpdateGain() override {
-			std::lock_guard<std::mutex> lock(mutex);
-			UpdateGainWithoutLock();
+			brtManager->ExecuteConfigurationUpdate(
+				[this]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);
+					UpdateGainWithoutLock();
+					return true;
+				});
 		}
+
 		// Requiere tener adquirido el mutex del modelo.
 		void UpdateGainWithoutLock() {
 			const float currentGain = BRTBase::CModelBase::GetGain();
@@ -415,24 +428,30 @@ namespace BRTEnvironmentModel {
 		 * @brief Set the room and reset and setup again
 		 * @param _room 
 		 * @return 
-		 */
+		 */		
 		bool SetRoom(std::shared_ptr<BRTServices::CRoom> _room) override {
-			std::lock_guard<std::mutex> l(mutex);
-			room = _room;
-			return ResetAndSetup();
+			return brtManager->ExecuteSetupUpdate(
+				[this, _room]() {
+					std::lock_guard<std::mutex> lock(mutex);
+					room = _room;
+					return ResetAndSetupWithoutLock();
+				});
 		}
 		
 		/**
 		 * @brief Called when the room is updated to reset and setup again
 		 * @return t
-		 */
-		bool UpdateRoom() override { 
-			std::lock_guard<std::mutex> l(mutex);
-			if (room == nullptr) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "Room is not set.");
-				return false;
-			}
-			return ResetAndSetup();			
+		 */		
+		bool UpdateRoom() override {
+			return brtManager->ExecuteSetupUpdate(
+				[this]() {
+					std::lock_guard<std::mutex> l(mutex);
+					if (room == nullptr) {
+						SET_RESULT(RESULT_ERROR_NOTSET, "Room is not set.");
+						return false;
+					}
+					return ResetAndSetupWithoutLock();
+				});
 		}
 
 		/**
@@ -440,35 +459,51 @@ namespace BRTEnvironmentModel {
 		 * @return pointer to the room
 		 */
 		std::shared_ptr<BRTServices::CRoom> GetRoom() const override { 
+			std::lock_guard<std::mutex> l(mutex);
 			return room; 
 		}	
 
 		/**
 		 * @brief Remove the room
 		 */
-		void RemoveRoom() override { 
+		/*void RemoveRoom() override { 
 			std::lock_guard<std::mutex> l(mutex);
 			room = std::make_shared<BRTServices::CRoom>();
 			ResetAndSetup();
-		};
+		};*/
 		
+		void RemoveRoom() override {
+			brtManager->ExecuteSetupUpdate(
+				[this]() -> bool {				
+					std::lock_guard<std::mutex> l(mutex);					
+					//room = std::make_shared<BRTServices::CRoom>();
+					room.reset();
+					return ResetAndSetupWithoutLock();
+				});
+		};
 		
 		/**
 		 * @brief Set the reflection order and reset and setup again
 		 * @param _reflectionOrder reflection order should be equal or greater than zero
 		 * @return true if success
-		 */
-		bool SetReflectionOrder(int _reflectionOrder) override { 
-			if (_reflectionOrder<0) {
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Reflection order must be equal or greater than zero.");
-				return false;
-			}
-			if (_reflectionOrder == reflectionOrder) {
-				return true; // No change
-			}
-			std::lock_guard<std::mutex> l(mutex);
-			reflectionOrder = _reflectionOrder; 			
-			return ResetAndSetup();	
+		 */		
+		bool SetReflectionOrder(int _reflectionOrder) override {
+			return brtManager->ExecuteSetupUpdate(
+				[this, _reflectionOrder]() {
+					std::lock_guard<std::mutex> lock(mutex);
+
+					if (_reflectionOrder < 0) {
+						SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Reflection order must be equal or greater than zero.");
+						return false;
+					}
+
+					if (_reflectionOrder == reflectionOrder) {
+						return true;
+					}
+
+					reflectionOrder = _reflectionOrder;
+					return ResetAndSetupWithoutLock();
+				});
 		}
 
 		/**
@@ -476,6 +511,7 @@ namespace BRTEnvironmentModel {
 		 * @return reflection order
 		 */
 		int GetReflectionOrder() override { 
+			std::lock_guard<std::mutex> lock(mutex);
 			return reflectionOrder; 
 		}
 
@@ -486,17 +522,22 @@ namespace BRTEnvironmentModel {
 		 * @return 
 		 */
 		bool SetMaxDistanceSourcesToListener(float _maxDistanceSourcesToListener) override	{ 
-			if (_maxDistanceSourcesToListener <= 0) {
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Max distance from sources to listener must be greater than zero.");
-				return false;
-			}
-			if (_maxDistanceSourcesToListener == maxDistanceSourcesToListener) {
-				return true; // No change
-			}
-			std::lock_guard<std::mutex> l(mutex);
-			maxDistanceSourcesToListener = _maxDistanceSourcesToListener;
-			
-			return ResetAndSetup(); 
+			return brtManager->ExecuteSetupUpdate(
+				[this, _maxDistanceSourcesToListener]() {
+					std::lock_guard<std::mutex> l(mutex);
+					if (_maxDistanceSourcesToListener <= 0) {
+						SET_RESULT(RESULT_ERROR_INVALID_PARAM
+							, "Max distance from sources to listener must be greater than zero.");
+						return false;
+					}
+					if (_maxDistanceSourcesToListener == maxDistanceSourcesToListener) {
+						return true; // No change
+					}
+					
+					maxDistanceSourcesToListener = _maxDistanceSourcesToListener;
+
+					return ResetAndSetupWithoutLock();
+				});
 		}
 
 		/**
@@ -504,6 +545,7 @@ namespace BRTEnvironmentModel {
 		 * @return The maximum distance between sources and the listener as a float.
 		 */
 		float GetMaxDistanceSourcesToListener() override { 
+			std::lock_guard<std::mutex> lock(mutex);
 			return maxDistanceSourcesToListener; 
 		}
 
@@ -513,16 +555,21 @@ namespace BRTEnvironmentModel {
 		 * @return 
 		*/ 
 		bool SetTransitionMeters(float _transitionMeters) override { 
-			if (_transitionMeters < 0) {
-				SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Transition meters must be equal or greater than zero.");
-				return false;
-			}
-			if (_transitionMeters == windowSlopeDistance) {
-				return true; // No change
-			}
-			std::lock_guard<std::mutex> l(mutex);
-			windowSlopeDistance = _transitionMeters;
-			return ResetAndSetup();
+			return brtManager->ExecuteSetupUpdate(
+				[this, _transitionMeters]() {
+					
+					std::lock_guard<std::mutex> l(mutex);
+					if (_transitionMeters < 0) {
+						SET_RESULT(RESULT_ERROR_INVALID_PARAM, "Transition meters must be equal or greater than zero.");
+						return false;
+					}
+					if (_transitionMeters == windowSlopeDistance) {
+						return true; // No change
+					}
+					
+					windowSlopeDistance = _transitionMeters;
+					return ResetAndSetupWithoutLock();
+				});
 		}
 
 		/**
@@ -530,6 +577,7 @@ namespace BRTEnvironmentModel {
 		 * @return 
 		*/
 		float GetTransitionMeters() override{ 
+			std::lock_guard<std::mutex> lock(mutex);
 			return windowSlopeDistance; 
 		}
 
@@ -649,22 +697,53 @@ namespace BRTEnvironmentModel {
 		/**
 		 * @brief Reset and setup all source processors
 		 */
-		bool ResetAndSetup() {												
+		bool ResetAndSetupWithoutLock() {												
 			// Get listener Model pointer
 			std::shared_ptr<BRTListenerModel::CListenerModelBase> _listenerModel = brtManager->GetListenerModel<BRTListenerModel::CListenerModelBase>(GetIDEntryPoint("listenerModelID")->GetData());
 			if (_listenerModel == nullptr) {
 				SET_RESULT(RESULT_ERROR_NOTSET, "This environment has not been connected to a listener Model.");
 				return false;
-			}		
-			
-			brtManager->BeginSetup();			
+			}					
+			//brtManager->BeginSetup();			
 			bool result = true;
 			for (auto & it : sourcesConnectedProcessors) {				
 				result = result && it.Setup(reflectionOrder, maxDistanceSourcesToListener, windowSlopeDistance, room, _listenerModel);
 				result = result && it.ConnectToListenerModel(_listenerModel);
 			}
-			brtManager->EndSetup();			
+			//brtManager->EndSetup();			
 			return result;
+		}
+
+		/**
+		 * @brief Set configuration flag and update all source processors in a thread-safe manner
+		 * @param flag 
+		 * @param enabled 
+		 */
+		void SetConfigurationFlag(bool & flag, bool enabled) {
+			brtManager->ExecuteConfigurationUpdate(
+				[this, &flag, enabled]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);
+
+					flag = enabled;
+					SetConfigurationInALLSourcesProcessorsWithoutLock();
+					return true;
+				});
+		}
+		/**
+		 * @brief Set enable/disable model and update all source processors in a thread-safe manner
+		 * @param enabled 
+		 */
+		void SetEnableFlag(bool enabled) {
+			brtManager->ExecuteConfigurationUpdate(
+				[this, enabled]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);
+					enableModel = enabled;
+
+					for (auto & it : sourcesConnectedProcessors) {
+						it.SetEnableProcessor(enabled);
+					}
+					return true;
+				});
 		}
 
 		/////////////////

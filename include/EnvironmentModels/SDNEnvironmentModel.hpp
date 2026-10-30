@@ -164,22 +164,24 @@ namespace BRTEnvironmentModel {
 		 * @brief Enable model
 		 */
 		void EnableModel() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableModel = true;
 			for (auto & it : sourcesConnectedProcessors) {
 				it.SetEnableProcessor(true);
-			}
+			}*/
+			SetEnableFlag(true);
 		};
 
 		/**
 		 * @brief Disable model
 		 */
 		void DisableModel() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableModel = false;
 			for (auto & it : sourcesConnectedProcessors) {
 				it.SetEnableProcessor(false);
-			}
+			}*/
+			SetEnableFlag(false);
 		};
 		
 		bool IsModelEnabled() override {
@@ -191,17 +193,20 @@ namespace BRTEnvironmentModel {
 		 * @brief Enable Direct Path
 		 */
 		void EnableDirectPath() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableDirectPath = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+
+			SetConfigurationFlag(enableDirectPath, true);
 		}
 		/**
 		 * @brief Disable Direct Path
 		 */
 		void DisableDirectPath() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableDirectPath = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableDirectPath, false);
 		}		
 		/**
 		 * @brief Check if Direct Path is enabled
@@ -216,17 +221,19 @@ namespace BRTEnvironmentModel {
 		 * @brief Enable Reverb Path
 		 */
 		void EnableReverbPath() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableReverbPath = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableReverbPath, true);
 		}
 		/**
 		 * @brief Disable Reverb Path
 		 */
 		void DisableReverbPath() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableReverbPath = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableReverbPath, false);
 		}
 		/**
 		 * @brief Check if Reverb Path is enabled
@@ -237,11 +244,22 @@ namespace BRTEnvironmentModel {
 			return enableReverbPath;
 		}
 
-		void SetGain(float _gain) override {
+		/*void SetGain(float _gain) override {
 			std::lock_guard<std::mutex> lock(mutex);
 
 			BRTBase::CModelBase::SetGain(_gain);
 			UpdateGainWithoutLock();
+		}*/
+		void SetGain(float _gain) override {
+			brtManager->ExecuteConfigurationUpdate(
+				[this, _gain]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);
+
+					BRTBase::CModelBase::SetGain(_gain);
+					UpdateGainWithoutLock();
+
+					return true;
+				});
 		}
 
 		/**
@@ -344,19 +362,16 @@ namespace BRTEnvironmentModel {
 		/**
 		 * @brief Set the gain of the model
 		 * @param _gain 
-		 */
-		/*void UpdateGain() override {
-			std::lock_guard<std::mutex> l(mutex);
-			for (auto & it : sourcesConnectedProcessors) {
-				it.SetGain(gain);
-		}
-		}*/
-
+		 */		
 		void UpdateGain() override {
-			std::lock_guard<std::mutex> lock(mutex);
-			UpdateGainWithoutLock();
+			brtManager->ExecuteConfigurationUpdate(
+				[this]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);
+					UpdateGainWithoutLock();
+					return true;
+				});
 		}
-		// Requiere tener adquirido el mutex del modelo.
+
 		void UpdateGainWithoutLock() {
 			const float currentGain = BRTBase::CModelBase::GetGain();
 
@@ -372,23 +387,26 @@ namespace BRTEnvironmentModel {
 		 */
 		bool SetRoom(std::shared_ptr<BRTServices::CRoom> _room) override
 		{ 			
-			if (_room == nullptr) return false;
-			if (!_room->IsShoeBox()) return false;
-			if (!_room->IsAnyWallDefined()) return false;
+			return brtManager->ExecuteSetupUpdate(
+				[this, _room]() {
+					if (_room == nullptr) return false;
+					if (!_room->IsShoeBox()) return false;
+					if (!_room->IsAnyWallDefined()) return false;
 
-			std::lock_guard<std::mutex> l(mutex);
-			room = _room;
-			//Get Room dimensions and Room Centre from CRoom object
-			Common::CVector3 roomDimensions = _room->GetShoeBoxRoomSize();
-			Common::CVector3 roomCentre = _room->GetCenter();
-						
-			// Update Room dimensions and Room Centre in all sources processors
-			for (auto & it : sourcesConnectedProcessors) {
-				it.SetupRoom(roomDimensions, roomCentre);
-			}
+					std::lock_guard<std::mutex> l(mutex);
+					room = _room;
+					//Get Room dimensions and Room Centre from CRoom object
+					Common::CVector3 roomDimensions = _room->GetShoeBoxRoomSize();
+					Common::CVector3 roomCentre = _room->GetCenter();
 
-			UpdateRoomAllWallsAbsortion();
-			return true;
+					// Update Room dimensions and Room Centre in all sources processors
+					for (auto & it : sourcesConnectedProcessors) {
+						it.SetupRoom(roomDimensions, roomCentre);
+					}
+
+					UpdateRoomAllWallsAbsortion();
+					return true;
+				});
 		};
 
 		/**
@@ -396,33 +414,44 @@ namespace BRTEnvironmentModel {
 		 * @return pointer to the room
 		 */
 		std::shared_ptr<BRTServices::CRoom> GetRoom() const override {
+			std::lock_guard<std::mutex> l(mutex);
 			return room;
 		}	
 		
 		/**
 		 * @brief Remove the room
 		 */
-		void RemoveRoom() override {						
-			std::lock_guard<std::mutex> l(mutex);
-			room = std::make_shared<BRTServices::CRoom>();
-			//Get Room dimensions and Room Centre from CRoom object
-			Common::CVector3 roomDimensions = Common::CVector3(1,1,1);
-			Common::CVector3 roomCentre = Common::CVector3::ZERO();
-			// Update Room dimensions and Room Centre in all sources processors
-			for (auto & it : sourcesConnectedProcessors) {
-				it.SetupRoom(roomDimensions, roomCentre);
-			}
+		void RemoveRoom() override {		
+			brtManager->ExecuteSetupUpdate(
+				[this]() -> bool {
+					std::lock_guard<std::mutex> l(mutex);
+					//room = std::make_shared<BRTServices::CRoom>();
+					room.reset();
+					//Get Room dimensions and Room Centre from CRoom object
+					Common::CVector3 roomDimensions = Common::CVector3(1, 1, 1);
+					Common::CVector3 roomCentre = Common::CVector3::ZERO();
+					
+					// Update Room dimensions and Room Centre in all sources processors
+					for (auto & it : sourcesConnectedProcessors) {
+						it.SetupRoom(roomDimensions, roomCentre);
+					}
+					return true;
+				});
 		};
+
 		/**
 		 * @brief Update room all walls absortion. Called from father class
 		 * @return 
 		 */
 		bool UpdateRoom() override { 
-			std::lock_guard<std::mutex> l(mutex);
-			if (room == nullptr) return false;			
+			return brtManager->ExecuteSetupUpdate(
+				[this]() {
+					std::lock_guard<std::mutex> l(mutex);
+					if (room == nullptr) return false;
 
-			UpdateRoomAllWallsAbsortion();
-			return true; 
+					UpdateRoomAllWallsAbsortion();
+					return true;
+				});
 		};
 			
 		/**
@@ -598,6 +627,39 @@ namespace BRTEnvironmentModel {
 				return true;
 			}
 			return false;
+		}
+
+		/**
+		 * @brief Set configuration flag and update all source processors in a thread-safe manner
+		 * @param flag 
+		 * @param enabled 
+		 */
+		void SetConfigurationFlag(bool & flag, bool enabled) {
+			brtManager->ExecuteConfigurationUpdate(
+				[this, &flag, enabled]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);
+
+					flag = enabled;
+					SetConfigurationInALLSourcesProcessorsWithoutLock();
+					return true;
+				});
+		}
+
+		/**
+		 * @brief Set enable/disable model and update all source processors in a thread-safe manner
+		 * @param enabled 
+		 */
+		void SetEnableFlag(bool enabled) {
+			brtManager->ExecuteConfigurationUpdate(
+				[this, enabled]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);
+					enableModel = enabled;
+
+					for (auto & it : sourcesConnectedProcessors) {
+						it.SetEnableProcessor(enabled);
+					}
+					return true;
+				});
 		}
 
 		/////////////////

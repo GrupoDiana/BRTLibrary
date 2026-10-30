@@ -39,11 +39,14 @@
 #include "third_party_libraries/nlohmann/json.hpp"
 
 namespace BRTEnvironmentModel {
-class CVirtualSourceManager;
+	class CVirtualSourceManager;
 }
 
 namespace BRTListenerModel {
-class CListenerDirectHRTFConvolutionModel;
+	class CListenerDirectHRTFConvolutionModel;
+	class CListenerDirectBRIRConvolutionModel;
+	class CListenerAmbisonicVirtualLoudspeakersModel;
+	class CListenerAmbisonicReverberantVirtualLoudspeakersModel;
 }
 
 namespace BRTBase {
@@ -104,6 +107,7 @@ namespace BRTBase {
 			: initialized { false }
 			, setupModeActivated { false }
 			, multiThreadingEnabled { false }
+			, commandBroadcastActive { false }
 		{
 			commandsExitPoint = std::make_shared<BRTConnectivity::CExitPointCommand>(static_cast<std::string>(Common::COMMAND_EXIT_POINT_ID));
 		}
@@ -967,9 +971,9 @@ namespace BRTBase {
 			ExecuteCommand(j.dump());
 		}
 
-		///////////////////////////
+		/////////////////////////////
 		// Listener SET/GET METHODs
-		//////////////////////////
+		/////////////////////////////
 		void SetListenerPosition(const std::string & listenerID, const Common::CVector3 & position) {
 			json j = {
 				{ BRTConnectivity::CCommand::FIELD_CONTENT_COMMAND, BRTConnectivity::CCommandList::COMMAND_LISTENER_SET_LOCATION },
@@ -1017,10 +1021,10 @@ namespace BRTBase {
 			ExecuteCommand(j.dump());
 		}
 
-
+	
 		///////////////////////////
 		// PROCESS METHODs
-		/////////////////////
+		//////////////////////////
 
 		/**
 		 * @brief Start audio processing
@@ -1058,6 +1062,50 @@ namespace BRTBase {
 			DrainPendingCommands();
 		}
 		
+		/////////////////////////////////////////////
+		// Execute Configuration / Setups METHODs
+		/////////////////////////////////////////////
+
+		/**
+		 * @brief Execute a configuration update operation. If the current thread is processing audio, 
+		 * the operation is not executed and an error is returned. If the current thread is dispatching commands,
+		 * the operation is executed immediately. Otherwise, the manager mutex is acquired and the operation is executed.
+		 * Any commands generated during the operation are appended to the pending commands list and dispatched after
+		 * the operation completes.
+		 * @tparam Operation 
+		 * @param operation 
+		 * @return 
+		 */
+		template <typename Operation>
+		bool ExecuteConfigurationUpdate(Operation operation) {
+			if (IsProcessingOnCurrentThread()) {
+				SET_RESULT(RESULT_ERROR_NOTALLOWED, "Configuration cannot be changed during audio processing. "
+													"Use an implemented command to defer the change.");
+				return false;
+			}
+
+			// The thread already holds the manager’s mutex.
+			if (IsDispatchingCommandsOnCurrentThread()) {
+				return operation();
+			}
+
+			std::lock_guard<std::mutex> lock(mutex);
+
+			bool result = false;
+
+			try {
+				// Commands generated within are appended.
+				CCommandDispatchContext controlContext(this);
+				result = operation();
+			} catch (...) {
+				pendingCommands.clear();
+				throw;
+			}
+
+			DrainPendingCommands();
+			return result;
+		}		
+
 		/**
 		 * @brief Submit a command.
 		 *
@@ -1067,12 +1115,17 @@ namespace BRTBase {
 		 * Calls made during audio processing or command dispatch only enqueue
 		 * the command. The enclosing operation dispatches it later.
 		 */
-		void ExecuteCommand(std::string commandJson) {
+		void ExecuteCommand(const std::string & commandJson) {
 			// Parsing only touches this local object.
 			BRTConnectivity::CCommand command(commandJson);
-
+			
 			if (IsProcessingOnCurrentThread() || IsDispatchingCommandsOnCurrentThread()) {
-				// The enclosing operation already holds the manager mutex.
+
+				if (setupModeActivated) {
+					SET_RESULT(RESULT_ERROR_NOTALLOWED, "Commands cannot be dispatched during setup.");
+					return;
+				}
+
 				pendingCommands.push_back(std::move(command));
 				return;
 			}
@@ -1086,6 +1139,39 @@ namespace BRTBase {
 
 			pendingCommands.push_back(std::move(command));
 			DrainPendingCommands();
+		}
+
+		template <typename Operation>
+		bool ExecuteSetupUpdate(Operation operation) {
+			return ExecuteConfigurationUpdate(
+				[this, &operation]() {
+					if (commandBroadcastActive) {
+						SET_RESULT(RESULT_ERROR_NOTALLOWED,
+							"Connections cannot be rebuilt during a command broadcast.");
+						return false;
+					}
+
+					struct CSetupScope {
+						bool & flag;
+						bool previous;
+
+						explicit CSetupScope(bool & setupFlag)
+							: flag(setupFlag)
+							, previous(setupFlag) {
+							flag = true;
+						}
+
+						~CSetupScope() noexcept {
+							flag = previous;
+						}
+
+						CSetupScope(const CSetupScope &) = delete;
+						CSetupScope & operator=(const CSetupScope &) = delete;
+					};
+
+					CSetupScope setupScope(setupModeActivated);
+					return operation();
+				});
 		}
 
 	private:
@@ -1234,15 +1320,17 @@ namespace BRTBase {
 					BRTConnectivity::CCommand command = std::move(pendingCommands.front());
 					pendingCommands.pop_front();
 					// Complete this broadcast before dispatching the next command.
+					commandBroadcastActive = true;
 					commandsExitPoint->sendData(command);
+					commandBroadcastActive = false;
 				}
 			} catch (...) {
 				// Do not retain commands derived from an interrupted operation.
+				commandBroadcastActive = false;
 				pendingCommands.clear();
 				throw;
 			}
 		}
-
 
 		/**
 		 * @brief Executes a resource update operation safely. Resource replacement cannot run inside sample-processing callbacks.
@@ -1252,38 +1340,16 @@ namespace BRTBase {
 		 */
 		template <typename Operation>
 		bool ExecuteResourceUpdate(Operation operation) {
-			
-			if (IsProcessingOnCurrentThread()) {
-				SET_RESULT(RESULT_ERROR_NOTALLOWED,	"Resources cannot be replaced during audio processing.");
-				return false;
-			}
+			return ExecuteConfigurationUpdate(
+				[this, &operation]() {
+					if (setupModeActivated) {
+						SET_RESULT(RESULT_ERROR_NOTALLOWED, "Resources must be assigned after EndSetup.");
+						return false;
+					}
 
-			// An enclosing control operation already holds the manager mutex.
-			if (IsDispatchingCommandsOnCurrentThread()) {
-				return operation();
-			}
-
-			std::lock_guard<std::mutex> lock(mutex);
-
-			if (setupModeActivated) {
-				SET_RESULT(RESULT_ERROR_NOTALLOWED,	"Resources must be assigned after EndSetup.");
-				return false;
-			}
-
-			bool result = false;
-
-			try {
-				// Nested commands are queued until this operation has finished.
-				CCommandDispatchContext controlContext(this);
-				result = operation();
-			} catch (...) {
-				pendingCommands.clear();
-				throw;
-			}
-
-			DrainPendingCommands();
-			return result;
-		}
+					return operation();
+				});
+		}		
 
 		///////////////
 		// Attributes
@@ -1301,10 +1367,15 @@ namespace BRTBase {
 		bool initialized;
 		bool setupModeActivated;
 		bool multiThreadingEnabled;
+		bool commandBroadcastActive;
+
 		mutable std::mutex mutex;
 		
 		friend class CListener;
 		friend class BRTListenerModel::CListenerDirectHRTFConvolutionModel;
+		friend class BRTListenerModel::CListenerDirectBRIRConvolutionModel;
+		friend class BRTListenerModel::CListenerAmbisonicVirtualLoudspeakersModel;
+		friend class BRTListenerModel::CListenerAmbisonicReverberantVirtualLoudspeakersModel;
 		friend class BRTEnvironmentModel::CVirtualSourceManager;
 	};
 }

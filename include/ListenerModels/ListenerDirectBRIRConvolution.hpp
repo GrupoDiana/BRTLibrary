@@ -135,22 +135,14 @@ namespace BRTListenerModel {
 		 * @brief Enable model
 		 */
 		void EnableModel() override {
-			std::lock_guard<std::mutex> l(mutex);
-			enableModel = true;
-			for (auto & it : sourcesConnectedProcessors) {
-				it.SetEnableProcessor(true);
-			}
+			SetEnableFlag(true);
 		};
 
 		/**
 		 * @brief Disable model
 		 */
 		void DisableModel() override {
-			std::lock_guard<std::mutex> l(mutex);
-			enableModel = false;
-			for (auto & it : sourcesConnectedProcessors) {
-				it.SetEnableProcessor(false);
-			}
+			SetEnableFlag(false);
 		};
 
 		bool IsModelEnabled() override {
@@ -162,17 +154,19 @@ namespace BRTListenerModel {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void EnableSpatialization() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableSpatialization = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableSpatialization, true);
 		}
 
 		/** \brief Disable binaural spatialization based in HRTF convolution
 		*/
 		void DisableSpatialization() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableSpatialization = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableSpatialization, false);
 		}
 
 		/** \brief Get the flag for run-time HRTF interpolation
@@ -188,17 +182,19 @@ namespace BRTListenerModel {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void EnableInterpolation() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableInterpolation = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableInterpolation, true);
 		}
 
 		/** \brief Disable run-time HRTF interpolation
 		*/
 		void DisableInterpolation() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableInterpolation = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableInterpolation, false);
 		}
 
 		/** \brief Get the flag for run-time HRTF interpolation
@@ -215,15 +211,26 @@ namespace BRTListenerModel {
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
 		bool SetHRBRIR(std::shared_ptr<BRTServices::CServicesBase> _listenerBRIR) override {			    
-			if (_listenerBRIR->GetSamplingRate() != globalParameters.GetSampleRate()) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "This nonInterpolatedHRTF has not been assigned to the listener. The sample rate of the nonInterpolatedHRTF does not match the one set in the library Global Parameters.");
-				return false;
-			}
-			listenerHRBRIR = _listenerBRIR;
-			GetHRBRIRExitPoint()->sendDataPtr(_listenerBRIR);
-			ResetProcessorBuffers();
-						
-			return true;
+			return brtManager->ExecuteResourceUpdate(
+				[this, _listenerBRIR]() -> bool {					
+					if (!_listenerBRIR || !_listenerBRIR->IsDataReady()) {
+						SET_RESULT(RESULT_ERROR_INVALID_PARAM, "BRIR resource must be non-null and ready.");
+						return false;
+					}													
+					if (_listenerBRIR->GetSamplingRate() != globalParameters.GetSampleRate()) {
+						SET_RESULT(RESULT_ERROR_NOTSET, 
+							"BRIR sample rate does not match the library sample rate.");
+						return false;
+					}
+
+					{
+						std::lock_guard<std::mutex> lock(resourceMutex);
+						listenerHRBRIR = _listenerBRIR;
+					}					
+					GetHRBRIRExitPoint()->sendDataPtr(_listenerBRIR);
+					ResetProcessorBuffers();
+					return true;
+				});
 		}
 
 		/** \brief Get HRBRIR of listener
@@ -232,32 +239,45 @@ namespace BRTListenerModel {
 		*/
 		std::shared_ptr<BRTServices::CServicesBase> GetHRBRIR() const override
 		{
+			std::lock_guard<std::mutex> lock(resourceMutex);
 			return listenerHRBRIR;
 		}
 
 		/** \brief Remove the HRBRIR of thelistener
 		*   \eh Nothing is reported to the error handler.
 		*/
-		void RemoveHRBRIR() override {						
-			listenerHRBRIR = nullptr;
+		void RemoveHRBRIR() override {									
+			brtManager->ExecuteResourceUpdate(
+				[this]() -> bool {
+					{
+						std::lock_guard<std::mutex> lock(resourceMutex);
+						listenerHRBRIR.reset();
+					}
+					GetHRBRIRExitPoint()->sendDataPtr(std::weak_ptr<BRTServices::CServicesBase> {});
+					ResetProcessorBuffers();
+					ResetMixerBuffers();
+					return true;
+				});
 		}
 
 		/**
 		 * @brief Enable distance attenuation
 		 */
 		void EnableDistanceAttenuation() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableDistanceAttenuation = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableDistanceAttenuation, true);
 		}
 
 		/**
 		 * @brief Disable distance attenuation
 		 */
 		void DisableDistanceAttenuation() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableDistanceAttenuation = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableDistanceAttenuation, false);
 		}
 
 		/**
@@ -274,16 +294,19 @@ namespace BRTListenerModel {
 		 * @param _distanceAttenuationFactorDB Attenuation factor in dB
 		 */
 		bool SetDistanceAttenuationFactor(float _distanceAttenuationFactorDB) override {
-			std::lock_guard<std::mutex> l(mutex);
-			if (_distanceAttenuationFactorDB > 0) {
-				SET_RESULT(RESULT_ERROR_PHYSICS, "Attenuation factor in decibels must be a negative value");
-				return false;
-			}
-			distanceAttenuationFactorDB = _distanceAttenuationFactorDB;
-			for (auto & it : sourcesConnectedProcessors) {
-				it.SetDistanceAttenuationFactor(_distanceAttenuationFactorDB);
-			}
-			return true;
+			return brtManager->ExecuteConfigurationUpdate(
+				[this, _distanceAttenuationFactorDB]() {
+					std::lock_guard<std::mutex> l(mutex);
+					if (_distanceAttenuationFactorDB > 0) {
+						SET_RESULT(RESULT_ERROR_PHYSICS, "Attenuation factor in decibels must be a negative value");
+						return false;
+					}
+					distanceAttenuationFactorDB = _distanceAttenuationFactorDB;
+					for (auto & it : sourcesConnectedProcessors) {
+						it.SetDistanceAttenuationFactor(_distanceAttenuationFactorDB);
+					}
+					return true;
+				});
 		}
 
 		/**
@@ -291,6 +314,7 @@ namespace BRTListenerModel {
 		 * @return Distance attenuation factor in decibels
 		 */
 		float GetDistanceAttenuationFactor() override {
+			std::lock_guard<std::mutex> l(mutex);
 			return distanceAttenuationFactorDB;
 		}
 
@@ -510,11 +534,45 @@ namespace BRTListenerModel {
 			return false;
 		}
 
+		/**
+		 * @brief Set configuration flag and update all source processors in a thread-safe manner
+		 * @param flag 
+		 * @param enabled 
+		 */
+		void SetConfigurationFlag(bool & flag, bool enabled) {
+			brtManager->ExecuteConfigurationUpdate(
+				[this, &flag, enabled]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);
+
+					flag = enabled;
+					SetConfigurationInALLSourcesProcessorsWithoutLock();
+
+					return true;
+				});
+		}
+		
+		/**
+		 * @brief Set enable/disable model and update all source processors in a thread-safe manner
+		 * @param enabled 
+		 */
+		void SetEnableFlag(bool enabled) {
+			brtManager->ExecuteConfigurationUpdate(
+				[this, enabled]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);
+					enableModel = enabled;
+
+					for (auto & it : sourcesConnectedProcessors) {
+						it.SetEnableProcessor(enabled);
+					}
+					return true;
+				});
+		}
+
 		/////////////////
 		// Attributes
 		/////////////////
 		mutable std::mutex mutex;									// To avoid access collisions
-		//std::string listenerID;										// Store unique listener ID		
+		mutable std::mutex resourceMutex;
 		std::shared_ptr<BRTServices::CServicesBase>	listenerHRBRIR;	// RBRIR of listener		
 		std::vector< CSourceProcessors> sourcesConnectedProcessors;	// Store the sources connected to this listener		
 

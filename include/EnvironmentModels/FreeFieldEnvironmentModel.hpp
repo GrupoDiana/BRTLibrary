@@ -169,28 +169,29 @@ namespace BRTEnvironmentModel {
 		{ 
 			
 		}
-
 		
 		/**
 		 * @brief Enable model
 		 */
 		void EnableModel() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableModel = true;
 			for (auto & it : sourcesConnectedProcessors) {
 				it.SetEnableProcessor(true);
-			}
+			}*/
+			SetEnableFlag(true);
 		};
 
 		/**
 		 * @brief Disable model
 		 */
 		void DisableModel() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableModel = false;
 			for (auto & it : sourcesConnectedProcessors) {
 				it.SetEnableProcessor(false);
-			}
+			}*/
+			SetEnableFlag(false);
 		};
 
 		bool IsModelEnabled() override {
@@ -202,17 +203,20 @@ namespace BRTEnvironmentModel {
 		 * @brief Enable distance attenuation
 		 */
 		void EnableDistanceAttenuation() override {	
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableDistanceAttenuation = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+
+			SetConfigurationFlag(enableDistanceAttenuation, true);
 		}
 		/**
 		 * @brief Disable distance attenuation
 		 */
 		void DisableDistanceAttenuation() override {	
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableDistanceAttenuation = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableDistanceAttenuation, false);
 		}
 		/**
 		 * @brief Get the flag for distance attenuation enabling
@@ -227,17 +231,19 @@ namespace BRTEnvironmentModel {
 		 * @brief Enable propagation delay
 		 */
 		void EnablePropagationDelay() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enablePropagationDelay = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enablePropagationDelay, true);
 		}
 		/**
 		 * @brief Disable propagation delay
 		 */ 
 		void DisablePropagationDelay() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enablePropagationDelay = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enablePropagationDelay, false);
 		}
 		/**
 		 * @brief Get the flag for propagation delay enabling
@@ -252,14 +258,20 @@ namespace BRTEnvironmentModel {
 		 * @brief Set the distance attenuation factor
 		 * @param _distanceAttenuationDB Distance attenuation factor in decibels
 		 */
-		bool SetDistanceAttenuationFactor(float _distanceAttenuationFactorDB) override {			
-			if (_distanceAttenuationFactorDB > 0) {
-				SET_RESULT(RESULT_ERROR_PHYSICS, "Attenuation factor in decibels must be a negative value");
-				return false;
-			}
-			distanceAttenuationFactorDB = _distanceAttenuationFactorDB;
-			SetConfigurationInALLSourcesProcessors();		
-			return true;
+		bool SetDistanceAttenuationFactor(float _distanceAttenuationFactorDB) override {
+			return brtManager->ExecuteConfigurationUpdate(
+				[this, _distanceAttenuationFactorDB]() {
+					if (_distanceAttenuationFactorDB > 0) {
+						SET_RESULT(RESULT_ERROR_PHYSICS, "Attenuation factor in decibels must be a negative value");
+						return false;
+					}
+					
+					std::lock_guard<std::mutex> l(mutex);
+
+					distanceAttenuationFactorDB = _distanceAttenuationFactorDB;
+					SetConfigurationInALLSourcesProcessorsWithoutLock();
+					return true;
+				});
 		}
 
 		/**
@@ -267,6 +279,7 @@ namespace BRTEnvironmentModel {
 		 * @return Distance attenuation factor in decibels
 		 */
 		float GetDistanceAttenuationFactor() override {
+			std::lock_guard<std::mutex> l(mutex);
 			return distanceAttenuationFactorDB;
 		}
 
@@ -287,11 +300,17 @@ namespace BRTEnvironmentModel {
 		float GetReferenceAttenuationDistance() override {
 			return referenceAttenuationDistance;
 		}
-
+		
 		void SetGain(float _gain) override {
-			std::lock_guard<std::mutex> lock(mutex);
-			BRTBase::CModelBase::SetGain(_gain);
-			UpdateGainWithoutLock();
+			brtManager->ExecuteConfigurationUpdate(
+				[this, _gain]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);
+
+					BRTBase::CModelBase::SetGain(_gain);
+					UpdateGainWithoutLock();
+
+					return true;
+				});
 		}
 
 		/**
@@ -395,12 +414,16 @@ namespace BRTEnvironmentModel {
 				}
 			}
 		}
-
-		
-
+				
 		void UpdateGain() override {
-			std::lock_guard<std::mutex> lock(mutex);
-			UpdateGainWithoutLock();
+			brtManager->ExecuteConfigurationUpdate(
+				[this]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);
+
+					UpdateGainWithoutLock();
+
+					return true;
+				});
 		}
 		///**
 		// * @brief Set the gain of the model
@@ -538,10 +561,10 @@ namespace BRTEnvironmentModel {
 		/**
 		 * @brief Update Configuration in all source processor
 		*/
-		void SetConfigurationInALLSourcesProcessors() {
+		/*void SetConfigurationInALLSourcesProcessors() {
 			std::lock_guard<std::mutex> l(mutex);
 			SetConfigurationInALLSourcesProcessorsWithoutLock();
-		}
+		}*/
 
 		void SetConfigurationInALLSourcesProcessorsWithoutLock() {
 			for (auto & it : sourcesConnectedProcessors) {
@@ -555,6 +578,39 @@ namespace BRTEnvironmentModel {
 		void SetSourceProcessorsConfiguration(CSourceProcessors & sourceProcessor) {
 			sourceProcessor.SetConfiguration(enableDistanceAttenuation, enablePropagationDelay, distanceAttenuationFactorDB, referenceAttenuationDistance);
 			sourceProcessor.SetGain(BRTBase::CModelBase::GetGain());
+		}
+
+		/**
+		 * @brief Set configuration flag and update all source processors in a thread-safe manner
+		 * @param flag 
+		 * @param enabled 
+		 */
+		void SetConfigurationFlag(bool & flag, bool enabled) {
+			brtManager->ExecuteConfigurationUpdate(
+				[this, &flag, enabled]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);
+
+					flag = enabled;
+					SetConfigurationInALLSourcesProcessorsWithoutLock();
+					return true;
+				});
+		}
+
+		/**
+		 * @brief Set enable/disable model and update all source processors in a thread-safe manner
+		 * @param enabled 
+		 */
+		void SetEnableFlag(bool enabled) {
+			brtManager->ExecuteConfigurationUpdate(
+				[this, enabled]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);
+					enableModel = enabled;
+
+					for (auto & it : sourcesConnectedProcessors) {
+						it.SetEnableProcessor(enabled);
+					}
+					return true;
+				});
 		}
 
 		/////////////////

@@ -130,26 +130,36 @@ namespace BRTListenerModel {
 		/** \brief SET HRTF of listener
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
-		*/
-		//bool SetHRTF(std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable> _listenerHRTF) override {
+		*/	
 		bool SetHRTF(std::shared_ptr<BRTServices::CServicesBase> _listenerHRTF) override {
+			return brtManager->ExecuteResourceUpdate(
+				[this, _listenerHRTF]() -> bool {
+					
+					if (!_listenerHRTF || !_listenerHRTF->IsDataReady()) {
+						SET_RESULT(RESULT_ERROR_INVALID_PARAM, "HRTF resource must be non-null and ready.");
+						return false;
+					}
 
-			if (_listenerHRTF->GetSamplingRate() != globalParameters.GetSampleRate()) {
-				SET_RESULT(RESULT_ERROR_NOTSET, "This nonInterpolatedHRTF has not been assigned to the listener. The sample rate of the nonInterpolatedHRTF does not match the one set in the library Global Parameters.");
-				return false;
-			}			
+					if (_listenerHRTF->GetSamplingRate() != globalParameters.GetSampleRate()) {
+						SET_RESULT(RESULT_ERROR_NOTSET,
+							"HRTF sample rate does not match the library sample rate.");
+						return false;
+					}
 
-			EnableAmbisonicDomainConvolvers(false); // Stop the convolvers
+					//EnableAmbisonicDomainConvolvers(false); // Stop the convolvers
+					{
+						std::lock_guard<std::mutex> lock(resourceMutex);
+						listenerHRTF = _listenerHRTF;
+					}					
+					InitListenerAmbisonicIR();
+					//GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
+					GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
+					GetABIRExitPoint()->sendDataPtr(listenerAmbisonicIR);
+					ResetProcessorBuffers();
 
-			listenerHRTF = _listenerHRTF;									
-			InitListenerAmbisonicIR();
-			//GetHRTFExitPoint()->sendDataPtr(listenerHRTF);
-			GetHRTFExitPoint()->sendDataPtr(listenerHRTF);			
-			GetABIRExitPoint()->sendDataPtr(listenerAmbisonicIR);						
-			ResetProcessorBuffers();
-
-			EnableAmbisonicDomainConvolvers(true); // Start again
-			return true;
+					//EnableAmbisonicDomainConvolvers(true); // Start again
+					return true;
+				});
 		}
 
 		/** \brief Get HRTF of listener
@@ -159,6 +169,7 @@ namespace BRTListenerModel {
 		//std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable> GetHRTF() const override
 		std::shared_ptr<BRTServices::CServicesBase> GetHRTF() const override
 		{
+			std::lock_guard<std::mutex> lock(resourceMutex);
 			return listenerHRTF;
 		}
 
@@ -166,8 +177,19 @@ namespace BRTListenerModel {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void RemoveHRTF() override {
-			listenerHRTF = std::make_shared<BRTServices::CSphericalInterpolatedFIRTable>();	// Empty HRTF			
-			listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicBIR>();	// Empty AmbisonicIR class
+			brtManager->ExecuteResourceUpdate(
+				[this]() -> bool {
+					{
+						std::lock_guard<std::mutex> lock(resourceMutex);
+						listenerHRTF.reset();
+						listenerAmbisonicIR = std::make_shared<BRTServices::CAmbisonicBIR>();
+					}						
+					GetHRTFExitPoint()->sendDataPtr(std::weak_ptr<BRTServices::CServicesBase> {});
+					GetABIRExitPoint()->sendDataPtr(std::weak_ptr<BRTServices::CServicesBase> {});
+					ResetProcessorBuffers();
+					ResetMixerBuffers();					
+					return true;					
+				});
 		}
 
 		///
@@ -175,10 +197,20 @@ namespace BRTListenerModel {
 		*	\param[in] pointer to HRTF to be stored
 		*   \eh On error, NO error code is reported to the error handler.
 		*/
-		bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CSphericalSOSTable > _listenerILD) override {
-			listenerNFCFilters = _listenerILD;
-			GetSOSFilterExitPoint()->sendDataPtr(listenerNFCFilters);
-			return true;
+		bool SetNearFieldCompensationFilters(std::shared_ptr< BRTServices::CSphericalSOSTable > _listenerNFC) override {
+			return brtManager->ExecuteResourceUpdate(
+				[this, _listenerNFC]() -> bool {
+					if (!_listenerNFC || !_listenerNFC->IsDataReady()) {
+						SET_RESULT(RESULT_ERROR_INVALID_PARAM, "NFC Filter resource must be non-null and ready.");
+						return false;
+					}
+					{
+						std::lock_guard<std::mutex> lock(resourceMutex);
+						listenerNFCFilters = _listenerNFC;
+					}
+					GetSOSFilterExitPoint()->sendDataPtr(listenerNFCFilters);
+					return true;
+				});
 		}
 
 		/** \brief Get HRTF of listener
@@ -187,6 +219,7 @@ namespace BRTListenerModel {
 		*/
 		std::shared_ptr <BRTServices::CSphericalSOSTable> GetNearFieldCompensationFilters() const override
 		{
+			std::lock_guard<std::mutex> lock(resourceMutex);
 			return listenerNFCFilters;
 		}
 
@@ -194,7 +227,15 @@ namespace BRTListenerModel {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void RemoveNearFierldCompensationFilters() override {
-			listenerNFCFilters = std::make_shared<BRTServices::CSphericalSOSTable>();	// empty HRTF			
+			brtManager->ExecuteResourceUpdate(
+				[this]() -> bool {
+					{
+						std::lock_guard<std::mutex> lock(resourceMutex);
+						listenerNFCFilters.reset();
+					}
+					GetSOSFilterExitPoint()->sendDataPtr(listenerNFCFilters);
+					return true;
+				});
 		}
 
 		/**
@@ -204,19 +245,30 @@ namespace BRTListenerModel {
 		*/
 		bool SetAmbisonicOrder(int _ambisonicOrder) override {
 			
-			if (_ambisonicOrder < 1 || _ambisonicOrder > 3) { return false; }
-			if (ambisonicOrder == _ambisonicOrder) { return true; }			
-			
-			EnableAmbisonicDomainConvolvers(false); // Stop the convolvers
-								
-			ambisonicOrder = _ambisonicOrder;
-			if (listenerHRTF->IsDataReady()) {	InitListenerAmbisonicIR();		}						
-			SetConfigurationInALLSourcesProcessors();
-			leftAmbisonicDomainConvolverProcessor->SetAmbisonicOrder(_ambisonicOrder);
-			rightAmbisonicDomainConvolverProcessor->SetAmbisonicOrder(_ambisonicOrder);
+			return brtManager->ExecuteConfigurationUpdate(
+				[this, _ambisonicOrder]() {
+					
+					std::lock_guard<std::mutex> lock(mutex);
+					if (_ambisonicOrder < 1 || _ambisonicOrder > 3) {
+						return false;
+					}
+					if (ambisonicOrder == _ambisonicOrder) {
+						return true;
+					}
+					
+					ambisonicOrder = _ambisonicOrder;
+					if (listenerHRTF && listenerHRTF->IsDataReady()) {
+						InitListenerAmbisonicIRWithoutLock();
+					}
+					SetConfigurationInALLSourcesProcessorsWithoutLock();
+					leftAmbisonicDomainConvolverProcessor->SetAmbisonicOrder(_ambisonicOrder);
+					rightAmbisonicDomainConvolverProcessor->SetAmbisonicOrder(_ambisonicOrder);
 
-			EnableAmbisonicDomainConvolvers(true); // Start again
-			return true;
+					ResetProcessorBuffersWithoutLock();
+					ResetMixerBuffers();
+					
+					return true;
+				});
 		}
 
 		/**
@@ -224,6 +276,7 @@ namespace BRTListenerModel {
 		 * @return order
 		*/
 		int GetAmbisonicOrder() override {
+			std::lock_guard<std::mutex> lock(mutex);
 			return ambisonicOrder;
 		}
 
@@ -233,16 +286,24 @@ namespace BRTListenerModel {
 		*/
 		bool SetAmbisonicNormalization(Common::TAmbisonicNormalization _ambisonicNormalization) override {
 			
-			if (ambisonicNormalization == _ambisonicNormalization) { return true; }
-			
-			EnableAmbisonicDomainConvolvers(false); // Stop the convolvers
-			
-			ambisonicNormalization = _ambisonicNormalization;
-			if (listenerHRTF->IsDataReady()) {	InitListenerAmbisonicIR();	}			
-			SetConfigurationInALLSourcesProcessors();
+			 return brtManager->ExecuteConfigurationUpdate(
+				[this, _ambisonicNormalization]() {
 
-			EnableAmbisonicDomainConvolvers(true); // Start again
-			return true;
+					std::lock_guard<std::mutex> lock(mutex);
+					if (ambisonicNormalization == _ambisonicNormalization) {
+						return true;
+					}
+					
+					ambisonicNormalization = _ambisonicNormalization;
+					if (listenerHRTF &&listenerHRTF->IsDataReady()) {
+						InitListenerAmbisonicIRWithoutLock();
+					}
+					SetConfigurationInALLSourcesProcessorsWithoutLock();
+					ResetProcessorBuffersWithoutLock();
+					ResetMixerBuffers();
+
+					return true;
+				});
 		}
 		
 		/**
@@ -265,6 +326,7 @@ namespace BRTListenerModel {
 		 * @return current established ambisonic normalization
 		*/
 		Common::TAmbisonicNormalization GetAmbisonicNormalization() override {
+			std::lock_guard<std::mutex> lock(mutex);
 			return ambisonicNormalization;
 		}
 		
@@ -273,18 +335,20 @@ namespace BRTListenerModel {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void EnableNearFieldEffect() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableNearFieldEffect = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();			
+			SetConfigurationInALLSourcesProcessorsWithoutLock();	*/
+			SetConfigurationFlag(enableNearFieldEffect, true);
 		}
 
 		/** \brief Disable near field effect for this source
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void DisableNearFieldEffect() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableNearFieldEffect = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();	
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableNearFieldEffect, false);
 		}
 
 		/** \brief Get the flag for near field effect enabling
@@ -300,18 +364,20 @@ namespace BRTListenerModel {
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void EnableITDSimulation() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableITDSimulation = true;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableITDSimulation, true);	
 		}
 
 		/** \brief Disable bilaterality for all source connected to this listener
 		*   \eh Nothing is reported to the error handler.
 		*/
 		void DisableITDSimulation() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableITDSimulation = false;
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableITDSimulation, false);
 		}
 		
 		/**
@@ -327,18 +393,20 @@ namespace BRTListenerModel {
 		 * @brief Enable Parallax Correction
 		*/
 		void EnableParallaxCorrection() override { 
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableParallaxCorrection = true; 
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableParallaxCorrection, true);
 		}
 
 		/**
 		 * @brief Disable Parallax Correction
 		*/
 		void DisableParallaxCorrection() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableParallaxCorrection = false; 
-			SetConfigurationInALLSourcesProcessorsWithoutLock();
+			SetConfigurationInALLSourcesProcessorsWithoutLock();*/
+			SetConfigurationFlag(enableParallaxCorrection, false);
 		}
 
 		/**
@@ -353,26 +421,28 @@ namespace BRTListenerModel {
 		 * @brief Enable model
 		 */
 		void EnableModel() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableModel = true;
 			for (auto& it : sourcesConnectedProcessors) {
 				it.SetEnableProcessor(true);
 			}
 			leftAmbisonicDomainConvolverProcessor->EnableProcessor();
-			rightAmbisonicDomainConvolverProcessor->EnableProcessor();
+			rightAmbisonicDomainConvolverProcessor->EnableProcessor();*/
+			SetEnableFlag(true);
 		};
 
 		/**
 		 * @brief Disable model
 		 */
 		void DisableModel() override {
-			std::lock_guard<std::mutex> l(mutex);
+			/*std::lock_guard<std::mutex> l(mutex);
 			enableModel = false;
 			for (auto& it : sourcesConnectedProcessors) {
 				it.SetEnableProcessor(false);
 			}
 			leftAmbisonicDomainConvolverProcessor->DisableProcessor();
-			rightAmbisonicDomainConvolverProcessor->DisableProcessor();
+			rightAmbisonicDomainConvolverProcessor->DisableProcessor();*/
+			SetEnableFlag(false);
 		};
 
 		bool IsModelEnabled() override {
@@ -425,16 +495,10 @@ namespace BRTListenerModel {
 		 * @brief Reset all processor buffers
 		*/
 		void ResetProcessorBuffers() {		
-			std::lock_guard<std::mutex> l(mutex);
-			
-			leftAmbisonicDomainConvolverProcessor->ResetChannelsConvolutionBuffers();
-			rightAmbisonicDomainConvolverProcessor->ResetChannelsConvolutionBuffers();
-
-			for (auto& it : sourcesConnectedProcessors) {
-				it.ResetBuffers();
-			}
+			std::lock_guard<std::mutex> l(mutex);			
+			ResetProcessorBuffersWithoutLock();
 		}
-
+		
 		/**
 		 * @brief Connect an environment to this listener model
 		 * @param _environmentModel ID
@@ -475,7 +539,7 @@ namespace BRTListenerModel {
 		void UpdateCommand() override {
 			//std::lock_guard<std::mutex> l(mutex);			
 			BRTConnectivity::CCommand command = GetLastReceivedCommand();
-			if (command.isNull() || command.GetAddress() == "") {
+			if (command.isNull() || command.GetCommand().empty()) {
 				return;
 			}
 
@@ -552,12 +616,15 @@ namespace BRTListenerModel {
 
 		void InitListenerAmbisonicIR(){
 			std::lock_guard<std::mutex> l(mutex);
+			InitListenerAmbisonicIRWithoutLock();
+		}
+
+		void InitListenerAmbisonicIRWithoutLock() {			
 			listenerAmbisonicIR->BeginSetup(ambisonicOrder, ambisonicNormalization);
 			bool control = listenerAmbisonicIR->AddSphericalFIRTable(listenerHRTF);
 			if (control) {
 				listenerAmbisonicIR->EndSetup();
-			}
-			else {
+			} else {
 				ASSERT(false, RESULT_ERROR_UNKNOWN, "It has not been possible to initialise the ambisonic IR of the associated listener.", "");
 			}
 		}
@@ -686,6 +753,19 @@ namespace BRTListenerModel {
 		}
 
 		/**
+		 * @brief Reset all processor buffers without locking the mutex. 
+		 * This function should be called only when the mutex is already locked.
+		 */
+		void ResetProcessorBuffersWithoutLock() {
+			leftAmbisonicDomainConvolverProcessor->ResetChannelsConvolutionBuffers();
+			rightAmbisonicDomainConvolverProcessor->ResetChannelsConvolutionBuffers();
+
+			for (auto & it : sourcesConnectedProcessors) {
+				it.ResetBuffers();
+			}
+		}
+
+		/**
 		 * @brief Enable or disable left and right ambisonic domain convolvers
 		 * @param _enable true to enable, false to disable
 		 */
@@ -699,10 +779,46 @@ namespace BRTListenerModel {
 			}
 		}
 
+		/**
+		 * @brief Set enable/disable model and update all source processors in a thread-safe manner
+		 * @param enabled 
+		 */
+		void SetEnableFlag(bool enabled) {
+			brtManager->ExecuteConfigurationUpdate(
+				[this, enabled]() -> bool {
+				std::lock_guard<std::mutex> lock(mutex);
+				enableModel = enabled;
+
+				for (auto & it : sourcesConnectedProcessors) {
+					it.SetEnableProcessor(enabled);
+				}
+				EnableAmbisonicDomainConvolvers(enabled);				
+				return true;
+			});
+		}
+
+		/**
+		 * @brief Set configuration flag and update all source processors in a thread-safe manner
+		 * @param flag 
+		 * @param enabled 
+		 */
+		void SetConfigurationFlag(bool & flag, bool enabled) {
+			brtManager->ExecuteConfigurationUpdate(
+				[this, &flag, enabled]() -> bool {
+					std::lock_guard<std::mutex> lock(mutex);
+
+					flag = enabled;
+					SetConfigurationInALLSourcesProcessorsWithoutLock();
+					return true;
+				});
+		}
+
 		/////////////////
 		// Attributes
 		/////////////////		
 		mutable std::mutex mutex;													// To avoid access collisions
+		mutable std::mutex resourceMutex; // To avoid access collisions when updating resources
+
 		std::string listenerID;														// Store unique listener ID
 		std::shared_ptr<BRTServices::CServicesBase> listenerHRTF;					// HRTF of listener	
 		//std::shared_ptr<BRTServices::CSphericalInterpolatedFIRTable> listenerHRTF; // HRTF of listener														
